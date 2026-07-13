@@ -314,6 +314,7 @@ export function MushafRoute({
             }}
             onToggleChrome={(visible) => setChromeVisible(visible)}
             pages={windowState.entries}
+            retainedPage={visiblePage}
             resolved={visiblePage.resolved}
             surahLabel={currentSurahLabel}
             viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}

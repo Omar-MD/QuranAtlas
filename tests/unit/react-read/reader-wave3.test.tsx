@@ -7,7 +7,7 @@ import { ReaderChrome } from '../../../src/components/reader/ReaderChrome'
 import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
 import { ReaderAssetGate } from '../../../src/components/reader/ReaderAssetGate'
 import { useReaderInteractionSuspended } from '../../../src/components/reader/ReaderInteractionContext'
-import { MushafPageViewer } from '../../../src/components/reader/MushafPageViewer'
+import { MushafPageViewer, retainReadyMushafPage } from '../../../src/components/reader/MushafPageViewer'
 import { clampMushafPageFraming, interpolateMushafPageFrame, mushafImagePlacement } from '../../../src/components/reader/mushaf-page-framing'
 import {
   loadPreparedExternalMushafPage,
@@ -776,8 +776,8 @@ describe('React reader coverage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('keeps page 42 truthful while requested page 43 fails, retries, or is cancelled', async () => {
-    let page43Attempts = 0
+  it('keeps page 42 truthful while distant requested page 100 fails, retries, or is cancelled', async () => {
+    let page100Attempts = 0
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url === '/dataset/indexes/mushaf-assets.json') {
@@ -788,7 +788,7 @@ describe('React reader coverage', () => {
             files: [
               { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json' },
               { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg' },
-              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg' },
+              { url: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/100.svg' },
             ],
           }],
         })
@@ -798,15 +798,15 @@ describe('React reader coverage', () => {
           ...mushafManifest,
           pages: [
             mushafManifest.pages[1],
-            { ...mushafManifest.pages[1], assetPath: 'pages/043.svg', firstVerse: { surah: 2, verse: 256 }, page: 43 },
+            { ...mushafManifest.pages[1], assetPath: 'pages/100.svg', firstVerse: { surah: 5, verse: 1 }, page: 100 },
           ],
         })
       }
       if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg') {
         return { ok: true, status: 200, text: async () => realMushafSvg } as Response
       }
-      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg') {
-        page43Attempts += 1
+      if (url === '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/100.svg') {
+        page100Attempts += 1
         return { ok: false, status: 500, text: async () => '' } as Response
       }
       return jsonResponse({}, { ok: false, status: 404 })
@@ -816,23 +816,76 @@ describe('React reader coverage', () => {
     const { rerender } = render(<MushafRoute onReplaceHash={onReplaceHash} page={42} />)
     expect(await screen.findByRole('img', { name: /mushaf page 42, qaloon/i })).toBeInTheDocument()
 
-    window.location.hash = '#/m/43'
-    rerender(<MushafRoute onReplaceHash={onReplaceHash} page={43} />)
+    window.location.hash = '#/m/100'
+    rerender(<MushafRoute onReplaceHash={onReplaceHash} page={100} />)
 
-    expect(await screen.findByText('Mushaf page 43 could not be loaded. Page 42 remains open.')).toBeInTheDocument()
+    expect(await screen.findByText('Mushaf page 100 could not be loaded. Page 42 remains open.')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: /mushaf page 42, qaloon/i })).toBeInTheDocument()
     expect(screen.getByLabelText('Mushaf page 42', { exact: true })).toHaveTextContent('42')
     expect(screen.getByRole('button', { name: 'Bookmark Mushaf page 42' })).toBeInTheDocument()
     expect(screen.queryByText('Mushaf page pack could not be loaded.')).not.toBeInTheDocument()
 
-    const attemptsBeforeRetry = page43Attempts
-    fireEvent.click(screen.getByRole('button', { name: 'Retry page 43' }))
-    await waitFor(() => expect(page43Attempts).toBeGreaterThan(attemptsBeforeRetry))
+    const attemptsBeforeRetry = page100Attempts
+    fireEvent.click(screen.getByRole('button', { name: 'Retry page 100' }))
+    await waitFor(() => expect(page100Attempts).toBeGreaterThan(attemptsBeforeRetry))
 
     fireEvent.click(screen.getByRole('button', { name: 'Stay on page 42' }))
     expect(onReplaceHash).toHaveBeenCalledWith('#/m/42')
     expect(window.location.hash).toBe('#/m/42')
     vi.unstubAllGlobals()
+  })
+
+  it.each([
+    ['single', 'auto' as const],
+    ['continuous', 'continuous' as const],
+  ])('retains the actual V2 external page in %s rendering when a distant requested window fails', (_label, viewMode) => {
+    const page = 42
+    const descriptor = privateMushafManifest.pages[page - 1]!.media.sources[1]!
+    const source = {
+      ...descriptor,
+      assetUrl: `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${descriptor.assetPath}`,
+    }
+    const visiblePage = {
+      asset: {
+        media: { kind: 'external-image' as const, source },
+        resolved: {
+          assetUrl: source.assetUrl,
+          displaySize: { height: source.height, width: source.width },
+          firstVerse: { surah: 2, verse: 41 },
+          framing: privateMushafManifest.pages[page - 1]!.framing,
+          mushafEditionId: 'qalun-furatiyyah-2023-v1',
+          page,
+          pageCount: 604,
+          riwayah: 'qaloon' as const,
+          riwayahLabel: 'Qaloon',
+        },
+        status: 'ready' as const,
+      },
+      loadPurpose: 'current' as const,
+      page,
+      status: 'ready' as const,
+    }
+    const distantEntries = Array.from({ length: 5 }, (_, index) => ({
+      page: 98 + index,
+      status: index === 2 ? 'error' as const : 'loading' as const,
+    }))
+    const retainedEntries = retainReadyMushafPage(distantEntries, visiblePage.asset)
+    const retained = retainedEntries.find((entry) => entry.page === page)
+    expect(retained?.status).toBe('ready')
+    if (retained?.status !== 'ready') throw new Error('Expected retained ready page')
+    expect(retained.asset.media).toEqual({ kind: 'external-image', source })
+
+    render(
+      <MushafPageViewer
+        inlineSvg={{ markup: '', viewBox: { height: 1, width: 1, x: 0, y: 0 }, viewBoxText: '0 0 1 1' }}
+        pages={distantEntries}
+        resolved={visiblePage.asset.resolved}
+        retainedPage={visiblePage.asset}
+        viewMode={viewMode}
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeInTheDocument()
   })
 
   it('renders the requested-page error gate when that page fails', async () => {

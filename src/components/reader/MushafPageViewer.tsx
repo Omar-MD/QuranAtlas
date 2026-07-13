@@ -42,6 +42,7 @@ export type MushafPageViewerProps = {
   onToggleChrome?: (visible: boolean) => void
   onToggleBookmark?: () => void
   pages?: readonly MushafPageWindowEntry[]
+  retainedPage?: MushafReadyPageAssetState
   resolved: MushafResolvedPage
   surahLabel?: string
   viewMode?: MushafViewMode
@@ -116,6 +117,7 @@ export function MushafPageViewer({
   onToggleBookmark,
   onToggleChrome,
   pages,
+  retainedPage,
   resolved,
   surahLabel,
   viewMode = 'auto',
@@ -139,8 +141,11 @@ export function MushafPageViewer({
     : sourceRatio
   const isScrollMode = viewMode === 'continuous'
   const effectivePages = useMemo(
-    () => pages ?? legacyPageEntries(adjacentPages, { inlineSvg, resolved }),
-    [adjacentPages, inlineSvg, pages, resolved],
+    () => retainReadyMushafPage(
+      pages ?? legacyPageEntries(adjacentPages, { inlineSvg, resolved }),
+      retainedPage,
+    ),
+    [adjacentPages, inlineSvg, pages, resolved, retainedPage],
   )
   const orderedPages = useMemo(
     () => [...effectivePages].sort((left, right) => left.page - right.page),
@@ -324,7 +329,7 @@ export function MushafPageViewer({
   function entryFor(page: number): MushafPageWindowEntry | null {
     const entry = effectivePages.find((candidate) => candidate.page === page)
     if (entry) return entry
-    if (page === resolved.page) {
+    if (page === resolved.page && pages === undefined) {
       return {
         asset: { media: { kind: 'inline-svg', inlineSvg }, resolved, status: 'ready' },
         loadPurpose: 'current',
@@ -474,6 +479,24 @@ export function MushafPageViewer({
       ) : null}
     </section>
   )
+}
+
+export function retainReadyMushafPage(
+  entries: readonly MushafPageWindowEntry[],
+  retainedPage?: MushafReadyPageAssetState,
+): readonly MushafPageWindowEntry[] {
+  if (!retainedPage) return entries
+  const retainedEntry: MushafPageWindowEntry = {
+    asset: retainedPage,
+    loadPurpose: 'current',
+    page: retainedPage.resolved.page,
+    status: 'ready',
+  }
+  const matchingIndex = entries.findIndex((entry) => entry.page === retainedEntry.page)
+  if (matchingIndex < 0) return [...entries, retainedEntry]
+  const matching = entries[matchingIndex]
+  if (matching?.status === 'ready' && matching.asset === retainedPage && matching.loadPurpose === 'current') return entries
+  return entries.map((entry, index) => index === matchingIndex ? retainedEntry : entry)
 }
 
 const MushafPageCell = ({
