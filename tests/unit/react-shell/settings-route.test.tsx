@@ -62,6 +62,16 @@ async function seedLastSurface(lastSurface: string) {
   ])
 }
 
+function createDeferred<T>() {
+  let reject!: (reason?: unknown) => void
+  let resolve!: (value: T | PromiseLike<T>) => void
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    reject = rejectPromise
+    resolve = resolvePromise
+  })
+  return { promise, reject, resolve }
+}
+
 function ReaderPreferenceListenerProbe() {
   const [updates, setUpdates] = useState(0)
 
@@ -360,6 +370,59 @@ describe('React settings shell coverage', () => {
     expect(within(dialog).getByRole('button', { name: 'Text focus' })).toHaveAttribute('aria-pressed', 'true')
     expect(within(dialog).getByText('80% reviewed frame width')).toBeInTheDocument()
     expect(writePreferences).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps a newer Mushaf framing intent visible when an older queued write rejects', async () => {
+    await resetReactDb()
+    const db = await openReactDb()
+    await db.settings.bulkPut([
+      { key: 'mushafEditionId', value: 'qalun-furatiyyah-2023-v1' },
+      { key: 'mushafPageFraming', value: 0.25 },
+    ])
+    mockedLoadMushafFramingCapability.mockResolvedValue({
+      hasValidFraming: true,
+      representativeTextFrame: { x: 0.1, y: 0, width: 0.8, height: 1 },
+    })
+    const intentA = createDeferred<void>()
+    const intentB = createDeferred<void>()
+    const writeReactReaderPreferences = settingsWriter.writeReactReaderPreferences
+    const writePreferences = vi.spyOn(settingsWriter, 'writeReactReaderPreferences')
+      .mockImplementationOnce(async (...args) => {
+        await intentA.promise
+        await writeReactReaderPreferences(...args)
+      })
+      .mockImplementationOnce(async (...args) => {
+        await intentB.promise
+        await writeReactReaderPreferences(...args)
+      })
+
+    render(<SettingsRoute mode="mushaf" onClose={vi.fn()} previousHash="#/m/1" />)
+
+    const dialog = await screen.findByRole('dialog', { name: 'Mushaf settings' })
+    expect(await within(dialog).findByText('95% reviewed frame width')).toBeInTheDocument()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Text focus' }))
+    await waitFor(() => expect(writePreferences).toHaveBeenCalledTimes(1))
+    expect(within(dialog).getByText('80% reviewed frame width')).toBeInTheDocument()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Full page' }))
+    expect(within(dialog).getByRole('button', { name: 'Full page' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(dialog).getByText('100% reviewed frame width')).toBeInTheDocument()
+
+    intentA.reject(new Error('stale framing write failed'))
+
+    await waitFor(() => expect(writePreferences).toHaveBeenCalledTimes(2))
+    expect(within(dialog).getByRole('button', { name: 'Full page' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(dialog).getByText('100% reviewed frame width')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Could not save Mushaf page framing')).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('button', { name: 'Retry saving Mushaf framing' })).not.toBeInTheDocument()
+
+    intentB.resolve(undefined)
+
+    await waitFor(() => expect(db.settings.get('mushafPageFraming')).resolves.toEqual({ key: 'mushafPageFraming', value: 0 }))
+    expect(within(dialog).getByRole('button', { name: 'Full page' })).toHaveAttribute('aria-pressed', 'true')
+    expect(within(dialog).getByText('100% reviewed frame width')).toBeInTheDocument()
+    expect(within(dialog).queryByText('Could not save Mushaf page framing')).not.toBeInTheDocument()
   })
 
   it('keeps quran.ws Page layout controls unchanged without framing controls', async () => {
