@@ -22,7 +22,7 @@
       "files": [
         {
           "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json",
-          "bytes": 281948
+          "bytes": 314302
         },
         {
           "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg",
@@ -2441,7 +2441,7 @@
           "bytes": 511840
         }
       ],
-      "totalBytes": 425049489
+      "totalBytes": 425081843
     }
   ]
 }

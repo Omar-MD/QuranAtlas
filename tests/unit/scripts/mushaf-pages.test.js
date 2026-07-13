@@ -19,6 +19,10 @@ import {
   writeMushafManifest,
 } from '../../../scripts/data/mushaf-pages/build.mjs'
 import {
+  assertContainedViewBox,
+  deriveMushafDisplayViewBox,
+} from '../../../scripts/data/mushaf-pages/display-view-box.mjs'
+import {
   MUSHAF_COLOR_TOKENS,
   assertThemeableSvgIntegrity,
   themeMushafSvg,
@@ -689,6 +693,25 @@ describe('mushaf asset index output', () => {
 })
 
 describe('mushaf page dataset builder', () => {
+  it('derives stable quran.ws display framing from themed page ink', () => {
+    expect(deriveMushafDisplayViewBox(
+      '<svg viewBox="0 0 900 1379.25"><path fill="var(--qa-mushaf-ink)" d="M 100 200 L 300 400"/></svg>',
+      '001.svg',
+    )).toBe('76 176 248 248')
+    expect(deriveMushafDisplayViewBox(
+      '<svg viewBox="0 0 900 1379.25"><path fill="var(--qa-mushaf-ground)" d="M 0 0 L 900 1379.25"/></svg>',
+      '001.svg',
+    )).toBe('60 60 790 1270')
+  })
+
+  it('rejects display framing that is outside the source viewBox', () => {
+    expect(() => assertContainedViewBox(
+      { x: -1, y: 0, width: 10, height: 20 },
+      { x: 0, y: 0, width: 10, height: 20 },
+      '001.svg',
+    )).toThrow(/outside its source viewBox/)
+  })
+
   it('builds quran.ws page PDF URLs with the source slug', () => {
     expect(quranWsPagePdfUrl('qalun', 42)).toBe('https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-42.pdf')
   })
@@ -877,6 +900,14 @@ describe('mushaf page dataset builder', () => {
       await buildMushafPages(['--profile=baseline', '--require-riwayah=qaloon'], paths)
       const baselineDigest = await treeDigest(legacyPages)
       const baselineManifest = await readFile(join(legacyRoot, 'manifest.json'))
+      const parsedBaselineManifest = JSON.parse(baselineManifest)
+      for (const page of parsedBaselineManifest.pages) {
+        const values = page.displayViewBox.split(/\s+/).map(Number)
+        expect(values).toHaveLength(4)
+        expect(values.every(Number.isFinite)).toBe(true)
+        expect(values[2]).toBeGreaterThan(0)
+        expect(values[3]).toBeGreaterThan(0)
+      }
 
       await buildMushafPages(['--profile=private', '--require-edition=qalun-furatiyyah-2023-v1'], paths)
       const privateIndex = JSON.parse(await readFile(indexPath, 'utf8'))
@@ -1210,6 +1241,16 @@ describe('mushaf page dataset builder', () => {
     })
     await writeFile(join(pages, '001.svg'), themedSvg)
 
+    await expect(writeMushafManifest({
+      outDir: out,
+      riwayah: 'qaloon',
+      sourceSlug: 'qalun',
+      pageCount: 1,
+      firstVerse: new Map([[1, { surah: 1, verse: 1 }]]),
+      verseToPage: { '1:1': 1 },
+      pageViewBoxes: new Map([[1, '0 0 10 20']]),
+    })).rejects.toThrow('No display viewBox mapping for Mushaf page 1')
+
     const manifestPath = await writeMushafManifest({
       outDir: out,
       riwayah: 'qaloon',
@@ -1218,6 +1259,7 @@ describe('mushaf page dataset builder', () => {
       firstVerse: new Map([[1, { surah: 1, verse: 1 }]]),
       verseToPage: { '1:1': 1 },
       pageViewBoxes: new Map([[1, '0 0 10 20']]),
+      pageDisplayViewBoxes: new Map([[1, '0 0 10 20']]),
     })
 
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
@@ -1227,6 +1269,7 @@ describe('mushaf page dataset builder', () => {
       page: 1,
       assetPath: 'pages/001.svg',
       viewBox: '0 0 10 20',
+      displayViewBox: '0 0 10 20',
       sourcePdfUrl: 'https://pdf.quran.ws/pdfs/qalun/page/quran-qalun-page-1.pdf',
       firstVerse: { surah: 1, verse: 1 },
     })

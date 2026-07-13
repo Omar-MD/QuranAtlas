@@ -7,6 +7,7 @@ import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildManifestPayload } from '../manifest/inventory.mjs'
+import { deriveMushafDisplayViewBox } from './display-view-box.mjs'
 import {
   assertThemeableSvgIntegrity,
   themeMushafSvg,
@@ -29,7 +30,7 @@ const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const OUT_ROOT = join(DATASET_DIR, 'mushaf-pages')
 const RIWAYAT = ['hafs', 'warsh', 'qaloon']
 const BUILD_STAMP_VERSION = 1
-const BUILD_TRANSFORM_ID = 'quranatlas-mushaf-pages-theme-v1'
+const BUILD_TRANSFORM_ID = 'quranatlas-mushaf-pages-theme-v2'
 const PROFILE_RIWAYAT = {
   baseline: [DEFAULT_PROFILE.riwayah],
   full: [DEFAULT_PROFILE.riwayah],
@@ -306,6 +307,7 @@ export async function buildMushafManifestPayload({
   firstVerse,
   verseToPage,
   pageViewBoxes,
+  pageDisplayViewBoxes,
   pageBytes = null,
   mushafEditionId = null,
   editionLabel = null,
@@ -318,11 +320,14 @@ export async function buildMushafManifestPayload({
     if (!first) throw new Error(`No first verse mapping for Mushaf page ${page}`)
     const viewBox = pageViewBoxes?.get(page)
     if (!viewBox) throw new Error(`No viewBox mapping for Mushaf page ${page}`)
+    const displayViewBox = pageDisplayViewBoxes?.get(page)
+    if (!displayViewBox) throw new Error(`No display viewBox mapping for Mushaf page ${page}`)
     const bytes = pageBytes?.get(page) ?? (await stat(join(outDir, 'pages', filename))).size
     pages.push({
       page,
       assetPath: `pages/${filename}`,
       viewBox,
+      displayViewBox,
       bytes,
       sourcePdfUrl: quranWsPagePdfUrl(sourceSlug, page),
       firstVerse: first,
@@ -659,6 +664,7 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
   const outDir = join(outRoot, riwayah, asset.mushafEditionId)
   const legacyOutDir = join(outRoot, riwayah)
   const pageViewBoxes = new Map()
+  const pageDisplayViewBoxes = new Map()
   const pageBytes = new Map()
   const editionFiles = []
   const legacyFiles = []
@@ -674,6 +680,7 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     assertThemeableSvgIntegrity(optimized, themed, filename)
     assertSafeSvg(filename, themed)
     pageViewBoxes.set(page, viewBoxForThemedPage(themed, filename))
+    pageDisplayViewBoxes.set(page, deriveMushafDisplayViewBox(themed, filename))
     pageBytes.set(page, Buffer.byteLength(themed))
     editionFiles.push([join(outDir, 'pages', filename), themed, `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`])
     legacyFiles.push([join(legacyOutDir, 'pages', filename), themed, `public/dataset/mushaf-pages/${riwayah}/pages/${filename}`])
@@ -690,6 +697,7 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     firstVerse: mappings.firstVerse,
     verseToPage: mappings.verseToPage,
     pageViewBoxes,
+    pageDisplayViewBoxes,
     pageBytes,
   })
   const legacyManifest = await buildMushafManifestPayload({
@@ -700,6 +708,7 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     firstVerse: mappings.firstVerse,
     verseToPage: mappings.verseToPage,
     pageViewBoxes,
+    pageDisplayViewBoxes,
     pageBytes,
   })
   editionFiles.push([join(outDir, 'manifest.json'), jsonText(editionManifest), `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`])
