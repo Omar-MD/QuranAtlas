@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { ReaderRoute } from '../../../src/app/routes/read/ReaderRoute'
 import { MushafRoute } from '../../../src/app/routes/read/MushafRoute'
+import type { MushafPageWindowEntry } from '../../../src/app/routes/read/useMushafPageWindow'
 import { ReaderChrome } from '../../../src/components/reader/ReaderChrome'
 import { ReaderPageShell } from '../../../src/components/reader/ReaderPageShell'
 import { ReaderAssetGate } from '../../../src/components/reader/ReaderAssetGate'
@@ -844,47 +845,95 @@ describe('React reader coverage', () => {
       ...descriptor,
       assetUrl: `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${descriptor.assetPath}`,
     }
-    const visiblePage = {
-      asset: {
-        media: { kind: 'external-image' as const, source },
-        resolved: {
-          assetUrl: source.assetUrl,
-          displaySize: { height: source.height, width: source.width },
-          firstVerse: { surah: 2, verse: 41 },
-          framing: privateMushafManifest.pages[page - 1]!.framing,
-          mushafEditionId: 'qalun-furatiyyah-2023-v1',
-          page,
-          pageCount: 604,
-          riwayah: 'qaloon' as const,
-          riwayahLabel: 'Qaloon',
-        },
-        status: 'ready' as const,
+    const visibleAsset = {
+      media: { kind: 'external-image' as const, source },
+      resolved: {
+        assetUrl: source.assetUrl,
+        displaySize: { height: source.height, width: source.width },
+        firstVerse: { surah: 2, verse: 41 },
+        framing: privateMushafManifest.pages[page - 1]!.framing,
+        mushafEditionId: 'qalun-furatiyyah-2023-v1',
+        page,
+        pageCount: 604,
+        riwayah: 'qaloon' as const,
+        riwayahLabel: 'Qaloon',
       },
-      loadPurpose: 'current' as const,
-      page,
       status: 'ready' as const,
     }
-    const distantEntries = Array.from({ length: 5 }, (_, index) => ({
-      page: 98 + index,
-      status: index === 2 ? 'error' as const : 'loading' as const,
-    }))
-    const retainedEntries = retainReadyMushafPage(distantEntries, visiblePage.asset)
+    const distantEntries: MushafPageWindowEntry[] = Array.from({ length: 5 }, (_, index) => {
+      const distantPage = 98 + index
+      const resolved = { ...visibleAsset.resolved, page: distantPage }
+      const descriptor = {
+        kind: 'inline-svg' as const,
+        assetUrl: `/pages/${distantPage}.svg`,
+        displayViewBox: { height: 1, width: 1, x: 0, y: 0 },
+        resolved,
+        sourceViewBox: { height: 1, width: 1, x: 0, y: 0 },
+      }
+      return index === 2
+        ? { descriptor, error: new Error('Mushaf page preparation failed'), page: distantPage, status: 'contract-error' }
+        : { attempt: 0, descriptor, page: distantPage, status: 'loading' }
+    })
+    const retainedEntries = retainReadyMushafPage(distantEntries, visibleAsset)
     const retained = retainedEntries.find((entry) => entry.page === page)
     expect(retained?.status).toBe('ready')
     if (retained?.status !== 'ready') throw new Error('Expected retained ready page')
     expect(retained.asset.media).toEqual({ kind: 'external-image', source })
+    expect(retained.rendition).toBe('full')
 
     render(
       <MushafPageViewer
         inlineSvg={{ markup: '', viewBox: { height: 1, width: 1, x: 0, y: 0 }, viewBoxText: '0 0 1 1' }}
         pages={distantEntries}
-        resolved={visiblePage.asset.resolved}
-        retainedPage={visiblePage.asset}
+        resolved={visibleAsset.resolved}
+        retainedPage={visibleAsset}
         viewMode={viewMode}
       />,
     )
 
     expect(screen.getByRole('img', { name: /Mushaf page 42, Qaloon/i })).toBeInTheDocument()
+  })
+
+  it('retains a V2 width-1280 preview truthfully while its full upgrade is pending', () => {
+    const page = 42
+    const pageManifest = privateMushafManifest.pages[page - 1]!
+    const previewDescriptor = pageManifest.media.sources[0]!
+    const fullDescriptor = pageManifest.media.sources[1]!
+    const previewSource = {
+      ...previewDescriptor,
+      assetUrl: `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${previewDescriptor.assetPath}`,
+    }
+    const retainedAsset = {
+      media: { kind: 'external-image' as const, source: previewSource },
+      resolved: {
+        assetUrl: `/dataset/mushaf-pages/qaloon/qalun-furatiyyah-2023-v1/${fullDescriptor.assetPath}`,
+        displaySize: { height: fullDescriptor.height, width: fullDescriptor.width },
+        firstVerse: { surah: 2, verse: 41 },
+        framing: pageManifest.framing,
+        mushafEditionId: 'qalun-furatiyyah-2023-v1',
+        page,
+        pageCount: 604,
+        riwayah: 'qaloon' as const,
+        riwayahLabel: 'Qaloon',
+      },
+      status: 'ready' as const,
+    }
+    const pendingFullUpgrade: MushafPageWindowEntry = {
+      asset: retainedAsset,
+      page,
+      rendition: 'preview',
+      status: 'ready',
+      upgradeStatus: 'loading',
+    }
+
+    const retained = retainReadyMushafPage([], pendingFullUpgrade.asset)[0]
+
+    expect(retained).toMatchObject({
+      asset: { media: { kind: 'external-image', source: { width: 1280 } } },
+      rendition: 'preview',
+      status: 'ready',
+      upgradeStatus: 'idle',
+    })
   })
 
   it('renders the requested-page error gate when that page fails', async () => {
@@ -928,14 +977,16 @@ describe('React reader coverage', () => {
       riwayah: 'qaloon' as const,
       riwayahLabel: 'Qalun',
     }
-    const pages = [41, 42, 43].map((page) => ({
+    const pages: MushafPageWindowEntry[] = [41, 42, 43].map((page) => ({
       asset: {
         media: { kind: 'inline-svg' as const, inlineSvg },
         resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
         status: 'ready' as const,
       },
       page,
+      rendition: 'full' as const,
       status: 'ready' as const,
+      upgradeStatus: 'idle' as const,
     }))
 
     render(
@@ -1029,14 +1080,16 @@ describe('React reader coverage', () => {
     render(
       <MushafPageViewer
         inlineSvg={inlineSvg}
-        pages={[41, 42, 43].map((page) => ({
+        pages={[41, 42, 43].map((page): MushafPageWindowEntry => ({
           asset: {
             media: { kind: 'inline-svg' as const, inlineSvg },
             resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
             status: 'ready' as const,
           },
           page,
+          rendition: 'full',
           status: 'ready' as const,
+          upgradeStatus: 'idle',
         }))}
         resolved={resolved}
         viewMode="continuous"
@@ -1098,14 +1151,16 @@ describe('React reader coverage', () => {
       <MushafPageViewer
         fitWidth
         inlineSvg={inlineSvg}
-        pages={[41, 42, 43].map((page) => ({
+        pages={[41, 42, 43].map((page): MushafPageWindowEntry => ({
           asset: {
             media: { kind: 'inline-svg' as const, inlineSvg },
             resolved: { ...resolved, assetUrl: resolved.assetUrl.replace('042', String(page).padStart(3, '0')), page },
             status: 'ready' as const,
           },
           page,
+          rendition: 'full',
           status: 'ready' as const,
+          upgradeStatus: 'idle',
         }))}
         resolved={resolved}
         viewMode="fit-page"

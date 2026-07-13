@@ -491,7 +491,7 @@ export function retainReadyMushafPage(
   const retainedEntry: MushafPageWindowEntry = {
     asset: retainedPage,
     page: retainedPage.resolved.page,
-    rendition: 'full',
+    rendition: retainedMushafPageRendition(retainedPage),
     status: 'ready',
     upgradeStatus: 'idle',
   }
@@ -500,6 +500,11 @@ export function retainReadyMushafPage(
   const matching = entries[matchingIndex]
   if (matching?.status === 'ready' && matching.asset === retainedPage) return entries
   return entries.map((entry, index) => index === matchingIndex ? retainedEntry : entry)
+}
+
+function retainedMushafPageRendition(asset: MushafReadyPageAssetState): 'preview' | 'full' {
+  if (asset.media.kind === 'inline-svg') return 'full'
+  return asset.media.source.assetUrl === asset.resolved.assetUrl ? 'full' : 'preview'
 }
 
 const MushafPageCell = ({
