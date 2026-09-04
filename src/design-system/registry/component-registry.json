@@ -1,0 +1,2683 @@
+{
+  "schemaVersion": 1,
+  "components": [
+    {
+      "id": "about-route",
+      "name": "AboutRoute",
+      "maturity": "product",
+      "exportPath": "src/app/routes/settings/AboutRoute.tsx",
+      "namedExport": "AboutRoute",
+      "allowedVariants": [
+        "default",
+        "app-update-check",
+        "clear-data-confirmation"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "attribution",
+        "install",
+        "appUpdate",
+        "clearData"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": [
+            "default",
+            "clear-data-confirmation"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-shell/about-route.test.tsx",
+          "behaviors": [
+            "About copy contract",
+            "clear data confirmation gating"
+          ]
+        }
+      ],
+      "accessibility": [
+        "main landmark",
+        "semantic attribution section",
+        "polite app update status",
+        "dialog focus and escape handled by owned Dialog primitive"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/settings/settings.stories.tsx",
+          "tests/e2e/configure/react-golden.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src/app/routes/settings"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned configure components or design-system styles."
+      ]
+    },
+    {
+      "id": "accordion",
+      "name": "Accordion",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/menus.tsx",
+      "namedExport": "Accordion",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "trigger",
+        "content"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-accordion"
+        ],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default",
+            "expanded"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "expanded content"
+          ]
+        }
+      ],
+      "accessibility": [
+        "button trigger",
+        "keyboard toggle",
+        "visible focus"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Radix accordion from feature code."
+      ]
+    },
+    {
+      "id": "badge",
+      "name": "Badge",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/feedback.tsx",
+      "namedExport": "Badge",
+      "allowedVariants": [
+        "neutral",
+        "success",
+        "warning",
+        "danger"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default",
+            "status"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "tone"
+          ]
+        }
+      ],
+      "accessibility": [
+        "state is not color-only when composed with text"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use raw palette utility status pills."
+      ]
+    },
+    {
+      "id": "bookmarks-list",
+      "name": "BookmarksList",
+      "maturity": "product",
+      "exportPath": "src/components/navigation/BookmarksList.tsx",
+      "namedExport": "BookmarksList",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default",
+            "empty",
+            "populated",
+            "page-bookmark",
+            "landing-pulse"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage",
+            "grouped bookmark rows",
+            "Arabic verse preview",
+            "Mushaf page rows",
+            "full-row jump",
+            "delete callback",
+            "bookmark landing pulse"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "full-row button names the target verse or page",
+        "destructive action remains a labelled button",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/navigation/navigation.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src/components/navigation"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "button",
+      "name": "Button",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/button.tsx",
+      "namedExport": "Button",
+      "allowedVariants": [
+        "primary",
+        "secondary",
+        "ghost",
+        "danger"
+      ],
+      "allowedSizes": [
+        "sm",
+        "md",
+        "lg"
+      ],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-slot"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default",
+            "disabled",
+            "focus-visible"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "click",
+            "variant"
+          ]
+        }
+      ],
+      "accessibility": [
+        "native button semantics",
+        "visible focus",
+        "disabled state"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use raw <button> in feature code."
+      ],
+      "replacement": "Button"
+    },
+    {
+      "id": "checkbox",
+      "name": "Checkbox",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "Checkbox",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "indicator",
+        "label"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-checkbox"
+        ],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "checked",
+            "unchecked",
+            "disabled"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "toggle"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled checkbox",
+        "keyboard toggle",
+        "visible focus"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Radix checkbox from feature code."
+      ]
+    },
+    {
+      "id": "command",
+      "name": "Command",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/menus.tsx",
+      "namedExport": "Command",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "listbox",
+        "option"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "listbox"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled listbox",
+        "button options"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not create ad hoc command lists."
+      ]
+    },
+    {
+      "id": "daily-wird-card",
+      "name": "DailyWirdCard",
+      "maturity": "product",
+      "exportPath": "src/components/reader/wird/DailyWirdCard.tsx",
+      "namedExport": "DailyWirdCard",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/navigation/wird/wird.stories.tsx",
+          "states": [
+            "default"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-wird/wird-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/navigation/wird/wird.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader/wird"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "dialog",
+      "name": "Dialog",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/overlays.tsx",
+      "namedExport": "Dialog",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "trigger",
+        "title",
+        "content",
+        "close"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-dialog"
+        ],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "closed",
+            "open"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "open dialog"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled dialog",
+        "focus trap",
+        "escape closes"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Radix dialog from feature code."
+      ]
+    },
+    {
+      "id": "disclosure",
+      "name": "Disclosure",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/disclosure.tsx",
+      "namedExport": "Disclosure",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "summary",
+        "content"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "collapsed",
+            "expanded"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "expanded content"
+          ]
+        }
+      ],
+      "accessibility": [
+        "native disclosure semantics"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not create unlabelled expandable panels."
+      ]
+    },
+    {
+      "id": "dropdown-menu",
+      "name": "DropdownMenu",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/menus.tsx",
+      "namedExport": "DropdownMenu",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "trigger",
+        "content",
+        "item"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-dropdown-menu"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "closed",
+            "open"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "menu item"
+          ]
+        }
+      ],
+      "accessibility": [
+        "menu semantics",
+        "keyboard navigation"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Radix dropdown menu from feature code."
+      ]
+    },
+    {
+      "id": "hizb-list",
+      "name": "HizbList",
+      "maturity": "product",
+      "exportPath": "src/components/navigation/HizbList.tsx",
+      "namedExport": "HizbList",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "group",
+        "row"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "error"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "navigation list coverage",
+            "row route start references"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic grouped list",
+        "keyboard reachable row actions",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/navigation/navigation.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src/components/navigation"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not repeat Surah names inside every Hizb row."
+      ]
+    },
+    {
+      "id": "icon-button",
+      "name": "IconButton",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/icon-button.tsx",
+      "namedExport": "IconButton",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "icon"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default",
+            "disabled",
+            "focus-visible"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "accessible name"
+          ]
+        }
+      ],
+      "accessibility": [
+        "required accessible name",
+        "visible focus"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not create icon-only buttons without a label."
+      ]
+    },
+    {
+      "id": "input",
+      "name": "Input",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "Input",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "label",
+        "input"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default",
+            "disabled",
+            "invalid"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "label association"
+          ]
+        }
+      ],
+      "accessibility": [
+        "visible label",
+        "native input semantics"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use raw <input> in feature code."
+      ]
+    },
+    {
+      "id": "juz-list",
+      "name": "JuzList",
+      "maturity": "product",
+      "exportPath": "src/components/navigation/JuzList.tsx",
+      "namedExport": "JuzList",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "error"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "real 30-row boundary data",
+            "route start references"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic list region",
+        "keyboard reachable row actions",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/navigation/navigation.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src/components/navigation"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "metadata-lane",
+      "name": "MetadataLane",
+      "maturity": "product",
+      "exportPath": "src/components/reader/metadata/MetadataLane.tsx",
+      "namedExport": "MetadataLane",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/metadata/metadata.stories.tsx",
+          "states": [
+            "default"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-metadata/metadata-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/metadata/metadata.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader/metadata"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "mushaf-page-viewer",
+      "name": "MushafPageViewer",
+      "maturity": "product",
+      "exportPath": "src/components/reader/MushafPageViewer.tsx",
+      "namedExport": "MushafPageViewer",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "pageBookmark"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": [
+            "default",
+            "ready",
+            "bookmarked",
+            "loading",
+            "unavailable",
+            "error",
+            "fit-page",
+            "fit-width",
+            "continuous",
+            "jump-input",
+            "focus-visible",
+            "mobile",
+            "tablet",
+            "desktop",
+            "light",
+            "sepia",
+            "dark",
+            "night"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage",
+            "page bookmark toggle"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/reader.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "nav-drawer",
+      "name": "NavDrawer",
+      "maturity": "product",
+      "exportPath": "src/components/navigation/NavDrawer.tsx",
+      "namedExport": "NavDrawer",
+      "allowedVariants": [
+        "read",
+        "search"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "modeTabs",
+        "readPanel",
+        "searchPanel"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/navigation/navigation.stories.tsx",
+          "tests/e2e/search/react-search.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src/components/navigation"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "onboarding-page-recipe",
+      "name": "OnboardingPageRecipe",
+      "maturity": "recipe",
+      "exportPath": "src/design-system/recipes/onboarding-page.tsx",
+      "namedExport": "OnboardingPageRecipe",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": [
+            "riwayah",
+            "translation",
+            "loading",
+            "disabled-source",
+            "selected-source"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage"
+          ]
+        },
+        {
+          "path": "tests/unit/react-navigate/onboarding-flow.test.ts",
+          "behaviors": [
+            "two-step flow",
+            "disabled source protection"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/settings/settings.stories.tsx",
+          "tests/e2e/configure/react-golden.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "onboard",
+        "package": "src/design-system/recipes"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "popover",
+      "name": "Popover",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/overlays.tsx",
+      "namedExport": "Popover",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "trigger",
+        "content"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-popover"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "closed",
+            "open"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "open content"
+          ]
+        }
+      ],
+      "accessibility": [
+        "triggered content",
+        "keyboard dismiss"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Radix popover from feature code."
+      ]
+    },
+    {
+      "id": "progress",
+      "name": "Progress",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/feedback.tsx",
+      "namedExport": "Progress",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "indicator"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-progress"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "partial",
+            "complete"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "aria value"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled progressbar",
+        "numeric value"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not show progress using color alone."
+      ]
+    },
+    {
+      "id": "reader-page-recipe",
+      "name": "ReaderPageRecipe",
+      "maturity": "recipe",
+      "exportPath": "src/design-system/recipes/reader-page.tsx",
+      "namedExport": "ReaderPageRecipe",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": [
+            "default"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/reader.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/design-system/recipes"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "reader-verse-surface",
+      "name": "ReaderVerseSurface",
+      "maturity": "product",
+      "exportPath": "src/components/reader/ReaderVerseSurface.tsx",
+      "namedExport": "ReaderVerseSurface",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "header",
+        "basmala",
+        "verse-list"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "unavailable",
+            "bookmarked",
+            "selected",
+            "footnote-open",
+            "mobile",
+            "tablet",
+            "desktop",
+            "light",
+            "sepia",
+            "dark"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "dataset-backed Al-Fatihah",
+            "basmala",
+            "footnotes",
+            "bookmark indicator",
+            "stable bookmark indicator slot",
+            "selection",
+            "Tafsir exclusion"
+          ]
+        },
+        {
+          "path": "tests/e2e/read/react-golden.spec.ts",
+          "behaviors": [
+            "production reader corpus coverage",
+            "responsive reader proof"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic main content via ReaderPageShell",
+        "named footnote buttons",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/reader.stories.tsx",
+          "tests/e2e/read/react-golden.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned read components or design-system styles."
+      ]
+    },
+    {
+      "id": "reader-wird-status-indicator",
+      "name": "ReaderWirdStatusIndicator",
+      "maturity": "product",
+      "exportPath": "src/components/reader/wird/ReaderWirdStatusIndicator.tsx",
+      "namedExport": "ReaderWirdStatusIndicator",
+      "allowedVariants": [
+        "active",
+        "today-complete",
+        "plan-complete"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "progressRing"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-tooltip"
+        ],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": [
+            "ReaderChromeWithWirdStatus"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "reader chrome status opens Daily Wird detail",
+            "full Daily Wird card stays out of reader content"
+          ]
+        },
+        {
+          "path": "tests/unit/react-shell/settings-route.test.tsx",
+          "behaviors": [
+            "settings toggle persists reader status visibility"
+          ]
+        }
+      ],
+      "accessibility": [
+        "button aria-label summarizes Daily Wird state",
+        "visible focus through owned IconButton primitive",
+        "tooltip uses owned Tooltip primitive"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/reader.stories.tsx",
+          "tests/e2e/read/react-golden.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader/wird"
+      },
+      "allowedConsumers": [
+        "src/components/reader/**"
+      ],
+      "forbiddenUses": [
+        "Do not replace the nav drawer Daily Wird card with this compact indicator.",
+        "Do not show this indicator when no active Wird plan exists."
+      ]
+    },
+    {
+      "id": "reading-view-toggle",
+      "name": "ReadingViewToggle",
+      "maturity": "product",
+      "exportPath": "src/components/reader/ReadingViewToggle.tsx",
+      "namedExport": "ReadingViewToggle",
+      "allowedVariants": [
+        "verse-destination",
+        "mushaf-destination"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "icon",
+        "tooltip"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [],
+        "components": [
+          "Tooltip",
+          "IconButton"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": [
+            "Verse destination",
+            "Mushaf destination"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "destination-labelled Verse and Mushaf actions",
+            "ReaderChrome-only consumer",
+            "reader route bridging"
+          ]
+        },
+        {
+          "path": "tests/e2e/navigate/react-golden.spec.ts",
+          "behaviors": [
+            "visible mobile destination action",
+            "route-preserving mode bridge"
+          ]
+        }
+      ],
+      "accessibility": [
+        "destination-based accessible name",
+        "tooltip repeats the action label",
+        "44px IconButton target"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/reader.stories.tsx",
+          "docs/ui-references/read/reading-view-toggle/default.mobile.light.png"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader"
+      },
+      "allowedConsumers": [
+        "src/components/reader/ReaderChrome.tsx"
+      ],
+      "forbiddenUses": [
+        "Do not duplicate the reading-view action outside ReaderChrome.",
+        "Do not present the destination action as selected state."
+      ]
+    },
+    {
+      "id": "search-page",
+      "name": "SearchPage",
+      "maturity": "product",
+      "exportPath": "src/components/search/SearchPage.tsx",
+      "namedExport": "SearchPage",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "mobileChrome",
+        "navDrawer",
+        "queryControls",
+        "workspaceTabs",
+        "overview",
+        "answerPreview",
+        "allMatches",
+        "verses",
+        "explore",
+        "sources",
+        "details",
+        "mobileDetails"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/search/search.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "overview-broad",
+            "overview-morphology",
+            "answer-preview-default",
+            "evidence-only-boundary",
+            "all-matches-open",
+            "verses-reference",
+            "verses-phrase",
+            "explore-missing-packs",
+            "sources",
+            "details-no-mapping",
+            "mobile-details",
+            "saved-searches",
+            "no-mapping",
+            "offline-unavailable"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-search/search-wave3.test.ts",
+          "behaviors": [
+            "prototype guard against mutable Search dataset URLs"
+          ]
+        },
+        {
+          "path": "tests/unit/react-search/search-route.test.tsx",
+          "behaviors": [
+            "route shell copy",
+            "result details",
+            "memory graph Explore sections",
+            "required graph source notes",
+            "validated Open in Read action",
+            "AnswerPreview renders supported claims only",
+            "All Matches loads after explicit user action",
+            "saved-search load recompute"
+          ]
+        },
+        {
+          "path": "tests/unit/react-search/saved-searches.test.tsx",
+          "behaviors": [
+            "saved query definition persistence",
+            "rename and delete",
+            "result snapshots not stored"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "polite result and saved-search status",
+        "controlled workspace tabs",
+        "Details close restores focus to the originating trigger",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/search/search.stories.tsx",
+          "tests/e2e/search/react-search.spec.ts"
+        ]
+      },
+      "owner": {
+        "surface": "search",
+        "package": "src/components/search"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "segmented-control",
+      "name": "SegmentedControl",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "SegmentedControl",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "list",
+        "trigger"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "selected",
+            "disabled"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "selected radio option"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled radiogroup",
+        "selected state"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use pill buttons for mutually exclusive modes."
+      ]
+    },
+    {
+      "id": "select",
+      "name": "Select",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "Select",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "trigger",
+        "content",
+        "item"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-select"
+        ],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "closed",
+            "open",
+            "disabled"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "combobox label"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled combobox",
+        "keyboard listbox",
+        "portal content layers above active settings shells"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Radix select from feature code."
+      ]
+    },
+    {
+      "id": "settings-group",
+      "name": "SettingsGroup",
+      "maturity": "product",
+      "exportPath": "src/components/settings/SettingsGroup.tsx",
+      "namedExport": "SettingsGroup",
+      "allowedVariants": [
+        "default",
+        "described"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "heading",
+        "content"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-settings-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": [
+            "Verse groups",
+            "Mushaf groups",
+            "included-assets disclosure"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-shell/settings-route.test.tsx",
+          "behaviors": [
+            "labelled heading and content slots",
+            "active-mode group ownership",
+            "settings route group order"
+          ]
+        }
+      ],
+      "accessibility": [
+        "region labelled by its visible heading",
+        "optional description remains adjacent to heading"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/settings/settings.stories.tsx",
+          "docs/ui-references/configure/settings-shell/default.mobile.light.png"
+        ]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src/components/settings"
+      },
+      "allowedConsumers": [
+        "src/components/settings/**",
+        "src/app/routes/settings/**"
+      ],
+      "forbiddenUses": [
+        "Do not use unlabelled visual group cards."
+      ]
+    },
+    {
+      "id": "settings-shell",
+      "name": "SettingsShell",
+      "maturity": "product",
+      "exportPath": "src/components/settings/SettingsShell.tsx",
+      "namedExport": "SettingsShell",
+      "allowedVariants": [
+        "verse",
+        "mushaf",
+        "compact",
+        "rail",
+        "dark",
+        "night"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "header",
+        "scrolling-body",
+        "group-stack"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": [
+            "Verse",
+            "Mushaf",
+            "compact assets-collapsed",
+            "dark",
+            "night"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-shell/settings-route.test.tsx",
+          "behaviors": [
+            "mode-aware route shell",
+            "in-place settings overlay preserves reader route",
+            "controlled return focus"
+          ]
+        },
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "mode-aware controls",
+            "verse typography controls",
+            "Mushaf-only view controls",
+            "grouped active-mode settings"
+          ]
+        },
+        {
+          "path": "tests/e2e/configure/react-golden.spec.ts",
+          "behaviors": [
+            "full-screen compact and short-landscape shell",
+            "tablet and desktop right rail",
+            "scroll reach and sticky header",
+            "focus trap and dismissal",
+            "44px targets",
+            "axe and rendered contrast"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled modal dialog",
+        "group regions with visible headings",
+        "focus containment and controlled return",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/settings/settings.stories.tsx",
+          "tests/e2e/configure/react-golden.spec.ts",
+          "docs/ui-references/configure/settings-shell/default.mobile.light.png"
+        ]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src/components/settings"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "sheet",
+      "name": "Sheet",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/overlays.tsx",
+      "namedExport": "Sheet",
+      "allowedVariants": [
+        "default",
+        "adaptive-settings"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "trigger",
+        "title",
+        "content",
+        "body",
+        "close"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-dialog"
+        ],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "closed",
+            "open",
+            "adaptive-settings open"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "open sheet",
+            "adaptive settings body",
+            "explicit and fallback return focus"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled dialog",
+        "focus trap",
+        "escape closes",
+        "outside dismissal",
+        "controlled return focus"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not create unlabelled drawer overlays."
+      ]
+    },
+    {
+      "id": "slider",
+      "name": "Slider",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "Slider",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "track",
+        "range",
+        "thumb"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-slider"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default",
+            "disabled"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "aria value"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled slider",
+        "numeric value"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use unlabelled range inputs."
+      ]
+    },
+    {
+      "id": "spinner",
+      "name": "Spinner",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/feedback.tsx",
+      "namedExport": "Spinner",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "loading"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "status label"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled status"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use unlabeled loading indicators."
+      ]
+    },
+    {
+      "id": "surah-list",
+      "name": "SurahList",
+      "maturity": "product",
+      "exportPath": "src/components/navigation/SurahList.tsx",
+      "namedExport": "SurahList",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/navigation/navigation.stories.tsx",
+          "states": [
+            "default",
+            "loading",
+            "error"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
+          "behaviors": [
+            "real 114-row metadata",
+            "riwayah-specific verse counts"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic list region",
+        "keyboard reachable row actions",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/navigation/navigation.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src/components/navigation"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    },
+    {
+      "id": "switch",
+      "name": "Switch",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "Switch",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "thumb",
+        "label"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-switch"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "checked",
+            "unchecked",
+            "disabled"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "switch role"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled switch",
+        "keyboard toggle"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use checkboxes for binary setting switches when Switch is expected."
+      ]
+    },
+    {
+      "id": "tabs",
+      "name": "Tabs",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/menus.tsx",
+      "namedExport": "Tabs",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "list",
+        "trigger",
+        "content"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-tabs"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "selected"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "tabpanel content"
+          ]
+        }
+      ],
+      "accessibility": [
+        "labelled tablist",
+        "tabpanel content"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not import Radix tabs from feature code."
+      ]
+    },
+    {
+      "id": "textarea",
+      "name": "Textarea",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "Textarea",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "label",
+        "textarea"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "default",
+            "disabled",
+            "invalid"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "label association"
+          ]
+        }
+      ],
+      "accessibility": [
+        "visible label",
+        "native textarea semantics"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use raw <textarea> in feature code."
+      ]
+    },
+    {
+      "id": "toast",
+      "name": "Toast",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/overlays.tsx",
+      "namedExport": "Toast",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "title",
+        "description",
+        "viewport"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-toast"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "open"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "title description"
+          ]
+        }
+      ],
+      "accessibility": [
+        "status announcement",
+        "visible message"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not create ad hoc toast containers."
+      ]
+    },
+    {
+      "id": "tooltip",
+      "name": "Tooltip",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/tooltip.tsx",
+      "namedExport": "Tooltip",
+      "allowedVariants": [
+        "default"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "trigger",
+        "content"
+      ],
+      "dependencies": {
+        "radix": [
+          "@radix-ui/react-tooltip"
+        ],
+        "icons": []
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": [
+            "closed",
+            "open"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-components/ui-components.test.tsx",
+          "behaviors": [
+            "trigger wrapper"
+          ]
+        }
+      ],
+      "accessibility": [
+        "triggered description",
+        "keyboard hover coverage"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/ui/ui.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not use title attributes as tooltips."
+      ]
+    },
+    {
+      "id": "verse-block",
+      "name": "VerseBlock",
+      "maturity": "product",
+      "exportPath": "src/components/reader/VerseBlock.tsx",
+      "namedExport": "VerseBlock",
+      "allowedVariants": [
+        "default",
+        "bookmarked",
+        "selected",
+        "translation-hidden",
+        "continuation"
+      ],
+      "allowedSizes": [],
+      "slots": [
+        "root",
+        "arabic",
+        "translation",
+        "footnote",
+        "metadata"
+      ],
+      "dependencies": {
+        "radix": [],
+        "icons": [
+          "lucide-react"
+        ]
+      },
+      "tokenNamespaces": [
+        "--qa-react-*"
+      ],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": [
+            "default",
+            "selected",
+            "bookmarked",
+            "footnote-open",
+            "long-text",
+            "dense-ayah",
+            "focus-visible",
+            "light",
+            "sepia",
+            "dark"
+          ]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/unit/react-read/reader-wave3.test.tsx",
+          "behaviors": [
+            "wave 3 coverage",
+            "bookmark toggle state",
+            "footnote disclosure",
+            "verse selection",
+            "Tafsir exclusion"
+          ]
+        }
+      ],
+      "accessibility": [
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": [
+          "src/components/reader/reader.stories.tsx"
+        ]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader"
+      },
+      "allowedConsumers": [
+        "src/**"
+      ],
+      "forbiddenUses": [
+        "Do not bypass owned React UI primitives for controls."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+# mise is the command front door for QuranAtlas. Tools are pinned; every task
+# below is the documented interface (AGENTS.md). Freshness (sources/outputs) is
+# used only for dependency installation and deterministic generated data —
+# never to skip checks or tests.
+
+[tools]
+node = "24.20.0"
+pnpm = "10.31.0"
+# 0.1.19 is published by Microsoft's official 1ES release account
+# (microsoft1es <npmjs@microsoft.com>) via Microsoft's internal package
+# publisher, not GitHub OIDC trusted publishing like 0.1.0 — a pipeline
+# change, not a maintainer change (registry metadata verified 2026-09-04).
+# mise/aube flags the missing provenance as a trust downgrade; exempt only
+# these exact versions (@playwright/cli and its exact-pinned playwright pair,
+# all published by the same Microsoft 1ES release train).
+"npm:@playwright/cli" = { version = "0.1.19", trust_policy_excludes = [
+  "@playwright/cli@0.1.19",
+  "playwright@1.63.0-alpha-2026-08-31",
+  "playwright-core@1.63.0-alpha-2026-08-31",
+] }
+
+[settings]
+activate_aggressive = true
+
+[env]
+_.path = ["~/.local/share/mise/shims"]
+
+[tasks.install]
+description = "Install pinned dependencies from pnpm-lock.yaml"
+run = "pnpm install --frozen-lockfile"
+sources = ["pnpm-lock.yaml"]
+outputs = ["node_modules/.pnpm"]
+
+[tasks.dev]
+description = "Vite dev server on 127.0.0.1:5173"
+run = "pnpm run dev"
+
+[tasks.preview]
+description = "Serve a production build on 127.0.0.1:4173"
+run = "pnpm run preview"
+
+[tasks."check:type"]
+description = "TypeScript project check"
+run = "pnpm exec tsc --project tsconfig.json --noEmit"
+
+[tasks."check:lint"]
+description = "ESLint over source, scripts, tests, and configs"
+run = "pnpm exec eslint ."
+
+[tasks."check:design"]
+description = "Design-literal guardrail"
+run = "node scripts/check-react-design-literals.mjs"
+
+[tasks."check:radix"]
+description = "Radix import boundary guardrail"
+run = "node scripts/check-react-radix-boundaries.mjs"
+
+[tasks."check:boundaries"]
+description = "React boundary guardrail"
+run = "node scripts/check-react-boundaries.mjs"
+
+[tasks."check:registry"]
+description = "Component registry schema + consumer boundary guardrail"
+run = "node scripts/check-react-component-registry.mjs"
+
+[tasks."check:ui-patterns"]
+description = "UI pattern guardrail"
+run = "node scripts/check-react-ui-forbidden-patterns.mjs"
+
+[tasks."check:feature-state"]
+description = "Feature-state guardrail"
+run = "node scripts/check-no-feature-state.js"
+
+[tasks."check:mushaf-assets"]
+description = "Mushaf asset/index reference checks (data/release verification only)"
+run = ["node scripts/check-react-mushaf-assets.mjs", "node scripts/check-react-mushaf-indexes.mjs"]
+
+[tasks.check]
+description = "All independent static checks (run in parallel via mise)"
+depends = [
+  "check:type",
+  "check:lint",
+  "check:design",
+  "check:radix",
+  "check:boundaries",
+  "check:registry",
+  "check:ui-patterns",
+  "check:feature-state",
+]
+run = "echo 'static checks passed'"
+
+[tasks."data:build"]
+description = "Build deterministic baseline datasets and search packs"
+run = "pnpm run data -- build"
+sources = ["data/catalog/**", "data/taxonomy/**", "data/normalized/**", "shared/**", "scripts/data/**"]
+outputs = [".data-build-complete"]
+
+[tasks."data:check"]
+description = "Validate generated datasets against sources"
+depends = ["data:build"]
+run = "pnpm run data -- check"
+
+[tasks."build:ui"]
+description = "Vite production build (shell only, no dataset copy)"
+run = "pnpm exec vite build"
+
+[tasks."build:release"]
+description = "Assemble the release dist (vite build + dataset/search-pack copy + chunk budget)"
+depends = ["data:build", "check:mushaf-assets"]
+run = ["pnpm run ci:build", "node scripts/check-chunks.js", "node scripts/check-react-mushaf-assets.mjs"]
+
+[tasks.smoke]
+description = "Core smoke suite on desktop + mobile viewports (dev server)"
+depends = ["data:build"]
+run = "pnpm exec playwright test --project=desktop-smoke --project=mobile-smoke"
+
+[tasks.offline]
+description = "Offline lifecycle suite against the production preview build"
+depends = ["build:release"]
+env = { PLAYWRIGHT_USE_PREVIEW = "1" }
+run = "pnpm exec playwright test --project=offline-lifecycle"
+
+[tasks.audit]
+description = "Dependency security audit"
+run = "pnpm audit --audit-level moderate"
+
+[tasks.validate]
+description = "Full verification gate: static checks, data, release build, both suites, audit"
+depends = ["check", "data:check", "build:release", "smoke", "offline", "audit"]
+run = "echo 'validate passed'"
+
+[tasks."clean:generated"]
+description = "Delete generated datasets, packs, Mushaf media, and build/test output (explicit paths only)"
+run = [
+  "rm -rf public/dataset",
+  "rm -rf public/search-packs",
+  "rm -rf data/normalized/mushaf-pages",
+  "rm -rf dist",
+  "rm -rf storybook-static",
+  "rm -rf test-output",
+  "rm -rf .playwright-cli",
+  "rm -rf .playwright",
+  "rm -f .data-build-complete",
+]
+
+[tasks.clean]
+description = "clean:generated plus local dependencies and tool caches"
+depends = ["clean:generated"]
+run = ["rm -rf node_modules", "rm -rf .vite", "rm -f .eslintcache"]

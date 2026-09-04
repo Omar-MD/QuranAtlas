@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "mushafEditionId": "qalun-furatiyyah-2023-v1",
+  "label": "Qalun Furatiyyah 2023",
+  "sourceKind": "local-pdf",
+  "expectedFilename": "Noor-Book.com  مصحف رواية قالون عن نافع طبعة جديدة.pdf",
+  "sha256": "4454431b2662bc10060cc9335ba13baabe1f18a6762c492d41ccf11a4083012f",
+  "documentPageCount": 630,
+  "readerPdfPageStart": 5,
+  "readerPdfPageEnd": 608,
+  "logicalPageCount": 604,
+  "cropBoxPoints": {
+    "width": 512.545,
+    "height": 652.654
+  },
+  "editionStatement": "Fourth edition, 2023",
+  "distribution": "private-build-only"
+}

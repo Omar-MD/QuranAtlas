@@ -1,0 +1,14 @@
+{
+  "assetContractId": "mvp-default-assets-qaloon-bridges-v1",
+  "resetCacheNamePrefixes": ["quran-", "qa-", "quran-atlas-react", "workbox-"],
+  "profile": {
+    "id": "qaloon-bridges-default",
+    "label": "Qaloon with Bridges",
+    "riwayah": "qaloon",
+    "quranTextStyleId": "uthmani-kfgqpc-v1",
+    "quranFontId": "kfgqpc-qaloon-v10",
+    "mushafEditionId": "qalun-quran-ws-v1",
+    "translationId": "bridges",
+    "tafsirId": null
+  }
+}

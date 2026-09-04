@@ -1,0 +1,14 @@
+[
+  {
+    "id": "qaloon",
+    "type": "riwayah",
+    "label": "Qaloon an Nafi",
+    "language": "ar",
+    "providerId": "kfgqpc",
+    "licenseId": "kfgqpc-non-commercial",
+    "visibility": "baseline",
+    "default": true,
+    "sourceUrl": "data/normalized/quran/riwayat/qaloon.json",
+    "outputPath": "riwayat/qaloon/{surah}.json"
+  }
+]

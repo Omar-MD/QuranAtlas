@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+
+# Generated data: rebuild with `mise run data:build` (tracked sources live in data/)
+public/dataset/
+public/search-packs/
+data/normalized/mushaf-pages/
+
+# Build output
+dist/
+dist-ssr/
+storybook-static/
+
+# Tooling caches
+.vite/
+.cache/
+.eslintcache
+*.tsbuildinfo
+.data-build-complete
+
+# Test artifacts
+test-output/
+playwright-report/
+blob-report/
+.playwright-cli/
+.playwright/
+tests/e2e/.auth/
+
+# Agent state
+.claude/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.vscode/mcp.env
+
+# Local editor state
+.vscode/*.local
+
+# Scratch and worktrees
+.superpowers/
+.scratch/
+scratch/
+.worktrees/
+ui-integration/
+
+# Logs
+logs/
+*.log
+.*.exit
+.*.status
+.*-coverage-status.txt
+.*-debug.json
+.*-debug.err
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~

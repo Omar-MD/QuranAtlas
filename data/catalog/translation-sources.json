@@ -1,0 +1,28 @@
+[
+  {
+    "id": "bridges",
+    "type": "translation",
+    "label": "Bridges",
+    "displayLabel": "Bridges",
+    "role": "translation",
+    "trustTier": "default",
+    "language": "en",
+    "providerId": "qul",
+    "licenseId": "qul-resource",
+    "sourceProvider": "Quranic Universal Library",
+    "translator": "Fadel Soliman",
+    "visibility": "baseline",
+    "default": true,
+    "sourceUrl": "https://qul.tarteel.ai/resources/translation/179",
+    "outputPath": "translations/bridges/{surah}.json",
+    "fetch": {
+      "provider": "qul-translation",
+      "resourceUrl": "https://qul.tarteel.ai/resources/translation/179",
+      "resourceId": 179,
+      "contentResourceId": 149,
+      "author": "Fadel Soliman",
+      "version": "qul-resource-179",
+      "normalizedPath": "data/normalized/translations/bridges.json"
+    }
+  }
+]

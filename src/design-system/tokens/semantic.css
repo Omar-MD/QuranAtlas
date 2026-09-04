@@ -1,0 +1,161 @@
+@layer qa-react-tokens {
+  :root {
+    --qa-react-canvas: #fbf8f0;
+    --qa-react-surface: #f8f2e4;
+    --qa-react-surface-raised: var(--qa-react-surface);
+    --qa-react-sheet: #faf1d8;
+    --qa-react-border: #f1e9d3;
+    --qa-react-text: #2d2820;
+    --qa-react-text-primary: var(--qa-react-text);
+    --qa-react-text-muted: #5a4d38;
+    --qa-react-text-danger: var(--qa-react-danger);
+    --qa-react-accent: #78592e;
+    --qa-react-accent-strong: #5e3a18;
+    --qa-react-focus: #78592e;
+    --qa-react-text-on-accent: #faf1d8;
+    --qa-react-success: #2f6634;
+    --qa-react-danger: var(--qar-color-danger-600);
+    --qa-react-reader-page: var(--qa-react-canvas);
+    --qa-react-reader-text: var(--qa-react-text);
+    --qa-react-reader-muted: var(--qa-react-text-muted);
+    --qa-react-reader-selection: color-mix(in srgb, var(--qa-react-accent) 22%, transparent);
+    --qa-react-bookmark-accent: var(--qa-react-accent);
+    --qa-react-bookmark-pulse-bg: color-mix(in srgb, var(--qa-react-bookmark-accent) 22%, transparent);
+    --qa-react-bookmark-pulse-edge: color-mix(in srgb, var(--qa-react-bookmark-accent) 72%, transparent);
+    --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 62%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 88%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 5%, var(--qa-react-nav-row-surface));
+    --qa-react-nav-row-border: color-mix(in srgb, var(--qa-react-border) 82%, var(--qa-react-accent));
+    --qa-react-nav-row-separator: color-mix(in srgb, var(--qa-react-border) 70%, transparent);
+    --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 10%, var(--qa-react-surface));
+    --qa-react-nav-current-spine: var(--qa-react-accent);
+    --qa-react-nav-control-surface: color-mix(in srgb, var(--qa-react-surface) 84%, var(--qa-react-canvas));
+    --qa-react-nav-control-selected-surface: color-mix(in srgb, var(--qa-react-accent) 13%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 9%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-text: var(--qa-react-accent);
+    --qa-react-nav-control-border: color-mix(in srgb, var(--qa-react-border) 84%, var(--qa-react-accent));
+    --qa-react-nav-badge-surface: color-mix(in srgb, var(--qa-react-accent) 14%, var(--qa-react-surface));
+    --qa-react-nav-badge-text: var(--qa-react-text);
+    --qa-react-nav-delete-surface: color-mix(in srgb, var(--qa-react-danger) 86%, var(--qa-react-surface-raised));
+    --qa-react-nav-delete-text: var(--qa-react-text-on-accent);
+    --qa-react-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 6%);
+    --qa-react-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 4%);
+    --qa-react-settings-backdrop: color-mix(in srgb, var(--qa-react-text) 34%, transparent);
+    --qa-react-settings-sheet: var(--qa-react-sheet);
+    --qa-react-settings-header: color-mix(in srgb, var(--qa-react-sheet) 88%, var(--qa-react-surface));
+    --qa-react-settings-group: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-sheet));
+    --qa-react-settings-group-border: color-mix(in srgb, var(--qa-react-border) 25%, var(--qa-react-accent));
+    --qa-react-settings-divider: color-mix(in srgb, var(--qa-react-settings-group-border) 58%, transparent);
+    --qa-react-settings-selected: color-mix(in srgb, var(--qa-react-accent) 15%, var(--qa-react-settings-group));
+    --qa-react-settings-selected-text: var(--qa-react-accent-strong);
+    --qa-react-settings-muted: var(--qa-react-text-muted);
+    --qa-react-settings-shadow: 0 18px 48px rgb(0 0 0 / 18%);
+    --qa-react-settings-space-1: var(--qar-space-1);
+    --qa-react-settings-space-2: var(--qar-space-2);
+    --qa-react-settings-space-3: var(--qar-space-3);
+    --qa-react-settings-space-4: var(--qar-space-4);
+    --qa-react-settings-space-6: var(--qar-space-6);
+    --qa-react-mushaf-ground: var(--qa-react-canvas);
+    --qa-react-mushaf-ink: var(--qa-react-text);
+    --qa-react-mushaf-border: var(--qa-react-border);
+    --qa-react-mushaf-accent: var(--qa-react-accent);
+    --qa-react-control-touch-target: var(--qar-size-touch-target);
+    --qa-react-mushaf-page-turn-duration: var(--qar-motion-settle);
+    --qa-react-mushaf-page-turn-easing: var(--qar-ease-direct-manipulation);
+    --qa-react-mushaf-boundary-surface: color-mix(in srgb, var(--qa-react-accent) 8%, var(--qa-react-mushaf-ground));
+    --qa-react-offline-warning: #806100;
+    --qa-react-storage-danger: var(--qa-react-danger);
+    --qa-react-theme-swatch-light: #fbf8f0;
+    --qa-react-theme-swatch-sepia: #ead8ae;
+    --qa-react-theme-swatch-dark: #111317;
+    --qa-react-radius-control: var(--qar-radius-2);
+    --qa-react-radius-surface: var(--qar-radius-3);
+    --qa-react-radius-sm: 4px;
+    --qa-react-radius-md: 8px;
+    --qa-react-radius-pill: 999px;
+    --qa-react-radius-circle: 999px;
+    --qa-react-space-control-x: var(--qar-space-3);
+    --qa-react-space-control-y: var(--qar-space-2);
+    --qa-react-font-ui: var(--qar-font-ui);
+    --qa-react-font-arabic: var(--qar-font-arabic);
+    --qa-react-font-translation: var(--qar-font-translation);
+    --qa-react-font-mono: var(--qar-font-mono);
+    --qa-react-transition-fast: var(--qar-motion-fast) var(--qar-ease-standard);
+  }
+
+  :root[data-riwayah='hafs'] {
+    --qa-react-font-arabic: var(--ff-kfgqpc-hafs);
+  }
+
+  :root[data-riwayah='warsh'] {
+    --qa-react-font-arabic: var(--ff-kfgqpc-warsh);
+  }
+
+  :root[data-riwayah='qaloon'] {
+    --qa-react-font-arabic: var(--ff-kfgqpc-qaloon);
+  }
+
+  html[data-theme='sepia'] {
+    --qa-react-canvas: #f7ebd0;
+    --qa-react-surface: #f4e6c4;
+    --qa-react-surface-raised: var(--qa-react-surface);
+    --qa-react-sheet: #f2dfb7;
+    --qa-react-text: #2f281f;
+    --qa-react-text-primary: var(--qa-react-text);
+    --qa-react-text-muted: #665133;
+    --qa-react-text-danger: var(--qa-react-danger);
+    --qa-react-border: #d9c595;
+    --qa-react-accent: #815c2b;
+    --qa-react-accent-strong: #674019;
+    --qa-react-focus: #815c2b;
+    --qa-react-success: #315f30;
+    --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 70%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 90%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 6%, var(--qa-react-nav-row-surface));
+    --qa-react-nav-row-border: color-mix(in srgb, var(--qa-react-border) 76%, var(--qa-react-accent));
+    --qa-react-nav-row-separator: color-mix(in srgb, var(--qa-react-border) 62%, transparent);
+    --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 11%, var(--qa-react-surface));
+    --qa-react-nav-control-surface: color-mix(in srgb, var(--qa-react-surface) 86%, var(--qa-react-canvas));
+    --qa-react-nav-control-selected-surface: color-mix(in srgb, var(--qa-react-accent) 14%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 10%, var(--qa-react-surface));
+    --qa-react-nav-control-border: color-mix(in srgb, var(--qa-react-border) 76%, var(--qa-react-accent));
+    --qa-react-nav-badge-surface: color-mix(in srgb, var(--qa-react-accent) 15%, var(--qa-react-surface));
+    --qa-react-nav-delete-surface: color-mix(in srgb, var(--qa-react-danger) 82%, var(--qa-react-surface-raised));
+    --qa-react-nav-delete-text: var(--qa-react-text-on-accent);
+    --qa-react-nav-shadow-row: 0 4px 14px rgb(64 43 18 / 7%);
+    --qa-react-nav-shadow-control: 0 8px 18px rgb(64 43 18 / 5%);
+  }
+
+  html[data-theme='dark'] {
+    --qa-react-canvas: #0f1215;
+    --qa-react-surface: #181c21;
+    --qa-react-surface-raised: var(--qa-react-surface);
+    --qa-react-sheet: #14181c;
+    --qa-react-text: #dcdcdc;
+    --qa-react-text-primary: var(--qa-react-text);
+    --qa-react-text-muted: #a3a3a3;
+    --qa-react-text-danger: var(--qa-react-danger);
+    --qa-react-border: #1d2328;
+    --qa-react-accent: #d4a253;
+    --qa-react-accent-strong: #e4b882;
+    --qa-react-focus: #d4a253;
+    --qa-react-text-on-accent: #15110a;
+    --qa-react-success: #91c98a;
+    --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 72%, var(--qa-react-sheet));
+    --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 78%, var(--qa-react-canvas));
+    --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 9%, var(--qa-react-nav-row-surface));
+    --qa-react-nav-row-border: color-mix(in srgb, var(--qa-react-border) 72%, var(--qa-react-accent));
+    --qa-react-nav-row-separator: color-mix(in srgb, var(--qa-react-border) 80%, transparent);
+    --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 16%, var(--qa-react-surface));
+    --qa-react-nav-control-surface: color-mix(in srgb, var(--qa-react-surface) 82%, var(--qa-react-canvas));
+    --qa-react-nav-control-selected-surface: color-mix(in srgb, var(--qa-react-accent) 20%, var(--qa-react-surface));
+    --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 14%, var(--qa-react-surface));
+    --qa-react-nav-control-border: color-mix(in srgb, var(--qa-react-border) 72%, var(--qa-react-accent));
+    --qa-react-nav-badge-surface: color-mix(in srgb, var(--qa-react-accent) 22%, var(--qa-react-surface));
+    --qa-react-nav-delete-surface: color-mix(in srgb, var(--qa-react-danger) 68%, var(--qa-react-surface-raised));
+    --qa-react-nav-delete-text: var(--qa-react-text-primary);
+    --qa-react-nav-shadow-row: 0 4px 14px rgb(0 0 0 / 28%);
+    --qa-react-nav-shadow-control: 0 8px 18px rgb(0 0 0 / 24%);
+    --qa-react-settings-shadow: 0 18px 48px rgb(0 0 0 / 42%);
+  }
+}

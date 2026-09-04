@@ -1,0 +1,5452 @@
+{
+  "version": 1,
+  "mushafEditionId": "qalun-furatiyyah-2023-v1",
+  "sourcePdfSha256": "4454431b2662bc10060cc9335ba13baabe1f18a6762c492d41ccf11a4083012f",
+  "pageMapSource": "data/normalized/quran/riwayat/qaloon.json",
+  "pageMapSha256": "18465c40ebeec40a92eb98745c9b89796ac6e31f6e93988883dfb6602faaea95",
+  "verseAliasSource": "public/dataset/translations/_verse-aliases.json",
+  "verseAliasSha256": "1df390b3cd73ba69502062a4fcab9d062a01b24cebda39c629bb4e50974bd450",
+  "reviewNotes": [
+    "Printed 2:49 resolves to canonical 2:48 through the verse-alias source.",
+    "Printed 18:98 resolves to canonical 18:94 through the verse-alias source.",
+    "Printed 19:12 resolves to canonical 19:11 through the verse-alias source."
+  ],
+  "pageStartReviews": [
+    {
+      "page": 1,
+      "sourcePdfPage": 5,
+      "canonicalFirstVerse": {
+        "surah": 1,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 2,
+      "sourcePdfPage": 6,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 3,
+      "sourcePdfPage": 7,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 4,
+      "sourcePdfPage": 8,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 5,
+      "sourcePdfPage": 9,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 24
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 6,
+      "sourcePdfPage": 10,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 7,
+      "sourcePdfPage": 11,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 37
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 8,
+      "sourcePdfPage": 12,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 48
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 9,
+      "sourcePdfPage": 13,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 57
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 10,
+      "sourcePdfPage": 14,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 11,
+      "sourcePdfPage": 15,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 69
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 12,
+      "sourcePdfPage": 16,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 76
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 13,
+      "sourcePdfPage": 17,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 83
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 14,
+      "sourcePdfPage": 18,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 88
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 15,
+      "sourcePdfPage": 19,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 93
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 16,
+      "sourcePdfPage": 20,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 101
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 17,
+      "sourcePdfPage": 21,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 105
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 18,
+      "sourcePdfPage": 22,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 112
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 19,
+      "sourcePdfPage": 23,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 119
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 20,
+      "sourcePdfPage": 24,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 126
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 21,
+      "sourcePdfPage": 25,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 134
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 22,
+      "sourcePdfPage": 26,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 141
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 23,
+      "sourcePdfPage": 27,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 145
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 24,
+      "sourcePdfPage": 28,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 153
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 25,
+      "sourcePdfPage": 29,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 163
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 26,
+      "sourcePdfPage": 30,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 169
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 27,
+      "sourcePdfPage": 31,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 176
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 28,
+      "sourcePdfPage": 32,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 181
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 29,
+      "sourcePdfPage": 33,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 186
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 30,
+      "sourcePdfPage": 34,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 190
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 31,
+      "sourcePdfPage": 35,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 196
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 32,
+      "sourcePdfPage": 36,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 201
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 33,
+      "sourcePdfPage": 37,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 209
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 34,
+      "sourcePdfPage": 38,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 214
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 35,
+      "sourcePdfPage": 39,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 218
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 36,
+      "sourcePdfPage": 40,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 223
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 37,
+      "sourcePdfPage": 41,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 229
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 38,
+      "sourcePdfPage": 42,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 232
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 39,
+      "sourcePdfPage": 43,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 236
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 40,
+      "sourcePdfPage": 44,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 244
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 41,
+      "sourcePdfPage": 45,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 247
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 42,
+      "sourcePdfPage": 46,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 251
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 43,
+      "sourcePdfPage": 47,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 256
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 44,
+      "sourcePdfPage": 48,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 259
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 45,
+      "sourcePdfPage": 49,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 264
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 46,
+      "sourcePdfPage": 50,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 269
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 47,
+      "sourcePdfPage": 51,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 274
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 48,
+      "sourcePdfPage": 52,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 281
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 49,
+      "sourcePdfPage": 53,
+      "canonicalFirstVerse": {
+        "surah": 2,
+        "verse": 282
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 50,
+      "sourcePdfPage": 54,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 51,
+      "sourcePdfPage": 55,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 10
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 52,
+      "sourcePdfPage": 56,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 53,
+      "sourcePdfPage": 57,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 23
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 54,
+      "sourcePdfPage": 58,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 30
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 55,
+      "sourcePdfPage": 59,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 56,
+      "sourcePdfPage": 60,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 46
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 57,
+      "sourcePdfPage": 61,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 52
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 58,
+      "sourcePdfPage": 62,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 59,
+      "sourcePdfPage": 63,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 70
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 60,
+      "sourcePdfPage": 64,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 77
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 61,
+      "sourcePdfPage": 65,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 83
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 62,
+      "sourcePdfPage": 66,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 91
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 63,
+      "sourcePdfPage": 67,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 101
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 64,
+      "sourcePdfPage": 68,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 109
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 65,
+      "sourcePdfPage": 69,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 116
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 66,
+      "sourcePdfPage": 70,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 122
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 67,
+      "sourcePdfPage": 71,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 133
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 68,
+      "sourcePdfPage": 72,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 141
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 69,
+      "sourcePdfPage": 73,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 149
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 70,
+      "sourcePdfPage": 74,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 154
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 71,
+      "sourcePdfPage": 75,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 158
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 72,
+      "sourcePdfPage": 76,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 166
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 73,
+      "sourcePdfPage": 77,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 174
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 74,
+      "sourcePdfPage": 78,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 181
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 75,
+      "sourcePdfPage": 79,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 187
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 76,
+      "sourcePdfPage": 80,
+      "canonicalFirstVerse": {
+        "surah": 3,
+        "verse": 195
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 77,
+      "sourcePdfPage": 81,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 78,
+      "sourcePdfPage": 82,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 79,
+      "sourcePdfPage": 83,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 80,
+      "sourcePdfPage": 84,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 81,
+      "sourcePdfPage": 85,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 20
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 82,
+      "sourcePdfPage": 86,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 24
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 83,
+      "sourcePdfPage": 87,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 27
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 84,
+      "sourcePdfPage": 88,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 34
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 85,
+      "sourcePdfPage": 89,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 86,
+      "sourcePdfPage": 90,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 87,
+      "sourcePdfPage": 91,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 51
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 88,
+      "sourcePdfPage": 92,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 59
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 89,
+      "sourcePdfPage": 93,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 65
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 90,
+      "sourcePdfPage": 94,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 74
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 91,
+      "sourcePdfPage": 95,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 79
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 92,
+      "sourcePdfPage": 96,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 86
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 93,
+      "sourcePdfPage": 97,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 91
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 94,
+      "sourcePdfPage": 98,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 94
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 95,
+      "sourcePdfPage": 99,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 101
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 96,
+      "sourcePdfPage": 100,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 105
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 97,
+      "sourcePdfPage": 101,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 113
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 98,
+      "sourcePdfPage": 102,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 121
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 99,
+      "sourcePdfPage": 103,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 127
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 100,
+      "sourcePdfPage": 104,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 134
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 101,
+      "sourcePdfPage": 105,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 140
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 102,
+      "sourcePdfPage": 106,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 147
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 103,
+      "sourcePdfPage": 107,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 154
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 104,
+      "sourcePdfPage": 108,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 162
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 105,
+      "sourcePdfPage": 109,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 170
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 106,
+      "sourcePdfPage": 110,
+      "canonicalFirstVerse": {
+        "surah": 4,
+        "verse": 175
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 107,
+      "sourcePdfPage": 111,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 4
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 108,
+      "sourcePdfPage": 112,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 109,
+      "sourcePdfPage": 113,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 110,
+      "sourcePdfPage": 114,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 111,
+      "sourcePdfPage": 115,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 20
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 112,
+      "sourcePdfPage": 116,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 26
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 113,
+      "sourcePdfPage": 117,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 34
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 114,
+      "sourcePdfPage": 118,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 39
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 115,
+      "sourcePdfPage": 119,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 116,
+      "sourcePdfPage": 120,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 48
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 117,
+      "sourcePdfPage": 121,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 53
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 118,
+      "sourcePdfPage": 122,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 60
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 119,
+      "sourcePdfPage": 123,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 67
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 120,
+      "sourcePdfPage": 124,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 73
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 121,
+      "sourcePdfPage": 125,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 80
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 122,
+      "sourcePdfPage": 126,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 86
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 123,
+      "sourcePdfPage": 127,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 93
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 124,
+      "sourcePdfPage": 128,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 98
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 125,
+      "sourcePdfPage": 129,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 106
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 126,
+      "sourcePdfPage": 130,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 111
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 127,
+      "sourcePdfPage": 131,
+      "canonicalFirstVerse": {
+        "surah": 5,
+        "verse": 116
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 128,
+      "sourcePdfPage": 132,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 129,
+      "sourcePdfPage": 133,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 10
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 130,
+      "sourcePdfPage": 134,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 20
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 131,
+      "sourcePdfPage": 135,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 132,
+      "sourcePdfPage": 136,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 37
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 133,
+      "sourcePdfPage": 137,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 46
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 134,
+      "sourcePdfPage": 138,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 135,
+      "sourcePdfPage": 139,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 136,
+      "sourcePdfPage": 140,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 69
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 137,
+      "sourcePdfPage": 141,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 75
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 138,
+      "sourcePdfPage": 142,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 83
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 139,
+      "sourcePdfPage": 143,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 92
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 140,
+      "sourcePdfPage": 144,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 96
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 141,
+      "sourcePdfPage": 145,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 103
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 142,
+      "sourcePdfPage": 146,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 112
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 143,
+      "sourcePdfPage": 147,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 120
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 144,
+      "sourcePdfPage": 148,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 126
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 145,
+      "sourcePdfPage": 149,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 132
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 146,
+      "sourcePdfPage": 150,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 139
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 147,
+      "sourcePdfPage": 151,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 144
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 148,
+      "sourcePdfPage": 152,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 148
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 149,
+      "sourcePdfPage": 153,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 153
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 150,
+      "sourcePdfPage": 154,
+      "canonicalFirstVerse": {
+        "surah": 6,
+        "verse": 159
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 151,
+      "sourcePdfPage": 155,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 152,
+      "sourcePdfPage": 156,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 153,
+      "sourcePdfPage": 157,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 22
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 154,
+      "sourcePdfPage": 158,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 155,
+      "sourcePdfPage": 159,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 156,
+      "sourcePdfPage": 160,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 43
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 157,
+      "sourcePdfPage": 161,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 51
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 158,
+      "sourcePdfPage": 162,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 57
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 159,
+      "sourcePdfPage": 163,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 67
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 160,
+      "sourcePdfPage": 164,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 73
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 161,
+      "sourcePdfPage": 165,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 81
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 162,
+      "sourcePdfPage": 166,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 87
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 163,
+      "sourcePdfPage": 167,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 95
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 164,
+      "sourcePdfPage": 168,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 104
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 165,
+      "sourcePdfPage": 169,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 120
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 166,
+      "sourcePdfPage": 170,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 130
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 167,
+      "sourcePdfPage": 171,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 138
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 168,
+      "sourcePdfPage": 172,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 144
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 169,
+      "sourcePdfPage": 173,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 150
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 170,
+      "sourcePdfPage": 174,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 156
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 171,
+      "sourcePdfPage": 175,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 160
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 172,
+      "sourcePdfPage": 176,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 164
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 173,
+      "sourcePdfPage": 177,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 171
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 174,
+      "sourcePdfPage": 178,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 179
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 175,
+      "sourcePdfPage": 179,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 188
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 176,
+      "sourcePdfPage": 180,
+      "canonicalFirstVerse": {
+        "surah": 7,
+        "verse": 196
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 177,
+      "sourcePdfPage": 181,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 178,
+      "sourcePdfPage": 182,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 9
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 179,
+      "sourcePdfPage": 183,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 17
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 180,
+      "sourcePdfPage": 184,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 26
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 181,
+      "sourcePdfPage": 185,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 34
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 182,
+      "sourcePdfPage": 186,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 41
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 183,
+      "sourcePdfPage": 187,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 47
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 184,
+      "sourcePdfPage": 188,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 185,
+      "sourcePdfPage": 189,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 63
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 186,
+      "sourcePdfPage": 190,
+      "canonicalFirstVerse": {
+        "surah": 8,
+        "verse": 71
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 187,
+      "sourcePdfPage": 191,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 188,
+      "sourcePdfPage": 192,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 189,
+      "sourcePdfPage": 193,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 190,
+      "sourcePdfPage": 194,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 191,
+      "sourcePdfPage": 195,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 27
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 192,
+      "sourcePdfPage": 196,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 32
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 193,
+      "sourcePdfPage": 197,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 37
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 194,
+      "sourcePdfPage": 198,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 41
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 195,
+      "sourcePdfPage": 199,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 48
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 196,
+      "sourcePdfPage": 200,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 55
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 197,
+      "sourcePdfPage": 201,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 62
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 198,
+      "sourcePdfPage": 202,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 69
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 199,
+      "sourcePdfPage": 203,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 74
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 200,
+      "sourcePdfPage": 204,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 81
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 201,
+      "sourcePdfPage": 205,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 88
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 202,
+      "sourcePdfPage": 206,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 95
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 203,
+      "sourcePdfPage": 207,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 101
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 204,
+      "sourcePdfPage": 208,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 108
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 205,
+      "sourcePdfPage": 209,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 113
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 206,
+      "sourcePdfPage": 210,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 119
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 207,
+      "sourcePdfPage": 211,
+      "canonicalFirstVerse": {
+        "surah": 9,
+        "verse": 124
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 208,
+      "sourcePdfPage": 212,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 209,
+      "sourcePdfPage": 213,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 210,
+      "sourcePdfPage": 214,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 211,
+      "sourcePdfPage": 215,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 212,
+      "sourcePdfPage": 216,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 26
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 213,
+      "sourcePdfPage": 217,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 34
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 214,
+      "sourcePdfPage": 218,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 43
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 215,
+      "sourcePdfPage": 219,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 216,
+      "sourcePdfPage": 220,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 62
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 217,
+      "sourcePdfPage": 221,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 71
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 218,
+      "sourcePdfPage": 222,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 79
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 219,
+      "sourcePdfPage": 223,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 89
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 220,
+      "sourcePdfPage": 224,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 98
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 221,
+      "sourcePdfPage": 225,
+      "canonicalFirstVerse": {
+        "surah": 10,
+        "verse": 107
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 222,
+      "sourcePdfPage": 226,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 223,
+      "sourcePdfPage": 227,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 13
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 224,
+      "sourcePdfPage": 228,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 20
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 225,
+      "sourcePdfPage": 229,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 226,
+      "sourcePdfPage": 230,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 227,
+      "sourcePdfPage": 231,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 46
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 228,
+      "sourcePdfPage": 232,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 229,
+      "sourcePdfPage": 233,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 62
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 230,
+      "sourcePdfPage": 234,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 71
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 231,
+      "sourcePdfPage": 235,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 81
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 232,
+      "sourcePdfPage": 236,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 89
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 233,
+      "sourcePdfPage": 237,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 98
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 234,
+      "sourcePdfPage": 238,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 109
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 235,
+      "sourcePdfPage": 239,
+      "canonicalFirstVerse": {
+        "surah": 11,
+        "verse": 118
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 236,
+      "sourcePdfPage": 240,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 237,
+      "sourcePdfPage": 241,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 238,
+      "sourcePdfPage": 242,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 23
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 239,
+      "sourcePdfPage": 243,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 240,
+      "sourcePdfPage": 244,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 241,
+      "sourcePdfPage": 245,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 242,
+      "sourcePdfPage": 246,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 53
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 243,
+      "sourcePdfPage": 247,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 64
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 244,
+      "sourcePdfPage": 248,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 70
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 245,
+      "sourcePdfPage": 249,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 79
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 246,
+      "sourcePdfPage": 250,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 87
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 247,
+      "sourcePdfPage": 251,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 96
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 248,
+      "sourcePdfPage": 252,
+      "canonicalFirstVerse": {
+        "surah": 12,
+        "verse": 104
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 249,
+      "sourcePdfPage": 253,
+      "canonicalFirstVerse": {
+        "surah": 13,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 250,
+      "sourcePdfPage": 254,
+      "canonicalFirstVerse": {
+        "surah": 13,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 251,
+      "sourcePdfPage": 255,
+      "canonicalFirstVerse": {
+        "surah": 13,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 252,
+      "sourcePdfPage": 256,
+      "canonicalFirstVerse": {
+        "surah": 13,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 253,
+      "sourcePdfPage": 257,
+      "canonicalFirstVerse": {
+        "surah": 13,
+        "verse": 30
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 254,
+      "sourcePdfPage": 258,
+      "canonicalFirstVerse": {
+        "surah": 13,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 255,
+      "sourcePdfPage": 259,
+      "canonicalFirstVerse": {
+        "surah": 13,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 256,
+      "sourcePdfPage": 260,
+      "canonicalFirstVerse": {
+        "surah": 14,
+        "verse": 8
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 257,
+      "sourcePdfPage": 261,
+      "canonicalFirstVerse": {
+        "surah": 14,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 258,
+      "sourcePdfPage": 262,
+      "canonicalFirstVerse": {
+        "surah": 14,
+        "verse": 22
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 259,
+      "sourcePdfPage": 263,
+      "canonicalFirstVerse": {
+        "surah": 14,
+        "verse": 27
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 260,
+      "sourcePdfPage": 264,
+      "canonicalFirstVerse": {
+        "surah": 14,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 261,
+      "sourcePdfPage": 265,
+      "canonicalFirstVerse": {
+        "surah": 14,
+        "verse": 45
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 262,
+      "sourcePdfPage": 266,
+      "canonicalFirstVerse": {
+        "surah": 15,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 263,
+      "sourcePdfPage": 267,
+      "canonicalFirstVerse": {
+        "surah": 15,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 264,
+      "sourcePdfPage": 268,
+      "canonicalFirstVerse": {
+        "surah": 15,
+        "verse": 32
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 265,
+      "sourcePdfPage": 269,
+      "canonicalFirstVerse": {
+        "surah": 15,
+        "verse": 52
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 266,
+      "sourcePdfPage": 270,
+      "canonicalFirstVerse": {
+        "surah": 15,
+        "verse": 71
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 267,
+      "sourcePdfPage": 271,
+      "canonicalFirstVerse": {
+        "surah": 15,
+        "verse": 91
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 268,
+      "sourcePdfPage": 272,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 269,
+      "sourcePdfPage": 273,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 270,
+      "sourcePdfPage": 274,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 27
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 271,
+      "sourcePdfPage": 275,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 35
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 272,
+      "sourcePdfPage": 276,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 43
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 273,
+      "sourcePdfPage": 277,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 55
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 274,
+      "sourcePdfPage": 278,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 65
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 275,
+      "sourcePdfPage": 279,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 73
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 276,
+      "sourcePdfPage": 280,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 80
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 277,
+      "sourcePdfPage": 281,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 88
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 278,
+      "sourcePdfPage": 282,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 94
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 279,
+      "sourcePdfPage": 283,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 103
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 280,
+      "sourcePdfPage": 284,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 111
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 281,
+      "sourcePdfPage": 285,
+      "canonicalFirstVerse": {
+        "surah": 16,
+        "verse": 119
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 282,
+      "sourcePdfPage": 286,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 283,
+      "sourcePdfPage": 287,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 8
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 284,
+      "sourcePdfPage": 288,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 18
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 285,
+      "sourcePdfPage": 289,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 286,
+      "sourcePdfPage": 290,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 39
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 287,
+      "sourcePdfPage": 291,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 50
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 288,
+      "sourcePdfPage": 292,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 59
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 289,
+      "sourcePdfPage": 293,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 67
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 290,
+      "sourcePdfPage": 294,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 76
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 291,
+      "sourcePdfPage": 295,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 87
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 292,
+      "sourcePdfPage": 296,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 97
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 293,
+      "sourcePdfPage": 297,
+      "canonicalFirstVerse": {
+        "surah": 17,
+        "verse": 105
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 294,
+      "sourcePdfPage": 298,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 295,
+      "sourcePdfPage": 299,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 296,
+      "sourcePdfPage": 300,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 297,
+      "sourcePdfPage": 301,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 298,
+      "sourcePdfPage": 302,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 35
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 299,
+      "sourcePdfPage": 303,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 45
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 300,
+      "sourcePdfPage": 304,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 53
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 301,
+      "sourcePdfPage": 305,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 302,
+      "sourcePdfPage": 306,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 74
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 303,
+      "sourcePdfPage": 307,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 83
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 304,
+      "sourcePdfPage": 308,
+      "canonicalFirstVerse": {
+        "surah": 18,
+        "verse": 94
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 305,
+      "sourcePdfPage": 309,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 306,
+      "sourcePdfPage": 310,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 307,
+      "sourcePdfPage": 311,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 25
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 308,
+      "sourcePdfPage": 312,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 309,
+      "sourcePdfPage": 313,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 52
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 310,
+      "sourcePdfPage": 314,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 65
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 311,
+      "sourcePdfPage": 315,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 78
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 312,
+      "sourcePdfPage": 316,
+      "canonicalFirstVerse": {
+        "surah": 19,
+        "verse": 97
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 313,
+      "sourcePdfPage": 317,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 314,
+      "sourcePdfPage": 318,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 37
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 315,
+      "sourcePdfPage": 319,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 51
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 316,
+      "sourcePdfPage": 320,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 64
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 317,
+      "sourcePdfPage": 321,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 76
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 318,
+      "sourcePdfPage": 322,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 86
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 319,
+      "sourcePdfPage": 323,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 97
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 320,
+      "sourcePdfPage": 324,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 111
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 321,
+      "sourcePdfPage": 325,
+      "canonicalFirstVerse": {
+        "surah": 20,
+        "verse": 124
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 322,
+      "sourcePdfPage": 326,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 323,
+      "sourcePdfPage": 327,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 324,
+      "sourcePdfPage": 328,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 25
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 325,
+      "sourcePdfPage": 329,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 326,
+      "sourcePdfPage": 330,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 45
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 327,
+      "sourcePdfPage": 331,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 58
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 328,
+      "sourcePdfPage": 332,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 72
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 329,
+      "sourcePdfPage": 333,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 81
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 330,
+      "sourcePdfPage": 334,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 90
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 331,
+      "sourcePdfPage": 335,
+      "canonicalFirstVerse": {
+        "surah": 21,
+        "verse": 101
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 332,
+      "sourcePdfPage": 336,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 333,
+      "sourcePdfPage": 337,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 334,
+      "sourcePdfPage": 338,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 335,
+      "sourcePdfPage": 339,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 22
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 336,
+      "sourcePdfPage": 340,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 337,
+      "sourcePdfPage": 341,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 37
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 338,
+      "sourcePdfPage": 342,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 45
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 339,
+      "sourcePdfPage": 343,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 340,
+      "sourcePdfPage": 344,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 63
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 341,
+      "sourcePdfPage": 345,
+      "canonicalFirstVerse": {
+        "surah": 22,
+        "verse": 71
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 342,
+      "sourcePdfPage": 346,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 343,
+      "sourcePdfPage": 347,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 18
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 344,
+      "sourcePdfPage": 348,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 345,
+      "sourcePdfPage": 349,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 43
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 346,
+      "sourcePdfPage": 350,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 347,
+      "sourcePdfPage": 351,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 76
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 348,
+      "sourcePdfPage": 352,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 91
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 349,
+      "sourcePdfPage": 353,
+      "canonicalFirstVerse": {
+        "surah": 23,
+        "verse": 106
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 350,
+      "sourcePdfPage": 354,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 351,
+      "sourcePdfPage": 355,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 352,
+      "sourcePdfPage": 356,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 353,
+      "sourcePdfPage": 357,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 354,
+      "sourcePdfPage": 358,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 32
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 355,
+      "sourcePdfPage": 359,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 356,
+      "sourcePdfPage": 360,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 42
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 357,
+      "sourcePdfPage": 361,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 52
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 358,
+      "sourcePdfPage": 362,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 57
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 359,
+      "sourcePdfPage": 363,
+      "canonicalFirstVerse": {
+        "surah": 24,
+        "verse": 60
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 360,
+      "sourcePdfPage": 364,
+      "canonicalFirstVerse": {
+        "surah": 25,
+        "verse": 3
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 361,
+      "sourcePdfPage": 365,
+      "canonicalFirstVerse": {
+        "surah": 25,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 362,
+      "sourcePdfPage": 366,
+      "canonicalFirstVerse": {
+        "surah": 25,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 363,
+      "sourcePdfPage": 367,
+      "canonicalFirstVerse": {
+        "surah": 25,
+        "verse": 33
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 364,
+      "sourcePdfPage": 368,
+      "canonicalFirstVerse": {
+        "surah": 25,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 365,
+      "sourcePdfPage": 369,
+      "canonicalFirstVerse": {
+        "surah": 25,
+        "verse": 56
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 366,
+      "sourcePdfPage": 370,
+      "canonicalFirstVerse": {
+        "surah": 25,
+        "verse": 68
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 367,
+      "sourcePdfPage": 371,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 368,
+      "sourcePdfPage": 372,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 19
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 369,
+      "sourcePdfPage": 373,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 39
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 370,
+      "sourcePdfPage": 374,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 371,
+      "sourcePdfPage": 375,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 84
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 372,
+      "sourcePdfPage": 376,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 112
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 373,
+      "sourcePdfPage": 377,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 137
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 374,
+      "sourcePdfPage": 378,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 160
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 375,
+      "sourcePdfPage": 379,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 184
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 376,
+      "sourcePdfPage": 380,
+      "canonicalFirstVerse": {
+        "surah": 26,
+        "verse": 207
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 377,
+      "sourcePdfPage": 381,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 378,
+      "sourcePdfPage": 382,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 379,
+      "sourcePdfPage": 383,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 23
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 380,
+      "sourcePdfPage": 384,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 37
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 381,
+      "sourcePdfPage": 385,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 47
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 382,
+      "sourcePdfPage": 386,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 58
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 383,
+      "sourcePdfPage": 387,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 66
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 384,
+      "sourcePdfPage": 388,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 79
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 385,
+      "sourcePdfPage": 389,
+      "canonicalFirstVerse": {
+        "surah": 27,
+        "verse": 91
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 386,
+      "sourcePdfPage": 390,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 387,
+      "sourcePdfPage": 391,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 13
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 388,
+      "sourcePdfPage": 392,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 389,
+      "sourcePdfPage": 393,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 390,
+      "sourcePdfPage": 394,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 391,
+      "sourcePdfPage": 395,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 392,
+      "sourcePdfPage": 396,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 51
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 393,
+      "sourcePdfPage": 397,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 60
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 394,
+      "sourcePdfPage": 398,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 71
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 395,
+      "sourcePdfPage": 399,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 78
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 396,
+      "sourcePdfPage": 400,
+      "canonicalFirstVerse": {
+        "surah": 28,
+        "verse": 85
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 397,
+      "sourcePdfPage": 401,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 398,
+      "sourcePdfPage": 402,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 399,
+      "sourcePdfPage": 403,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 23
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 400,
+      "sourcePdfPage": 404,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 401,
+      "sourcePdfPage": 405,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 39
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 402,
+      "sourcePdfPage": 406,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 46
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 403,
+      "sourcePdfPage": 407,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 53
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 404,
+      "sourcePdfPage": 408,
+      "canonicalFirstVerse": {
+        "surah": 29,
+        "verse": 64
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 405,
+      "sourcePdfPage": 409,
+      "canonicalFirstVerse": {
+        "surah": 30,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 406,
+      "sourcePdfPage": 410,
+      "canonicalFirstVerse": {
+        "surah": 30,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 407,
+      "sourcePdfPage": 411,
+      "canonicalFirstVerse": {
+        "surah": 30,
+        "verse": 24
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 408,
+      "sourcePdfPage": 412,
+      "canonicalFirstVerse": {
+        "surah": 30,
+        "verse": 32
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 409,
+      "sourcePdfPage": 413,
+      "canonicalFirstVerse": {
+        "surah": 30,
+        "verse": 41
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 410,
+      "sourcePdfPage": 414,
+      "canonicalFirstVerse": {
+        "surah": 30,
+        "verse": 50
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 411,
+      "sourcePdfPage": 415,
+      "canonicalFirstVerse": {
+        "surah": 31,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 412,
+      "sourcePdfPage": 416,
+      "canonicalFirstVerse": {
+        "surah": 31,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 413,
+      "sourcePdfPage": 417,
+      "canonicalFirstVerse": {
+        "surah": 31,
+        "verse": 19
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 414,
+      "sourcePdfPage": 418,
+      "canonicalFirstVerse": {
+        "surah": 31,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 415,
+      "sourcePdfPage": 419,
+      "canonicalFirstVerse": {
+        "surah": 32,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 416,
+      "sourcePdfPage": 420,
+      "canonicalFirstVerse": {
+        "surah": 32,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 417,
+      "sourcePdfPage": 421,
+      "canonicalFirstVerse": {
+        "surah": 32,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 418,
+      "sourcePdfPage": 422,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 419,
+      "sourcePdfPage": 423,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 420,
+      "sourcePdfPage": 424,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 421,
+      "sourcePdfPage": 425,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 23
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 422,
+      "sourcePdfPage": 426,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 423,
+      "sourcePdfPage": 427,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 424,
+      "sourcePdfPage": 428,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 425,
+      "sourcePdfPage": 429,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 51
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 426,
+      "sourcePdfPage": 430,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 55
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 427,
+      "sourcePdfPage": 431,
+      "canonicalFirstVerse": {
+        "surah": 33,
+        "verse": 63
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 428,
+      "sourcePdfPage": 432,
+      "canonicalFirstVerse": {
+        "surah": 34,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 429,
+      "sourcePdfPage": 433,
+      "canonicalFirstVerse": {
+        "surah": 34,
+        "verse": 8
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 430,
+      "sourcePdfPage": 434,
+      "canonicalFirstVerse": {
+        "surah": 34,
+        "verse": 15
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 431,
+      "sourcePdfPage": 435,
+      "canonicalFirstVerse": {
+        "surah": 34,
+        "verse": 23
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 432,
+      "sourcePdfPage": 436,
+      "canonicalFirstVerse": {
+        "surah": 34,
+        "verse": 32
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 433,
+      "sourcePdfPage": 437,
+      "canonicalFirstVerse": {
+        "surah": 34,
+        "verse": 40
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 434,
+      "sourcePdfPage": 438,
+      "canonicalFirstVerse": {
+        "surah": 34,
+        "verse": 49
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 435,
+      "sourcePdfPage": 439,
+      "canonicalFirstVerse": {
+        "surah": 35,
+        "verse": 4
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 436,
+      "sourcePdfPage": 440,
+      "canonicalFirstVerse": {
+        "surah": 35,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 437,
+      "sourcePdfPage": 441,
+      "canonicalFirstVerse": {
+        "surah": 35,
+        "verse": 19
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 438,
+      "sourcePdfPage": 442,
+      "canonicalFirstVerse": {
+        "surah": 35,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 439,
+      "sourcePdfPage": 443,
+      "canonicalFirstVerse": {
+        "surah": 35,
+        "verse": 39
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 440,
+      "sourcePdfPage": 444,
+      "canonicalFirstVerse": {
+        "surah": 35,
+        "verse": 46
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 441,
+      "sourcePdfPage": 445,
+      "canonicalFirstVerse": {
+        "surah": 36,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 442,
+      "sourcePdfPage": 446,
+      "canonicalFirstVerse": {
+        "surah": 36,
+        "verse": 27
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 443,
+      "sourcePdfPage": 447,
+      "canonicalFirstVerse": {
+        "surah": 36,
+        "verse": 40
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 444,
+      "sourcePdfPage": 448,
+      "canonicalFirstVerse": {
+        "surah": 36,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 445,
+      "sourcePdfPage": 449,
+      "canonicalFirstVerse": {
+        "surah": 36,
+        "verse": 70
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 446,
+      "sourcePdfPage": 450,
+      "canonicalFirstVerse": {
+        "surah": 37,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 447,
+      "sourcePdfPage": 451,
+      "canonicalFirstVerse": {
+        "surah": 37,
+        "verse": 25
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 448,
+      "sourcePdfPage": 452,
+      "canonicalFirstVerse": {
+        "surah": 37,
+        "verse": 52
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 449,
+      "sourcePdfPage": 453,
+      "canonicalFirstVerse": {
+        "surah": 37,
+        "verse": 77
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 450,
+      "sourcePdfPage": 454,
+      "canonicalFirstVerse": {
+        "surah": 37,
+        "verse": 103
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 451,
+      "sourcePdfPage": 455,
+      "canonicalFirstVerse": {
+        "surah": 37,
+        "verse": 127
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 452,
+      "sourcePdfPage": 456,
+      "canonicalFirstVerse": {
+        "surah": 37,
+        "verse": 154
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 453,
+      "sourcePdfPage": 457,
+      "canonicalFirstVerse": {
+        "surah": 38,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 454,
+      "sourcePdfPage": 458,
+      "canonicalFirstVerse": {
+        "surah": 38,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 455,
+      "sourcePdfPage": 459,
+      "canonicalFirstVerse": {
+        "surah": 38,
+        "verse": 26
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 456,
+      "sourcePdfPage": 460,
+      "canonicalFirstVerse": {
+        "surah": 38,
+        "verse": 42
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 457,
+      "sourcePdfPage": 461,
+      "canonicalFirstVerse": {
+        "surah": 38,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 458,
+      "sourcePdfPage": 462,
+      "canonicalFirstVerse": {
+        "surah": 38,
+        "verse": 83
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 459,
+      "sourcePdfPage": 463,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 460,
+      "sourcePdfPage": 464,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 461,
+      "sourcePdfPage": 465,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 462,
+      "sourcePdfPage": 466,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 463,
+      "sourcePdfPage": 467,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 464,
+      "sourcePdfPage": 468,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 45
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 465,
+      "sourcePdfPage": 469,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 466,
+      "sourcePdfPage": 470,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 65
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 467,
+      "sourcePdfPage": 471,
+      "canonicalFirstVerse": {
+        "surah": 39,
+        "verse": 72
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 468,
+      "sourcePdfPage": 472,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 469,
+      "sourcePdfPage": 473,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 470,
+      "sourcePdfPage": 474,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 26
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 471,
+      "sourcePdfPage": 475,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 34
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 472,
+      "sourcePdfPage": 476,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 41
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 473,
+      "sourcePdfPage": 477,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 50
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 474,
+      "sourcePdfPage": 478,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 59
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 475,
+      "sourcePdfPage": 479,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 67
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 476,
+      "sourcePdfPage": 480,
+      "canonicalFirstVerse": {
+        "surah": 40,
+        "verse": 77
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 477,
+      "sourcePdfPage": 481,
+      "canonicalFirstVerse": {
+        "surah": 41,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 478,
+      "sourcePdfPage": 482,
+      "canonicalFirstVerse": {
+        "surah": 41,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 479,
+      "sourcePdfPage": 483,
+      "canonicalFirstVerse": {
+        "surah": 41,
+        "verse": 20
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 480,
+      "sourcePdfPage": 484,
+      "canonicalFirstVerse": {
+        "surah": 41,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 481,
+      "sourcePdfPage": 485,
+      "canonicalFirstVerse": {
+        "surah": 41,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 482,
+      "sourcePdfPage": 486,
+      "canonicalFirstVerse": {
+        "surah": 41,
+        "verse": 46
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 483,
+      "sourcePdfPage": 487,
+      "canonicalFirstVerse": {
+        "surah": 42,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 484,
+      "sourcePdfPage": 488,
+      "canonicalFirstVerse": {
+        "surah": 42,
+        "verse": 9
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 485,
+      "sourcePdfPage": 489,
+      "canonicalFirstVerse": {
+        "surah": 42,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 486,
+      "sourcePdfPage": 490,
+      "canonicalFirstVerse": {
+        "surah": 42,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 487,
+      "sourcePdfPage": 491,
+      "canonicalFirstVerse": {
+        "surah": 42,
+        "verse": 30
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 488,
+      "sourcePdfPage": 492,
+      "canonicalFirstVerse": {
+        "surah": 42,
+        "verse": 42
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 489,
+      "sourcePdfPage": 493,
+      "canonicalFirstVerse": {
+        "surah": 42,
+        "verse": 49
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 490,
+      "sourcePdfPage": 494,
+      "canonicalFirstVerse": {
+        "surah": 43,
+        "verse": 10
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 491,
+      "sourcePdfPage": 495,
+      "canonicalFirstVerse": {
+        "surah": 43,
+        "verse": 22
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 492,
+      "sourcePdfPage": 496,
+      "canonicalFirstVerse": {
+        "surah": 43,
+        "verse": 33
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 493,
+      "sourcePdfPage": 497,
+      "canonicalFirstVerse": {
+        "surah": 43,
+        "verse": 47
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 494,
+      "sourcePdfPage": 498,
+      "canonicalFirstVerse": {
+        "surah": 43,
+        "verse": 61
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 495,
+      "sourcePdfPage": 499,
+      "canonicalFirstVerse": {
+        "surah": 43,
+        "verse": 74
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 496,
+      "sourcePdfPage": 500,
+      "canonicalFirstVerse": {
+        "surah": 44,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 497,
+      "sourcePdfPage": 501,
+      "canonicalFirstVerse": {
+        "surah": 44,
+        "verse": 18
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 498,
+      "sourcePdfPage": 502,
+      "canonicalFirstVerse": {
+        "surah": 44,
+        "verse": 38
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 499,
+      "sourcePdfPage": 503,
+      "canonicalFirstVerse": {
+        "surah": 45,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 500,
+      "sourcePdfPage": 504,
+      "canonicalFirstVerse": {
+        "surah": 45,
+        "verse": 13
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 501,
+      "sourcePdfPage": 505,
+      "canonicalFirstVerse": {
+        "surah": 45,
+        "verse": 22
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 502,
+      "sourcePdfPage": 506,
+      "canonicalFirstVerse": {
+        "surah": 45,
+        "verse": 32
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 503,
+      "sourcePdfPage": 507,
+      "canonicalFirstVerse": {
+        "surah": 46,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 504,
+      "sourcePdfPage": 508,
+      "canonicalFirstVerse": {
+        "surah": 46,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 505,
+      "sourcePdfPage": 509,
+      "canonicalFirstVerse": {
+        "surah": 46,
+        "verse": 20
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 506,
+      "sourcePdfPage": 510,
+      "canonicalFirstVerse": {
+        "surah": 46,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 507,
+      "sourcePdfPage": 511,
+      "canonicalFirstVerse": {
+        "surah": 47,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 508,
+      "sourcePdfPage": 512,
+      "canonicalFirstVerse": {
+        "surah": 47,
+        "verse": 13
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 509,
+      "sourcePdfPage": 513,
+      "canonicalFirstVerse": {
+        "surah": 47,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 510,
+      "sourcePdfPage": 514,
+      "canonicalFirstVerse": {
+        "surah": 47,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 511,
+      "sourcePdfPage": 515,
+      "canonicalFirstVerse": {
+        "surah": 48,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 512,
+      "sourcePdfPage": 516,
+      "canonicalFirstVerse": {
+        "surah": 48,
+        "verse": 10
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 513,
+      "sourcePdfPage": 517,
+      "canonicalFirstVerse": {
+        "surah": 48,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 514,
+      "sourcePdfPage": 518,
+      "canonicalFirstVerse": {
+        "surah": 48,
+        "verse": 24
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 515,
+      "sourcePdfPage": 519,
+      "canonicalFirstVerse": {
+        "surah": 48,
+        "verse": 29
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 516,
+      "sourcePdfPage": 520,
+      "canonicalFirstVerse": {
+        "surah": 49,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 517,
+      "sourcePdfPage": 521,
+      "canonicalFirstVerse": {
+        "surah": 49,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 518,
+      "sourcePdfPage": 522,
+      "canonicalFirstVerse": {
+        "surah": 50,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 519,
+      "sourcePdfPage": 523,
+      "canonicalFirstVerse": {
+        "surah": 50,
+        "verse": 16
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 520,
+      "sourcePdfPage": 524,
+      "canonicalFirstVerse": {
+        "surah": 50,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 521,
+      "sourcePdfPage": 525,
+      "canonicalFirstVerse": {
+        "surah": 51,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 522,
+      "sourcePdfPage": 526,
+      "canonicalFirstVerse": {
+        "surah": 51,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 523,
+      "sourcePdfPage": 527,
+      "canonicalFirstVerse": {
+        "surah": 51,
+        "verse": 52
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 524,
+      "sourcePdfPage": 528,
+      "canonicalFirstVerse": {
+        "surah": 52,
+        "verse": 13
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 525,
+      "sourcePdfPage": 529,
+      "canonicalFirstVerse": {
+        "surah": 52,
+        "verse": 30
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 526,
+      "sourcePdfPage": 530,
+      "canonicalFirstVerse": {
+        "surah": 53,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 527,
+      "sourcePdfPage": 531,
+      "canonicalFirstVerse": {
+        "surah": 53,
+        "verse": 27
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 528,
+      "sourcePdfPage": 532,
+      "canonicalFirstVerse": {
+        "surah": 53,
+        "verse": 44
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 529,
+      "sourcePdfPage": 533,
+      "canonicalFirstVerse": {
+        "surah": 54,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 530,
+      "sourcePdfPage": 534,
+      "canonicalFirstVerse": {
+        "surah": 54,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 531,
+      "sourcePdfPage": 535,
+      "canonicalFirstVerse": {
+        "surah": 54,
+        "verse": 50
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 532,
+      "sourcePdfPage": 536,
+      "canonicalFirstVerse": {
+        "surah": 55,
+        "verse": 17
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 533,
+      "sourcePdfPage": 537,
+      "canonicalFirstVerse": {
+        "surah": 55,
+        "verse": 41
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 534,
+      "sourcePdfPage": 538,
+      "canonicalFirstVerse": {
+        "surah": 55,
+        "verse": 69
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 535,
+      "sourcePdfPage": 539,
+      "canonicalFirstVerse": {
+        "surah": 56,
+        "verse": 19
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 536,
+      "sourcePdfPage": 540,
+      "canonicalFirstVerse": {
+        "surah": 56,
+        "verse": 54
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 537,
+      "sourcePdfPage": 541,
+      "canonicalFirstVerse": {
+        "surah": 56,
+        "verse": 80
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 538,
+      "sourcePdfPage": 542,
+      "canonicalFirstVerse": {
+        "surah": 57,
+        "verse": 4
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 539,
+      "sourcePdfPage": 543,
+      "canonicalFirstVerse": {
+        "surah": 57,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 540,
+      "sourcePdfPage": 544,
+      "canonicalFirstVerse": {
+        "surah": 57,
+        "verse": 18
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 541,
+      "sourcePdfPage": 545,
+      "canonicalFirstVerse": {
+        "surah": 57,
+        "verse": 24
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 542,
+      "sourcePdfPage": 546,
+      "canonicalFirstVerse": {
+        "surah": 58,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 543,
+      "sourcePdfPage": 547,
+      "canonicalFirstVerse": {
+        "surah": 58,
+        "verse": 7
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 544,
+      "sourcePdfPage": 548,
+      "canonicalFirstVerse": {
+        "surah": 58,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 545,
+      "sourcePdfPage": 549,
+      "canonicalFirstVerse": {
+        "surah": 58,
+        "verse": 21
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 546,
+      "sourcePdfPage": 550,
+      "canonicalFirstVerse": {
+        "surah": 59,
+        "verse": 4
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 547,
+      "sourcePdfPage": 551,
+      "canonicalFirstVerse": {
+        "surah": 59,
+        "verse": 10
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 548,
+      "sourcePdfPage": 552,
+      "canonicalFirstVerse": {
+        "surah": 59,
+        "verse": 17
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 549,
+      "sourcePdfPage": 553,
+      "canonicalFirstVerse": {
+        "surah": 60,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 550,
+      "sourcePdfPage": 554,
+      "canonicalFirstVerse": {
+        "surah": 60,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 551,
+      "sourcePdfPage": 555,
+      "canonicalFirstVerse": {
+        "surah": 60,
+        "verse": 12
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 552,
+      "sourcePdfPage": 556,
+      "canonicalFirstVerse": {
+        "surah": 61,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 553,
+      "sourcePdfPage": 557,
+      "canonicalFirstVerse": {
+        "surah": 62,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 554,
+      "sourcePdfPage": 558,
+      "canonicalFirstVerse": {
+        "surah": 62,
+        "verse": 9
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 555,
+      "sourcePdfPage": 559,
+      "canonicalFirstVerse": {
+        "surah": 63,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 556,
+      "sourcePdfPage": 560,
+      "canonicalFirstVerse": {
+        "surah": 64,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 557,
+      "sourcePdfPage": 561,
+      "canonicalFirstVerse": {
+        "surah": 64,
+        "verse": 10
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 558,
+      "sourcePdfPage": 562,
+      "canonicalFirstVerse": {
+        "surah": 65,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 559,
+      "sourcePdfPage": 563,
+      "canonicalFirstVerse": {
+        "surah": 65,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 560,
+      "sourcePdfPage": 564,
+      "canonicalFirstVerse": {
+        "surah": 66,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 561,
+      "sourcePdfPage": 565,
+      "canonicalFirstVerse": {
+        "surah": 66,
+        "verse": 8
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 562,
+      "sourcePdfPage": 566,
+      "canonicalFirstVerse": {
+        "surah": 67,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 563,
+      "sourcePdfPage": 567,
+      "canonicalFirstVerse": {
+        "surah": 67,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 564,
+      "sourcePdfPage": 568,
+      "canonicalFirstVerse": {
+        "surah": 67,
+        "verse": 28
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 565,
+      "sourcePdfPage": 569,
+      "canonicalFirstVerse": {
+        "surah": 68,
+        "verse": 17
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 566,
+      "sourcePdfPage": 570,
+      "canonicalFirstVerse": {
+        "surah": 68,
+        "verse": 43
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 567,
+      "sourcePdfPage": 571,
+      "canonicalFirstVerse": {
+        "surah": 69,
+        "verse": 8
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 568,
+      "sourcePdfPage": 572,
+      "canonicalFirstVerse": {
+        "surah": 69,
+        "verse": 36
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 569,
+      "sourcePdfPage": 573,
+      "canonicalFirstVerse": {
+        "surah": 70,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 570,
+      "sourcePdfPage": 574,
+      "canonicalFirstVerse": {
+        "surah": 70,
+        "verse": 41
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 571,
+      "sourcePdfPage": 575,
+      "canonicalFirstVerse": {
+        "surah": 71,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 572,
+      "sourcePdfPage": 576,
+      "canonicalFirstVerse": {
+        "surah": 72,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 573,
+      "sourcePdfPage": 577,
+      "canonicalFirstVerse": {
+        "surah": 72,
+        "verse": 14
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 574,
+      "sourcePdfPage": 578,
+      "canonicalFirstVerse": {
+        "surah": 73,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 575,
+      "sourcePdfPage": 579,
+      "canonicalFirstVerse": {
+        "surah": 73,
+        "verse": 18
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 576,
+      "sourcePdfPage": 580,
+      "canonicalFirstVerse": {
+        "surah": 74,
+        "verse": 19
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 577,
+      "sourcePdfPage": 581,
+      "canonicalFirstVerse": {
+        "surah": 74,
+        "verse": 47
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 578,
+      "sourcePdfPage": 582,
+      "canonicalFirstVerse": {
+        "surah": 75,
+        "verse": 19
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 579,
+      "sourcePdfPage": 583,
+      "canonicalFirstVerse": {
+        "surah": 76,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 580,
+      "sourcePdfPage": 584,
+      "canonicalFirstVerse": {
+        "surah": 76,
+        "verse": 26
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 581,
+      "sourcePdfPage": 585,
+      "canonicalFirstVerse": {
+        "surah": 77,
+        "verse": 20
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 582,
+      "sourcePdfPage": 586,
+      "canonicalFirstVerse": {
+        "surah": 78,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 583,
+      "sourcePdfPage": 587,
+      "canonicalFirstVerse": {
+        "surah": 78,
+        "verse": 31
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 584,
+      "sourcePdfPage": 588,
+      "canonicalFirstVerse": {
+        "surah": 79,
+        "verse": 17
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 585,
+      "sourcePdfPage": 589,
+      "canonicalFirstVerse": {
+        "surah": 80,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 586,
+      "sourcePdfPage": 590,
+      "canonicalFirstVerse": {
+        "surah": 80,
+        "verse": 41
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 587,
+      "sourcePdfPage": 591,
+      "canonicalFirstVerse": {
+        "surah": 82,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 588,
+      "sourcePdfPage": 592,
+      "canonicalFirstVerse": {
+        "surah": 83,
+        "verse": 5
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 589,
+      "sourcePdfPage": 593,
+      "canonicalFirstVerse": {
+        "surah": 83,
+        "verse": 34
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 590,
+      "sourcePdfPage": 594,
+      "canonicalFirstVerse": {
+        "surah": 84,
+        "verse": 25
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 591,
+      "sourcePdfPage": 595,
+      "canonicalFirstVerse": {
+        "surah": 86,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 592,
+      "sourcePdfPage": 596,
+      "canonicalFirstVerse": {
+        "surah": 87,
+        "verse": 11
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 593,
+      "sourcePdfPage": 597,
+      "canonicalFirstVerse": {
+        "surah": 88,
+        "verse": 23
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 594,
+      "sourcePdfPage": 598,
+      "canonicalFirstVerse": {
+        "surah": 89,
+        "verse": 25
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 595,
+      "sourcePdfPage": 599,
+      "canonicalFirstVerse": {
+        "surah": 90,
+        "verse": 19
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 596,
+      "sourcePdfPage": 600,
+      "canonicalFirstVerse": {
+        "surah": 92,
+        "verse": 10
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 597,
+      "sourcePdfPage": 601,
+      "canonicalFirstVerse": {
+        "surah": 94,
+        "verse": 3
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 598,
+      "sourcePdfPage": 602,
+      "canonicalFirstVerse": {
+        "surah": 96,
+        "verse": 13
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 599,
+      "sourcePdfPage": 603,
+      "canonicalFirstVerse": {
+        "surah": 98,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 600,
+      "sourcePdfPage": 604,
+      "canonicalFirstVerse": {
+        "surah": 100,
+        "verse": 6
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 601,
+      "sourcePdfPage": 605,
+      "canonicalFirstVerse": {
+        "surah": 103,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 602,
+      "sourcePdfPage": 606,
+      "canonicalFirstVerse": {
+        "surah": 106,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 603,
+      "sourcePdfPage": 607,
+      "canonicalFirstVerse": {
+        "surah": 109,
+        "verse": 1
+      },
+      "result": "wording-match"
+    },
+    {
+      "page": 604,
+      "sourcePdfPage": 608,
+      "canonicalFirstVerse": {
+        "surah": 112,
+        "verse": 1
+      },
+      "result": "wording-match"
+    }
+  ]
+}

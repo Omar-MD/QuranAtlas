@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "requiredSourceIds": [
+    "search-hafs-text-tanzil-v1",
+    "search-bridges-context-qul-v1",
+    "search-qac-morphology-0-4"
+  ],
+  "requiredLicenseIds": [
+    "search-tanzil-hafs-text",
+    "search-qul-bridges-context",
+    "search-pack-metadata-quranatlas",
+    "search-qac-gpl-v3-terms"
+  ],
+  "expectedCoverage": {
+    "search-hafs-text-tanzil-v1": {
+      "surahs": 114,
+      "ayahs": 6236
+    },
+    "search-bridges-context-qul-v1": {
+      "surahs": 114,
+      "ayahs": 6236
+    },
+    "search-qac-morphology-0-4": {
+      "surahs": 114,
+      "ayahs": 6236,
+      "tokens": 77429,
+      "rows": 128219
+    }
+  },
+  "morphology": {
+    "sourceId": "search-qac-morphology-0-4",
+    "expectedVersion": "0.4",
+    "manualSourceDropPath": "data/normalized/search/qac/quranic-corpus-morphology-0.4.txt",
+    "approvedFilenames": ["quranic-corpus-morphology-0.4.txt"],
+    "acceptedSha256": ["a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46"],
+    "sourceAvailabilityRequired": true,
+    "mayShipDerivedFeature": true
+  }
+}

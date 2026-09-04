@@ -1,0 +1,40 @@
+# Cloudflare Pages headers for the QuranAtlas shell and lazy data.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; manifest-src 'self'; worker-src 'self'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/search-packs/registry.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/search-packs/packs/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/dataset/manifest.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/dataset/provenance.json
+  Cache-Control: public, max-age=0, must-revalidate
+
+/dataset/indexes/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/dataset/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/manifest*.webmanifest
+  Cache-Control: public, max-age=0, must-revalidate
+
+/icons/*
+  Cache-Control: public, max-age=0, must-revalidate

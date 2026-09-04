@@ -1,0 +1,81 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main, dev, staging]
+
+permissions:
+  contents: read
+  actions: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    concurrency:
+      group: deploy-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    env:
+      TARGET_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      TARGET_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Checkout at the verified SHA
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Download dist artifact from triggering CI run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-output
+          path: dist/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Setup mise toolchain
+        uses: jdx/mise-action@0c6ea298a49e2fc9b6b8ec854c2e6c292490f032 # main as of 2026-09-01; runs mise install
+        with:
+          install: 'true'
+          cache: 'true'
+
+      - name: Install dependencies
+        run: mise run install
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          pnpm exec wrangler pages deploy dist \
+            --project-name=quranatlas \
+            --branch="${TARGET_BRANCH}" \
+            --commit-hash="${TARGET_SHA}" \
+            | tee deploy-output.txt
+          # wrangler prints "Take a peek over at https://<id>.quranatlas.pages.dev"
+          DEPLOY_URL=$(grep -Eo 'https://[a-f0-9]+\.quranatlas\.pages\.dev' deploy-output.txt | tail -1)
+          echo "deployment-url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Write deploy summary
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          {
+            echo "### Deployed ${TARGET_BRANCH}"
+            echo ""
+            echo "- **Commit:** \`${TARGET_SHA}\`"
+            echo "- **Deployment URL:** ${DEPLOY_URL}"
+            echo "- **Live at:**"
+            case "${TARGET_BRANCH}" in
+              main) echo "  - https://quranatlas.org" ;;
+              dev) echo "  - https://dev.quranatlas.org" ;;
+              staging) echo "  - https://staging.quranatlas.org" ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"

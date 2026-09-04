@@ -1,0 +1,173 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev, staging]
+  pull_request:
+    branches: [main, dev, staging]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - run: mise run check
+
+  data:
+    name: Dataset build + check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - name: Cache deterministic dataset + search-pack output
+        id: dataset-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            public/dataset
+            public/search-packs
+            .data-build-complete
+          key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml') }}
+      # The key already hashes every data:build source; restoring outputs with
+      # older mtimes would still look stale to mise's timestamp freshness, so
+      # re-stamp them to skip the rebuild. data:check remains the real gate.
+      - name: Restamp restored dataset outputs for mise freshness
+        if: steps.dataset-cache.outputs.cache-hit == 'true'
+        run: find public/dataset public/search-packs -exec touch {} + && touch .data-build-complete
+      - run: mise run data:build
+      - run: mise run data:check
+
+  build:
+    name: Release build
+    needs: data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      # build:release depends on data:build; share the data job's cache so the
+      # datasets are not rebuilt a second time on this runner.
+      - name: Cache deterministic dataset + search-pack output
+        id: dataset-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            public/dataset
+            public/search-packs
+            .data-build-complete
+          key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml') }}
+      - name: Restamp restored dataset outputs for mise freshness
+        if: steps.dataset-cache.outputs.cache-hit == 'true'
+        run: find public/dataset public/search-packs -exec touch {} + && touch .data-build-complete
+      - run: mise run build:release
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
+
+  smoke:
+    name: Core smoke (desktop + mobile)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # CI runs the suites directly (not `mise run smoke/offline`): here the
+      # shared build-output artifact supplies dist/, and PLAYWRIGHT_USE_PREVIEW
+      # points Playwright at the production preview rather than the dev server
+      # that local `mise run smoke` uses.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-output
+          path: dist/
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Playwright browsers (cache miss)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright system deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - name: Run core smoke suite
+        run: env -u NO_COLOR PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --project=desktop-smoke --project=mobile-smoke
+      - name: Upload Playwright failure evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-evidence-smoke
+          path: test-output/playwright
+          retention-days: 7
+          if-no-files-found: ignore
+
+  offline:
+    name: Offline lifecycle
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: build-output
+          path: dist/
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Playwright browsers (cache miss)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright system deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - name: Run offline lifecycle suite
+        run: env -u NO_COLOR PLAYWRIGHT_USE_PREVIEW=1 pnpm exec playwright test --project=offline-lifecycle
+      - name: Upload Playwright failure evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-evidence-offline
+          path: test-output/playwright
+          retention-days: 7
+          if-no-files-found: ignore
+
+  ci-ok:
+    name: CI OK
+    needs: [static, data, build, smoke, offline]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate CI results
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          printf '%s' "$NEEDS_JSON" | jq -r 'to_entries[] | "  \(.key): \(.value.result)"'
+          if printf '%s' "$NEEDS_JSON" | jq -e 'all(.[]; .result != "failure" and .result != "cancelled")' > /dev/null; then
+            echo "All required CI gates passed."
+          else
+            echo "::error::One or more required CI gates failed or were cancelled."
+            exit 1
+          fi

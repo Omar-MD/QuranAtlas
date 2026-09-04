@@ -1,0 +1,50 @@
+[
+  {
+    "id": "kfgqpc-non-commercial",
+    "label": "KFGQPC personal, educational, non-commercial attribution",
+    "status": "restricted",
+    "url": "https://qurancomplex.gov.sa/en/techquran/dev/"
+  },
+  {
+    "id": "saheeh-non-commercial",
+    "label": "Saheeh International non-commercial distribution",
+    "status": "restricted",
+    "url": "https://saheehinternational.com/"
+  },
+  {
+    "id": "quran-db-upstream-restricted",
+    "label": "Quran DB upstream translation source requires source-specific review",
+    "status": "restricted",
+    "url": "https://github.com/faisalill/quran_db"
+  },
+  {
+    "id": "qul-resource",
+    "label": "QUL downloadable resource",
+    "status": "approved",
+    "url": "https://qul.tarteel.ai/resources"
+  },
+  {
+    "id": "kfgqpc-quran-text",
+    "label": "KFGQPC Quran text source",
+    "status": "restricted",
+    "url": "https://qurancomplex.gov.sa/en/techquran/dev/"
+  },
+  {
+    "id": "private-local-pdf-restricted",
+    "label": "Private local PDF; redistribution not approved",
+    "status": "restricted"
+  },
+  {
+    "id": "user-authorized-public-noncommercial-deployment",
+    "label": "User-authorized public noncommercial deployment of derived Furatiyyah WebPs",
+    "status": "restricted",
+    "scope": "QuranAtlas dev deployments of qalun-furatiyyah-2023-v1 derived WebPs only; source PDF excluded",
+    "provenance": "User authorization; not a general source license"
+  },
+  {
+    "id": "quran-ws-free-use",
+    "label": "Quran.ws page assets free use",
+    "status": "approved",
+    "url": "https://quran.ws"
+  }
+]

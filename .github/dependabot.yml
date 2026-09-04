@@ -1,0 +1,65 @@
+version: 2
+
+# Auto-PRs for outdated GitHub Actions and npm deps. Runs weekly so the PR
+# volume is manageable for a solo dev. Security fixes still arrive daily via
+# Dependabot security updates (separate setting, enabled repo-wide).
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '04:00'
+      timezone: Europe/London
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'ci'
+      include: scope
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
+
+  # Composite setup action has its own directory for Dependabot to recognise.
+  - package-ecosystem: github-actions
+    directory: /.github/actions/setup
+    schedule:
+      interval: weekly
+      day: monday
+      time: '04:00'
+      timezone: Europe/London
+    commit-message:
+      prefix: 'ci'
+      include: scope
+    labels:
+      - dependencies
+      - github-actions
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '04:30'
+      timezone: Europe/London
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: 'chore'
+      include: scope
+    labels:
+      - dependencies
+      - npm
+    groups:
+      # Group minor + patch bumps across the dev toolchain — they rarely need
+      # individual review, and a single PR reduces CI cost.
+      dev-deps-minor-patch:
+        dependency-type: development
+        update-types: [minor, patch]
+      # Runtime deps — grouped minor/patch too.
+      runtime-deps-minor-patch:
+        dependency-type: production
+        update-types: [minor, patch]
+    # Majors always get their own PR — they deserve scrutiny.

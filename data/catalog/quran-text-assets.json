@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "defaults": {
+    "qaloon": "uthmani-kfgqpc-v1"
+  },
+  "assets": [
+    {
+      "riwayah": "qaloon",
+      "textStyleId": "uthmani-kfgqpc-v1",
+      "label": "Uthmani KFGQPC",
+      "scriptFamily": "uthmani",
+      "providerId": "kfgqpc",
+      "licenseId": "kfgqpc-quran-text",
+      "visibility": "baseline",
+      "shipped": true,
+      "outputPathTemplate": "quran-text/qaloon/uthmani-kfgqpc-v1/{surah}.json",
+      "provenance": { "source": "KFGQPC Qalun v10" }
+    }
+  ]
+}

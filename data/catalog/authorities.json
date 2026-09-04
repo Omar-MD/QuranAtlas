@@ -1,0 +1,36 @@
+[
+  {
+    "id": "kfgqpc",
+    "label": "King Fahd Glorious Qur'an Printing Complex",
+    "url": "https://qurancomplex.gov.sa/en/techquran/dev/"
+  },
+  {
+    "id": "private-local-pdf",
+    "label": "Private local PDF"
+  },
+  {
+    "id": "quran-db",
+    "label": "Quran DB",
+    "url": "https://github.com/faisalill/quran_db"
+  },
+  {
+    "id": "qul",
+    "label": "Quranic Universal Library",
+    "url": "https://qul.tarteel.ai/resources"
+  },
+  {
+    "id": "quran-ws",
+    "label": "Quran.ws",
+    "url": "https://quran.ws"
+  },
+  {
+    "id": "quranic-arabic-corpus",
+    "label": "Quranic Arabic Corpus",
+    "url": "https://corpus.quran.com"
+  },
+  {
+    "id": "tanzil",
+    "label": "Tanzil Project",
+    "url": "https://tanzil.net"
+  }
+]

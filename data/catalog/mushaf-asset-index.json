@@ -1,0 +1,2447 @@
+{
+  "version": 1,
+  "defaults": {
+    "qaloon": "qalun-quran-ws-v1"
+  },
+  "assets": [
+    {
+      "riwayah": "qaloon",
+      "mushafEditionId": "qalun-quran-ws-v1",
+      "label": "Qalun Quran.ws",
+      "tradition": "qalun",
+      "providerId": "quran-ws",
+      "licenseId": "quran-ws-free-use",
+      "visibility": "baseline",
+      "shipped": true,
+      "sourceSlug": "qalun",
+      "pageCount": 604,
+      "provenance": {
+        "source": "quran.ws page PDFs"
+      },
+      "manifestUrl": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json",
+      "files": [
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json",
+          "bytes": 314302
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg",
+          "bytes": 323968
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/002.svg",
+          "bytes": 297241
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/003.svg",
+          "bytes": 710707
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/004.svg",
+          "bytes": 644507
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/005.svg",
+          "bytes": 617610
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/006.svg",
+          "bytes": 721548
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/007.svg",
+          "bytes": 745254
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/008.svg",
+          "bytes": 681923
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/009.svg",
+          "bytes": 580134
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/010.svg",
+          "bytes": 666503
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/011.svg",
+          "bytes": 690256
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/012.svg",
+          "bytes": 610752
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/013.svg",
+          "bytes": 605147
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/014.svg",
+          "bytes": 563768
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/015.svg",
+          "bytes": 625779
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/016.svg",
+          "bytes": 551058
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/017.svg",
+          "bytes": 610700
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/018.svg",
+          "bytes": 647954
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/019.svg",
+          "bytes": 709991
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/020.svg",
+          "bytes": 676174
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/021.svg",
+          "bytes": 651861
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/022.svg",
+          "bytes": 612226
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/023.svg",
+          "bytes": 662165
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/024.svg",
+          "bytes": 747146
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/025.svg",
+          "bytes": 658964
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/026.svg",
+          "bytes": 635157
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/027.svg",
+          "bytes": 647466
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/028.svg",
+          "bytes": 563173
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/029.svg",
+          "bytes": 593350
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/030.svg",
+          "bytes": 746013
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/031.svg",
+          "bytes": 543508
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/032.svg",
+          "bytes": 625672
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/033.svg",
+          "bytes": 660553
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/034.svg",
+          "bytes": 572782
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/035.svg",
+          "bytes": 646994
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/036.svg",
+          "bytes": 715399
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/037.svg",
+          "bytes": 655985
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/038.svg",
+          "bytes": 617618
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/039.svg",
+          "bytes": 632985
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/040.svg",
+          "bytes": 545485
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/041.svg",
+          "bytes": 523974
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/042.svg",
+          "bytes": 651705
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/043.svg",
+          "bytes": 571111
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/044.svg",
+          "bytes": 650694
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/045.svg",
+          "bytes": 612730
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/046.svg",
+          "bytes": 538861
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/047.svg",
+          "bytes": 653136
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/048.svg",
+          "bytes": 553174
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/049.svg",
+          "bytes": 595886
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/050.svg",
+          "bytes": 686207
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/051.svg",
+          "bytes": 599306
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/052.svg",
+          "bytes": 614506
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/053.svg",
+          "bytes": 660472
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/054.svg",
+          "bytes": 700119
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/055.svg",
+          "bytes": 676588
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/056.svg",
+          "bytes": 623998
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/057.svg",
+          "bytes": 644043
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/058.svg",
+          "bytes": 686366
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/059.svg",
+          "bytes": 671254
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/060.svg",
+          "bytes": 609683
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/061.svg",
+          "bytes": 637892
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/062.svg",
+          "bytes": 724267
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/063.svg",
+          "bytes": 690469
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/064.svg",
+          "bytes": 623334
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/065.svg",
+          "bytes": 641212
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/066.svg",
+          "bytes": 745128
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/067.svg",
+          "bytes": 647230
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/068.svg",
+          "bytes": 682040
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/069.svg",
+          "bytes": 500386
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/070.svg",
+          "bytes": 628475
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/071.svg",
+          "bytes": 724328
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/072.svg",
+          "bytes": 687838
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/073.svg",
+          "bytes": 696016
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/074.svg",
+          "bytes": 588977
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/075.svg",
+          "bytes": 666210
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/076.svg",
+          "bytes": 590041
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/077.svg",
+          "bytes": 715271
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/078.svg",
+          "bytes": 616483
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/079.svg",
+          "bytes": 485531
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/080.svg",
+          "bytes": 587831
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/081.svg",
+          "bytes": 513858
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/082.svg",
+          "bytes": 542277
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/083.svg",
+          "bytes": 608830
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/084.svg",
+          "bytes": 548269
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/085.svg",
+          "bytes": 642927
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/086.svg",
+          "bytes": 669494
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/087.svg",
+          "bytes": 712148
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/088.svg",
+          "bytes": 580561
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/089.svg",
+          "bytes": 679992
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/090.svg",
+          "bytes": 700725
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/091.svg",
+          "bytes": 659888
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/092.svg",
+          "bytes": 649049
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/093.svg",
+          "bytes": 523081
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/094.svg",
+          "bytes": 727317
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/095.svg",
+          "bytes": 589209
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/096.svg",
+          "bytes": 627747
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/097.svg",
+          "bytes": 644082
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/098.svg",
+          "bytes": 588104
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/099.svg",
+          "bytes": 634588
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/100.svg",
+          "bytes": 680893
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/101.svg",
+          "bytes": 664150
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/102.svg",
+          "bytes": 669691
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/103.svg",
+          "bytes": 710181
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/104.svg",
+          "bytes": 653290
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/105.svg",
+          "bytes": 609842
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/106.svg",
+          "bytes": 609242
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/107.svg",
+          "bytes": 631261
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/108.svg",
+          "bytes": 565574
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/109.svg",
+          "bytes": 545075
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/110.svg",
+          "bytes": 506450
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/111.svg",
+          "bytes": 638282
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/112.svg",
+          "bytes": 695986
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/113.svg",
+          "bytes": 581226
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/114.svg",
+          "bytes": 599314
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/115.svg",
+          "bytes": 568054
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/116.svg",
+          "bytes": 665764
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/117.svg",
+          "bytes": 763634
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/118.svg",
+          "bytes": 743952
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/119.svg",
+          "bytes": 640379
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/120.svg",
+          "bytes": 684545
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/121.svg",
+          "bytes": 551700
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/122.svg",
+          "bytes": 665362
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/123.svg",
+          "bytes": 633617
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/124.svg",
+          "bytes": 668562
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/125.svg",
+          "bytes": 673533
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/126.svg",
+          "bytes": 620234
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/127.svg",
+          "bytes": 714726
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/128.svg",
+          "bytes": 662377
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/129.svg",
+          "bytes": 666755
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/130.svg",
+          "bytes": 790810
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/131.svg",
+          "bytes": 727531
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/132.svg",
+          "bytes": 728733
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/133.svg",
+          "bytes": 680211
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/134.svg",
+          "bytes": 641270
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/135.svg",
+          "bytes": 715291
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/136.svg",
+          "bytes": 598435
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/137.svg",
+          "bytes": 650188
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/138.svg",
+          "bytes": 675338
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/139.svg",
+          "bytes": 650158
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/140.svg",
+          "bytes": 684349
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/141.svg",
+          "bytes": 662986
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/142.svg",
+          "bytes": 682860
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/143.svg",
+          "bytes": 637561
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/144.svg",
+          "bytes": 603938
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/145.svg",
+          "bytes": 586607
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/146.svg",
+          "bytes": 584881
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/147.svg",
+          "bytes": 595713
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/148.svg",
+          "bytes": 599944
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/149.svg",
+          "bytes": 633569
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/150.svg",
+          "bytes": 756490
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/151.svg",
+          "bytes": 653546
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/152.svg",
+          "bytes": 777720
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/153.svg",
+          "bytes": 677790
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/154.svg",
+          "bytes": 712414
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/155.svg",
+          "bytes": 672884
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/156.svg",
+          "bytes": 703376
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/157.svg",
+          "bytes": 642484
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/158.svg",
+          "bytes": 693818
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/159.svg",
+          "bytes": 590029
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/160.svg",
+          "bytes": 615636
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/161.svg",
+          "bytes": 556264
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/162.svg",
+          "bytes": 712482
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/163.svg",
+          "bytes": 654734
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/164.svg",
+          "bytes": 783082
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/165.svg",
+          "bytes": 695936
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/166.svg",
+          "bytes": 662905
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/167.svg",
+          "bytes": 625625
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/168.svg",
+          "bytes": 628603
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/169.svg",
+          "bytes": 661560
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/170.svg",
+          "bytes": 576103
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/171.svg",
+          "bytes": 535923
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/172.svg",
+          "bytes": 685354
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/173.svg",
+          "bytes": 684136
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/174.svg",
+          "bytes": 744285
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/175.svg",
+          "bytes": 680893
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/176.svg",
+          "bytes": 719796
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/177.svg",
+          "bytes": 619254
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/178.svg",
+          "bytes": 669510
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/179.svg",
+          "bytes": 660534
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/180.svg",
+          "bytes": 658551
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/181.svg",
+          "bytes": 607251
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/182.svg",
+          "bytes": 610095
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/183.svg",
+          "bytes": 625531
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/184.svg",
+          "bytes": 682894
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/185.svg",
+          "bytes": 691705
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/186.svg",
+          "bytes": 664594
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/187.svg",
+          "bytes": 645758
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/188.svg",
+          "bytes": 614557
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/189.svg",
+          "bytes": 650787
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/190.svg",
+          "bytes": 606539
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/191.svg",
+          "bytes": 538492
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/192.svg",
+          "bytes": 569194
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/193.svg",
+          "bytes": 542625
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/194.svg",
+          "bytes": 631047
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/195.svg",
+          "bytes": 587774
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/196.svg",
+          "bytes": 637905
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/197.svg",
+          "bytes": 609820
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/198.svg",
+          "bytes": 605236
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/199.svg",
+          "bytes": 630973
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/200.svg",
+          "bytes": 677410
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/201.svg",
+          "bytes": 622211
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/202.svg",
+          "bytes": 612155
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/203.svg",
+          "bytes": 679729
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/204.svg",
+          "bytes": 603031
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/205.svg",
+          "bytes": 601233
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/206.svg",
+          "bytes": 610658
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/207.svg",
+          "bytes": 591513
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/208.svg",
+          "bytes": 630494
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/209.svg",
+          "bytes": 643710
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/210.svg",
+          "bytes": 607872
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/211.svg",
+          "bytes": 664895
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/212.svg",
+          "bytes": 720185
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/213.svg",
+          "bytes": 766223
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/214.svg",
+          "bytes": 752867
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/215.svg",
+          "bytes": 674149
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/216.svg",
+          "bytes": 624147
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/217.svg",
+          "bytes": 713195
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/218.svg",
+          "bytes": 738838
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/219.svg",
+          "bytes": 684536
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/220.svg",
+          "bytes": 692034
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/221.svg",
+          "bytes": 668943
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/222.svg",
+          "bytes": 642509
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/223.svg",
+          "bytes": 667295
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/224.svg",
+          "bytes": 695126
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/225.svg",
+          "bytes": 714567
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/226.svg",
+          "bytes": 678596
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/227.svg",
+          "bytes": 671295
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/228.svg",
+          "bytes": 723342
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/229.svg",
+          "bytes": 676018
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/230.svg",
+          "bytes": 750220
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/231.svg",
+          "bytes": 652938
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/232.svg",
+          "bytes": 670025
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/233.svg",
+          "bytes": 730768
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/234.svg",
+          "bytes": 689283
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/235.svg",
+          "bytes": 648528
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/236.svg",
+          "bytes": 694356
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/237.svg",
+          "bytes": 652547
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/238.svg",
+          "bytes": 651501
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/239.svg",
+          "bytes": 749806
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/240.svg",
+          "bytes": 655575
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/241.svg",
+          "bytes": 730820
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/242.svg",
+          "bytes": 726532
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/243.svg",
+          "bytes": 641576
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/244.svg",
+          "bytes": 658873
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/245.svg",
+          "bytes": 640715
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/246.svg",
+          "bytes": 665150
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/247.svg",
+          "bytes": 668183
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/248.svg",
+          "bytes": 667078
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/249.svg",
+          "bytes": 616936
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/250.svg",
+          "bytes": 648818
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/251.svg",
+          "bytes": 717152
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/252.svg",
+          "bytes": 771253
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/253.svg",
+          "bytes": 677408
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/254.svg",
+          "bytes": 689836
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/255.svg",
+          "bytes": 565759
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/256.svg",
+          "bytes": 594996
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/257.svg",
+          "bytes": 622503
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/258.svg",
+          "bytes": 600822
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/259.svg",
+          "bytes": 676163
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/260.svg",
+          "bytes": 679146
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/261.svg",
+          "bytes": 658701
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/262.svg",
+          "bytes": 709086
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/263.svg",
+          "bytes": 800212
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/264.svg",
+          "bytes": 844346
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/265.svg",
+          "bytes": 819536
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/266.svg",
+          "bytes": 864405
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/267.svg",
+          "bytes": 706505
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/268.svg",
+          "bytes": 593322
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/269.svg",
+          "bytes": 699967
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/270.svg",
+          "bytes": 696764
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/271.svg",
+          "bytes": 666253
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/272.svg",
+          "bytes": 783427
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/273.svg",
+          "bytes": 728148
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/274.svg",
+          "bytes": 746732
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/275.svg",
+          "bytes": 639630
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/276.svg",
+          "bytes": 625758
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/277.svg",
+          "bytes": 619633
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/278.svg",
+          "bytes": 656732
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/279.svg",
+          "bytes": 596568
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/280.svg",
+          "bytes": 640639
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/281.svg",
+          "bytes": 706294
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/282.svg",
+          "bytes": 601801
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/283.svg",
+          "bytes": 747434
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/284.svg",
+          "bytes": 698137
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/285.svg",
+          "bytes": 767012
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/286.svg",
+          "bytes": 801014
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/287.svg",
+          "bytes": 704827
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/288.svg",
+          "bytes": 661744
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/289.svg",
+          "bytes": 692392
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/290.svg",
+          "bytes": 713361
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/291.svg",
+          "bytes": 706712
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/292.svg",
+          "bytes": 701877
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/293.svg",
+          "bytes": 697085
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/294.svg",
+          "bytes": 692164
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/295.svg",
+          "bytes": 627878
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/296.svg",
+          "bytes": 650221
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/297.svg",
+          "bytes": 698794
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/298.svg",
+          "bytes": 768843
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/299.svg",
+          "bytes": 689886
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/300.svg",
+          "bytes": 671530
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/301.svg",
+          "bytes": 767252
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/302.svg",
+          "bytes": 710754
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/303.svg",
+          "bytes": 782365
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/304.svg",
+          "bytes": 812725
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/305.svg",
+          "bytes": 599615
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/306.svg",
+          "bytes": 737549
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/307.svg",
+          "bytes": 762142
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/308.svg",
+          "bytes": 790343
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/309.svg",
+          "bytes": 819085
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/310.svg",
+          "bytes": 765903
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/311.svg",
+          "bytes": 821643
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/312.svg",
+          "bytes": 683140
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/313.svg",
+          "bytes": 904836
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/314.svg",
+          "bytes": 819641
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/315.svg",
+          "bytes": 759183
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/316.svg",
+          "bytes": 797562
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/317.svg",
+          "bytes": 710086
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/318.svg",
+          "bytes": 701702
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/319.svg",
+          "bytes": 769404
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/320.svg",
+          "bytes": 734041
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/321.svg",
+          "bytes": 793904
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/322.svg",
+          "bytes": 623001
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/323.svg",
+          "bytes": 762902
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/324.svg",
+          "bytes": 711227
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/325.svg",
+          "bytes": 627799
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/326.svg",
+          "bytes": 738948
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/327.svg",
+          "bytes": 718809
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/328.svg",
+          "bytes": 656141
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/329.svg",
+          "bytes": 614954
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/330.svg",
+          "bytes": 611604
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/331.svg",
+          "bytes": 619334
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/332.svg",
+          "bytes": 595401
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/333.svg",
+          "bytes": 723384
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/334.svg",
+          "bytes": 616816
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/335.svg",
+          "bytes": 607441
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/336.svg",
+          "bytes": 702717
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/337.svg",
+          "bytes": 667230
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/338.svg",
+          "bytes": 698826
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/339.svg",
+          "bytes": 617126
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/340.svg",
+          "bytes": 650404
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/341.svg",
+          "bytes": 581356
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/342.svg",
+          "bytes": 777726
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/343.svg",
+          "bytes": 733680
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/344.svg",
+          "bytes": 835089
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/345.svg",
+          "bytes": 873647
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/346.svg",
+          "bytes": 824453
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/347.svg",
+          "bytes": 747625
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/348.svg",
+          "bytes": 772122
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/349.svg",
+          "bytes": 744857
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/350.svg",
+          "bytes": 786123
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/351.svg",
+          "bytes": 748148
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/352.svg",
+          "bytes": 713676
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/353.svg",
+          "bytes": 634663
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/354.svg",
+          "bytes": 686654
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/355.svg",
+          "bytes": 702066
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/356.svg",
+          "bytes": 780283
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/357.svg",
+          "bytes": 656276
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/358.svg",
+          "bytes": 556550
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/359.svg",
+          "bytes": 600809
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/360.svg",
+          "bytes": 634631
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/361.svg",
+          "bytes": 636629
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/362.svg",
+          "bytes": 760204
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/363.svg",
+          "bytes": 690841
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/364.svg",
+          "bytes": 722853
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/365.svg",
+          "bytes": 715379
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/366.svg",
+          "bytes": 626072
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/367.svg",
+          "bytes": 834081
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/368.svg",
+          "bytes": 869959
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/369.svg",
+          "bytes": 958023
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/370.svg",
+          "bytes": 891834
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/371.svg",
+          "bytes": 1008313
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/372.svg",
+          "bytes": 978000
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/373.svg",
+          "bytes": 952225
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/374.svg",
+          "bytes": 982926
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/375.svg",
+          "bytes": 931408
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/376.svg",
+          "bytes": 833039
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/377.svg",
+          "bytes": 796302
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/378.svg",
+          "bytes": 691005
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/379.svg",
+          "bytes": 808038
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/380.svg",
+          "bytes": 788019
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/381.svg",
+          "bytes": 663227
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/382.svg",
+          "bytes": 643473
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/383.svg",
+          "bytes": 749928
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/384.svg",
+          "bytes": 754764
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/385.svg",
+          "bytes": 646369
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/386.svg",
+          "bytes": 607029
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/387.svg",
+          "bytes": 723982
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/388.svg",
+          "bytes": 647943
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/389.svg",
+          "bytes": 647803
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/390.svg",
+          "bytes": 629648
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/391.svg",
+          "bytes": 637402
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/392.svg",
+          "bytes": 687412
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/393.svg",
+          "bytes": 735229
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/394.svg",
+          "bytes": 641861
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/395.svg",
+          "bytes": 654785
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/396.svg",
+          "bytes": 642865
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/397.svg",
+          "bytes": 665739
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/398.svg",
+          "bytes": 671192
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/399.svg",
+          "bytes": 630226
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/400.svg",
+          "bytes": 611389
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/401.svg",
+          "bytes": 588611
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/402.svg",
+          "bytes": 620465
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/403.svg",
+          "bytes": 755898
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/404.svg",
+          "bytes": 637554
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/405.svg",
+          "bytes": 699044
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/406.svg",
+          "bytes": 666259
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/407.svg",
+          "bytes": 649618
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/408.svg",
+          "bytes": 743021
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/409.svg",
+          "bytes": 741997
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/410.svg",
+          "bytes": 709491
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/411.svg",
+          "bytes": 658999
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/412.svg",
+          "bytes": 694103
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/413.svg",
+          "bytes": 713608
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/414.svg",
+          "bytes": 640608
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/415.svg",
+          "bytes": 702389
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/416.svg",
+          "bytes": 671539
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/417.svg",
+          "bytes": 650556
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/418.svg",
+          "bytes": 639349
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/419.svg",
+          "bytes": 702885
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/420.svg",
+          "bytes": 703301
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/421.svg",
+          "bytes": 686504
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/422.svg",
+          "bytes": 609515
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/423.svg",
+          "bytes": 712772
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/424.svg",
+          "bytes": 665546
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/425.svg",
+          "bytes": 621799
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/426.svg",
+          "bytes": 694993
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/427.svg",
+          "bytes": 734952
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/428.svg",
+          "bytes": 600106
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/429.svg",
+          "bytes": 670120
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/430.svg",
+          "bytes": 690567
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/431.svg",
+          "bytes": 673459
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/432.svg",
+          "bytes": 700898
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/433.svg",
+          "bytes": 730709
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/434.svg",
+          "bytes": 675390
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/435.svg",
+          "bytes": 732702
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/436.svg",
+          "bytes": 650310
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/437.svg",
+          "bytes": 729556
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/438.svg",
+          "bytes": 667375
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/439.svg",
+          "bytes": 731504
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/440.svg",
+          "bytes": 733365
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/441.svg",
+          "bytes": 771728
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/442.svg",
+          "bytes": 748313
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/443.svg",
+          "bytes": 777304
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/444.svg",
+          "bytes": 778313
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/445.svg",
+          "bytes": 701546
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/446.svg",
+          "bytes": 938854
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/447.svg",
+          "bytes": 1011938
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/448.svg",
+          "bytes": 937967
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/449.svg",
+          "bytes": 968241
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/450.svg",
+          "bytes": 905306
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/451.svg",
+          "bytes": 999473
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/452.svg",
+          "bytes": 1013084
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/453.svg",
+          "bytes": 789756
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/454.svg",
+          "bytes": 751463
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/455.svg",
+          "bytes": 850134
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/456.svg",
+          "bytes": 881408
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/457.svg",
+          "bytes": 946269
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/458.svg",
+          "bytes": 659783
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/459.svg",
+          "bytes": 659482
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/460.svg",
+          "bytes": 765306
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/461.svg",
+          "bytes": 726082
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/462.svg",
+          "bytes": 625486
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/463.svg",
+          "bytes": 629414
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/464.svg",
+          "bytes": 693687
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/465.svg",
+          "bytes": 693781
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/466.svg",
+          "bytes": 639191
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/467.svg",
+          "bytes": 602327
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/468.svg",
+          "bytes": 666615
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/469.svg",
+          "bytes": 678309
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/470.svg",
+          "bytes": 665424
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/471.svg",
+          "bytes": 612623
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/472.svg",
+          "bytes": 653294
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/473.svg",
+          "bytes": 612096
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/474.svg",
+          "bytes": 605783
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/475.svg",
+          "bytes": 679110
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/476.svg",
+          "bytes": 636566
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/477.svg",
+          "bytes": 667820
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/478.svg",
+          "bytes": 723041
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/479.svg",
+          "bytes": 711061
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/480.svg",
+          "bytes": 667567
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/481.svg",
+          "bytes": 716849
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/482.svg",
+          "bytes": 686776
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/483.svg",
+          "bytes": 650165
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/484.svg",
+          "bytes": 627759
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/485.svg",
+          "bytes": 621025
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/486.svg",
+          "bytes": 732590
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/487.svg",
+          "bytes": 811748
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/488.svg",
+          "bytes": 689214
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/489.svg",
+          "bytes": 639518
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/490.svg",
+          "bytes": 721993
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/491.svg",
+          "bytes": 752219
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/492.svg",
+          "bytes": 787130
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/493.svg",
+          "bytes": 738865
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/494.svg",
+          "bytes": 738047
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/495.svg",
+          "bytes": 806798
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/496.svg",
+          "bytes": 748653
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/497.svg",
+          "bytes": 879352
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/498.svg",
+          "bytes": 746858
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/499.svg",
+          "bytes": 787596
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/500.svg",
+          "bytes": 693207
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/501.svg",
+          "bytes": 814358
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/502.svg",
+          "bytes": 679967
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/503.svg",
+          "bytes": 726030
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/504.svg",
+          "bytes": 706921
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/505.svg",
+          "bytes": 714964
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/506.svg",
+          "bytes": 651532
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/507.svg",
+          "bytes": 809130
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/508.svg",
+          "bytes": 783193
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/509.svg",
+          "bytes": 692789
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/510.svg",
+          "bytes": 729950
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/511.svg",
+          "bytes": 655734
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/512.svg",
+          "bytes": 665177
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/513.svg",
+          "bytes": 712353
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/514.svg",
+          "bytes": 627976
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/515.svg",
+          "bytes": 627942
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/516.svg",
+          "bytes": 726305
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/517.svg",
+          "bytes": 714484
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/518.svg",
+          "bytes": 754148
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/519.svg",
+          "bytes": 926616
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/520.svg",
+          "bytes": 755752
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/521.svg",
+          "bytes": 949373
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/522.svg",
+          "bytes": 935450
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/523.svg",
+          "bytes": 803879
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/524.svg",
+          "bytes": 833352
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/525.svg",
+          "bytes": 854965
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/526.svg",
+          "bytes": 956031
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/527.svg",
+          "bytes": 883218
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/528.svg",
+          "bytes": 880726
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/529.svg",
+          "bytes": 907512
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/530.svg",
+          "bytes": 959770
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/531.svg",
+          "bytes": 818306
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/532.svg",
+          "bytes": 972660
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/533.svg",
+          "bytes": 1035377
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/534.svg",
+          "bytes": 881547
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/535.svg",
+          "bytes": 1120075
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/536.svg",
+          "bytes": 975418
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/537.svg",
+          "bytes": 869291
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/538.svg",
+          "bytes": 713169
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/539.svg",
+          "bytes": 700971
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/540.svg",
+          "bytes": 663483
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/541.svg",
+          "bytes": 646978
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/542.svg",
+          "bytes": 647946
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/543.svg",
+          "bytes": 698307
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/544.svg",
+          "bytes": 785159
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/545.svg",
+          "bytes": 588509
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/546.svg",
+          "bytes": 667563
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/547.svg",
+          "bytes": 665178
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/548.svg",
+          "bytes": 625199
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/549.svg",
+          "bytes": 707070
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/550.svg",
+          "bytes": 755616
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/551.svg",
+          "bytes": 621139
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/552.svg",
+          "bytes": 816135
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/553.svg",
+          "bytes": 655167
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/554.svg",
+          "bytes": 666060
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/555.svg",
+          "bytes": 604779
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/556.svg",
+          "bytes": 742394
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/557.svg",
+          "bytes": 628422
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/558.svg",
+          "bytes": 689517
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/559.svg",
+          "bytes": 751207
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/560.svg",
+          "bytes": 686257
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/561.svg",
+          "bytes": 602663
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/562.svg",
+          "bytes": 756185
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/563.svg",
+          "bytes": 816945
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/564.svg",
+          "bytes": 822632
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/565.svg",
+          "bytes": 1046261
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/566.svg",
+          "bytes": 829381
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/567.svg",
+          "bytes": 1070353
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/568.svg",
+          "bytes": 935519
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/569.svg",
+          "bytes": 1095961
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/570.svg",
+          "bytes": 747420
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/571.svg",
+          "bytes": 880505
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/572.svg",
+          "bytes": 752566
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/573.svg",
+          "bytes": 808685
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/574.svg",
+          "bytes": 794665
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/575.svg",
+          "bytes": 864204
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/576.svg",
+          "bytes": 1064269
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/577.svg",
+          "bytes": 988970
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/578.svg",
+          "bytes": 981851
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/579.svg",
+          "bytes": 936152
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/580.svg",
+          "bytes": 901843
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/581.svg",
+          "bytes": 1097977
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/582.svg",
+          "bytes": 955675
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/583.svg",
+          "bytes": 959346
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/584.svg",
+          "bytes": 1007413
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/585.svg",
+          "bytes": 1210185
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/586.svg",
+          "bytes": 969786
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/587.svg",
+          "bytes": 812456
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/588.svg",
+          "bytes": 1034956
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/589.svg",
+          "bytes": 909036
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/590.svg",
+          "bytes": 868449
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/591.svg",
+          "bytes": 859436
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/592.svg",
+          "bytes": 972669
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/593.svg",
+          "bytes": 920781
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/594.svg",
+          "bytes": 888351
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/595.svg",
+          "bytes": 836547
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/596.svg",
+          "bytes": 802733
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/597.svg",
+          "bytes": 835285
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/598.svg",
+          "bytes": 772783
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/599.svg",
+          "bytes": 714354
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/600.svg",
+          "bytes": 800536
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/601.svg",
+          "bytes": 643536
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/602.svg",
+          "bytes": 531932
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/603.svg",
+          "bytes": 540096
+        },
+        {
+          "url": "/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/604.svg",
+          "bytes": 511840
+        }
+      ],
+      "totalBytes": 425081843
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+name: 'Setup mise toolchain + dependencies'
+description: 'Install mise-managed tools (Node, pnpm, playwright-cli) from mise.toml and project dependencies.'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup mise
+      uses: jdx/mise-action@0c6ea298a49e2fc9b6b8ec854c2e6c292490f032 # main as of 2026-09-01; runs mise install
+      with:
+        install: 'true'
+        cache: 'true'
+
+    - name: Install dependencies
+      shell: bash
+      run: mise run install
