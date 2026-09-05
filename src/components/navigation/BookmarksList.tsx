@@ -104,9 +104,13 @@ export function BookmarksList({
     if (!touchStart || touchStart.key !== key) return null
     const dx = point.x - touchStart.x
     const dy = point.y - touchStart.y
-    const nextAxis = scrollAxisRef.current ?? ((Math.abs(dx) > AXIS_LOCK_PX || Math.abs(dy) > AXIS_LOCK_PX)
-      ? Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical'
-      : null)
+    const nextAxis =
+      scrollAxisRef.current ??
+      (Math.abs(dx) > AXIS_LOCK_PX || Math.abs(dy) > AXIS_LOCK_PX
+        ? Math.abs(dx) > Math.abs(dy)
+          ? 'horizontal'
+          : 'vertical'
+        : null)
 
     if (nextAxis !== scrollAxisRef.current) {
       scrollAxisRef.current = nextAxis
@@ -215,12 +219,15 @@ export function BookmarksList({
     )
   }
   return (
-    <div className="qar-react-bookmarks-list" aria-label="Bookmarks" data-bookmarks-list="">
+    <section className="qar-react-bookmarks-list" aria-label="Bookmarks" data-bookmarks-list="">
       {groupedBookmarks.map(([surah, list]) => (
         <div className="qar-react-bookmarks-section" data-surah={surah} key={surah}>
           <div className="qar-react-bookmarks-section-hdr">
             <span className="qar-react-bookmarks-section-name">{sectionName(surah, list, meta)}</span>
-            <span className="qar-react-bookmarks-section-count" aria-label={`${list.length} bookmarks`}>{list.length}</span>
+            <span className="qar-react-bookmarks-section-count">
+              <span className="qar:sr-only">{`${list.length} bookmarks`}</span>
+              <span aria-hidden="true">{list.length}</span>
+            </span>
           </div>
           <ul className="qar-react-bookmarks-rows">
             {list.map((bookmark) => {
@@ -229,7 +236,10 @@ export function BookmarksList({
               const preview = pageBookmark ? 'Mushaf page bookmark' : (meta.snippets.get(bookmark.verseKey) ?? '')
               return (
                 <li
-                  className={cn('qar-react-bookmarks-row', openSwipeKey === bookmark.verseKey && 'qar-react-bookmarks-row--swiped')}
+                  className={cn(
+                    'qar-react-bookmarks-row',
+                    openSwipeKey === bookmark.verseKey && 'qar-react-bookmarks-row--swiped',
+                  )}
                   data-bookmark-kind={pageBookmark ? 'page' : 'verse'}
                   data-verse-key={bookmark.verseKey}
                   key={`${bookmark.riwayah}:${bookmark.verseKey}`}
@@ -260,7 +270,9 @@ export function BookmarksList({
                     >
                       {preview}
                     </span>
-                    <span className="qar-react-bookmarks-row-chev" aria-hidden="true">›</span>
+                    <span className="qar-react-bookmarks-row-chev" aria-hidden="true">
+                      ›
+                    </span>
                   </Button>
                   <Button
                     aria-label={bookmarkDeleteLabel(bookmark)}
@@ -281,7 +293,7 @@ export function BookmarksList({
           </ul>
         </div>
       ))}
-    </div>
+    </section>
   )
 }
 
@@ -294,23 +306,25 @@ function groupBookmarks(bookmarks: BookmarkListItem[]): Array<[number, BookmarkL
   }
   return Array.from(grouped.entries())
     .sort(([a, aRows], [b, bRows]) => groupSortKey(a, aRows) - groupSortKey(b, bRows))
-    .map(([surah, rows]) => [
-      surah,
-      [...rows].sort(compareBookmarkRows),
-    ])
+    .map(([surah, rows]) => [surah, [...rows].sort(compareBookmarkRows)])
 }
 
 function bookmarkMetaFromRows(bookmarks: BookmarkListItem[]): BookmarkMeta {
   return {
-    snippets: new Map(bookmarks.flatMap((bookmark) => bookmark.arabicSnippet ? [[bookmark.verseKey, bookmark.arabicSnippet]] : [])),
-    surahNames: new Map(bookmarks.flatMap((bookmark) => bookmark.surahName ? [[bookmark.surah, bookmark.surahName]] : [])),
+    snippets: new Map(
+      bookmarks.flatMap((bookmark) => (bookmark.arabicSnippet ? [[bookmark.verseKey, bookmark.arabicSnippet]] : [])),
+    ),
+    surahNames: new Map(
+      bookmarks.flatMap((bookmark) => (bookmark.surahName ? [[bookmark.surah, bookmark.surahName]] : [])),
+    ),
   }
 }
 
 async function loadBookmarkMeta(bookmarks: BookmarkListItem[]): Promise<BookmarkMeta> {
   const meta = bookmarkMetaFromRows(bookmarks)
   if (bookmarks.length === 0) return meta
-  if (bookmarks.every((bookmark) => meta.surahNames.has(bookmark.surah) && meta.snippets.has(bookmark.verseKey))) return meta
+  if (bookmarks.every((bookmark) => meta.surahNames.has(bookmark.surah) && meta.snippets.has(bookmark.verseKey)))
+    return meta
   if (typeof fetch === 'undefined') return meta
 
   await loadSurahNames(meta, bookmarks)
@@ -324,7 +338,7 @@ async function loadSurahNames(meta: BookmarkMeta, bookmarks: BookmarkListItem[])
   try {
     const response = await fetch('/dataset/surahs.json')
     if (!response.ok) return
-    const rows = await response.json() as Array<{ n?: number; name?: string }>
+    const rows = (await response.json()) as Array<{ n?: number; name?: string }>
     for (const row of rows) {
       if (Number.isInteger(row.n) && typeof row.name === 'string') meta.surahNames.set(row.n as number, row.name)
     }
@@ -343,21 +357,23 @@ async function loadSnippets(meta: BookmarkMeta, bookmarks: BookmarkListItem[]): 
     missingBySurah.set(bookmark.surah, rows)
   }
 
-  await Promise.all(Array.from(missingBySurah.entries()).map(async ([surah, rows]) => {
-    try {
-      const padded = String(surah).padStart(3, '0')
-      const response = await fetch(`/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/${padded}.json`)
-      if (!response.ok) return
-      const payload = await response.json() as { ayat?: Array<{ aya_no?: number; aya_text?: string }> }
-      for (const row of rows) {
-        const verse = verseNumber(row.verseKey)
-        const ayah = payload.ayat?.find((candidate) => candidate.aya_no === verse)
-        if (typeof ayah?.aya_text === 'string') meta.snippets.set(row.verseKey, truncateArabic(ayah.aya_text))
+  await Promise.all(
+    Array.from(missingBySurah.entries()).map(async ([surah, rows]) => {
+      try {
+        const padded = String(surah).padStart(3, '0')
+        const response = await fetch(`/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/${padded}.json`)
+        if (!response.ok) return
+        const payload = (await response.json()) as { ayat?: Array<{ aya_no?: number; aya_text?: string }> }
+        for (const row of rows) {
+          const verse = verseNumber(row.verseKey)
+          const ayah = payload.ayat?.find((candidate) => candidate.aya_no === verse)
+          if (typeof ayah?.aya_text === 'string') meta.snippets.set(row.verseKey, truncateArabic(ayah.aya_text))
+        }
+      } catch {
+        // Missing snippets do not block jump/delete behavior.
       }
-    } catch {
-      // Missing snippets do not block jump/delete behavior.
-    }
-  }))
+    }),
+  )
 }
 
 function truncateArabic(text: string): string {
@@ -401,5 +417,7 @@ function bookmarkJumpLabel(bookmark: BookmarkListItem): string {
 
 function bookmarkDeleteLabel(bookmark: BookmarkListItem): string {
   const page = pageNumberForBookmark(bookmark)
-  return isMushafPageBookmark(bookmark) && page ? `Delete bookmark Mushaf page ${page}` : `Delete bookmark ${bookmark.verseKey}`
+  return isMushafPageBookmark(bookmark) && page
+    ? `Delete bookmark Mushaf page ${page}`
+    : `Delete bookmark ${bookmark.verseKey}`
 }

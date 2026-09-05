@@ -90,7 +90,9 @@ export function useWirdReminderScheduler(): void {
 }
 
 async function loadSurahCounts(): Promise<SurahCount[]> {
-  cachedCounts ??= loadReaderSurahIndex(fetch).then((rows) => rows.map((row) => ({ count: row.counts.qaloon, n: row.n })))
+  cachedCounts ??= loadReaderSurahIndex(fetch).then((rows) =>
+    rows.map((row) => ({ count: row.counts.qaloon, n: row.n })),
+  )
   return cachedCounts
 }
 

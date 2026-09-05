@@ -43,13 +43,16 @@ export function ReaderPageShell({
   const dailyWirdVisible = showWirdStatus
   const lastScrollTopRef = useRef(0)
 
-  const setChromeVisible = useCallback((nextVisible: boolean) => {
-    if (chromeVisible === undefined) {
-      setInternalChromeVisible(nextVisible)
-    } else {
-      onChromeVisibleChange?.(nextVisible)
-    }
-  }, [chromeVisible, onChromeVisibleChange])
+  const setChromeVisible = useCallback(
+    (nextVisible: boolean) => {
+      if (chromeVisible === undefined) {
+        setInternalChromeVisible(nextVisible)
+      } else {
+        onChromeVisibleChange?.(nextVisible)
+      }
+    },
+    [chromeVisible, onChromeVisibleChange],
+  )
 
   useEffect(() => {
     if (!drawerState.open) return undefined
@@ -106,7 +109,13 @@ export function ReaderPageShell({
 
   return (
     <ReaderInteractionProvider suspended={interactionSuspended || drawerState.open}>
-      <main className={`qar-react-reader-shell qar:bg-canvas qar:text-text${mode === 'verse' ? ' qar:min-h-screen' : ''}`} aria-label={mode === 'verse' ? 'Verse reader' : 'Mushaf reader'} data-reader-mode={mode} id="reader-main" tabIndex={-1}>
+      <main
+        className={`qar-react-reader-shell qar:bg-canvas qar:text-text${mode === 'verse' ? ' qar:min-h-screen' : ''}`}
+        aria-label={mode === 'verse' ? 'Verse reader' : 'Mushaf reader'}
+        data-reader-mode={mode}
+        id="reader-main"
+        tabIndex={-1}
+      >
         <ReaderChrome
           mode={mode}
           onBlurCapture={(event) => {
@@ -127,19 +136,28 @@ export function ReaderPageShell({
           }}
           title={surahLabel}
           visible={visible}
-          wirdStatus={dailyWirdVisible && wirdSummary ? (
-            <ReaderWirdStatusIndicator
-              onOpen={() => {
-                setChromeVisible(true)
-                setDrawerWirdInitialView('detail')
-                dispatchDrawer({ returnFocusId: 'reader-wird-status-trigger', type: 'open' })
-              }}
-              summary={wirdSummary}
-            />
-          ) : null}
+          wirdStatus={
+            dailyWirdVisible && wirdSummary ? (
+              <ReaderWirdStatusIndicator
+                onOpen={() => {
+                  setChromeVisible(true)
+                  setDrawerWirdInitialView('detail')
+                  dispatchDrawer({ returnFocusId: 'reader-wird-status-trigger', type: 'open' })
+                }}
+                summary={wirdSummary}
+              />
+            ) : null
+          }
         />
         {drawerState.open && (
-          <div className="qar-react-nav-drawer-overlay" onClick={() => dispatchDrawer({ reason: 'outside', type: 'close' })} role="presentation">
+          <div
+            className="qar-react-nav-drawer-overlay"
+            onPointerDown={(event) => {
+              if (event.target !== event.currentTarget) return
+              dispatchDrawer({ reason: 'outside', type: 'close' })
+            }}
+            role="presentation"
+          >
             <NavDrawer
               bookmarks={bookmarks}
               currentLabel={label}

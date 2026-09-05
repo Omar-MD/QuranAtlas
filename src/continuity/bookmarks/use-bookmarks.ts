@@ -52,11 +52,19 @@ export function useBookmarks() {
     deleteBookmark: async (bookmark: BookmarkIdentity) => {
       const db = await openReactDb()
       await deleteBookmark(db, bookmark)
-      setBookmarks((current) => current.filter((row) => row.riwayah !== bookmark.riwayah || row.verseKey !== bookmark.verseKey))
+      setBookmarks((current) =>
+        current.filter((row) => row.riwayah !== bookmark.riwayah || row.verseKey !== bookmark.verseKey),
+      )
     },
     riwayah,
     status,
-    toggleBookmark: async (bookmark: { kind?: BookmarkKind; page?: number; riwayah?: Riwayah; surah: number; verseKey: string }) => {
+    toggleBookmark: async (bookmark: {
+      kind?: BookmarkKind
+      page?: number
+      riwayah?: Riwayah
+      surah: number
+      verseKey: string
+    }) => {
       const db = await openReactDb()
       await toggleStoredBookmark(db, {
         kind: bookmark.kind,

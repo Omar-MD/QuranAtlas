@@ -10,11 +10,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
 const CATALOG_DIR = join(REPO_ROOT, 'data', 'catalog')
 
-const SOURCE_FILES = [
-  'quran-sources.json',
-  'translation-sources.json',
-  'tafsir-sources.json',
-]
+const SOURCE_FILES = ['quran-sources.json', 'translation-sources.json', 'tafsir-sources.json']
 
 const SEARCH_SOURCE_FILE = 'search-sources.json'
 const SEARCH_LICENSE_FILE = 'search-licenses.json'
@@ -63,7 +59,7 @@ export async function loadSourceCatalog(catalogDir = CATALOG_DIR) {
     searchSources,
     searchLicenses,
     searchVerification,
-    sources: sourceGroups.flatMap((group) => Array.isArray(group) ? group : []),
+    sources: sourceGroups.flatMap((group) => (Array.isArray(group) ? group : [])),
   }
   catalog.mushafContractEvidence = await loadMushafContractEvidence(catalog.mushafAssets, catalogDir)
   return catalog
@@ -77,29 +73,33 @@ function isInside(parent, candidate) {
 async function loadMushafContractEvidence(mushafAssets, catalogDir) {
   const evidence = {}
   const assets = Array.isArray(mushafAssets?.assets) ? mushafAssets.assets : []
-  await Promise.all(assets.filter((asset) => asset?.sourceKind === 'local-pdf').map(async (asset) => {
-    const key = `${asset.riwayah}/${asset.mushafEditionId}`
-    const record = {}
-    for (const [field, filename] of Object.entries({
-      sourceContractPath: 'source',
-      pageStartReviewPath: 'review',
-      framingPath: 'framing',
-      mediaPolicyPath: 'media',
-      distributionPath: 'distribution',
-    })) {
-      const path = typeof asset[field] === 'string' ? join(catalogDir, asset[field]) : ''
-      if (!path || !isInside(catalogDir, path)) {
-        record[filename] = { error: 'missing' }
-        continue
-      }
-      try {
-        record[filename] = { value: await readJson(path) }
-      } catch (error) {
-        record[filename] = { error: error?.code === 'ENOENT' ? 'missing' : 'invalid' }
-      }
-    }
-    evidence[key] = record
-  }))
+  await Promise.all(
+    assets
+      .filter((asset) => asset?.sourceKind === 'local-pdf')
+      .map(async (asset) => {
+        const key = `${asset.riwayah}/${asset.mushafEditionId}`
+        const record = {}
+        for (const [field, filename] of Object.entries({
+          sourceContractPath: 'source',
+          pageStartReviewPath: 'review',
+          framingPath: 'framing',
+          mediaPolicyPath: 'media',
+          distributionPath: 'distribution',
+        })) {
+          const path = typeof asset[field] === 'string' ? join(catalogDir, asset[field]) : ''
+          if (!path || !isInside(catalogDir, path)) {
+            record[filename] = { error: 'missing' }
+            continue
+          }
+          try {
+            record[filename] = { value: await readJson(path) }
+          } catch (error) {
+            record[filename] = { error: error?.code === 'ENOENT' ? 'missing' : 'invalid' }
+          }
+        }
+        evidence[key] = record
+      }),
+  )
   return evidence
 }
 
@@ -324,9 +324,9 @@ function validateSearchMorphologySource(source, verification, context) {
 
 function hasAcceptedSha256(checksums) {
   if (!isRecord(checksums) || checksums.algorithm !== 'sha-256') return false
-  return arrayOrEmpty(checksums.accepted).some((checksum) => (
-    checksum === 'normalized-source-checksum-bound-at-build' || /^[a-f0-9]{64}$/.test(checksum)
-  ))
+  return arrayOrEmpty(checksums.accepted).some(
+    (checksum) => checksum === 'normalized-source-checksum-bound-at-build' || /^[a-f0-9]{64}$/.test(checksum),
+  )
 }
 
 function arrayOrEmpty(value) {
@@ -422,11 +422,13 @@ function validateMushafAssets(mushafCatalog, context) {
   }
 
   for (const [riwayah, mushafEditionId] of Object.entries(defaults)) {
-    const defaultAsset = assets.find((asset) => asset?.riwayah === riwayah && asset?.mushafEditionId === mushafEditionId)
+    const defaultAsset = assets.find(
+      (asset) => asset?.riwayah === riwayah && asset?.mushafEditionId === mushafEditionId,
+    )
     if (!assetKeys.has(`${riwayah}:${mushafEditionId}`)) {
       context.errors.push(`mushaf asset default ${riwayah} references missing edition ${mushafEditionId}`)
     }
-    if (riwayah === 'qaloon' && (!defaultAsset || defaultAsset.sourceKind !== 'quran-ws' || defaultAsset.shipped !== true)) {
+    if (riwayah === 'qaloon' && (defaultAsset?.sourceKind !== 'quran-ws' || defaultAsset?.shipped !== true)) {
       context.errors.push('mushaf asset default qaloon must reference a shipped quran.ws edition')
     }
   }
@@ -468,7 +470,9 @@ function validateMushafAssetSourceKind(asset, key, riwayah, context) {
     if (asset.distributionAuthorizationId !== distributionAuthorizationId) {
       context.errors.push(`mushaf asset ${key} distributionAuthorizationId must be ${distributionAuthorizationId}`)
     } else if (!context.licenseById.has(distributionAuthorizationId)) {
-      context.errors.push(`mushaf asset ${key} references missing distribution authorization ${distributionAuthorizationId}`)
+      context.errors.push(
+        `mushaf asset ${key} references missing distribution authorization ${distributionAuthorizationId}`,
+      )
     } else if (context.licenseById.get(distributionAuthorizationId).status !== 'restricted') {
       context.errors.push(`mushaf asset ${key} distribution authorization must remain restricted to its recorded scope`)
     }
@@ -510,46 +514,87 @@ function validatePrivateMushafContractEvidence(asset, key, context) {
   const media = evidence.media?.value
   const distribution = evidence.distribution?.value
   if (!source) {
-    context.errors.push(`mushaf asset ${key} source contract is ${evidence.source?.error === 'missing' ? 'missing' : 'invalid'}`)
+    context.errors.push(
+      `mushaf asset ${key} source contract is ${evidence.source?.error === 'missing' ? 'missing' : 'invalid'}`,
+    )
     return
   }
-  if (source.version !== 1 || source.mushafEditionId !== asset.mushafEditionId || source.sourceKind !== 'local-pdf' || !isSha256(source.sha256) || source.logicalPageCount !== asset.pageCount) {
+  if (
+    source.version !== 1 ||
+    source.mushafEditionId !== asset.mushafEditionId ||
+    source.sourceKind !== 'local-pdf' ||
+    !isSha256(source.sha256) ||
+    source.logicalPageCount !== asset.pageCount
+  ) {
     context.errors.push(`mushaf asset ${key} source contract identity is invalid`)
   }
   if (!review) {
-    context.errors.push(`mushaf asset ${key} page-start review contract is ${evidence.review?.error === 'missing' ? 'missing' : 'invalid'}`)
-  } else if (review.version !== 1 || review.mushafEditionId !== asset.mushafEditionId || review.sourcePdfSha256 !== source.sha256 || !hasValidReviewRows(review.pageStartReviews, source, asset.pageCount)) {
+    context.errors.push(
+      `mushaf asset ${key} page-start review contract is ${evidence.review?.error === 'missing' ? 'missing' : 'invalid'}`,
+    )
+  } else if (
+    review.version !== 1 ||
+    review.mushafEditionId !== asset.mushafEditionId ||
+    review.sourcePdfSha256 !== source.sha256 ||
+    !hasValidReviewRows(review.pageStartReviews, source, asset.pageCount)
+  ) {
     context.errors.push(`mushaf asset ${key} page-start review contract is invalid`)
   }
   if (!framing) {
-    context.errors.push(`mushaf asset ${key} framing contract is ${evidence.framing?.error === 'missing' ? 'missing' : 'invalid'}`)
-  } else if (framing.version !== 1 || framing.mushafEditionId !== asset.mushafEditionId || framing.coordinateSpace !== 'pdf-crop-box-normalized' || !hasValidFramingRows(framing.pages, source, asset.pageCount)) {
+    context.errors.push(
+      `mushaf asset ${key} framing contract is ${evidence.framing?.error === 'missing' ? 'missing' : 'invalid'}`,
+    )
+  } else if (
+    framing.version !== 1 ||
+    framing.mushafEditionId !== asset.mushafEditionId ||
+    framing.coordinateSpace !== 'pdf-crop-box-normalized' ||
+    !hasValidFramingRows(framing.pages, source, asset.pageCount)
+  ) {
     context.errors.push(`mushaf asset ${key} framing contract is invalid`)
   }
   if (!media) {
-    context.errors.push(`mushaf asset ${key} media policy contract is ${evidence.media?.error === 'missing' ? 'missing' : 'invalid'}`)
-  } else if (media.version !== 1 || media.mushafEditionId !== asset.mushafEditionId || media.kind !== 'external-image' || media.mimeType !== 'image/webp' || media.renderDpi !== 300 || media.encoder?.command !== 'cwebp' || media.encoder?.quality !== 88 || media.encoder?.method !== 6 || !hasValidMediaRenditions(media.renditions)) {
+    context.errors.push(
+      `mushaf asset ${key} media policy contract is ${evidence.media?.error === 'missing' ? 'missing' : 'invalid'}`,
+    )
+  } else if (
+    media.version !== 1 ||
+    media.mushafEditionId !== asset.mushafEditionId ||
+    media.kind !== 'external-image' ||
+    media.mimeType !== 'image/webp' ||
+    media.renderDpi !== 300 ||
+    media.encoder?.command !== 'cwebp' ||
+    media.encoder?.quality !== 88 ||
+    media.encoder?.method !== 6 ||
+    !hasValidMediaRenditions(media.renditions)
+  ) {
     context.errors.push(`mushaf asset ${key} media policy contract is invalid`)
   } else {
     try {
       validatePassedPrivateMediaGate(media)
     } catch {
-      context.errors.push(`mushaf asset ${key} media policy contract requires a passed media gate with runtime evidence`)
+      context.errors.push(
+        `mushaf asset ${key} media policy contract requires a passed media gate with runtime evidence`,
+      )
     }
   }
   if (!distribution) {
-    context.errors.push(`mushaf asset ${key} distribution contract is ${evidence.distribution?.error === 'missing' ? 'missing' : 'invalid'}`)
-  } else if (distribution.version !== 1
-    || distribution.mushafEditionId !== asset.mushafEditionId
-    || distribution.authorization !== asset.distributionAuthorizationId
-    || distribution.repository !== 'Omar-MD/QuranAtlas'
-    || distribution.releaseTag !== 'mushaf-qalun-furatiyyah-2023-v1'
-    || distribution.assetName !== 'qalun-furatiyyah-2023-v1-normalized-v1.tar'
-    || !Number.isInteger(distribution.archiveBytes) || distribution.archiveBytes <= 0
-    || !isSha256(distribution.archiveSha256)
-    || !isSha256(distribution.normalizedContentDigest)
-    || !isSha256(distribution.normalizedContractDigest)
-    || distribution.fileCount !== 1209) {
+    context.errors.push(
+      `mushaf asset ${key} distribution contract is ${evidence.distribution?.error === 'missing' ? 'missing' : 'invalid'}`,
+    )
+  } else if (
+    distribution.version !== 1 ||
+    distribution.mushafEditionId !== asset.mushafEditionId ||
+    distribution.authorization !== asset.distributionAuthorizationId ||
+    distribution.repository !== 'Omar-MD/QuranAtlas' ||
+    distribution.releaseTag !== 'mushaf-qalun-furatiyyah-2023-v1' ||
+    distribution.assetName !== 'qalun-furatiyyah-2023-v1-normalized-v1.tar' ||
+    !Number.isInteger(distribution.archiveBytes) ||
+    distribution.archiveBytes <= 0 ||
+    !isSha256(distribution.archiveSha256) ||
+    !isSha256(distribution.normalizedContentDigest) ||
+    !isSha256(distribution.normalizedContractDigest) ||
+    distribution.fileCount !== 1209
+  ) {
     context.errors.push(`mushaf asset ${key} distribution contract is invalid`)
   }
 }
@@ -559,40 +604,62 @@ function isSha256(value) {
 }
 
 function hasValidReviewRows(rows, source, pageCount) {
-  return Array.isArray(rows) && rows.length === pageCount && rows.every((row, index) => (
-    row?.page === index + 1
-    && row.sourcePdfPage === source.readerPdfPageStart + index
-    && row.result === 'wording-match'
-    && Number.isInteger(row.canonicalFirstVerse?.surah)
-    && Number.isInteger(row.canonicalFirstVerse?.verse)
-  ))
+  return (
+    Array.isArray(rows) &&
+    rows.length === pageCount &&
+    rows.every(
+      (row, index) =>
+        row?.page === index + 1 &&
+        row.sourcePdfPage === source.readerPdfPageStart + index &&
+        row.result === 'wording-match' &&
+        Number.isInteger(row.canonicalFirstVerse?.surah) &&
+        Number.isInteger(row.canonicalFirstVerse?.verse),
+    )
+  )
 }
 
 function hasValidFramingRows(rows, source, pageCount) {
-  return Array.isArray(rows) && rows.length === pageCount && rows.every((row, index) => (
-    row?.page === index + 1
-    && row.sourcePdfPage === source.readerPdfPageStart + index
-    && hasUnitRect(row.sourceFullFrame)
-    && hasUnitRect(row.sourceTextFrame)
-    && row.sourceTextFrame.x >= row.sourceFullFrame.x
-    && row.sourceTextFrame.y >= row.sourceFullFrame.y
-    && row.sourceTextFrame.x + row.sourceTextFrame.width <= row.sourceFullFrame.x + row.sourceFullFrame.width
-    && row.sourceTextFrame.y + row.sourceTextFrame.height <= row.sourceFullFrame.y + row.sourceFullFrame.height
-    && ['left', 'right', 'none'].includes(row.sideLane)
-  ))
+  return (
+    Array.isArray(rows) &&
+    rows.length === pageCount &&
+    rows.every(
+      (row, index) =>
+        row?.page === index + 1 &&
+        row.sourcePdfPage === source.readerPdfPageStart + index &&
+        hasUnitRect(row.sourceFullFrame) &&
+        hasUnitRect(row.sourceTextFrame) &&
+        row.sourceTextFrame.x >= row.sourceFullFrame.x &&
+        row.sourceTextFrame.y >= row.sourceFullFrame.y &&
+        row.sourceTextFrame.x + row.sourceTextFrame.width <= row.sourceFullFrame.x + row.sourceFullFrame.width &&
+        row.sourceTextFrame.y + row.sourceTextFrame.height <= row.sourceFullFrame.y + row.sourceFullFrame.height &&
+        ['left', 'right', 'none'].includes(row.sideLane),
+    )
+  )
 }
 
 function hasUnitRect(rect) {
-  return rect && typeof rect === 'object'
-    && ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(rect[key]))
-    && rect.x >= 0 && rect.y >= 0 && rect.width > 0 && rect.height > 0
-    && rect.x + rect.width <= 1 && rect.y + rect.height <= 1
+  return (
+    rect &&
+    typeof rect === 'object' &&
+    ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(rect[key])) &&
+    rect.x >= 0 &&
+    rect.y >= 0 &&
+    rect.width > 0 &&
+    rect.height > 0 &&
+    rect.x + rect.width <= 1 &&
+    rect.y + rect.height <= 1
+  )
 }
 
 function hasValidMediaRenditions(renditions) {
-  return Array.isArray(renditions) && renditions.length === 2
-    && renditions[0]?.role === 'preview' && renditions[0]?.width === 1280
-    && renditions[1]?.role === 'full' && renditions[1]?.width === 2136
+  return (
+    Array.isArray(renditions) &&
+    renditions.length === 2 &&
+    renditions[0]?.role === 'preview' &&
+    renditions[0]?.width === 1280 &&
+    renditions[1]?.role === 'full' &&
+    renditions[1]?.width === 2136
+  )
 }
 
 export async function main() {

@@ -64,9 +64,13 @@ export function SavedSearchesNavPanel({
     if (!touchStart || touchStart.key !== key) return null
     const dx = point.x - touchStart.x
     const dy = point.y - touchStart.y
-    const nextAxis = scrollAxisRef.current ?? ((Math.abs(dx) > AXIS_LOCK_PX || Math.abs(dy) > AXIS_LOCK_PX)
-      ? Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical'
-      : null)
+    const nextAxis =
+      scrollAxisRef.current ??
+      (Math.abs(dx) > AXIS_LOCK_PX || Math.abs(dy) > AXIS_LOCK_PX
+        ? Math.abs(dx) > Math.abs(dy)
+          ? 'horizontal'
+          : 'vertical'
+        : null)
 
     if (nextAxis !== scrollAxisRef.current) {
       scrollAxisRef.current = nextAxis
@@ -191,7 +195,10 @@ export function SavedSearchesNavPanel({
         <ul className="qar-react-nav-drawer-saved-searches-list">
           {records.map((record) => (
             <li
-              className={cn('qar-react-nav-drawer-saved-searches-row', openSwipeKey === record.id && 'qar-react-nav-drawer-saved-searches-row--swiped')}
+              className={cn(
+                'qar-react-nav-drawer-saved-searches-row',
+                openSwipeKey === record.id && 'qar-react-nav-drawer-saved-searches-row--swiped',
+              )}
               key={record.id}
             >
               <Button
@@ -209,10 +216,16 @@ export function SavedSearchesNavPanel({
                 unstyled
               >
                 <span className="qar-react-nav-drawer-saved-searches-copy" dir="auto">
-                  <span className="qar-react-nav-drawer-saved-searches-name"><bdi>{record.intent.name}</bdi></span>
-                  <span className="qar-react-nav-drawer-saved-searches-query"><bdi>{record.intent.queryText}</bdi></span>
+                  <span className="qar-react-nav-drawer-saved-searches-name">
+                    <bdi>{record.intent.name}</bdi>
+                  </span>
+                  <span className="qar-react-nav-drawer-saved-searches-query">
+                    <bdi>{record.intent.queryText}</bdi>
+                  </span>
                 </span>
-                <span className="qar-react-nav-drawer-saved-searches-chev" aria-hidden="true">›</span>
+                <span className="qar-react-nav-drawer-saved-searches-chev" aria-hidden="true">
+                  ›
+                </span>
               </Button>
               <Button
                 aria-label={`Delete saved search ${record.intent.name}`}

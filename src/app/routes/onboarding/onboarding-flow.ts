@@ -20,7 +20,7 @@ export type OnboardingSourceOption = {
 export function createInitialMushafEditionSetupState(editions: MushafEditionOption[]): MushafEditionSetupFlowState {
   return {
     persistenceStatus: 'idle',
-    selectedEditionId: editions.length === 1 ? editions[0]?.id ?? null : null,
+    selectedEditionId: editions.length === 1 ? (editions[0]?.id ?? null) : null,
   }
 }
 
@@ -45,6 +45,9 @@ export function mushafEditionSetupReducer(
   }
 }
 
-export function canContinueMushafEditionSetup(state: MushafEditionSetupFlowState, editions: MushafEditionOption[]): boolean {
+export function canContinueMushafEditionSetup(
+  state: MushafEditionSetupFlowState,
+  editions: MushafEditionOption[],
+): boolean {
   return state.selectedEditionId !== null && editions.some((edition) => edition.id === state.selectedEditionId)
 }

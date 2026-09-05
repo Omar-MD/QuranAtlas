@@ -36,11 +36,7 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
         ))}
       </dl>
 
-      {overview.recoveryMessage ? (
-        <p className="qar-search-overview-recovery">
-          {overview.recoveryMessage}
-        </p>
-      ) : null}
+      {overview.recoveryMessage ? <p className="qar-search-overview-recovery">{overview.recoveryMessage}</p> : null}
 
       {overview.topSurahs.length > 0 ? (
         <section aria-label="Top surah distribution" className="qar-search-overview-list">
@@ -72,7 +68,12 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
 
       <div className="qar-search-overview-actions">
         {overview.actions.map((action, index) => (
-          <Button key={action.label} onClick={() => onAction(action)} size="sm" variant={index === 0 ? 'primary' : 'secondary'}>
+          <Button
+            key={action.label}
+            onClick={() => onAction(action)}
+            size="sm"
+            variant={index === 0 ? 'primary' : 'secondary'}
+          >
             {action.label}
           </Button>
         ))}

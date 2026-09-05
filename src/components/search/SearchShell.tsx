@@ -27,7 +27,10 @@ export function SearchShell() {
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
   const aliasesPromiseRef = useRef<Promise<VerseAliases> | null>(null)
   const compatibilityKey = useMemo(
-    () => search.packVersion ? `qa-search-core-hafs-v1:${search.packVersion}:abi1:normalizer1` : 'search-pack-abi-1-normalizer-1',
+    () =>
+      search.packVersion
+        ? `qa-search-core-hafs-v1:${search.packVersion}:abi1:normalizer1`
+        : 'search-pack-abi-1-normalizer-1',
     [search.packVersion],
   )
 
@@ -96,7 +99,10 @@ export function SearchShell() {
     if (saved.status && !search.error) setSavedStatusMessage(saved.status)
   }, [saved.status, search.error])
 
+  const lastSearchStatusRef = useRef(search.searchStatus)
   useEffect(() => {
+    if (lastSearchStatusRef.current === search.searchStatus) return
+    lastSearchStatusRef.current = search.searchStatus
     setSavedStatusMessage('')
   }, [search.searchStatus])
 
@@ -122,7 +128,14 @@ export function SearchShell() {
         />
       </div>
       {drawerState.open && (
-        <div className="qar-react-nav-drawer-overlay qar-search-nav-drawer-overlay" onClick={() => dispatchDrawer({ reason: 'outside', type: 'close' })} role="presentation">
+        <div
+          className="qar-react-nav-drawer-overlay qar-search-nav-drawer-overlay"
+          onPointerDown={(event) => {
+            if (event.target !== event.currentTarget) return
+            dispatchDrawer({ reason: 'outside', type: 'close' })
+          }}
+          role="presentation"
+        >
           <NavDrawer
             activeMode="search"
             bookmarks={bookmarks}
@@ -143,11 +156,13 @@ export function SearchShell() {
           <SearchHeader
             canSave={search.canSaveSearch}
             onQueryChange={search.setQuery}
-            onSaveSearch={() => void saved.saveSearch({
-              mode: 'all',
-              packCompatibilityKey: compatibilityKey,
-              query: search.query,
-            })}
+            onSaveSearch={() =>
+              void saved.saveSearch({
+                mode: 'all',
+                packCompatibilityKey: compatibilityKey,
+                query: search.query,
+              })
+            }
             onSubmit={(submittedQuery) => {
               search.setQuery(submittedQuery)
               search.submitSearch({ query: submittedQuery })
@@ -165,11 +180,7 @@ export function SearchShell() {
           <div className="qar-search-status-row">
             <p>{search.packMessage}</p>
           </div>
-          {search.error ? (
-            <p className="qar-search-error">
-              {search.error}
-            </p>
-          ) : null}
+          {search.error ? <p className="qar-search-error">{search.error}</p> : null}
           <SearchIndexGate message={search.packMessage} ready={search.packState === 'active'}>
             <SearchWorkspace
               activeTab={search.activeWorkspaceTab}

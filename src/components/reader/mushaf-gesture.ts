@@ -47,9 +47,10 @@ export function decideMushafSettle(input: {
   const direction = mushafDirectionForDelta(input.deltaX)
   const distanceThreshold = Math.min(MAX_DISTANCE_PX, Math.max(MIN_DISTANCE_PX, input.width * DISTANCE_RATIO))
   const distanceMet = Math.abs(input.deltaX) >= distanceThreshold
-  const flickMet = Math.abs(input.deltaX) >= MIN_FLICK_TRAVEL_PX
-    && Math.abs(input.velocityX) >= FLICK_VELOCITY_PX_PER_MS
-    && Math.sign(input.velocityX) === Math.sign(input.deltaX)
+  const flickMet =
+    Math.abs(input.deltaX) >= MIN_FLICK_TRAVEL_PX &&
+    Math.abs(input.velocityX) >= FLICK_VELOCITY_PX_PER_MS &&
+    Math.sign(input.velocityX) === Math.sign(input.deltaX)
   return input.destinationReady && (distanceMet || flickMet)
     ? { direction, outcome: 'commit' }
     : { direction, outcome: 'cancel' }

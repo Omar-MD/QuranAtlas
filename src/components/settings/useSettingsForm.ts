@@ -67,7 +67,8 @@ export function useSettingsForm(): {
         setState({ preferences, status: 'ready' })
       })
       .catch(() => {
-        if (active && !hasUserChangesRef.current) setState({ preferences: DEFAULT_REACT_READER_PREFERENCES, status: 'error' })
+        if (active && !hasUserChangesRef.current)
+          setState({ preferences: DEFAULT_REACT_READER_PREFERENCES, status: 'error' })
       })
     return () => {
       active = false
@@ -148,28 +149,30 @@ export function useSettingsForm(): {
     },
     setMushafPageFraming: persistMushafPageFraming,
     setNightMode: (nightMode) => updatePreferences((current) => ({ ...current, nightMode })),
-    setReadingFlow: (value) => updatePreferences((current) => ({
-      ...current,
-      lineSpacing: value,
-      readerMargin: value,
-      verseSpacing: value,
-      wordSpacing: value,
-    })),
+    setReadingFlow: (value) =>
+      updatePreferences((current) => ({
+        ...current,
+        lineSpacing: value,
+        readerMargin: value,
+        verseSpacing: value,
+        wordSpacing: value,
+      })),
     setTheme: (theme) => updatePreferences((current) => ({ ...current, theme })),
     setTranslationVisible: (translationVisible) => updatePreferences((current) => ({ ...current, translationVisible })),
-    setWirdReaderStatusVisible: (wirdReaderStatusVisible) => updatePreferences(
-      (current) => ({ ...current, wirdReaderStatusVisible }),
-      async () => {
-        if (wirdReaderStatusVisible) return
-        const db = await openReactDb()
-        const plan = await readWirdPlan(db)
-        if (!plan?.reminder.enabled) return
-        await writeWirdPlan(db, {
-          ...plan,
-          reminder: { ...plan.reminder, enabled: false },
-        })
-      },
-    ),
+    setWirdReaderStatusVisible: (wirdReaderStatusVisible) =>
+      updatePreferences(
+        (current) => ({ ...current, wirdReaderStatusVisible }),
+        async () => {
+          if (wirdReaderStatusVisible) return
+          const db = await openReactDb()
+          const plan = await readWirdPlan(db)
+          if (!plan?.reminder.enabled) return
+          await writeWirdPlan(db, {
+            ...plan,
+            reminder: { ...plan.reminder, enabled: false },
+          })
+        },
+      ),
     state,
   }
 }

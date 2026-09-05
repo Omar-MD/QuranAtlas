@@ -1,5 +1,5 @@
 import type { SearchFeatureId } from '../../shared/search'
-import { SearchPackReader } from '../search/pack-reader'
+import type { SearchPackReader } from '../search/pack-reader'
 import type { SearchDecodedShard, SearchPackShardPayload } from '../search/schema'
 
 type ResidentShard = SearchDecodedShard<SearchPackShardPayload> & {

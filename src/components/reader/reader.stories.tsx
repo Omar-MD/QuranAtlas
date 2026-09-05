@@ -58,7 +58,8 @@ const readyCorpus: ReaderCorpusState = {
       surah: 1,
       verse: 7,
       arabic: 'غَيْرِ اِ۬لْمَغْضُوبِ عَلَيْهِمْ وَلَا اَ۬لضَّآلِّينَۖ',
-      translation: 'the path of those You have blessed, not those who have incurred wrath, nor those who have gone astray.',
+      translation:
+        'the path of those You have blessed, not those who have incurred wrath, nor those who have gone astray.',
       translationRole: 'primary' as const,
       translationSourceKey: '1:7',
       footnotes: {},
@@ -84,7 +85,8 @@ const sampleMushafPage: MushafResolvedPage = {
 }
 
 const sampleMushafSvg: ReactInlineMushafSvg = {
-  markup: '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg" class="qa-react-mushaf-svg" aria-hidden="true" focusable="false"><rect width="120" height="180" fill="var(--qa-react-mushaf-ground)"/><path d="M14 16h92v148H14z" fill="none" stroke="var(--qa-react-mushaf-ink)"/><path d="M32 42h56M28 60h64M28 78h64M28 96h64M28 114h64M36 132h48" stroke="var(--qa-react-mushaf-ink)" stroke-width="4" stroke-linecap="round"/></svg>',
+  markup:
+    '<svg viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg" class="qa-react-mushaf-svg" aria-hidden="true" focusable="false"><rect width="120" height="180" fill="var(--qa-react-mushaf-ground)"/><path d="M14 16h92v148H14z" fill="none" stroke="var(--qa-react-mushaf-ink)"/><path d="M32 42h56M28 60h64M28 78h64M28 96h64M28 114h64M36 132h48" stroke="var(--qa-react-mushaf-ink)" stroke-width="4" stroke-linecap="round"/></svg>',
   viewBox: { x: 0, y: 0, width: 120, height: 180 },
   viewBoxText: '0 0 120 180',
 }
@@ -123,7 +125,9 @@ export const VerseReader: Story = {
 }
 
 export const VerseReaderBookmarked: Story = {
-  render: () => <ReaderVerseSurface bookmarkedVerseKeys={new Set(['1:1'])} corpus={readyCorpus} surahIndex={surahIndex} />,
+  render: () => (
+    <ReaderVerseSurface bookmarkedVerseKeys={new Set(['1:1'])} corpus={readyCorpus} surahIndex={surahIndex} />
+  ),
 }
 
 export const VerseReaderLoading: Story = {
@@ -158,33 +162,15 @@ export const MushafMissingPack: Story = {
 }
 
 export const MushafReady: Story = {
-  render: () => (
-    <MushafPageViewer
-      inlineSvg={sampleMushafSvg}
-      resolved={sampleMushafPage}
-      viewMode="auto"
-    />
-  ),
+  render: () => <MushafPageViewer inlineSvg={sampleMushafSvg} resolved={sampleMushafPage} viewMode="auto" />,
 }
 
 export const MushafFitPage: Story = {
-  render: () => (
-    <MushafPageViewer
-      inlineSvg={sampleMushafSvg}
-      resolved={sampleMushafPage}
-      viewMode="fit-page"
-    />
-  ),
+  render: () => <MushafPageViewer inlineSvg={sampleMushafSvg} resolved={sampleMushafPage} viewMode="fit-page" />,
 }
 
 export const MushafFitWidth: Story = {
-  render: () => (
-    <MushafPageViewer
-      inlineSvg={sampleMushafSvg}
-      resolved={sampleMushafPage}
-      viewMode="fit-width"
-    />
-  ),
+  render: () => <MushafPageViewer inlineSvg={sampleMushafSvg} resolved={sampleMushafPage} viewMode="fit-width" />,
 }
 
 export const MushafContinuous: Story = {

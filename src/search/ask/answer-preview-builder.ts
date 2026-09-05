@@ -22,7 +22,7 @@ import {
 } from '../../../shared/search'
 import { SearchCancelledError, type SearchCancellationToken } from '../../search-worker/cancellation'
 import { SearchQueryExecutor } from '../../search-worker/query-executor'
-import { SearchPackReader, SearchPackReaderError } from '../pack-reader'
+import { type SearchPackReader, SearchPackReaderError } from '../pack-reader'
 import { stableQueryHash } from '../query-parser'
 import {
   evidenceAtomForResult,
@@ -124,7 +124,10 @@ export class AskSearchPreviewBuilder {
         }),
         query: input.query,
         queryUnderstanding: understanding,
-        searchPlan: skippedSearchPlan(basePlan, 'The Ask preview boundary policy blocked prose claims before Search execution.'),
+        searchPlan: skippedSearchPlan(
+          basePlan,
+          'The Ask preview boundary policy blocked prose claims before Search execution.',
+        ),
         mode: ambiguous ? 'no-answer' : 'evidence-only',
         answerability: {
           status: ambiguous ? 'needs-clarification' : 'evidence-only',
@@ -187,23 +190,28 @@ export class AskSearchPreviewBuilder {
       })
     }
 
-    const evidencePairs = evidencePairsForResults(results, this.reader.manifest).slice(0, ASK_PREVIEW_EVIDENCE_ATOM_LIMIT)
+    const evidencePairs = evidencePairsForResults(results, this.reader.manifest).slice(
+      0,
+      ASK_PREVIEW_EVIDENCE_ATOM_LIMIT,
+    )
     const evidenceAtoms = evidencePairs.map((pair) => pair.atom)
     const firstPair = evidencePairs[0]
     if (!firstPair) {
       const insufficient: AnswerBlockerLite[] = ['insufficient-evidence']
-      return this.validatedPreview(evidenceOnlyPreview({
-        query: input.query,
-        lens: understanding.lens,
-        queryAst: effectiveAst,
-        sort: input.sort,
-        manifest: this.reader.manifest,
-        understanding,
-        searchPlan,
-        evidenceAtoms,
-        sourceFamilyStatuses,
-        reasons: insufficient,
-      }))
+      return this.validatedPreview(
+        evidenceOnlyPreview({
+          query: input.query,
+          lens: understanding.lens,
+          queryAst: effectiveAst,
+          sort: input.sort,
+          manifest: this.reader.manifest,
+          understanding,
+          searchPlan,
+          evidenceAtoms,
+          sourceFamilyStatuses,
+          reasons: insufficient,
+        }),
+      )
     }
 
     const claim = claimForEvidence({
@@ -214,18 +222,20 @@ export class AskSearchPreviewBuilder {
     })
     if (!claim) {
       const insufficient: AnswerBlockerLite[] = ['insufficient-evidence']
-      return this.validatedPreview(evidenceOnlyPreview({
-        query: input.query,
-        lens: understanding.lens,
-        queryAst: effectiveAst,
-        sort: input.sort,
-        manifest: this.reader.manifest,
-        understanding,
-        searchPlan,
-        evidenceAtoms,
-        sourceFamilyStatuses,
-        reasons: insufficient,
-      }))
+      return this.validatedPreview(
+        evidenceOnlyPreview({
+          query: input.query,
+          lens: understanding.lens,
+          queryAst: effectiveAst,
+          sort: input.sort,
+          manifest: this.reader.manifest,
+          understanding,
+          searchPlan,
+          evidenceAtoms,
+          sourceFamilyStatuses,
+          reasons: insufficient,
+        }),
+      )
     }
     const claimSupport: ClaimSupport = {
       id: `support:${claim.id}`,
@@ -250,11 +260,13 @@ export class AskSearchPreviewBuilder {
       claimSupports: [claimSupport],
       evidenceAtoms,
       evidenceBasis: evidenceBasisFor(sourceFamilyStatuses, evidenceAtoms),
-      evidenceCards: [evidenceCardForResult({
-        result: firstPair.result,
-        evidenceAtomId: firstPair.atom.id,
-        claimSupportId: claimSupport.id,
-      })],
+      evidenceCards: [
+        evidenceCardForResult({
+          result: firstPair.result,
+          evidenceAtomId: firstPair.atom.id,
+          claimSupportId: claimSupport.id,
+        }),
+      ],
       sourceFamilyStatuses,
     }
     return this.validatedPreview(preview)
@@ -301,7 +313,10 @@ export class AskSearchPreviewBuilder {
   }
 }
 
-function evidencePairsForResults(results: SearchResultDto[], manifest: SearchPackReader['manifest']): EvidenceResultPair[] {
+function evidencePairsForResults(
+  results: SearchResultDto[],
+  manifest: SearchPackReader['manifest'],
+): EvidenceResultPair[] {
   const pairs: EvidenceResultPair[] = []
   for (const result of results) {
     const atom = evidenceAtomForResult(result, manifest)
@@ -385,8 +400,7 @@ function canRenderClaim(input: {
   if (input.atom.evidenceType === 'translation') return input.understanding.lens === 'translation'
   if (input.atom.evidenceType === 'morphology') return input.understanding.lens === 'morphology'
   if (input.atom.evidenceType === 'quran-text') {
-    return input.understanding.lens === 'quran-text'
-      || input.understanding.lens === 'phrase'
+    return input.understanding.lens === 'quran-text' || input.understanding.lens === 'phrase'
   }
   return false
 }
@@ -424,9 +438,10 @@ function evidenceBasisFor(
     quranText: evidenceUseFor('quran-text', sourceFamilyStatuses, used),
     translation: evidenceUseFor('translation', sourceFamilyStatuses, used),
     morphology: evidenceUseFor('morphology', sourceFamilyStatuses, used),
-    note: evidenceAtoms.length > 0
-      ? 'Answer claims use the listed typed evidence only.'
-      : 'No typed evidence atom was available for a v1 prose claim.',
+    note:
+      evidenceAtoms.length > 0
+        ? 'Answer claims use the listed typed evidence only.'
+        : 'No typed evidence atom was available for a v1 prose claim.',
   }
 }
 
@@ -470,13 +485,15 @@ function previewIdFor(input: {
   sort: SearchSort
   manifest: SearchPackManifestV1
 }): string {
-  const queryHash = input.queryAst ? stableQueryHash(input.queryAst) : stableQueryHash({
-    astVersion: 1,
-    mode: 'all',
-    rawText: input.query,
-    normalizedText: input.query.trim().toLowerCase(),
-    tokens: [input.query.trim().toLowerCase()].filter(Boolean),
-    filters: {},
-  })
+  const queryHash = input.queryAst
+    ? stableQueryHash(input.queryAst)
+    : stableQueryHash({
+        astVersion: 1,
+        mode: 'all',
+        rawText: input.query,
+        normalizedText: input.query.trim().toLowerCase(),
+        tokens: [input.query.trim().toLowerCase()].filter(Boolean),
+        filters: {},
+      })
   return `ask-preview:${input.manifest.packId}:${input.manifest.packVersion}:${input.manifest.contentHash}:${input.lens}:${input.sort}:${queryHash}`
 }

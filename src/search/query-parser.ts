@@ -33,9 +33,8 @@ export function parseSearchQuery(rawText: string, options: SearchQueryParseOptio
   const normalizationMode = mode === 'exact-word-form' ? 'exact-word-form' : 'normalized'
   const normalizedText = reference ? trimmed : normalizeSearchText(trimmed, normalizationMode)
   const tokens = reference ? [] : tokenizeSearchText(trimmed, normalizationMode)
-  const phraseTokens = mode === 'phrase'
-    ? tokenizeSearchText(trimmed, 'normalized')
-    : inferPhraseTokens(mode, trimmed, tokens)
+  const phraseTokens =
+    mode === 'phrase' ? tokenizeSearchText(trimmed, 'normalized') : inferPhraseTokens(mode, trimmed, tokens)
 
   if (!reference && tokens.length === 0) throw new SearchQueryParseError('Search query has no searchable tokens')
   if (mode === 'phrase') {
@@ -43,7 +42,9 @@ export function parseSearchQuery(rawText: string, options: SearchQueryParseOptio
     assertSearchPhraseWithinPhase1Policy(phraseTokens)
   }
   if (phraseTokens.length > SEARCH_PHASE1_MAX_PHRASE_TOKENS) {
-    throw new SearchQueryParseError(`Search phrase exceeds Phase 1 maximum of ${SEARCH_PHASE1_MAX_PHRASE_TOKENS} tokens`)
+    throw new SearchQueryParseError(
+      `Search phrase exceeds Phase 1 maximum of ${SEARCH_PHASE1_MAX_PHRASE_TOKENS} tokens`,
+    )
   }
 
   const ast: SearchQueryAstV1 = {
@@ -82,18 +83,17 @@ function inferPhraseTokens(mode: SearchQueryMode, rawText: string, tokens: strin
   return tokenizeSearchText(rawText, 'normalized')
 }
 
-function sourceLanesForMode(
-  mode: SearchQueryMode,
-  queryHasArabic: boolean,
-): SearchQueryAstV1['filters']['sourceLane'] {
+function sourceLanesForMode(mode: SearchQueryMode, queryHasArabic: boolean): SearchQueryAstV1['filters']['sourceLane'] {
   if (mode === 'arabic-text' || mode === 'exact-word-form' || mode === 'phrase') return ['arabic-text']
-  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context') return ['arabic-text']
+  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context')
+    return ['arabic-text']
   if (mode === 'translation') return ['translation']
   if (mode === 'context') return ['context']
   return queryHasArabic ? ['arabic-text'] : ['translation', 'context']
 }
 
 function morphologyFiltersForMode(mode: SearchQueryMode): SearchQueryAstV1['filters']['morphology'] | undefined {
-  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context') return [mode]
+  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context')
+    return [mode]
   return undefined
 }

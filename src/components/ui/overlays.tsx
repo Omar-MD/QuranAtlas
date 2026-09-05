@@ -32,7 +32,10 @@ export function Dialog({ title, trigger, children, onOpenChange, open }: DialogP
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30" />
-        <DialogPrimitive.Content aria-describedby={undefined} className="qar:fixed qar:left-1/2 qar:top-1/2 qar:z-50 qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg">
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className="qar:fixed qar:left-1/2 qar:top-1/2 qar:z-50 qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg"
+        >
           <div className="qar:flex qar:items-center qar:justify-between qar:gap-3">
             <DialogPrimitive.Title className="qar:m-0 qar:text-base qar:font-semibold">{title}</DialogPrimitive.Title>
             <CloseButton />
@@ -107,7 +110,10 @@ export function Popover({ trigger, children, ...props }: PopoverProps) {
     <PopoverPrimitive.Root {...props}>
       <PopoverPrimitive.Trigger asChild>{trigger}</PopoverPrimitive.Trigger>
       <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content className="qar:z-50 qar:max-w-sm qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-3 qar:text-sm qar:text-text qar:shadow-lg" sideOffset={8}>
+        <PopoverPrimitive.Content
+          className="qar:z-50 qar:max-w-sm qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-3 qar:text-sm qar:text-text qar:shadow-lg"
+          sideOffset={8}
+        >
           {children}
           <PopoverPrimitive.Arrow className="qar:fill-surface" />
         </PopoverPrimitive.Content>
@@ -124,9 +130,14 @@ export type ToastProps = ToastPrimitive.ToastProps & {
 export function Toast({ title, description, ...props }: ToastProps) {
   return (
     <ToastPrimitive.Provider>
-      <ToastPrimitive.Root className="qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-3 qar:text-text qar:shadow-lg" {...props}>
+      <ToastPrimitive.Root
+        className="qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-3 qar:text-text qar:shadow-lg"
+        {...props}
+      >
         <ToastPrimitive.Title className="qar:text-sm qar:font-semibold">{title}</ToastPrimitive.Title>
-        {description ? <ToastPrimitive.Description className="qar:text-sm qar:text-muted">{description}</ToastPrimitive.Description> : null}
+        {description ? (
+          <ToastPrimitive.Description className="qar:text-sm qar:text-muted">{description}</ToastPrimitive.Description>
+        ) : null}
       </ToastPrimitive.Root>
       <ToastPrimitive.Viewport className="qar:fixed qar:bottom-4 qar:right-4 qar:z-50 qar:grid qar:w-80 qar:gap-2" />
     </ToastPrimitive.Provider>

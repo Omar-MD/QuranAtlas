@@ -5,11 +5,14 @@ import { fileURLToPath } from 'node:url'
 
 const modulePath = fileURLToPath(import.meta.url).replace(/^\/@fs\//, '/')
 const repoRoot = resolve(dirname(modulePath), '..')
-const allowlist = JSON.parse(readFileSync(join(repoRoot, 'src/design-system/docs/measured-layout-allowlist.json'), 'utf8'))
+const allowlist = JSON.parse(
+  readFileSync(join(repoRoot, 'src/design-system/docs/measured-layout-allowlist.json'), 'utf8'),
+)
 const allowedLiteralCssFiles = new Set(allowlist.allowedLiteralCssFiles)
 const allowedArbitraryUtilities = new Set(allowlist.allowedArbitraryUtilities.map((entry) => entry.className))
 const checkedExtensions = new Set(['.ts', '.tsx', '.css'])
-const forbiddenPalette = /\bqar:(?:bg|text|border|ring|from|to|via)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g
+const forbiddenPalette =
+  /\bqar:(?:bg|text|border|ring|from|to|via)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g
 const arbitraryUtility = /\bqar:[\w:-]+-\[[^\]]+\]/g
 const hexColor = /#[0-9a-fA-F]{3,8}\b/g
 const primitiveToken = /var\(--qar-/g
@@ -21,7 +24,7 @@ async function walk(dir) {
   for (const entry of entries) {
     const path = join(dir, entry.name)
     if (entry.isDirectory()) {
-      files.push(...await walk(path))
+      files.push(...(await walk(path)))
     } else if (checkedExtensions.has(extname(entry.name))) {
       files.push(path)
     }

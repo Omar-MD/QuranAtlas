@@ -30,7 +30,11 @@ export function SearchGraphExplore({
         <p className="qar:m-0">{SEARCH_OCCURS_ONCE_NOTE}</p>
       </div>
       <Button disabled={graph.loading} onClick={() => onLoad?.(result)} type="button" variant="secondary">
-        {graph.loading ? 'Loading Explore sections' : loadedForResult ? 'Refresh Explore sections' : 'Load Explore sections'}
+        {graph.loading
+          ? 'Loading Explore sections'
+          : loadedForResult
+            ? 'Refresh Explore sections'
+            : 'Load Explore sections'}
       </Button>
       {graph.loading ? (
         <div aria-live="polite" className="qar-search-graph-loading" role="status">
@@ -57,7 +61,9 @@ function sectionToAccordionItem(section: SearchGraphSection) {
         {section.note ? <p className="qar:m-0">{section.note}</p> : null}
         {section.unavailable ? (
           <p className="qar:m-0">Missing graph feature: {section.unavailable.reason}</p>
-        ) : sectionContent(section)}
+        ) : (
+          sectionContent(section)
+        )}
         {section.sourcePolicy.length > 0 ? (
           <dl className="qar:grid qar:gap-1 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-2">
             {section.sourcePolicy.map((row) => (
@@ -92,8 +98,13 @@ function sectionContent(section: SearchGraphSection) {
       <ul className="qar:m-0 qar:grid qar:list-none qar:gap-2 qar:p-0">
         {section.rows.map((row) => (
           <li key={row.ref}>
-            <span>{row.ref}: {row.sharedTokenCount} shared tokens</span>
-            <span dir="auto"> <bdi>{row.sharedTokens.join(', ')}</bdi></span>
+            <span>
+              {row.ref}: {row.sharedTokenCount} shared tokens
+            </span>
+            <span dir="auto">
+              {' '}
+              <bdi>{row.sharedTokens.join(', ')}</bdi>
+            </span>
           </li>
         ))}
       </ul>
@@ -115,7 +126,8 @@ function sectionContent(section: SearchGraphSection) {
       <ul className="qar:m-0 qar:grid qar:list-none qar:gap-2 qar:p-0">
         {section.rows.map((row) => (
           <li key={`${row.phrase}:${row.length}`} dir="auto">
-            <bdi>{row.phrase}</bdi> - occurs {row.countInIndex} time{row.countInIndex === 1 ? '' : 's'} as an ayah ending in this index
+            <bdi>{row.phrase}</bdi> - occurs {row.countInIndex} time{row.countInIndex === 1 ? '' : 's'} as an ayah
+            ending in this index
           </li>
         ))}
       </ul>

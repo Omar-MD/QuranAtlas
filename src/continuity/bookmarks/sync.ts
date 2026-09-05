@@ -23,7 +23,9 @@ function isRiwayah(value: unknown): value is Riwayah {
 function normalizeVerseKeys(value: unknown): string[] | null {
   const verseKeys = Array.isArray(value) ? value : typeof value === 'string' ? [value] : null
   if (!verseKeys) return null
-  const normalized = verseKeys.filter((verseKey): verseKey is string => typeof verseKey === 'string' && BOOKMARK_KEY_RE.test(verseKey))
+  const normalized = verseKeys.filter(
+    (verseKey): verseKey is string => typeof verseKey === 'string' && BOOKMARK_KEY_RE.test(verseKey),
+  )
   return normalized.length > 0 ? normalized : null
 }
 

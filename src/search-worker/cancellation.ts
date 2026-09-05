@@ -50,7 +50,11 @@ export class SearchCancellationRegistry {
   }
 }
 
-export async function cooperativeYield(token: SearchCancellationToken, everyIndex: number, index: number): Promise<void> {
+export async function cooperativeYield(
+  token: SearchCancellationToken,
+  everyIndex: number,
+  index: number,
+): Promise<void> {
   if (index % everyIndex !== 0) return
   token.throwIfCancelled()
   await Promise.resolve()

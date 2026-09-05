@@ -13,7 +13,10 @@ export type TranslationResolution =
   | { role: 'continuation'; sourceKey: string; primaryAyah?: number; text: null }
   | { role: 'none'; sourceKey: null; text: null }
 
-export async function loadVerseAliases(fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<{ aliases: VerseAliases }> {
+export async function loadVerseAliases(
+  fetcher: typeof fetch = fetch,
+  signal?: AbortSignal,
+): Promise<{ aliases: VerseAliases }> {
   const response = await fetcher('/dataset/translations/_verse-aliases.json', { signal })
   if (!response.ok) return { aliases: {} }
   return response.json() as Promise<{ aliases: VerseAliases }>
@@ -53,14 +56,18 @@ export function resolveTranslationFor({
 
   if (matches.length > 1) {
     const sourceKey = matches.map((entry) => `${surah}:${entry.alias.hafs}`).join(',')
-    const text = matches.map((entry) => translations[`${surah}:${entry.alias.hafs}`]).filter(Boolean).join(' ')
+    const text = matches
+      .map((entry) => translations[`${surah}:${entry.alias.hafs}`])
+      .filter(Boolean)
+      .join(' ')
     return text ? { role: 'merged', sourceKey, text } : { role: 'none', sourceKey: null, text: null }
   }
 
-  const matched = matches[0]!
+  const matched = matches[0]
   const sourceKey = `${surah}:${matched.alias.hafs}`
   const text = translations[sourceKey] ?? null
-  if (matched.verses[0] !== verse) return { role: 'continuation', sourceKey, primaryAyah: matched.verses[0], text: null }
+  if (matched.verses[0] !== verse)
+    return { role: 'continuation', sourceKey, primaryAyah: matched.verses[0], text: null }
   if (!text) return { role: 'none', sourceKey: null, text: null }
   return { role: matched.verses.length > 1 ? 'primary' : 'identity', sourceKey, text }
 }

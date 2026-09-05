@@ -34,7 +34,9 @@ export function SearchExplorePanel({
         <div className="qar-search-explore-result-note">
           <p>Result-level graph sections are available after opening Details on a verse.</p>
           <ul>
-            {graphModules.map((module) => <li key={module}>{exploreModuleLabel(module)}</li>)}
+            {graphModules.map((module) => (
+              <li key={module}>{exploreModuleLabel(module)}</li>
+            ))}
           </ul>
         </div>
       ) : null}
@@ -51,7 +53,13 @@ export function SearchExplorePanel({
   )
 }
 
-function ExploreSummaryList({ focusedModule, summaries }: { focusedModule?: SearchExploreModuleId | null; summaries: SearchExploreSummary[] }) {
+function ExploreSummaryList({
+  focusedModule,
+  summaries,
+}: {
+  focusedModule?: SearchExploreModuleId | null
+  summaries: SearchExploreSummary[]
+}) {
   return (
     <ul className="qar-search-explore-modules">
       {summaries.map((summary) => (
@@ -91,10 +99,12 @@ function exploreModuleLabel(module: SearchExploreModuleId): string {
 }
 
 function isGraphModule(module: SearchExploreModuleId): boolean {
-  return module === 'following-wording'
-    || module === 'shared-wording'
-    || module === 'repeated-phrases'
-    || module === 'occurs-once'
-    || module === 'ayah-endings'
-    || module === 'counts-patterns'
+  return (
+    module === 'following-wording' ||
+    module === 'shared-wording' ||
+    module === 'repeated-phrases' ||
+    module === 'occurs-once' ||
+    module === 'ayah-endings' ||
+    module === 'counts-patterns'
+  )
 }

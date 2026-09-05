@@ -3,5 +3,11 @@ import { SearchResultList } from './SearchResultList'
 import { toVerseCardViewModel } from './search-presentation-model'
 
 export function SearchResults({ results }: { results: SearchResultDto[] }) {
-  return <SearchResultList cards={results.map(toVerseCardViewModel)} onOpenInRead={() => undefined} onSelect={() => undefined} />
+  return (
+    <SearchResultList
+      cards={results.map(toVerseCardViewModel)}
+      onOpenInRead={() => undefined}
+      onSelect={() => undefined}
+    />
+  )
 }

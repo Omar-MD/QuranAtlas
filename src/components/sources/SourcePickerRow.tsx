@@ -9,7 +9,11 @@ export function SourcePickerRow({ label, status }: { label: string; status: stri
       </div>
       <div className="qar:flex qar:items-center qar:gap-2">
         <Badge tone={status === 'Active' ? 'success' : 'neutral'}>{status}</Badge>
-        {status !== 'Active' && <Button size="sm" variant="secondary">Install</Button>}
+        {status !== 'Active' && (
+          <Button size="sm" variant="secondary">
+            Install
+          </Button>
+        )}
       </div>
     </div>
   )

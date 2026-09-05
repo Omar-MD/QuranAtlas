@@ -60,15 +60,42 @@ export function MushafSettings({
             </span>
             <div className="qar-react-mushaf-framing-controls">
               <div className="qar-react-mushaf-framing-presets">
-                <Button aria-pressed={framing === 0} onClick={() => onFramingChange?.(0)} size="sm" type="button" variant="secondary">Full page</Button>
-                <Button aria-pressed={framing === 1} onClick={() => onFramingChange?.(1)} size="sm" type="button" variant="secondary">Text focus</Button>
+                <Button
+                  aria-pressed={framing === 0}
+                  onClick={() => onFramingChange?.(0)}
+                  size="sm"
+                  type="button"
+                  variant="secondary"
+                >
+                  Full page
+                </Button>
+                <Button
+                  aria-pressed={framing === 1}
+                  onClick={() => onFramingChange?.(1)}
+                  size="sm"
+                  type="button"
+                  variant="secondary"
+                >
+                  Text focus
+                </Button>
               </div>
-              <Slider label="Qur'an text size" max={100} min={0} onValueChange={(values) => onFramingChange?.((values[0] ?? 0) / 100)} step={1} value={[Math.round(framing * 100)]} />
+              <Slider
+                label="Qur'an text size"
+                max={100}
+                min={0}
+                onValueChange={(values) => onFramingChange?.((values[0] ?? 0) / 100)}
+                step={1}
+                value={[Math.round(framing * 100)]}
+              />
             </div>
             {framingWriteStatus === 'error' ? (
               <div className="qar:grid qar:gap-2">
-                <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">Could not save Mushaf page framing</p>
-                <Button onClick={onRetryFraming} size="sm" type="button" variant="secondary">Retry saving Mushaf framing</Button>
+                <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">
+                  Could not save Mushaf page framing
+                </p>
+                <Button onClick={onRetryFraming} size="sm" type="button" variant="secondary">
+                  Retry saving Mushaf framing
+                </Button>
               </div>
             ) : null}
           </div>

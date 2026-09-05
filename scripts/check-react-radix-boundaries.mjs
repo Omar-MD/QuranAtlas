@@ -11,7 +11,7 @@ async function walk(dir) {
   const files = []
   for (const entry of entries) {
     const path = join(dir, entry.name)
-    if (entry.isDirectory()) files.push(...await walk(path))
+    if (entry.isDirectory()) files.push(...(await walk(path)))
     else if (checkedExtensions.has(extname(entry.name))) files.push(path)
   }
   return files
@@ -21,7 +21,9 @@ export function checkReactRadixBoundaryText(repoRelativePath, text) {
   if (repoRelativePath.startsWith('src/components/ui/')) return []
   const failures = []
   for (const match of text.matchAll(radixImportPattern)) {
-    failures.push(`${repoRelativePath} imports ${match[1]}: direct Radix imports are restricted to src/components/ui/**.`)
+    failures.push(
+      `${repoRelativePath} imports ${match[1]}: direct Radix imports are restricted to src/components/ui/**.`,
+    )
   }
   return failures
 }

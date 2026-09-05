@@ -77,7 +77,9 @@ export class SearchPackReader {
   }
 
   async loadFeature(featureId: string): Promise<void> {
-    const shards = this.manifest.shards.filter((shard) => shard.featureId === featureId || shard.shardId.startsWith(`${featureId}-`))
+    const shards = this.manifest.shards.filter(
+      (shard) => shard.featureId === featureId || shard.shardId.startsWith(`${featureId}-`),
+    )
     if (shards.length === 0) {
       throw new SearchPackReaderError('missing-feature', `Search pack is missing feature ${featureId}`)
     }
@@ -115,9 +117,12 @@ export class SearchPackReader {
   }
 
   async getPostings(lane: SearchPostingsPayload['lane']): Promise<SearchPostingsPayload[]> {
-    const shardIds = lane === 'phrase'
-      ? this.manifest.shards.filter((shard) => shard.shardId.startsWith('phrase-postings-')).map((shard) => shard.shardId)
-      : [`${lane === 'exact-word' ? 'exact-word' : lane}-postings`]
+    const shardIds =
+      lane === 'phrase'
+        ? this.manifest.shards
+            .filter((shard) => shard.shardId.startsWith('phrase-postings-'))
+            .map((shard) => shard.shardId)
+        : [`${lane === 'exact-word' ? 'exact-word' : lane}-postings`]
     const postings: SearchPostingsPayload[] = []
     for (const shardId of shardIds) {
       const shard = await this.loadShard(shardId)
@@ -128,7 +133,8 @@ export class SearchPackReader {
 
   async getMorphologyRows(): Promise<SearchMorphologyRowsPayload['rows']> {
     const shards = this.manifest.shards.filter((entry) => entry.shardId.startsWith('morphology-rows-'))
-    if (shards.length === 0) throw new SearchPackReaderError('missing-feature', 'Search pack is missing morphology rows')
+    if (shards.length === 0)
+      throw new SearchPackReaderError('missing-feature', 'Search pack is missing morphology rows')
     const rows: SearchMorphologyRowsPayload['rows'] = []
     for (const shard of shards) {
       const decoded = await this.decodeShard(shard)
@@ -137,7 +143,9 @@ export class SearchPackReader {
     return rows
   }
 
-  async getMorphologyPostings(lane: SearchMorphologyPostingsPayload['lane']): Promise<SearchMorphologyPostingsPayload[]> {
+  async getMorphologyPostings(
+    lane: SearchMorphologyPostingsPayload['lane'],
+  ): Promise<SearchMorphologyPostingsPayload[]> {
     const shards = this.manifest.shards.filter((entry) => entry.shardId.startsWith(`${lane}-`))
     if (shards.length === 0) throw new SearchPackReaderError('missing-feature', `Search pack is missing ${lane}`)
     const postings: SearchMorphologyPostingsPayload[] = []
@@ -196,7 +204,9 @@ export class SearchPackReader {
     prefix: string,
     guard: (payload: SearchPackShardPayload) => payload is TPayload,
   ): Promise<TPayload[]> {
-    const shards = this.manifest.shards.filter((entry) => entry.shardId.startsWith(`${prefix}-`) || entry.shardId === prefix)
+    const shards = this.manifest.shards.filter(
+      (entry) => entry.shardId.startsWith(`${prefix}-`) || entry.shardId === prefix,
+    )
     if (shards.length === 0) throw new SearchPackReaderError('missing-feature', `Search pack is missing ${prefix}`)
     const payloads: TPayload[] = []
     for (const shard of shards) {
@@ -210,7 +220,10 @@ export class SearchPackReader {
     const cached = this.decoded.get(shard.shardId)
     if (cached) return cached
     this.throwIfAborted()
-    if (shard.byteLength > this.manifest.byteBudget.maxShardBytes || shard.maxDecodedBytes > this.manifest.byteBudget.maxDecodedShardBytes) {
+    if (
+      shard.byteLength > this.manifest.byteBudget.maxShardBytes ||
+      shard.maxDecodedBytes > this.manifest.byteBudget.maxDecodedShardBytes
+    ) {
       throw new SearchPackReaderError('corrupt-shard', `Search shard ${shard.shardId} exceeds declared byte budget`)
     }
     const bytes = await this.readShardBytes(shard)
@@ -237,7 +250,12 @@ export class SearchPackReader {
       : null
     const cachedResponse = await cache?.match(shard.url)
     if (cachedResponse) {
-      if (!cachedResponse.ok) throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} cached response is unavailable`, true)
+      if (!cachedResponse.ok)
+        throw new SearchPackReaderError(
+          'offline-miss',
+          `Search shard ${shard.shardId} cached response is unavailable`,
+          true,
+        )
       return cachedResponse.arrayBuffer()
     }
 
@@ -249,14 +267,20 @@ export class SearchPackReader {
     } catch {
       throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} is not cached`, true)
     }
-    if (!fetchedResponse.ok) throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} is unavailable`, true)
+    if (!fetchedResponse.ok)
+      throw new SearchPackReaderError('offline-miss', `Search shard ${shard.shardId} is unavailable`, true)
     const bytes = await fetchedResponse.arrayBuffer()
     if (cache && bytes.byteLength === shard.byteLength) {
-      await cache.put(shard.url, new Response(bytes, {
-        headers: fetchedResponse.headers,
-        status: fetchedResponse.status,
-        statusText: fetchedResponse.statusText,
-      })).catch(() => undefined)
+      await cache
+        .put(
+          shard.url,
+          new Response(bytes, {
+            headers: fetchedResponse.headers,
+            status: fetchedResponse.status,
+            statusText: fetchedResponse.statusText,
+          }),
+        )
+        .catch(() => undefined)
     }
     return bytes
   }
@@ -276,12 +300,12 @@ export async function loadSearchPackManifestFromRegistry(
   try {
     const registryResponse = await fetcher(SEARCH_PACK_REGISTRY_RUNTIME_URL, { signal: options.signal })
     if (!registryResponse.ok) throw new Error('registry unavailable')
-    const registry = await registryResponse.json() as SearchPackRegistry
+    const registry = (await registryResponse.json()) as SearchPackRegistry
     const entry = registry.packs.find((pack) => pack.packId === packId)
     if (!entry) throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} is not registered`, true)
     const manifestResponse = await fetcher(entry.manifestUrl, { signal: options.signal })
     if (!manifestResponse.ok) throw new Error('manifest unavailable')
-    const manifest = await manifestResponse.json() as SearchPackManifestV1
+    const manifest = (await manifestResponse.json()) as SearchPackManifestV1
     assertSearchPackManifestUrls(manifest)
     await cacheSearchPackManifest(manifest, entry.manifestUrl)
     return manifest
@@ -300,10 +324,15 @@ async function cacheSearchPackManifest(manifest: SearchPackManifestV1, manifestU
   if (!cacheStorage) return
   const cache = await cacheStorage.open(searchPackCacheName(manifest.contentHash)).catch(() => null)
   if (!cache) return
-  await cache.put(manifestUrl, new Response(JSON.stringify(manifest), {
-    headers: { 'Content-Type': 'application/json' },
-    status: 200,
-  })).catch(() => undefined)
+  await cache
+    .put(
+      manifestUrl,
+      new Response(JSON.stringify(manifest), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+      }),
+    )
+    .catch(() => undefined)
 }
 
 async function loadActiveSearchPackManifest(
@@ -313,7 +342,7 @@ async function loadActiveSearchPackManifest(
   const active = await openReactDb()
     .then((db) => db.searchPackActivations.get('current'))
     .catch(() => null)
-  if (!active || active.status !== 'active' || active.packId !== packId) return null
+  if (active?.status !== 'active' || active.packId !== packId) return null
 
   const cached = await loadCachedSearchPackManifest(packId, active.contentHash)
   if (cached) return cached
@@ -324,7 +353,7 @@ async function loadActiveSearchPackManifest(
   try {
     const response = await fetcher(manifestUrl, { signal: options.signal })
     if (!response.ok) return null
-    const manifest = await response.json() as SearchPackManifestV1
+    const manifest = (await response.json()) as SearchPackManifestV1
     assertSearchPackManifestUrls(manifest)
     return manifest.packId === packId && manifest.contentHash === active.contentHash ? manifest : null
   } catch {
@@ -332,14 +361,17 @@ async function loadActiveSearchPackManifest(
   }
 }
 
-async function loadCachedSearchPackManifest(packId: string, contentHash?: string): Promise<SearchPackManifestV1 | null> {
+async function loadCachedSearchPackManifest(
+  packId: string,
+  contentHash?: string,
+): Promise<SearchPackManifestV1 | null> {
   if (!globalThis.caches?.keys) return null
   if (contentHash) {
     const manifestUrl = `/search-packs/packs/${contentHash}/manifest.json`
     const cache = await globalThis.caches.open(searchPackCacheName(contentHash))
     const response = await cache.match(manifestUrl)
     if (!response?.ok) return null
-    const manifest = await response.json() as SearchPackManifestV1
+    const manifest = (await response.json()) as SearchPackManifestV1
     assertSearchPackManifestUrls(manifest)
     return manifest.packId === packId && manifest.contentHash === contentHash ? manifest : null
   }
@@ -353,7 +385,7 @@ async function loadCachedSearchPackManifest(packId: string, contentHash?: string
       if (!url.pathname.endsWith('/manifest.json')) continue
       const response = await cache.match(request)
       if (!response?.ok) continue
-      const manifest = await response.json() as SearchPackManifestV1
+      const manifest = (await response.json()) as SearchPackManifestV1
       assertSearchPackManifestUrls(manifest)
       if (manifest.packId === packId) return manifest
     }
@@ -403,22 +435,24 @@ function readTableDirectoryEntry(view: DataView, offset: number): SearchShardTab
 }
 
 function isSearchPackShardPayload(payload: SearchPackShardPayload): payload is SearchPackShardPayload {
-  return isReferencesPayload(payload)
-    || isPostingsPayload(payload)
-    || isMorphologyRowsPayload(payload)
-    || isMorphologyPostingsPayload(payload)
-    || isSurahContextPayload(payload)
-    || (payload?.kind === 'dictionaries' && typeof payload.dictionaries === 'object')
-    || (payload?.kind === 'provenance' && Array.isArray(payload.sourceIds))
-    || (payload?.kind === 'morphology-dictionary' && Array.isArray(payload.entries))
-    || (payload?.kind === 'morphology-provenance' && typeof payload.sourceId === 'string')
-    || isFollowingWordingPayload(payload)
-    || isSharedWordingPayload(payload)
-    || isRepeatedPhrasesPayload(payload)
-    || isOccursOncePayload(payload)
-    || isAyahEndingsPayload(payload)
-    || isCountsPatternsPayload(payload)
-    || (payload?.kind === 'graph-provenance' && Array.isArray(payload.sourceIds))
+  return (
+    isReferencesPayload(payload) ||
+    isPostingsPayload(payload) ||
+    isMorphologyRowsPayload(payload) ||
+    isMorphologyPostingsPayload(payload) ||
+    isSurahContextPayload(payload) ||
+    (payload?.kind === 'dictionaries' && typeof payload.dictionaries === 'object') ||
+    (payload?.kind === 'provenance' && Array.isArray(payload.sourceIds)) ||
+    (payload?.kind === 'morphology-dictionary' && Array.isArray(payload.entries)) ||
+    (payload?.kind === 'morphology-provenance' && typeof payload.sourceId === 'string') ||
+    isFollowingWordingPayload(payload) ||
+    isSharedWordingPayload(payload) ||
+    isRepeatedPhrasesPayload(payload) ||
+    isOccursOncePayload(payload) ||
+    isAyahEndingsPayload(payload) ||
+    isCountsPatternsPayload(payload) ||
+    (payload?.kind === 'graph-provenance' && Array.isArray(payload.sourceIds))
+  )
 }
 
 function isReferencesPayload(payload: SearchPackShardPayload): payload is SearchReferencesPayload {

@@ -41,16 +41,30 @@ export function ReaderChrome({
       onFocusCapture={onFocusCapture}
     >
       <div className="qar-reader-chrome-left">
-        <IconButton className="qar-reader-chrome-icon" id="reader-navigation-trigger" label="Open navigation" onClick={onOpenNavigation}>
+        <IconButton
+          className="qar-reader-chrome-icon"
+          id="reader-navigation-trigger"
+          label="Open navigation"
+          onClick={onOpenNavigation}
+        >
           <Menu aria-hidden="true" size={26} strokeWidth={1.8} />
         </IconButton>
       </div>
-      {title ? <div className="qar-reader-chrome-title" dir="rtl" lang="ar">{title}</div> : null}
+      {title ? (
+        <div className="qar-reader-chrome-title" dir="rtl" lang="ar">
+          {title}
+        </div>
+      ) : null}
       <div className="qar-reader-chrome-right">
         {wirdStatus}
         {onModeChange ? <ReadingViewToggle mode={mode} onModeChange={onModeChange} /> : null}
         {!hideSettings ? (
-          <IconButton className="qar-reader-chrome-icon" id="reader-settings-trigger" label="Open settings" onClick={onOpenSettings}>
+          <IconButton
+            className="qar-reader-chrome-icon"
+            id="reader-settings-trigger"
+            label="Open settings"
+            onClick={onOpenSettings}
+          >
             <Settings aria-hidden="true" size={26} strokeWidth={1.6} />
           </IconButton>
         ) : null}

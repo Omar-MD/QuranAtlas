@@ -35,7 +35,7 @@ export async function loadOnboardingSourceIndexes({
   assertRuntimeDatasetUrl(SOURCE_INDEX_URL)
   const response = await fetcher(SOURCE_INDEX_URL, { signal })
   if (!response.ok) throw new Error(`Unable to load React onboarding source index: ${response.status}`)
-  const data = await response.json() as { sources?: SourceIndexRecord[] }
+  const data = (await response.json()) as { sources?: SourceIndexRecord[] }
   const sources = Array.isArray(data.sources) ? data.sources : []
 
   return {

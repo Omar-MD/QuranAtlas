@@ -3,8 +3,18 @@ import { IconButton, Tooltip } from '../ui'
 function OpenMushafGlyph() {
   return (
     <svg aria-hidden="true" fill="none" height="24" viewBox="0 0 24 24" width="24">
-      <path d="M3.5 5.5c2.9-.8 5.7-.2 8.5 1.7v12c-2.8-1.9-5.6-2.5-8.5-1.7v-12Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.6" />
-      <path d="M20.5 5.5c-2.9-.8-5.7-.2-8.5 1.7v12c2.8-1.9 5.6-2.5 8.5-1.7v-12Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.6" />
+      <path
+        d="M3.5 5.5c2.9-.8 5.7-.2 8.5 1.7v12c-2.8-1.9-5.6-2.5-8.5-1.7v-12Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
+      <path
+        d="M20.5 5.5c-2.9-.8-5.7-.2-8.5 1.7v12c2.8-1.9 5.6-2.5 8.5-1.7v-12Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
     </svg>
   )
 }
@@ -19,7 +29,10 @@ function VerseLinesGlyph() {
   )
 }
 
-export function ReadingViewToggle({ mode, onModeChange }: {
+export function ReadingViewToggle({
+  mode,
+  onModeChange,
+}: {
   mode: 'verse' | 'mushaf'
   onModeChange: (mode: 'verse' | 'mushaf') => void
 }) {

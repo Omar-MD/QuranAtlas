@@ -14,7 +14,10 @@ export function DropdownMenu({ trigger, items }: DropdownMenuProps) {
     <DropdownMenuPrimitive.Root modal={false}>
       <DropdownMenuPrimitive.Trigger asChild>{trigger}</DropdownMenuPrimitive.Trigger>
       <DropdownMenuPrimitive.Portal>
-        <DropdownMenuPrimitive.Content className="qar:z-50 qar:min-w-40 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1 qar:text-text qar:shadow-lg" sideOffset={8}>
+        <DropdownMenuPrimitive.Content
+          className="qar:z-50 qar:min-w-40 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1 qar:text-text qar:shadow-lg"
+          sideOffset={8}
+        >
           {items.map((item) => (
             <DropdownMenuPrimitive.Item
               className="qar:rounded-control qar:px-3 qar:py-2 qar:text-sm qar:outline-none qar:focus:bg-canvas qar:data-[disabled]:opacity-50"
@@ -43,7 +46,10 @@ export type TabsProps = {
 export function Tabs({ label, items, defaultValue, onValueChange, value }: TabsProps) {
   return (
     <TabsPrimitive.Root defaultValue={defaultValue ?? items[0]?.value} onValueChange={onValueChange} value={value}>
-      <TabsPrimitive.List aria-label={label} className="qar:inline-flex qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1">
+      <TabsPrimitive.List
+        aria-label={label}
+        className="qar:inline-flex qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1"
+      >
         {items.map((item) => (
           <TabsPrimitive.Trigger
             className="qar:min-h-9 qar:rounded-control qar:px-3 qar:text-sm qar:data-[state=active]:bg-accent qar:data-[state=active]:text-surface qar:data-[disabled]:opacity-50"
@@ -56,7 +62,12 @@ export function Tabs({ label, items, defaultValue, onValueChange, value }: TabsP
         ))}
       </TabsPrimitive.List>
       {items.map((item) => (
-        <TabsPrimitive.Content aria-label={item.label} className="qar:pt-3 qar:text-sm qar:text-text" key={item.value} value={item.value}>
+        <TabsPrimitive.Content
+          aria-label={item.label}
+          className="qar:pt-3 qar:text-sm qar:text-text"
+          key={item.value}
+          value={item.value}
+        >
           {item.content}
         </TabsPrimitive.Content>
       ))}
@@ -72,14 +83,20 @@ export function Accordion({ items }: AccordionProps) {
   return (
     <AccordionPrimitive.Root collapsible type="single">
       {items.map((item, index) => (
-        <AccordionPrimitive.Item className="qar:border-b qar:border-border" key={item.value ?? item.title} value={item.value ?? String(index)}>
+        <AccordionPrimitive.Item
+          className="qar:border-b qar:border-border"
+          key={item.value ?? item.title}
+          value={item.value ?? String(index)}
+        >
           <AccordionPrimitive.Header>
             <AccordionPrimitive.Trigger className="qar:flex qar:min-h-10 qar:w-full qar:items-center qar:justify-between qar:text-sm qar:text-text">
               {item.title}
               <ChevronDown aria-hidden="true" size={16} />
             </AccordionPrimitive.Trigger>
           </AccordionPrimitive.Header>
-          <AccordionPrimitive.Content className="qar:pb-3 qar:text-sm qar:text-muted">{item.content}</AccordionPrimitive.Content>
+          <AccordionPrimitive.Content className="qar:pb-3 qar:text-sm qar:text-muted">
+            {item.content}
+          </AccordionPrimitive.Content>
         </AccordionPrimitive.Item>
       ))}
     </AccordionPrimitive.Root>
@@ -93,11 +110,21 @@ export type CommandProps = {
 
 export function Command({ label, items }: CommandProps) {
   return (
-    <div aria-label={label} className="qar:grid qar:gap-1 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1" role="listbox">
+    <div
+      aria-label={label}
+      className="qar:grid qar:gap-1 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1"
+      role="listbox"
+    >
       {items.map((item) => {
         const Icon = item.icon
         return (
-          <button className="qar:flex qar:min-h-9 qar:items-center qar:gap-2 qar:rounded-control qar:px-3 qar:text-left qar:text-sm qar:text-text qar:hover:bg-canvas qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus" key={item.label} onClick={item.onSelect} role="option" type="button">
+          <button
+            className="qar:flex qar:min-h-9 qar:items-center qar:gap-2 qar:rounded-control qar:px-3 qar:text-left qar:text-sm qar:text-text qar:hover:bg-canvas qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus"
+            key={item.label}
+            onClick={item.onSelect}
+            role="option"
+            type="button"
+          >
             {Icon ? <Icon aria-hidden="true" size={16} /> : null}
             {item.label}
           </button>

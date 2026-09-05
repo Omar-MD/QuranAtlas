@@ -7,9 +7,13 @@ export function SearchMorphologyPanel({ result }: { result: SearchResultDto | nu
     return (
       <div className="qar:grid qar:gap-3">
         <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          Morphology is available for same written form, same root, lemma, and Surah context searches when the active Search index includes the morphology feature.
+          Morphology is available for same written form, same root, lemma, and Surah context searches when the active
+          Search index includes the morphology feature.
         </p>
-        <div role="status" className="qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-3 qar:text-sm">
+        <div
+          role="status"
+          className="qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-3 qar:text-sm"
+        >
           Morphology details do not apply to this selected result because no morphology token was selected.
         </div>
       </div>
@@ -21,15 +25,21 @@ export function SearchMorphologyPanel({ result }: { result: SearchResultDto | nu
       <dl className="qar:grid qar:grid-cols-2 qar:gap-3">
         <div>
           <dt className="qar:text-muted">Same written form</dt>
-          <dd className="qar:m-0" dir="auto">{morphology.sourceToken || 'Unavailable'}</dd>
+          <dd className="qar:m-0" dir="auto">
+            {morphology.sourceToken || 'Unavailable'}
+          </dd>
         </div>
         <div>
           <dt className="qar:text-muted">Same root</dt>
-          <dd className="qar:m-0" dir="auto">{morphology.root ?? 'Unavailable'}</dd>
+          <dd className="qar:m-0" dir="auto">
+            {morphology.root ?? 'Unavailable'}
+          </dd>
         </div>
         <div>
           <dt className="qar:text-muted">Lemma</dt>
-          <dd className="qar:m-0" dir="auto">{morphology.lemma ?? 'Unavailable'}</dd>
+          <dd className="qar:m-0" dir="auto">
+            {morphology.lemma ?? 'Unavailable'}
+          </dd>
         </div>
         <div>
           <dt className="qar:text-muted">Word position</dt>
@@ -55,7 +65,9 @@ export function SearchMorphologyPanel({ result }: { result: SearchResultDto | nu
           <p className="qar:m-0 qar:text-xs qar:text-muted">Surah context</p>
           <ul className="qar:m-0 qar:grid qar:list-none qar:gap-1 qar:p-0">
             {morphology.surahContext.map((row) => (
-              <li key={row.surah}>Surah {row.surah}: {row.count}</li>
+              <li key={row.surah}>
+                Surah {row.surah}: {row.count}
+              </li>
             ))}
           </ul>
         </div>

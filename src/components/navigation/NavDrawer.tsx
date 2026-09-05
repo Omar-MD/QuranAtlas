@@ -25,7 +25,11 @@ import { WirdDetail, type WirdSetupPayload } from './wird/WirdDetail'
 
 type SavedPosition = { surah: number; verse: number }
 type SurahFilter = 'all' | 'recent'
-const FALLBACK_WIRD_COUNTS: SurahCount[] = [{ n: 1, count: 7 }, { n: 2, count: 286 }, { n: 114, count: 6 }]
+const FALLBACK_WIRD_COUNTS: SurahCount[] = [
+  { n: 1, count: 7 },
+  { n: 2, count: 286 },
+  { n: 114, count: 6 },
+]
 
 export function NavDrawer({
   activeMode = 'read',
@@ -168,22 +172,27 @@ export function NavDrawer({
   function handleWirdCreate(payload: WirdSetupPayload): void {
     if (!showWird) return
     const today = getLocalDayKey()
-    const last = wirdCounts[wirdCounts.length - 1] ?? FALLBACK_WIRD_COUNTS[FALLBACK_WIRD_COUNTS.length - 1]!
-    const startRef = payload.startMode === 'current' && currentPosition
-      ? { surah: currentPosition.surah, verse: currentPosition.verse }
-      : { surah: 1, verse: 1 }
-    const plan = createWirdPlan({
-      endRef: { surah: last.n, verse: last.count },
-      reminder: {
-        browserNotifications: payload.browserNotifications,
-        enabled: payload.reminderEnabled,
-        time: payload.reminderTime,
+    const last = wirdCounts[wirdCounts.length - 1] ?? FALLBACK_WIRD_COUNTS[FALLBACK_WIRD_COUNTS.length - 1]
+    const startRef =
+      payload.startMode === 'current' && currentPosition
+        ? { surah: currentPosition.surah, verse: currentPosition.verse }
+        : { surah: 1, verse: 1 }
+    const plan = createWirdPlan(
+      {
+        endRef: { surah: last.n, verse: last.count },
+        reminder: {
+          browserNotifications: payload.browserNotifications,
+          enabled: payload.reminderEnabled,
+          time: payload.reminderTime,
+        },
+        startedOn: today,
+        startRef,
+        targetEndOn: finishDateFromTarget(payload.targetDays, payload.targetEndOn),
+        unit: payload.unit,
       },
-      startedOn: today,
-      startRef,
-      targetEndOn: finishDateFromTarget(payload.targetDays, payload.targetEndOn),
-      unit: payload.unit,
-    }, wirdCounts, today)
+      wirdCounts,
+      today,
+    )
 
     void openReactDb()
       .then((db) => writeWirdPlan(db, plan))
@@ -199,8 +208,9 @@ export function NavDrawer({
     if (!summary.nextRef) return
     const href = withWirdProgressIntent(REACT_ROUTES.surah(summary.nextRef.surah, summary.nextRef.verse))
     if (mode === 'mushaf') {
-      void resolveDrawerHrefForReaderMode(mode, REACT_ROUTES.surah(summary.nextRef.surah, summary.nextRef.verse))
-        .then((mushafHref) => onNavigate(withWirdProgressIntent(mushafHref)))
+      void resolveDrawerHrefForReaderMode(mode, REACT_ROUTES.surah(summary.nextRef.surah, summary.nextRef.verse)).then(
+        (mushafHref) => onNavigate(withWirdProgressIntent(mushafHref)),
+      )
     } else {
       onNavigate(href)
     }
@@ -218,7 +228,8 @@ export function NavDrawer({
   }
 
   async function requestWirdNotifications() {
-    if (typeof Notification === 'undefined' || typeof Notification.requestPermission !== 'function') return 'unsupported' as const
+    if (typeof Notification === 'undefined' || typeof Notification.requestPermission !== 'function')
+      return 'unsupported' as const
     const permission = await Notification.requestPermission()
     return getBrowserNotificationState(permission)
   }
@@ -229,21 +240,27 @@ export function NavDrawer({
   const drawerShowsWird = readModeActive && showWird
   const wirdBoundaries = createWirdBoundaries(wirdCounts, wirdPageBoundaries)
   const wirdSummary = drawerShowsWird ? deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries) : null
-  const fallbackReadHref = currentPosition ? REACT_ROUTES.surah(currentPosition.surah, currentPosition.verse) : REACT_ROUTES.home
+  const fallbackReadHref = currentPosition
+    ? REACT_ROUTES.surah(currentPosition.surah, currentPosition.verse)
+    : REACT_ROUTES.home
   return (
-    <div
-      aria-label="Navigation"
-      aria-modal="true"
-      className="qar-react-nav-drawer"
-      onClick={(event) => event.stopPropagation()}
-      role="dialog"
-      tabIndex={-1}
-    >
+    <div aria-label="Navigation" aria-modal="true" className="qar-react-nav-drawer" role="dialog" tabIndex={-1}>
       <div className="qar-react-nav-drawer-header">
         <div className="qar-react-nav-drawer-product-row">
-          <Button aria-label="About QuranAtlas" className="qar-react-nav-drawer-wordmark" onClick={() => onNavigate('#/about')} variant="ghost">
+          <Button
+            aria-label="About QuranAtlas"
+            className="qar-react-nav-drawer-wordmark"
+            onClick={() => onNavigate('#/about')}
+            variant="ghost"
+          >
             <span className="qar-react-nav-drawer-logo" aria-hidden="true">
-              <svg className="qar-react-nav-drawer-logo-svg" data-icon="brand-rosette" viewBox="0 0 48 48" fill="none">
+              <svg
+                aria-hidden="true"
+                className="qar-react-nav-drawer-logo-svg"
+                data-icon="brand-rosette"
+                viewBox="0 0 48 48"
+                fill="none"
+              >
                 <path d="M24 4.5l4.1 5.2 6.6-1.1 1.6 6.4 6.2 2.6-2.9 6 2.9 6-6.2 2.6-1.6 6.4-6.6-1.1L24 43.5l-4.1-5.2-6.6 1.1-1.6-6.4-6.2-2.6 2.9-6-2.9-6 6.2-2.6 1.6-6.4 6.6 1.1L24 4.5Z" />
                 <circle cx="24" cy="24" r="12.2" />
                 <circle cx="24" cy="24" r="6.2" />
@@ -252,7 +269,11 @@ export function NavDrawer({
             </span>
             <span className="qar-react-nav-drawer-wordmark-text">QuranAtlas</span>
           </Button>
-          <IconButton className="qar-react-nav-drawer-about" label="About QuranAtlas" onClick={() => onNavigate('#/about')}>
+          <IconButton
+            className="qar-react-nav-drawer-about"
+            label="About QuranAtlas"
+            onClick={() => onNavigate('#/about')}
+          >
             <span aria-hidden="true">
               <Info size={20} strokeWidth={1.65} />
             </span>
@@ -288,7 +309,12 @@ export function NavDrawer({
       </div>
       {drawerShowsWird && wirdView === 'card' ? (
         <div className="qar-react-drawer-wird-slot">
-          <DailyWirdCard boundaries={wirdBoundaries} counts={wirdCounts} onOpen={() => setWirdView('detail')} plan={wirdPlan} />
+          <DailyWirdCard
+            boundaries={wirdBoundaries}
+            counts={wirdCounts}
+            onOpen={() => setWirdView('detail')}
+            plan={wirdPlan}
+          />
         </div>
       ) : drawerShowsWird && wirdSummary ? (
         <div className="qar-react-drawer-wird-slot">
@@ -305,11 +331,15 @@ export function NavDrawer({
         </div>
       ) : null}
       {searchModeActive ? (
-        <div className="qar-react-nav-drawer-search-mode">
-          {searchPanel}
-        </div>
+        <div className="qar-react-nav-drawer-search-mode">{searchPanel}</div>
       ) : (
-        <div className={drawerShowsWird && wirdView === 'detail' ? 'qar-react-nav-drawer-read qar-react-nav-drawer-read--hidden' : 'qar-react-nav-drawer-read'}>
+        <div
+          className={
+            drawerShowsWird && wirdView === 'detail'
+              ? 'qar-react-nav-drawer-read qar-react-nav-drawer-read--hidden'
+              : 'qar-react-nav-drawer-read'
+          }
+        >
           <div className="qar-react-nav-drawer-source-panel">
             <div className="qar-react-nav-drawer-source-tabs" role="tablist" aria-label="Read source">
               <Button
@@ -354,7 +384,7 @@ export function NavDrawer({
               </Button>
             </div>
             {readSource === 'surah' && (
-              <div className="qar-react-nav-drawer-source-tools" aria-label="Surah controls">
+              <div className="qar-react-nav-drawer-source-tools">
                 <Input
                   autoComplete="off"
                   className="qar-react-nav-drawer-search-input"
@@ -365,21 +395,62 @@ export function NavDrawer({
                   onChange={handleSurahSearchChange}
                   onKeyDown={handleSurahSearchKeyDown}
                   placeholder="Search..."
-                  prefix={<SearchIcon aria-hidden="true" className="qar-react-nav-drawer-search-icon" size={15} strokeWidth={1.7} />}
+                  prefix={
+                    <SearchIcon
+                      aria-hidden="true"
+                      className="qar-react-nav-drawer-search-icon"
+                      size={15}
+                      strokeWidth={1.7}
+                    />
+                  }
                   type="search"
                   value={surahQuery}
                 />
                 <div className="qar-react-nav-drawer-source-filter" role="tablist" aria-label="Surah filter">
-                  <Button aria-selected={surahFilter === 'all'} className="qar-react-nav-drawer-filter-option" onClick={() => setSurahFilter('all')} role="tab" size="sm" variant="ghost">All</Button>
-                  <Button aria-selected={surahFilter === 'recent'} className="qar-react-nav-drawer-filter-option" onClick={() => setSurahFilter('recent')} role="tab" size="sm" variant="ghost">Recent</Button>
+                  <Button
+                    aria-selected={surahFilter === 'all'}
+                    className="qar-react-nav-drawer-filter-option"
+                    onClick={() => setSurahFilter('all')}
+                    role="tab"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    All
+                  </Button>
+                  <Button
+                    aria-selected={surahFilter === 'recent'}
+                    className="qar-react-nav-drawer-filter-option"
+                    onClick={() => setSurahFilter('recent')}
+                    role="tab"
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Recent
+                  </Button>
                 </div>
               </div>
             )}
           </div>
-          {readSource === 'surah' && <SurahList currentSurah={currentPosition?.surah ?? null} filter={surahFilter} onNavigate={navigateForReaderMode} query={surahQuery} recentSurahs={recentSurahs} />}
-          {readSource === 'juz' && <JuzList currentRef={currentPosition} onNavigate={navigateForReaderMode} rows={juzRows} />}
+          {readSource === 'surah' && (
+            <SurahList
+              currentSurah={currentPosition?.surah ?? null}
+              filter={surahFilter}
+              onNavigate={navigateForReaderMode}
+              query={surahQuery}
+              recentSurahs={recentSurahs}
+            />
+          )}
+          {readSource === 'juz' && (
+            <JuzList currentRef={currentPosition} onNavigate={navigateForReaderMode} rows={juzRows} />
+          )}
           {readSource === 'hizb' && <HizbList currentRef={currentPosition} onNavigate={navigateForReaderMode} />}
-          {readSource === 'bookmarks' && <BookmarksList bookmarks={bookmarks} onDeleteBookmark={onDeleteBookmark} onNavigate={navigateForReaderMode} />}
+          {readSource === 'bookmarks' && (
+            <BookmarksList
+              bookmarks={bookmarks}
+              onDeleteBookmark={onDeleteBookmark}
+              onNavigate={navigateForReaderMode}
+            />
+          )}
         </div>
       )}
     </div>

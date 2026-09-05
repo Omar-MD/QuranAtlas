@@ -64,10 +64,7 @@ export function readerAssetRowFallbackLabel(row: ReaderAssetInventoryRow): strin
 
 export async function resolveReaderAssetProfileRows(
   profile: ReaderAssetProfile,
-  {
-    fetcher = fetch,
-    signal,
-  }: ReaderAssetProfileRowResolverOptions = {},
+  { fetcher = fetch, signal }: ReaderAssetProfileRowResolverOptions = {},
 ): Promise<ReaderAssetInventoryDisplayRow[]> {
   const [textIndex, provenance, mushafIndex, sourceIndex] = await Promise.all([
     fetchRuntimeJson(TEXT_ASSET_INDEX_URL, fetcher, signal).catch(() => null),
@@ -121,9 +118,9 @@ function resolvedLabelForRow(
 
 function findTextAssetLabel(index: unknown, profile: ReaderAssetProfile): string | null {
   const assets = readArray(index, 'assets')
-  const asset = assets.find((entry) =>
-    readString(entry, 'riwayah') === profile.riwayah
-    && readString(entry, 'textStyleId') === profile.quranTextStyleId,
+  const asset = assets.find(
+    (entry) =>
+      readString(entry, 'riwayah') === profile.riwayah && readString(entry, 'textStyleId') === profile.quranTextStyleId,
   )
   return readDisplayLabel(asset)
 }
@@ -136,18 +133,18 @@ function findFontLabel(provenance: unknown, profile: ReaderAssetProfile): string
 
 function findMushafAssetLabel(index: unknown, profile: ReaderAssetProfile): string | null {
   const assets = readArray(index, 'assets')
-  const asset = assets.find((entry) =>
-    readString(entry, 'riwayah') === profile.riwayah
-    && readString(entry, 'mushafEditionId') === profile.mushafEditionId,
+  const asset = assets.find(
+    (entry) =>
+      readString(entry, 'riwayah') === profile.riwayah &&
+      readString(entry, 'mushafEditionId') === profile.mushafEditionId,
   )
   return readDisplayLabel(asset)
 }
 
 function findTranslationLabel(index: unknown, profile: ReaderAssetProfile): string | null {
   const sources = readArray(index, 'sources')
-  const source = sources.find((entry) =>
-    readString(entry, 'id') === profile.translationId
-    && readString(entry, 'type') === 'translation',
+  const source = sources.find(
+    (entry) => readString(entry, 'id') === profile.translationId && readString(entry, 'type') === 'translation',
   )
   return readDisplayLabel(source)
 }

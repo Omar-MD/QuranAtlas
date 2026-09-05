@@ -82,7 +82,10 @@ export function assertGraphMaterializationBudgets({
     if (maxShardBytes !== undefined && shard.byteLength > maxShardBytes) {
       throw new Error(`Search graph shard ${shard.shardId ?? shard.filename} exceeds encoded byte budget`)
     }
-    if (maxDecodedShardBytes !== undefined && (shard.maxDecodedBytes ?? shard.estimatedMemoryBytes ?? 0) > maxDecodedShardBytes) {
+    if (
+      maxDecodedShardBytes !== undefined &&
+      (shard.maxDecodedBytes ?? shard.estimatedMemoryBytes ?? 0) > maxDecodedShardBytes
+    ) {
       throw new Error(`Search graph shard ${shard.shardId ?? shard.filename} exceeds decoded byte budget`)
     }
   }

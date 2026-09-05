@@ -39,5 +39,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   ref,
 ) {
   const Comp = asChild ? Slot : 'button'
-  return <Comp className={cn(unstyled ? undefined : buttonVariants({ variant, size }), className)} ref={ref} type={asChild ? undefined : type} {...props} />
+  return (
+    <Comp
+      className={cn(unstyled ? undefined : buttonVariants({ variant, size }), className)}
+      ref={ref}
+      type={asChild ? undefined : type}
+      {...props}
+    />
+  )
 })

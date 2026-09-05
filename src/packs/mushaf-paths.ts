@@ -54,7 +54,11 @@ export function isLegacyMushafPageUrl(url: string): boolean {
 
 export function assertReactMushafUrl(url: string): void {
   if (isLegacyMushafPageUrl(url)) throw new Error(`React Mushaf paths must be edition-aware: ${url}`)
-  if (!/^\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/(?:manifest\.json|pages\/\d{3}(?:\.svg|-\d+\.webp))$/.test(mushafPathname(url))) {
+  if (
+    !/^\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/(?:manifest\.json|pages\/\d{3}(?:\.svg|-\d+\.webp))$/.test(
+      mushafPathname(url),
+    )
+  ) {
     throw new Error(`Invalid React Mushaf URL: ${url}`)
   }
 }

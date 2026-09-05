@@ -43,9 +43,13 @@ run = "pnpm run preview"
 description = "TypeScript project check"
 run = "pnpm exec tsc --project tsconfig.json --noEmit"
 
-[tasks."check:lint"]
-description = "ESLint over source, scripts, tests, and configs"
-run = "pnpm exec eslint ."
+[tasks."check:biome"]
+description = "Biome lint and formatting gate"
+run = "pnpm exec biome ci --error-on-warnings ."
+
+[tasks.format]
+description = "Apply Biome formatting and safe lint fixes"
+run = "pnpm exec biome check --write ."
 
 [tasks."check:design"]
 description = "Design-literal guardrail"
@@ -79,7 +83,7 @@ run = ["node scripts/check-react-mushaf-assets.mjs", "node scripts/check-react-m
 description = "All independent static checks (run in parallel via mise)"
 depends = [
   "check:type",
-  "check:lint",
+  "check:biome",
   "check:design",
   "check:radix",
   "check:boundaries",
@@ -146,4 +150,4 @@ run = [
 [tasks.clean]
 description = "clean:generated plus local dependencies and tool caches"
 depends = ["clean:generated"]
-run = ["rm -rf node_modules", "rm -rf .vite", "rm -f .eslintcache"]
+run = ["rm -rf node_modules", "rm -rf .vite"]

@@ -13,7 +13,7 @@ async function walk(dir) {
   for (const entry of entries) {
     const path = join(dir, entry.name)
     if (entry.isDirectory()) {
-      files.push(...await walk(path))
+      files.push(...(await walk(path)))
     } else if (checkedExtensions.has(extname(entry.name))) {
       files.push(path)
     }
@@ -70,10 +70,7 @@ export function checkReactBoundaryText(sourcePath, text) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const files = [
-    ...await walk(join(repoRoot, '.storybook')),
-    ...await walk(join(repoRoot, 'src')),
-  ]
+  const files = [...(await walk(join(repoRoot, '.storybook'))), ...(await walk(join(repoRoot, 'src')))]
 
   const failures = []
   for (const file of files) {

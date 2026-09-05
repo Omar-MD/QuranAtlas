@@ -1,10 +1,6 @@
 import { assertRuntimeDatasetUrl } from '../data/runtime-boundary'
 import type { Riwayah } from '../storage/types'
-import type {
-  MushafExternalImageDescriptor,
-  MushafExternalImageSource,
-  MushafPageFraming,
-} from './mushaf-index'
+import type { MushafExternalImageDescriptor, MushafExternalImageSource, MushafPageFraming } from './mushaf-index'
 import { mushafManifestUrl, mushafPageUrl, resolveMushafEditionAssetUrl } from './mushaf-paths'
 
 export type { MushafExternalImageSource, MushafPageFraming } from './mushaf-index'
@@ -67,7 +63,10 @@ export type MushafPageDescriptor =
 export type MushafMediaPurpose = 'readable' | 'full'
 
 export class MushafAssetHttpError extends Error {
-  constructor(readonly url: string, readonly status: number) {
+  constructor(
+    readonly url: string,
+    readonly status: number,
+  ) {
     super(`Failed to fetch ${url}: ${status}`)
   }
 }
@@ -208,7 +207,11 @@ export async function loadMushafPageAsset({
   try {
     const prepared = await loadPreparedMushafPage({ context, fetcher, mushafEditionId, page, riwayah, signal })
     if (prepared.kind !== 'inline-svg') throw new Error('External-image Mushaf pages require the prepared page loader')
-    return { status: 'ready', media: { kind: 'inline-svg', inlineSvg: prepared.inlineSvg }, resolved: prepared.resolved }
+    return {
+      status: 'ready',
+      media: { kind: 'inline-svg', inlineSvg: prepared.inlineSvg },
+      resolved: prepared.resolved,
+    }
   } catch (error) {
     if (isAbortError(error) || signal?.aborted) return { status: 'aborted' }
     if (error instanceof Error && /Failed to fetch .*: 404/.test(error.message)) {
@@ -232,20 +235,19 @@ export async function loadPreparedExternalMushafPage({
 }
 
 export async function loadPreparedMushafPage(options: LoadMushafPageAssetOptions): Promise<PreparedMushafPage> {
-  const {
-    fetcher = fetch,
-    mushafEditionId,
-    page,
-    riwayah,
-    signal,
-  } = options
+  const { fetcher = fetch, mushafEditionId, page, riwayah, signal } = options
   if (signal?.aborted) throw abortError()
-  const context = options.context ?? await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal })
+  const context = options.context ?? (await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal }))
   const descriptor = describeMushafPage(context, page)
   if (descriptor.kind === 'external-image') return descriptor
   const media = await prepareMushafDescriptorMedia(descriptor, 'readable', signal, fetcher)
   if (media.kind !== 'inline-svg') throw new Error('Inline Mushaf descriptor did not prepare SVG media')
-  return { kind: 'inline-svg', assetUrl: descriptor.assetUrl, inlineSvg: media.inlineSvg, resolved: descriptor.resolved }
+  return {
+    kind: 'inline-svg',
+    assetUrl: descriptor.assetUrl,
+    inlineSvg: media.inlineSvg,
+    resolved: descriptor.resolved,
+  }
 }
 
 export async function loadMushafPageProfileContext({
@@ -287,10 +289,12 @@ export async function loadMushafFramingCapability({
 
 export function deriveMushafFramingCapability(context: MushafPageProfileContext): MushafFramingCapability {
   if (context.manifest.version !== 2) return { hasValidFraming: false }
-  const valid = context.manifest.pages.length === context.manifest.pageCount
-    && context.manifest.pages.every((page, index) => page.page === index + 1 && isMushafPageFraming(page.framing))
+  const valid =
+    context.manifest.pages.length === context.manifest.pageCount &&
+    context.manifest.pages.every((page, index) => page.page === index + 1 && isMushafPageFraming(page.framing))
   if (!valid) return { hasValidFraming: false }
-  const representativeTextFrame = context.manifest.pages[Math.floor(context.manifest.pages.length / 2)]?.framing.textFrame
+  const representativeTextFrame =
+    context.manifest.pages[Math.floor(context.manifest.pages.length / 2)]?.framing.textFrame
   return representativeTextFrame ? { hasValidFraming: true, representativeTextFrame } : { hasValidFraming: false }
 }
 
@@ -412,17 +416,21 @@ function hasIndexedMushafAsset(
   index: MushafAssetIndex,
   expected: { riwayah: Riwayah; mushafEditionId: string; page: number },
 ): boolean {
-  const entry = index.assets?.find((asset) =>
-    asset.riwayah === expected.riwayah
-    && asset.mushafEditionId === expected.mushafEditionId
-    && asset.manifestUrl === mushafManifestUrl(expected)
-    && asset.pageCount === 604,
+  const entry = index.assets?.find(
+    (asset) =>
+      asset.riwayah === expected.riwayah &&
+      asset.mushafEditionId === expected.mushafEditionId &&
+      asset.manifestUrl === mushafManifestUrl(expected) &&
+      asset.pageCount === 604,
   )
   if (!entry) return false
   const page = Math.min(604, Math.max(1, Math.floor(expected.page)))
   if (entry.version === 'v2') {
-    return Array.isArray(entry.pageUrls)
-      && entry.pageUrls[page - 1] === resolveMushafEditionAssetUrl(expected, `pages/${String(page).padStart(3, '0')}-2136.webp`)
+    return (
+      Array.isArray(entry.pageUrls) &&
+      entry.pageUrls[page - 1] ===
+        resolveMushafEditionAssetUrl(expected, `pages/${String(page).padStart(3, '0')}-2136.webp`)
+    )
   }
   const pageUrl = mushafPageUrl(expected, page)
   return Boolean(entry.files?.some((file) => file.url === pageUrl))
@@ -434,12 +442,13 @@ function assertMushafPageProfileContext(
 ): void {
   assertMushafPageProfileIdentity(context, expected)
   assertMushafManifest(context.manifest, expected)
-  const indexed = context.index.assets?.find((asset) => (
-    asset.riwayah === expected.riwayah
-    && asset.mushafEditionId === expected.mushafEditionId
-    && asset.manifestUrl === mushafManifestUrl(expected)
-    && asset.pageCount === context.manifest.pageCount
-  ))
+  const indexed = context.index.assets?.find(
+    (asset) =>
+      asset.riwayah === expected.riwayah &&
+      asset.mushafEditionId === expected.mushafEditionId &&
+      asset.manifestUrl === mushafManifestUrl(expected) &&
+      asset.pageCount === context.manifest.pageCount,
+  )
   if (!indexed) throw new Error(`Mushaf page pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
   if (context.manifest.version === 2) {
     const external = findExternalMushafIndexEntry(context.index, expected)
@@ -463,13 +472,21 @@ function assertMushafPageProfileIdentity(
   context: MushafPageProfileContext,
   expected: { riwayah: Riwayah; mushafEditionId: string },
 ): void {
-  if (context.riwayah !== expected.riwayah || context.mushafEditionId !== expected.mushafEditionId
-    || context.manifest.riwayah !== expected.riwayah || context.manifest.mushafEditionId !== expected.mushafEditionId) {
+  if (
+    context.riwayah !== expected.riwayah ||
+    context.mushafEditionId !== expected.mushafEditionId ||
+    context.manifest.riwayah !== expected.riwayah ||
+    context.manifest.mushafEditionId !== expected.mushafEditionId
+  ) {
     throw new Error('Mushaf page profile context identity mismatch')
   }
-  if ((context.manifest.version !== 1 && context.manifest.version !== 2)
-    || !Number.isInteger(context.manifest.pageCount) || context.manifest.pageCount < 1
-    || !context.manifest.verseToPage || typeof context.manifest.verseToPage !== 'object') {
+  if (
+    (context.manifest.version !== 1 && context.manifest.version !== 2) ||
+    !Number.isInteger(context.manifest.pageCount) ||
+    context.manifest.pageCount < 1 ||
+    !context.manifest.verseToPage ||
+    typeof context.manifest.verseToPage !== 'object'
+  ) {
     throw new Error('Mushaf page profile context contract is invalid')
   }
 }
@@ -522,7 +539,7 @@ export function prepareReactInlineMushafSvg(
   const document = new DOMParser().parseFromString(text, 'image/svg+xml')
   if (document.querySelector('parsererror')) throw new Error('Invalid Mushaf page SVG')
   const root = document.documentElement
-  if (!root || root.localName.toLowerCase() !== 'svg') throw new Error('Invalid Mushaf page SVG')
+  if (root?.localName.toLowerCase() !== 'svg') throw new Error('Invalid Mushaf page SVG')
   validateSafeSvg(root)
 
   const viewBoxText = root.getAttribute('viewBox')?.trim()
@@ -592,15 +609,13 @@ function compareQuranRefs(a: QuranRef, b: QuranRef): number {
   return a.verse - b.verse
 }
 
-function assertMushafManifest(
-  manifest: MushafManifest,
-  expected: { riwayah: Riwayah; mushafEditionId: string },
-): void {
+function assertMushafManifest(manifest: MushafManifest, expected: { riwayah: Riwayah; mushafEditionId: string }): void {
   if (manifest.version !== 1 && manifest.version !== 2) throw new Error('Unsupported Mushaf manifest version')
   if (manifest.riwayah !== expected.riwayah) throw new Error('Mushaf manifest riwayah mismatch')
   if (manifest.mushafEditionId !== expected.mushafEditionId) throw new Error('Mushaf manifest edition mismatch')
   if (!Number.isInteger(manifest.pageCount) || manifest.pageCount < 1) throw new Error('Invalid Mushaf page count')
-  if (!manifest.verseToPage || typeof manifest.verseToPage !== 'object') throw new Error('Invalid Mushaf verse-to-page map')
+  if (!manifest.verseToPage || typeof manifest.verseToPage !== 'object')
+    throw new Error('Invalid Mushaf verse-to-page map')
   if (manifest.version === 1) return
   if (!Array.isArray(manifest.pages)) throw new Error('Invalid Mushaf manifest pages')
   for (const page of manifest.pages) validateExternalManifestPage(page)
@@ -620,14 +635,16 @@ function findExternalMushafIndexEntry(
   index: MushafAssetIndex,
   expected: { riwayah: Riwayah; mushafEditionId: string },
 ): MushafExternalIndexEntry {
-  const entry = index.assets?.find((asset) => (
-    asset.riwayah === expected.riwayah
-    && asset.mushafEditionId === expected.mushafEditionId
-    && asset.manifestUrl === mushafManifestUrl(expected)
-    && asset.pageCount === 604
-    && asset.version === 'v2'
-  ))
-  if (!entry) throw new Error(`Mushaf external-image pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
+  const entry = index.assets?.find(
+    (asset) =>
+      asset.riwayah === expected.riwayah &&
+      asset.mushafEditionId === expected.mushafEditionId &&
+      asset.manifestUrl === mushafManifestUrl(expected) &&
+      asset.pageCount === 604 &&
+      asset.version === 'v2',
+  )
+  if (!entry)
+    throw new Error(`Mushaf external-image pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
   return entry as MushafExternalIndexEntry
 }
 
@@ -639,13 +656,16 @@ function validateExternalManifestIndexAgreement(
   if (manifest.pageCount !== 604 || manifest.pages.length !== manifest.pageCount) {
     throw new Error('External-image Mushaf manifest must contain every page')
   }
-  if (!Array.isArray(indexEntry.pageUrls) || indexEntry.pageUrls.length !== manifest.pageCount || !Array.isArray(indexEntry.files)) {
+  if (
+    !Array.isArray(indexEntry.pageUrls) ||
+    indexEntry.pageUrls.length !== manifest.pageCount ||
+    !Array.isArray(indexEntry.files)
+  ) {
     throw new Error('External-image Mushaf asset index is incomplete')
   }
   const manifestUrl = mushafManifestUrl(identity)
   const expectedDescriptors = new Map<string, MushafExternalImageDescriptor>()
-  for (let index = 0; index < manifest.pages.length; index += 1) {
-    const page = manifest.pages[index]!
+  for (const [index, page] of manifest.pages.entries()) {
     if (page.page !== index + 1) throw new Error('External-image Mushaf manifest page order is invalid')
     const fallbackUrl = resolveMushafEditionAssetUrl(identity, page.media.fallback.assetPath)
     if (indexEntry.pageUrls[page.page - 1] !== fallbackUrl) {
@@ -653,7 +673,8 @@ function validateExternalManifestIndexAgreement(
     }
     for (const descriptor of page.media.sources) {
       const url = resolveMushafEditionAssetUrl(identity, descriptor.assetPath)
-      if (expectedDescriptors.has(url)) throw new Error(`External-image descriptor disagrees with its asset index at page ${page.page}`)
+      if (expectedDescriptors.has(url))
+        throw new Error(`External-image descriptor disagrees with its asset index at page ${page.page}`)
       expectedDescriptors.set(url, descriptor)
     }
   }
@@ -700,7 +721,8 @@ function validateExternalManifestPage(page: MushafManifestPageV2): void {
   if (!isMushafPageFraming(page.framing) || page.media?.kind !== 'external-image') {
     throw new Error('Invalid V2 Mushaf manifest page')
   }
-  if (!Array.isArray(page.media.sources) || page.media.sources.length !== 2) throw new Error('Invalid V2 Mushaf media sources')
+  if (!Array.isArray(page.media.sources) || page.media.sources.length !== 2)
+    throw new Error('Invalid V2 Mushaf media sources')
   for (const descriptor of page.media.sources) validateExternalDescriptor(descriptor, page.page)
   validateExternalDescriptor(page.media.fallback, page.page)
   const preview = page.media.sources.find((source) => source.width === 1280)
@@ -711,31 +733,49 @@ function validateExternalManifestPage(page: MushafManifestPageV2): void {
 }
 
 function validateExternalDescriptor(descriptor: MushafExternalImageDescriptor, page: number): void {
-  if (!descriptor || descriptor.assetPath !== `pages/${String(page).padStart(3, '0')}-${descriptor.width}.webp`
-    || !Number.isInteger(descriptor.bytes) || descriptor.bytes <= 0
-    || !/^[a-f0-9]{64}$/.test(descriptor.sha256)
-    || !Number.isInteger(descriptor.width) || descriptor.width <= 0
-    || !Number.isInteger(descriptor.height) || descriptor.height <= 0
-    || descriptor.mimeType !== 'image/webp') {
+  if (
+    !descriptor ||
+    descriptor.assetPath !== `pages/${String(page).padStart(3, '0')}-${descriptor.width}.webp` ||
+    !Number.isInteger(descriptor.bytes) ||
+    descriptor.bytes <= 0 ||
+    !/^[a-f0-9]{64}$/.test(descriptor.sha256) ||
+    !Number.isInteger(descriptor.width) ||
+    descriptor.width <= 0 ||
+    !Number.isInteger(descriptor.height) ||
+    descriptor.height <= 0 ||
+    descriptor.mimeType !== 'image/webp'
+  ) {
     throw new Error(`Invalid V2 Mushaf external-image descriptor at page ${page}`)
   }
 }
 
 function isMushafPageFraming(value: MushafPageFraming): boolean {
   const frame = value?.textFrame
-  return Boolean(frame && ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(frame[key as keyof typeof frame]))
-    && frame.x >= 0 && frame.y >= 0 && frame.width > 0 && frame.height > 0
-    && frame.x + frame.width <= 1 && frame.y + frame.height <= 1
-    && ['left', 'right', 'none'].includes(value.sideLane))
+  return Boolean(
+    frame &&
+      ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(frame[key as keyof typeof frame])) &&
+      frame.x >= 0 &&
+      frame.y >= 0 &&
+      frame.width > 0 &&
+      frame.height > 0 &&
+      frame.x + frame.width <= 1 &&
+      frame.y + frame.height <= 1 &&
+      ['left', 'right', 'none'].includes(value.sideLane),
+  )
 }
 
-function sameExternalDescriptor(file: Record<string, unknown> | undefined, descriptor: MushafExternalImageDescriptor): boolean {
-  return Boolean(file
-    && file.bytes === descriptor.bytes
-    && file.sha256 === descriptor.sha256
-    && file.width === descriptor.width
-    && file.height === descriptor.height
-    && file.mimeType === descriptor.mimeType)
+function sameExternalDescriptor(
+  file: Record<string, unknown> | undefined,
+  descriptor: MushafExternalImageDescriptor,
+): boolean {
+  return Boolean(
+    file &&
+      file.bytes === descriptor.bytes &&
+      file.sha256 === descriptor.sha256 &&
+      file.width === descriptor.width &&
+      file.height === descriptor.height &&
+      file.mimeType === descriptor.mimeType,
+  )
 }
 
 function isQuranRef(value: QuranRef): boolean {
@@ -801,10 +841,10 @@ async function fetchText(fetcher: typeof fetch, url: string, signal?: AbortSigna
 
 function parseViewBox(text: string): SvgViewBox {
   const parts = text.trim().split(/\s+/).map(Number)
-  if (parts.length !== 4 || parts.some((part) => !Number.isFinite(part)) || parts[2]! <= 0 || parts[3]! <= 0) {
+  if (parts.length !== 4 || parts.some((part) => !Number.isFinite(part)) || parts[2] <= 0 || parts[3] <= 0) {
     throw new Error(`Invalid Mushaf viewBox: ${text}`)
   }
-  return { x: parts[0]!, y: parts[1]!, width: parts[2]!, height: parts[3]! }
+  return { x: parts[0], y: parts[1], width: parts[2], height: parts[3] }
 }
 
 function sameViewBox(left: SvgViewBox, right: SvgViewBox): boolean {
@@ -812,9 +852,12 @@ function sameViewBox(left: SvgViewBox, right: SvgViewBox): boolean {
 }
 
 function assertContainedViewBox(display: SvgViewBox, source: SvgViewBox): void {
-  if (display.x < source.x || display.y < source.y
-    || display.x + display.width > source.x + source.width
-    || display.y + display.height > source.y + source.height) {
+  if (
+    display.x < source.x ||
+    display.y < source.y ||
+    display.x + display.width > source.x + source.width ||
+    display.y + display.height > source.y + source.height
+  ) {
     throw new Error('Mushaf display viewBox is outside the source viewBox')
   }
 }
@@ -834,13 +877,17 @@ function roundViewBoxNumber(value: number): number {
 function validateSafeSvg(root: Element): void {
   for (const element of [root, ...Array.from(root.querySelectorAll('*'))]) {
     const name = element.localName.toLowerCase()
-    if (name === 'script' || name === 'foreignobject' || name === 'style') throw new Error('Mushaf page SVG contains unsafe content')
+    if (name === 'script' || name === 'foreignobject' || name === 'style')
+      throw new Error('Mushaf page SVG contains unsafe content')
     for (const attr of Array.from(element.attributes)) {
       const attrName = attr.name.toLowerCase()
       const value = attr.value.trim()
       if (attrName.startsWith('on')) throw new Error('Mushaf page SVG contains unsafe content')
       if (attrName === 'href' || attrName.endsWith(':href') || attrName === 'src') validateFragment(value)
-      if ((attrName === 'fill' || attrName === 'stroke' || attrName === 'clip-path' || attrName === 'mask') && /\burl\s*\(/i.test(value)) {
+      if (
+        (attrName === 'fill' || attrName === 'stroke' || attrName === 'clip-path' || attrName === 'mask') &&
+        /\burl\s*\(/i.test(value)
+      ) {
         for (const match of value.matchAll(/\burl\s*\(\s*(?:(["'])(.*?)\1|([^)]*?))\s*\)/gis)) {
           validateFragment((match[2] ?? match[3] ?? '').trim())
         }

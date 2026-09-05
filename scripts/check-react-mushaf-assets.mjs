@@ -10,19 +10,23 @@ async function walk(dir) {
   const files = []
   for (const entry of entries) {
     const path = join(dir, entry.name)
-    if (entry.isDirectory()) files.push(...await walk(path))
+    if (entry.isDirectory()) files.push(...(await walk(path)))
     else files.push(path)
   }
   return files
 }
 
 export function checkReactMushafAssetText(repoRelativePath, text) {
-  return [...text.matchAll(legacyMushafPattern)].map((match) => `${repoRelativePath} contains legacy React Mushaf path ${match[0]}.`)
+  return [...text.matchAll(legacyMushafPattern)].map(
+    (match) => `${repoRelativePath} contains legacy React Mushaf path ${match[0]}.`,
+  )
 }
 
 export function checkReactMushafOutputFiles(files) {
   return files
-    .filter((file) => file.path.startsWith('dist/assets/') && extname(file.path) === '.svg' && /<svg[\s>]/.test(file.text))
+    .filter(
+      (file) => file.path.startsWith('dist/assets/') && extname(file.path) === '.svg' && /<svg[\s>]/.test(file.text),
+    )
     .map((file) => `${file.path} contains a Mushaf SVG body; React must install page packs on demand.`)
 }
 

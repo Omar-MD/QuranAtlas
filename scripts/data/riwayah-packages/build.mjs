@@ -42,15 +42,24 @@ function datasetUrl(path) {
 }
 
 function datasetRelPathFromUrl(url) {
-  ensure(typeof url === 'string' && url.startsWith('/dataset/') && !url.includes('..') && !url.includes('://'), `Invalid dataset URL: ${url}`)
+  ensure(
+    typeof url === 'string' && url.startsWith('/dataset/') && !url.includes('..') && !url.includes('://'),
+    `Invalid dataset URL: ${url}`,
+  )
   return url.slice('/dataset/'.length)
 }
 
 async function loadCatalog() {
   const catalog = await readJson(CATALOG_PATH)
   ensure(catalog.version === 1, 'Riwayah package catalog version must be 1')
-  ensure(catalog.defaultRiwayah === DEFAULT_PROFILE.riwayah, `Riwayah package catalog default must be ${DEFAULT_PROFILE.riwayah}`)
-  ensure(catalog.baselineRiwayah === DEFAULT_PROFILE.riwayah, `Riwayah package catalog baseline must be ${DEFAULT_PROFILE.riwayah}`)
+  ensure(
+    catalog.defaultRiwayah === DEFAULT_PROFILE.riwayah,
+    `Riwayah package catalog default must be ${DEFAULT_PROFILE.riwayah}`,
+  )
+  ensure(
+    catalog.baselineRiwayah === DEFAULT_PROFILE.riwayah,
+    `Riwayah package catalog baseline must be ${DEFAULT_PROFILE.riwayah}`,
+  )
   for (const riwayah of RIWAYAT) {
     ensure(typeof catalog.riwayat?.[riwayah]?.optional === 'boolean', `Riwayah package catalog missing ${riwayah}`)
   }
@@ -94,7 +103,9 @@ async function textAssetsFor(riwayah, textAssetIndex) {
 
 async function pageAssetsFor(riwayah, mushafAssetIndex) {
   const mushafEditionId = mushafAssetIndex.defaults[riwayah] ?? DEFAULT_MUSHAF_EDITIONS[riwayah]
-  const asset = mushafAssetIndex.assets.find((entry) => entry.riwayah === riwayah && entry.mushafEditionId === mushafEditionId)
+  const asset = mushafAssetIndex.assets.find(
+    (entry) => entry.riwayah === riwayah && entry.mushafEditionId === mushafEditionId,
+  )
   const files = Array.isArray(asset?.files) ? asset.files : []
   const urls = files.map((file) => file.url)
   const available = typeof asset?.manifestUrl === 'string' && files.length === 605 && (await urlsExist(urls))
@@ -172,7 +183,7 @@ export async function buildRiwayahPackageIndex({ profile = 'baseline', check = f
 
   if (!check) {
     await mkdir(dirname(OUT_PATH), { recursive: true })
-    await writeFile(OUT_PATH, JSON.stringify(index, null, 2) + '\n', 'utf8')
+    await writeFile(OUT_PATH, `${JSON.stringify(index, null, 2)}\n`, 'utf8')
     await refreshDatasetManifest(profile)
   }
 

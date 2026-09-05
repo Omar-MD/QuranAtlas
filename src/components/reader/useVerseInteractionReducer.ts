@@ -4,9 +4,7 @@ type VerseInteractionState = {
   selectedVerseKey: string | null
 }
 
-type VerseInteractionAction =
-  | { type: 'select'; verseKey: string }
-  | { type: 'clear' }
+type VerseInteractionAction = { type: 'select'; verseKey: string } | { type: 'clear' }
 
 function reducer(state: VerseInteractionState, action: VerseInteractionAction): VerseInteractionState {
   if (action.type === 'clear') return { selectedVerseKey: null }

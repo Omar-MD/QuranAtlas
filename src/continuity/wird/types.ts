@@ -54,15 +54,14 @@ export type WirdBoundaries = {
   page: WirdBoundary[]
 }
 
-export type WirdSummary =
-  {
-    state: WirdSummaryState
-    plan: WirdPlan | null
-    percent: number
-    todayPercent: number
-    nextRef: QuranRef | null
-    todayRangeLabel: string
-    todayRemainingLabel?: string
-    remainingLabel: string
-    reminderLabel: string | null
-  }
+export type WirdSummary = {
+  state: WirdSummaryState
+  plan: WirdPlan | null
+  percent: number
+  todayPercent: number
+  nextRef: QuranRef | null
+  todayRangeLabel: string
+  todayRemainingLabel?: string
+  remainingLabel: string
+  reminderLabel: string | null
+}

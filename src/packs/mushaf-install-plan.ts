@@ -10,7 +10,8 @@ export type MushafInstallPlan = CacheInstallPlan & {
 
 export function buildMushafInstallPlan(entry: MushafAssetIndexEntry): MushafInstallPlan {
   const valid = validateMushafAssetIndexEntry(entry)
-  const urls = valid.pageUrls ?? Array.from({ length: MUSHAF_PAGE_COUNT }, (_, index) => mushafPageUrl(valid, index + 1))
+  const urls =
+    valid.pageUrls ?? Array.from({ length: MUSHAF_PAGE_COUNT }, (_, index) => mushafPageUrl(valid, index + 1))
   const genericPlan = buildCacheInstallPlan({
     packId: valid.packId,
     kind: 'mushaf-pages',

@@ -41,12 +41,12 @@ export const SEARCH_FEATURE_IDS = {
   provenance: 'provenance',
 } as const
 
-export type SearchFeatureId = typeof SEARCH_FEATURE_IDS[keyof typeof SEARCH_FEATURE_IDS]
+export type SearchFeatureId = (typeof SEARCH_FEATURE_IDS)[keyof typeof SEARCH_FEATURE_IDS]
 export type SearchShardSchemaId = `search-shard-${SearchFeatureId}-v${number}`
 export type SearchChecksumScope = 'encoded-bytes' | 'decoded-bytes'
-export type SearchTableRoleId = typeof SEARCH_TABLE_ROLES[keyof typeof SEARCH_TABLE_ROLES]
-export type SearchValueWidthId = typeof SEARCH_VALUE_WIDTHS[keyof typeof SEARCH_VALUE_WIDTHS]
-export type SearchTableAlignment = typeof SEARCH_TABLE_ALIGNMENTS[number]
+export type SearchTableRoleId = (typeof SEARCH_TABLE_ROLES)[keyof typeof SEARCH_TABLE_ROLES]
+export type SearchValueWidthId = (typeof SEARCH_VALUE_WIDTHS)[keyof typeof SEARCH_VALUE_WIDTHS]
+export type SearchTableAlignment = (typeof SEARCH_TABLE_ALIGNMENTS)[number]
 
 export interface SearchByteBudget {
   maxShardBytes: number

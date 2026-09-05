@@ -24,7 +24,14 @@ export type ReaderSurahMeta = {
 
 export type ReaderCorpusState =
   | { status: 'idle' | 'loading' }
-  | { status: 'ready'; footnotes: Record<string, string>; riwayah: Riwayah; surah: ReaderSurahMeta; translationVisible: boolean; verses: ReaderVerse[] }
+  | {
+      status: 'ready'
+      footnotes: Record<string, string>
+      riwayah: Riwayah
+      surah: ReaderSurahMeta
+      translationVisible: boolean
+      verses: ReaderVerse[]
+    }
   | { status: 'unavailable'; reason: string }
   | { status: 'error'; error: Error }
   | { status: 'aborted' }
@@ -90,7 +97,11 @@ async function loadTranslation(
 ): Promise<TranslationPayload | null> {
   try {
     const padded = String(surah).padStart(3, '0')
-    const payload = await fetchJson<TranslationPayload>(fetcher, `/dataset/translations/${translationId}/${padded}.json`, signal)
+    const payload = await fetchJson<TranslationPayload>(
+      fetcher,
+      `/dataset/translations/${translationId}/${padded}.json`,
+      signal,
+    )
     if (payload.surahNo !== surah || !Array.isArray(payload.verses)) return null
     return payload
   } catch (error) {
@@ -102,10 +113,7 @@ async function loadTranslation(
   }
 }
 
-export async function loadReaderSurah(
-  surah: number,
-  options: ReaderCorpusOptions = {},
-): Promise<ReaderCorpusState> {
+export async function loadReaderSurah(surah: number, options: ReaderCorpusOptions = {}): Promise<ReaderCorpusState> {
   const fetcher = options.fetcher ?? fetch
   const riwayah = options.riwayah ?? DEFAULT_RIWAYAH
   const quranTextStyleId = options.quranTextStyleId ?? DEFAULT_QURAN_TEXT_STYLE_ID

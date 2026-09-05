@@ -1,8 +1,4 @@
-import {
-  normalizeSearchInput,
-  tokenizeSearchInput,
-  type SearchNormalizationMode,
-} from '../../shared/search'
+import { normalizeSearchInput, tokenizeSearchInput, type SearchNormalizationMode } from '../../shared/search'
 
 export type { SearchNormalizationMode }
 

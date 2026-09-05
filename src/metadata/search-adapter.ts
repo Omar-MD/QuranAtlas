@@ -12,12 +12,14 @@ export function metadataToSearchEntries(rows: Iterable<VerseMetadata>): ContextS
     const [surah, verse] = row.verseKey.split(':').map(Number)
     const text = [row.themes.map((theme) => theme.label).join(' '), row.passageSummary].filter(Boolean).join(' ')
     return text
-      ? [{
-          id: `context:${row.verseKey}`,
-          lane: 'context' as const,
-          sourceRef: `${surah}:${verse}` as const,
-          text,
-        }]
+      ? [
+          {
+            id: `context:${row.verseKey}`,
+            lane: 'context' as const,
+            sourceRef: `${surah}:${verse}` as const,
+            text,
+          },
+        ]
       : []
   })
 }

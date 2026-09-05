@@ -1,6 +1,11 @@
 import { getAliasVerses, type VerseAlias, type VerseAliases } from '../data/verse-aliases'
 import type { Riwayah } from '../storage/types'
-import { isValidQuranAyahRef, type SearchMappingAsset, type SearchMappingState, type SearchReaderRef } from '../../shared/search'
+import {
+  isValidQuranAyahRef,
+  type SearchMappingAsset,
+  type SearchMappingState,
+  type SearchReaderRef,
+} from '../../shared/search'
 import type { SearchGraphRef } from './schema'
 
 export type SearchReaderRiwayah = Riwayah | 'hafs'
@@ -51,7 +56,12 @@ export function mapSearchRefToReader({
   const surahAliases = aliases[String(surah)]
   if (!surahAliases) {
     return hasLoadedAliases(aliases)
-      ? readerIdentity(sourceRef, surah, ayah, 'This surah is omitted from the Hafs-to-Qalun alias table because its ayah boundaries are identity-mapped')
+      ? readerIdentity(
+          sourceRef,
+          surah,
+          ayah,
+          'This surah is omitted from the Hafs-to-Qalun alias table because its ayah boundaries are identity-mapped',
+        )
       : sourceOnly(sourceRef, 'Reader alias data is not available for this Search result')
   }
 

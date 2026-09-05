@@ -2,20 +2,9 @@ import type { SearchResultCursor } from './query'
 
 export type SourceKindV1 = 'quran-text' | 'translation' | 'morphology' | 'reader-mapping'
 
-export type QueryIntentLite =
-  | 'open-reference'
-  | 'find-occurrences'
-  | 'answer-question'
-  | 'trace-language'
-  | 'unknown'
+export type QueryIntentLite = 'open-reference' | 'find-occurrences' | 'answer-question' | 'trace-language' | 'unknown'
 
-export type SearchLensLite =
-  | 'reference'
-  | 'quran-text'
-  | 'translation'
-  | 'phrase'
-  | 'morphology'
-  | 'mixed'
+export type SearchLensLite = 'reference' | 'quran-text' | 'translation' | 'phrase' | 'morphology' | 'mixed'
 
 export type QueryUnderstandingLite = {
   originalQuery: string
@@ -109,17 +98,9 @@ export type ReaderMappingEvidence = BaseEvidenceAtom & {
   mappingStatus: 'same-riwayah' | 'verse-level-only' | 'token-level-mapped' | 'token-level-different' | 'unmapped'
 }
 
-export type EvidenceAtom =
-  | QuranTextEvidence
-  | TranslationEvidence
-  | MorphologyEvidence
-  | ReaderMappingEvidence
+export type EvidenceAtom = QuranTextEvidence | TranslationEvidence | MorphologyEvidence | ReaderMappingEvidence
 
-export type ClaimAttributionLite =
-  | 'quran-mentions'
-  | 'quran-states'
-  | 'translation-renders'
-  | 'morphology-analyzes'
+export type ClaimAttributionLite = 'quran-mentions' | 'quran-states' | 'translation-renders' | 'morphology-analyzes'
 
 export type ClaimPredicateLite = 'mentions' | 'states' | 'renders' | 'analyzes'
 
@@ -130,11 +111,7 @@ export type ClaimSupport = {
   verdict: 'supported' | 'insufficient'
 }
 
-export type ClaimTemplateIdLite =
-  | 'quran-mentions'
-  | 'quran-states'
-  | 'translation-renders'
-  | 'morphology-analyzes'
+export type ClaimTemplateIdLite = 'quran-mentions' | 'quran-states' | 'translation-renders' | 'morphology-analyzes'
 
 export type AnswerClaim = {
   id: string
@@ -146,12 +123,7 @@ export type AnswerClaim = {
   supportId: string
 }
 
-export type DeferredSourceRequirement =
-  | 'tafsir'
-  | 'asbab'
-  | 'hadith'
-  | 'theme'
-  | 'cross-reference'
+export type DeferredSourceRequirement = 'tafsir' | 'asbab' | 'hadith' | 'theme' | 'cross-reference'
 
 export type AnswerBlockerLite =
   | 'insufficient-evidence'
@@ -186,12 +158,10 @@ export type EvidenceBasisLite = {
 }
 
 export const QURAN_AYAH_COUNTS = [
-  7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98,
-  135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85,
-  54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11,
-  11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25,
-  22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6,
-  3, 5, 4, 5, 6,
+  7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77,
+  227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55,
+  78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36,
+  25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6,
 ] as const
 
 export function isValidQuranAyahRef(value: string): value is `${number}:${number}` {
@@ -292,7 +262,11 @@ const SOURCE_FAMILY_AVAILABILITIES: readonly SourceFamilyStatusLite['availabilit
   'unsupported-for-query',
   'failed',
 ]
-const SEARCH_PLAN_LANE_STATUSES: readonly SearchPlanLite['lanes'][number]['status'][] = ['executed', 'skipped', 'failed']
+const SEARCH_PLAN_LANE_STATUSES: readonly SearchPlanLite['lanes'][number]['status'][] = [
+  'executed',
+  'skipped',
+  'failed',
+]
 const SEARCH_PLAN_EXCLUDED_REASONS: readonly SearchPlanLite['excludedSources'][number]['reason'][] = [
   'not-installed',
   'not-indexed',
@@ -330,7 +304,11 @@ const DEFERRED_SOURCE_REQUIREMENTS: readonly DeferredSourceRequirement[] = [
   'cross-reference',
 ]
 const RENDER_PERMISSIONS: readonly AnswerabilityDecision['renderPermission'][] = ['answer-preview', 'no-answer-claims']
-const READER_ACTION_TYPES: readonly ReaderActionLite['type'][] = ['open-in-reader', 'open-source-in-reader', 'unavailable']
+const READER_ACTION_TYPES: readonly ReaderActionLite['type'][] = [
+  'open-in-reader',
+  'open-source-in-reader',
+  'unavailable',
+]
 const DISPLAY_TARGET_TYPES: readonly EvidenceDisplayTarget['type'][] = ['verse-ref', 'quote-range', 'token']
 const MORPHOLOGY_ANALYSIS_SCOPES: readonly MorphologyEvidence['analysisScope'][] = ['token', 'segment']
 const READER_MAPPING_STATUSES: readonly ReaderMappingEvidence['mappingStatus'][] = [
@@ -450,7 +428,7 @@ function assertEvidenceAtomVariant(atom: EvidenceAtom): void {
 }
 
 function isSupportedClaimAuthorityKey(key: ClaimAuthorityKey): key is SupportedClaimAuthorityKey {
-  return Object.prototype.hasOwnProperty.call(V1_CLAIM_AUTHORITY, key)
+  return Object.keys(V1_CLAIM_AUTHORITY).includes(key)
 }
 
 function assertAnswerabilityDecision(decision: AnswerabilityDecision): void {
@@ -579,10 +557,12 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     assertArray(support.supportIds, `claim support ${support.id} supportIds`)
     assertKnownValue(support.verdict, CLAIM_SUPPORT_VERDICTS, `claim support ${support.id} verdict`)
     const claim = claimById.get(support.claimId)
-    if (!claim && support.verdict === 'supported') throw new Error(`supported claim support ${support.id} points to missing claim`)
+    if (!claim && support.verdict === 'supported')
+      throw new Error(`supported claim support ${support.id} points to missing claim`)
     if (support.supportIds.length === 0) throw new Error(`claim support ${support.id} has no evidence`)
     for (const supportId of support.supportIds) {
-      if (!evidenceById.has(supportId)) throw new Error(`claim support ${support.id} references missing evidence ${supportId}`)
+      if (!evidenceById.has(supportId))
+        throw new Error(`claim support ${support.id} references missing evidence ${supportId}`)
     }
   }
 
@@ -590,10 +570,12 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     assertRecord(claim, 'claim')
     const support = supportById.get(claim.supportId)
     if (!support) throw new Error(`claim ${claim.id} references missing support ${claim.supportId}`)
-    if (support.claimId !== claim.id) throw new Error(`claim ${claim.id} support ${support.id} points to ${support.claimId}`)
+    if (support.claimId !== claim.id)
+      throw new Error(`claim ${claim.id} support ${support.id} points to ${support.claimId}`)
     if (support.verdict !== 'supported') throw new Error(`claim ${claim.id} cannot render with insufficient support`)
     const authorityKey: ClaimAuthorityKey = `${claim.attribution}:${claim.predicate}`
-    if (!isSupportedClaimAuthorityKey(authorityKey)) throw new Error(`claim ${claim.id} has unsupported authority key ${authorityKey}`)
+    if (!isSupportedClaimAuthorityKey(authorityKey))
+      throw new Error(`claim ${claim.id} has unsupported authority key ${authorityKey}`)
     const allowedKinds = V1_CLAIM_AUTHORITY[authorityKey]
     for (const supportId of support.supportIds) {
       const atom = evidenceById.get(supportId)
@@ -603,10 +585,14 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
       }
       const sourceStatus = sourceStatusByKind.get(atom.sourceKind)
       if (!sourceStatus) {
-        throw new Error(`claim ${claim.id} evidence ${atom.id} uses source family ${atom.sourceKind} without sourceFamilyStatuses entry`)
+        throw new Error(
+          `claim ${claim.id} evidence ${atom.id} uses source family ${atom.sourceKind} without sourceFamilyStatuses entry`,
+        )
       }
       if (sourceStatus.availability !== 'available' || !sourceStatus.canSupportClaims) {
-        throw new Error(`claim ${claim.id} cannot use ${atom.evidenceType} evidence because source family ${atom.sourceKind} cannot support claims`)
+        throw new Error(
+          `claim ${claim.id} cannot use ${atom.evidenceType} evidence because source family ${atom.sourceKind} cannot support claims`,
+        )
       }
     }
   }
@@ -615,8 +601,10 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     assertRecord(card, 'evidence card')
     assertArray(card.evidenceAtomIds, `evidence card ${card.id} evidenceAtomIds`)
     assertArray(card.claimSupportIds, `evidence card ${card.id} claimSupportIds`)
-    if (card.evidenceAtomIds.length === 0) throw new Error(`evidence card ${card.id} evidenceAtomIds must include at least one item`)
-    if (card.claimSupportIds.length === 0) throw new Error(`evidence card ${card.id} claimSupportIds must include at least one item`)
+    if (card.evidenceAtomIds.length === 0)
+      throw new Error(`evidence card ${card.id} evidenceAtomIds must include at least one item`)
+    if (card.claimSupportIds.length === 0)
+      throw new Error(`evidence card ${card.id} claimSupportIds must include at least one item`)
     const cardEvidenceIds = new Set(card.evidenceAtomIds)
     const supportEvidenceIds = new Set<string>()
     const supportEvidenceRefs = new Set<string>()
@@ -625,37 +613,49 @@ export function assertAnswerPreviewContract(preview: AnswerPreview): void {
     }
     for (const supportId of card.claimSupportIds) {
       const support = supportById.get(supportId)
-      if (!support || support.verdict !== 'supported') {
+      if (support?.verdict !== 'supported') {
         throw new Error(`evidence card ${card.id} references unsupported claim support ${supportId}`)
       }
       if (!claimById.has(support.claimId)) {
-        throw new Error(`evidence card ${card.id} support ${supportId} points to missing rendered claim ${support.claimId}`)
+        throw new Error(
+          `evidence card ${card.id} support ${supportId} points to missing rendered claim ${support.claimId}`,
+        )
       }
       for (const supportEvidenceId of support.supportIds) {
         const supportEvidence = evidenceById.get(supportEvidenceId)
-        if (!supportEvidence) throw new Error(`evidence card ${card.id} support ${supportId} references missing evidence ${supportEvidenceId}`)
+        if (!supportEvidence)
+          throw new Error(
+            `evidence card ${card.id} support ${supportId} references missing evidence ${supportEvidenceId}`,
+          )
         supportEvidenceIds.add(supportEvidenceId)
         for (const ref of supportEvidence.refs) supportEvidenceRefs.add(ref)
         if (!cardEvidenceIds.has(supportEvidenceId)) {
-          throw new Error(`evidence card ${card.id} support ${supportId} evidence ${supportEvidenceId} is not included in card evidenceAtomIds`)
+          throw new Error(
+            `evidence card ${card.id} support ${supportId} evidence ${supportEvidenceId} is not included in card evidenceAtomIds`,
+          )
         }
       }
     }
     for (const atomId of card.evidenceAtomIds) {
-      if (!supportEvidenceIds.has(atomId)) throw new Error(`evidence card ${card.id} includes unrelated evidence ${atomId}`)
+      if (!supportEvidenceIds.has(atomId))
+        throw new Error(`evidence card ${card.id} includes unrelated evidence ${atomId}`)
     }
     assertRecord(card.readerAction, `evidence card ${card.id} readerAction`)
     assertKnownValue(card.readerAction.type, READER_ACTION_TYPES, `evidence card ${card.id} readerAction type`)
     if (card.readerAction.type === 'open-in-reader') {
       assertAyahRef(card.readerAction.ref, `evidence card ${card.id} open-in-reader ref`)
       if (!supportEvidenceRefs.has(card.readerAction.ref)) {
-        throw new Error(`evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked support evidence`)
+        throw new Error(
+          `evidence card ${card.id} open-in-reader ref ${card.readerAction.ref} is not linked support evidence`,
+        )
       }
     }
     if (card.readerAction.type === 'open-source-in-reader') {
       assertAyahRef(card.readerAction.sourceRef, `evidence card ${card.id} open-source-in-reader sourceRef`)
       if (!supportEvidenceRefs.has(card.readerAction.sourceRef)) {
-        throw new Error(`evidence card ${card.id} open-source-in-reader sourceRef ${card.readerAction.sourceRef} is not linked support evidence`)
+        throw new Error(
+          `evidence card ${card.id} open-source-in-reader sourceRef ${card.readerAction.sourceRef} is not linked support evidence`,
+        )
       }
     }
   }

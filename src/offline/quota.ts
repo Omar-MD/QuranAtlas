@@ -14,5 +14,5 @@ export function mapQuotaEstimate(estimate: QuotaEstimate): { status: QuotaStatus
 }
 
 export async function estimateStorageQuota(): Promise<{ status: QuotaStatus; ratio?: number }> {
-  return mapQuotaEstimate(await navigator.storage?.estimate?.() ?? {})
+  return mapQuotaEstimate((await navigator.storage?.estimate?.()) ?? {})
 }

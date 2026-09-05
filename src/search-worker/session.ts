@@ -135,8 +135,9 @@ export class SearchWorkerSession {
   }
 
   private async init(packId: string): Promise<void> {
-    const manifest = this.options.manifest ?? await loadSearchPackManifestFromRegistry(packId, this.options)
-    if (manifest.packId !== packId) throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} does not match active manifest`)
+    const manifest = this.options.manifest ?? (await loadSearchPackManifestFromRegistry(packId, this.options))
+    if (manifest.packId !== packId)
+      throw new SearchPackReaderError('unavailable-pack', `Search pack ${packId} does not match active manifest`)
     this.reader = new SearchPackReader(manifest, this.options)
     this.executor = new SearchQueryExecutor(this.reader)
     this.askBuilder = new AskSearchPreviewBuilder(this.reader)
@@ -171,7 +172,8 @@ export class SearchWorkerSession {
   }
 
   private requireGraphExecutor(): SearchGraphExecutor {
-    if (!this.graphExecutor) throw new SearchPackReaderError('unavailable-pack', 'Search worker is not initialized', true)
+    if (!this.graphExecutor)
+      throw new SearchPackReaderError('unavailable-pack', 'Search worker is not initialized', true)
     return this.graphExecutor
   }
 
@@ -179,7 +181,11 @@ export class SearchWorkerSession {
     if (this.activeGeneration === null) return
     const current = await readActivationGeneration()
     if (current !== this.activeGeneration) {
-      throw new SearchPackReaderError('activation-changed', 'Search pack activation changed while the request was running', true)
+      throw new SearchPackReaderError(
+        'activation-changed',
+        'Search pack activation changed while the request was running',
+        true,
+      )
     }
   }
 
@@ -206,7 +212,8 @@ export class SearchWorkerSession {
     if (error instanceof SearchCancelledError) return this.error(requestId, 'cancelled', error.message)
     if (error instanceof SearchPackReaderError) return this.error(requestId, error.code, error.message, error.retryable)
     if (error instanceof SearchQueryParseError) return this.error(requestId, error.code, error.message)
-    if (error instanceof Error && error.message.includes('cursor')) return this.error(requestId, 'stale-epoch', error.message, true)
+    if (error instanceof Error && error.message.includes('cursor'))
+      return this.error(requestId, 'stale-epoch', error.message, true)
     return this.error(requestId, 'corrupt-shard', error instanceof Error ? error.message : String(error))
   }
 

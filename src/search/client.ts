@@ -26,11 +26,14 @@ export class SearchClient {
   private worker: Worker | null = null
   private sequence = 0
   private epoch = 0
-  private readonly pending = new Map<string, {
-    resolve: (response: SearchWorkerResponse) => void
-    reject: (error: Error) => void
-    timeout: ReturnType<typeof setTimeout>
-  }>()
+  private readonly pending = new Map<
+    string,
+    {
+      resolve: (response: SearchWorkerResponse) => void
+      reject: (error: Error) => void
+      timeout: ReturnType<typeof setTimeout>
+    }
+  >()
   private readonly createWorker: () => Worker
   private readonly requestTimeoutMs: number
 

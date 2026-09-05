@@ -39,12 +39,12 @@ export function assertSearchCursorValid(
 ): void {
   if (!cursor) return
   if (
-    cursor.packId !== expected.packId
-    || cursor.packVersion !== expected.packVersion
-    || cursor.queryHash !== expected.queryHash
-    || cursor.queryAstVersion !== SEARCH_QUERY_AST_VERSION
-    || cursor.rankVersion !== SEARCH_RANK_VERSION
-    || cursor.sort !== expected.sort
+    cursor.packId !== expected.packId ||
+    cursor.packVersion !== expected.packVersion ||
+    cursor.queryHash !== expected.queryHash ||
+    cursor.queryAstVersion !== SEARCH_QUERY_AST_VERSION ||
+    cursor.rankVersion !== SEARCH_RANK_VERSION ||
+    cursor.sort !== expected.sort
   ) {
     throw new Error('Search result cursor is no longer valid for this pack, query, rank, or sort')
   }

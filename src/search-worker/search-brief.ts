@@ -212,11 +212,15 @@ function buildRepresentativeRefs(
   const differentSurah = rankedResults.find((result) => Number(result.sourceRef.split(':')[0]) !== firstSurah)
   if (differentSurah) refs.push({ label: 'different-surah-example', ref: differentSurah.sourceRef })
 
-  const translationContext = rankedResults.find((result) => result.matchLanes.some((lane) => lane === 'translation' || lane === 'context'))
+  const translationContext = rankedResults.find((result) =>
+    result.matchLanes.some((lane) => lane === 'translation' || lane === 'context'),
+  )
   if (translationContext) refs.push({ label: 'translation-context-example', ref: translationContext.sourceRef })
 
   const arabicText = !isReferenceQuery(query)
-    ? rankedResults.find((result) => result.matchLanes.some((lane) => lane === 'arabic-text' || lane === 'exact-word-form' || lane === 'phrase'))
+    ? rankedResults.find((result) =>
+        result.matchLanes.some((lane) => lane === 'arabic-text' || lane === 'exact-word-form' || lane === 'phrase'),
+      )
     : null
   if (arabicText) refs.push({ label: 'arabic-text-example', ref: arabicText.sourceRef })
 
@@ -247,7 +251,10 @@ function buildFeatureAvailability(manifest: SearchPackManifestV1): SearchBriefDt
   ]
 }
 
-function featureStatus(section: SearchBriefFeatureSection, available: boolean): { section: SearchBriefFeatureSection; status: SearchBriefFeatureStatus } {
+function featureStatus(
+  section: SearchBriefFeatureSection,
+  available: boolean,
+): { section: SearchBriefFeatureSection; status: SearchBriefFeatureStatus } {
   return { section, status: available ? 'available' : 'missing' }
 }
 
@@ -256,13 +263,18 @@ function buildSourceNotes(
   manifest: SearchPackManifestV1,
   evidenceTypes: SearchBriefEvidenceType[],
 ): SearchBriefDto['sourceNotes'] {
-  const notes: SearchBriefDto['sourceNotes'] = [{
-    id: 'search-source-boundary',
-    label: 'Search source boundary',
-    text: 'Arabic matches are from the Hafs/Tanzil Search source. Reader opening uses validated mapping when available.',
-  }]
+  const notes: SearchBriefDto['sourceNotes'] = [
+    {
+      id: 'search-source-boundary',
+      label: 'Search source boundary',
+      text: 'Arabic matches are from the Hafs/Tanzil Search source. Reader opening uses validated mapping when available.',
+    },
+  ]
 
-  if (evidenceTypes.includes('translation-context') || query.filters.sourceLane?.some((lane) => lane === 'translation' || lane === 'context')) {
+  if (
+    evidenceTypes.includes('translation-context') ||
+    query.filters.sourceLane?.some((lane) => lane === 'translation' || lane === 'context')
+  ) {
     notes.push({
       id: 'translation-context-not-tafsir',
       label: 'Translation/context boundary',
@@ -330,14 +342,21 @@ function whyMatchedForMorphology(lane: SearchResultMatchLane): string {
   if (lane === 'same-written-form') return 'The same indexed written form occurs in this Hafs source ayah.'
   if (lane === 'same-root') return 'The same QAC morphology root occurs in this Hafs source ayah.'
   if (lane === 'lemma') return 'The same QAC lemma occurs in this Hafs source ayah.'
-  if (lane === 'surah-context') return 'This Hafs source ayah belongs to the indexed Surah context for the morphology key.'
+  if (lane === 'surah-context')
+    return 'This Hafs source ayah belongs to the indexed Surah context for the morphology key.'
   return 'This source ayah matches the selected morphology evidence.'
 }
 
 function occurrenceCountKnownForQuery(query: SearchQueryAstV1): boolean {
   if (isReferenceQuery(query)) return false
   if (query.mode === 'phrase' || query.mode === 'exact-word-form') return true
-  if (query.mode === 'same-written-form' || query.mode === 'same-root' || query.mode === 'lemma' || query.mode === 'surah-context') return true
+  if (
+    query.mode === 'same-written-form' ||
+    query.mode === 'same-root' ||
+    query.mode === 'lemma' ||
+    query.mode === 'surah-context'
+  )
+    return true
   return query.tokens.length === 1
 }
 
@@ -365,7 +384,13 @@ function sourceLanesForMode(mode: SearchQueryAstV1['mode']): SearchBriefDto['que
 }
 
 function morphologyModeForQuery(query: SearchQueryAstV1): SearchBriefDto['query']['morphologyMode'] {
-  if (query.mode === 'same-written-form' || query.mode === 'same-root' || query.mode === 'lemma' || query.mode === 'surah-context') return query.mode
+  if (
+    query.mode === 'same-written-form' ||
+    query.mode === 'same-root' ||
+    query.mode === 'lemma' ||
+    query.mode === 'surah-context'
+  )
+    return query.mode
   return undefined
 }
 
@@ -392,5 +417,5 @@ function laneOrder(lane: LaneCountKey): number {
 function compareRefs(left: string, right: string): number {
   const [leftSurah, leftAyah] = left.split(':').map(Number)
   const [rightSurah, rightAyah] = right.split(':').map(Number)
-  return (leftSurah - rightSurah) || (leftAyah - rightAyah)
+  return leftSurah - rightSurah || leftAyah - rightAyah
 }

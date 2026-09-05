@@ -23,7 +23,7 @@
 
 import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { canonicalAyahKey, canonicalSurahKey, formatAyahKey, pad3, parseAyahKey } from '../lib/ayah.mjs'
@@ -37,7 +37,7 @@ const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat')
 const NORMALIZED_TRANSLATIONS_DIR = join(REPO_ROOT, 'data', 'normalized', 'translations')
 const NORMALIZED_TAFSIR_DIR = join(REPO_ROOT, 'data', 'normalized', 'tafsir')
-const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat')                            // shipped output (per-surah split files)
+const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat') // shipped output (per-surah split files)
 const QURAN_TEXT_DIR = join(DATASET_DIR, 'quran-text')
 const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
 const TAFSIR_DIR = join(DATASET_DIR, 'tafsir')
@@ -165,9 +165,7 @@ const DATASET_PROFILES = {
 }
 
 function emittedSourceIdsForProfile(profile) {
-  return profile.name === 'catalog'
-    ? { translations: [], tafsir: [] }
-    : { translations: [], tafsir: [] }
+  return profile.name === 'catalog' ? { translations: [], tafsir: [] } : { translations: [], tafsir: [] }
 }
 
 async function collectSourceAssetGroup(kind, sourceId, baseDir) {
@@ -198,11 +196,7 @@ async function writeSourceAssetIndex({ translationIds, tafsirIds }) {
   for (const id of tafsirIds) {
     tafsir.push(await collectSourceAssetGroup('tafsir', id, TAFSIR_DIR))
   }
-  await writeFile(
-    join(INDEXES_DIR, 'source-assets.json'),
-    JSON.stringify({ version: 1, translations, tafsir }),
-    'utf8',
-  )
+  await writeFile(join(INDEXES_DIR, 'source-assets.json'), JSON.stringify({ version: 1, translations, tafsir }), 'utf8')
 }
 
 async function writeTextStyleSplits({ riwayah, textStyleId, perSurah }) {
@@ -239,7 +233,7 @@ async function writeTextAssetIndex(textCatalog, splits) {
   }
   await writeFile(
     join(INDEXES_DIR, 'text-assets.json'),
-    JSON.stringify({ version: 1, defaults: textCatalog.defaults, assets: resolvedTextAssets }, null, 2) + '\n',
+    `${JSON.stringify({ version: 1, defaults: textCatalog.defaults, assets: resolvedTextAssets }, null, 2)}\n`,
     'utf8',
   )
 }
@@ -272,9 +266,9 @@ async function resolveDatasetBuiltAt(profileName) {
   try {
     const current = JSON.parse(await readFile(provenancePath, 'utf8'))
     if (
-      current?.packageVersion === PACKAGE_VERSION
-      && current?.profile === profileName
-      && typeof current?.builtAt === 'string'
+      current?.packageVersion === PACKAGE_VERSION &&
+      current?.profile === profileName &&
+      typeof current?.builtAt === 'string'
     ) {
       return current.builtAt
     }
@@ -291,14 +285,14 @@ async function resolveDatasetBuiltAt(profileName) {
 // conventional Madinah mushaf leading. Mirrored in
 // src/settings/reading-typography.ts (RIWAYAH_FLOOR); keep in sync.
 const RIWAYAH_META = {
-  hafs:   { label: 'Ḥafṣ ʿan ʿĀṣim',   version: '18', fontFamily: 'KFGQPC Hafs',   minLineHeight: 1.92 },
-  warsh:  { label: 'Warsh ʿan Nāfiʿ',  version: '10', fontFamily: 'KFGQPC Warsh',  minLineHeight: 1.92 },
-  qaloon: { label: 'Qālūn ʿan Nāfiʿ',  version: '10', fontFamily: 'KFGQPC Qaloon', minLineHeight: 1.92 },
+  hafs: { label: 'Ḥafṣ ʿan ʿĀṣim', version: '18', fontFamily: 'KFGQPC Hafs', minLineHeight: 1.92 },
+  warsh: { label: 'Warsh ʿan Nāfiʿ', version: '10', fontFamily: 'KFGQPC Warsh', minLineHeight: 1.92 },
+  qaloon: { label: 'Qālūn ʿan Nāfiʿ', version: '10', fontFamily: 'KFGQPC Qaloon', minLineHeight: 1.92 },
 }
 
 const FONT_PATHS = {
-  hafs:   { woff2: '/fonts/kfgqpc-hafs/hafs.18.woff2',     ttf: '/fonts/kfgqpc-hafs/hafs.18.ttf' },
-  warsh:  { woff2: '/fonts/kfgqpc-warsh/warsh.10.woff2',   ttf: '/fonts/kfgqpc-warsh/warsh.10.ttf' },
+  hafs: { woff2: '/fonts/kfgqpc-hafs/hafs.18.woff2', ttf: '/fonts/kfgqpc-hafs/hafs.18.ttf' },
+  warsh: { woff2: '/fonts/kfgqpc-warsh/warsh.10.woff2', ttf: '/fonts/kfgqpc-warsh/warsh.10.ttf' },
   qaloon: { woff2: '/fonts/kfgqpc-qaloon/qaloon.10.woff2', ttf: '/fonts/kfgqpc-qaloon/qaloon.10.ttf' },
 }
 
@@ -323,7 +317,13 @@ function stripTrailingAyaNumber(text, ayaNo) {
   if (!m) {
     throw new Error(`Expected trailing Arabic-Indic digit on ayah ${ayaNo}, got: ${JSON.stringify(text.slice(-20))}`)
   }
-  const western = parseInt(m[1].split('').map((c) => A_INDIC_TO_WESTERN[c] ?? '?').join(''), 10)
+  const western = parseInt(
+    m[1]
+      .split('')
+      .map((c) => A_INDIC_TO_WESTERN[c] ?? '?')
+      .join(''),
+    10,
+  )
   if (western !== ayaNo) {
     throw new Error(`Captured digit ${m[1]} (= ${western}) does not match aya_no ${ayaNo}; refusing to strip`)
   }
@@ -339,10 +339,13 @@ export function splitRiwayah(riwayah, ayat) {
   const grouped = {}
   const seenRefs = new Set()
   for (const [index, a] of ayat.entries()) {
-    const parsedRef = parseAyahKey({
-      surah: a.sura_no ?? a.sora,
-      ayah: a.aya_no,
-    }, `${riwayah} source row[${index}]`)
+    const parsedRef = parseAyahKey(
+      {
+        surah: a.sura_no ?? a.sora,
+        ayah: a.aya_no,
+      },
+      `${riwayah} source row[${index}]`,
+    )
     const { surah: suraNo, ayah: ayaNo, key: ref, surahKey: key } = parsedRef
     if (seenRefs.has(ref)) {
       throw new Error(`${riwayah} source duplicate ayah ref ${ref}`)
@@ -378,7 +381,9 @@ export function splitRiwayah(riwayah, ayat) {
     payload.ayat.forEach((ayah, index) => {
       const expected = index + 1
       if (ayah.aya_no !== expected) {
-        throw new Error(`${riwayah} source surah ${surahKey} ayah refs must be contiguous from 1; expected ${expected}, got ${ayah.aya_no}`)
+        throw new Error(
+          `${riwayah} source surah ${surahKey} ayah refs must be contiguous from 1; expected ${expected}, got ${ayah.aya_no}`,
+        )
       }
     })
   }
@@ -395,8 +400,8 @@ export function computeSurahsMeta(namesEn, namesAr, perRiwayahCounts) {
     name: namesEn[i],
     name_ar: namesAr[i],
     counts: {
-      hafs:   perRiwayahCounts.hafs[i],
-      warsh:  perRiwayahCounts.warsh[i],
+      hafs: perRiwayahCounts.hafs[i],
+      warsh: perRiwayahCounts.warsh[i],
       qaloon: perRiwayahCounts.qaloon[i],
     },
   }))
@@ -635,17 +640,17 @@ export function validateVerseMap(verseMap, surahsMeta) {
   const extraInMap = [...declared.keys()].filter((n) => !actual.has(n))
   if (missingFromMap.length > 0 || extraInMap.length > 0) {
     throw new Error(
-      `_verse-map.json divergences drift from surahs.json — `
-      + `missing surahs: [${missingFromMap.join(',')}], extra: [${extraInMap.join(',')}]. `
-      + `Regenerate _verse-map.json to match.`,
+      `_verse-map.json divergences drift from surahs.json — ` +
+        `missing surahs: [${missingFromMap.join(',')}], extra: [${extraInMap.join(',')}]. ` +
+        `Regenerate _verse-map.json to match.`,
     )
   }
   for (const [surah, counts] of actual) {
     const dec = declared.get(surah)
     if (dec.hafs !== counts.hafs || dec.warsh !== counts.warsh || dec.qaloon !== counts.qaloon) {
       throw new Error(
-        `_verse-map.json surah ${surah} counts ${JSON.stringify(dec)} `
-        + `disagree with surahs.json ${JSON.stringify(counts)}`,
+        `_verse-map.json surah ${surah} counts ${JSON.stringify(dec)} ` +
+          `disagree with surahs.json ${JSON.stringify(counts)}`,
       )
     }
   }
@@ -671,9 +676,7 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
   if (!verseAliases.aliases || typeof verseAliases.aliases !== 'object') {
     throw new Error('_verse-aliases.json: `aliases` must be an object')
   }
-  const expectedSurahs = surahsMeta
-    .filter((s) => s.n === 1 || s.counts.hafs !== s.counts.qaloon)
-    .map((s) => s.n)
+  const expectedSurahs = surahsMeta.filter((s) => s.n === 1 || s.counts.hafs !== s.counts.qaloon).map((s) => s.n)
   for (const n of expectedSurahs) {
     const entries = verseAliases.aliases[String(n)]
     const meta = surahsMeta.find((s) => s.n === n)
@@ -681,7 +684,9 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
       throw new Error(`_verse-aliases.json missing surah ${n}`)
     }
     if (entries.length !== meta.counts.hafs) {
-      throw new Error(`_verse-aliases.json surah ${n}: ${entries.length} entries, expected ${meta.counts.hafs} (hafs count)`)
+      throw new Error(
+        `_verse-aliases.json surah ${n}: ${entries.length} entries, expected ${meta.counts.hafs} (hafs count)`,
+      )
     }
     for (const entry of entries) {
       if (typeof entry.hafs !== 'number') {
@@ -689,11 +694,15 @@ export function validateVerseAliases(verseAliases, surahsMeta) {
       }
       for (const r of ['qaloon']) {
         const v = entry[r]
-        if (v === null) { continue }
+        if (v === null) {
+          continue
+        }
         const indices = Array.isArray(v) ? v : [v]
         for (const idx of indices) {
           if (!Number.isInteger(idx) || idx < 1 || idx > meta.counts[r]) {
-            throw new Error(`_verse-aliases.json surah ${n} hafs ${entry.hafs}: ${r} index ${idx} out of range [1..${meta.counts[r]}]`)
+            throw new Error(
+              `_verse-aliases.json surah ${n} hafs ${entry.hafs}: ${r} index ${idx} out of range [1..${meta.counts[r]}]`,
+            )
           }
         }
       }
@@ -723,21 +732,32 @@ export function computeTranslationCoverage(translationPerSurah, splitsByRiwayah,
     for (let n = 1; n <= 114; n++) {
       const key = pad3(n)
       const surah = splitsByRiwayah[r][key]
-      if (!surah) { throw new Error(`coverage: ${r} missing surah ${key}`) }
+      if (!surah) {
+        throw new Error(`coverage: ${r} missing surah ${key}`)
+      }
       const transSurah = translationPerSurah[key]
-      if (!transSurah) { throw new Error(`coverage: translation missing surah ${key}`) }
-      const transKeys = new Set(transSurah.verses.map((v) => canonicalAyahKey(v.key, `coverage translation surah ${key}`)))
+      if (!transSurah) {
+        throw new Error(`coverage: translation missing surah ${key}`)
+      }
+      const transKeys = new Set(
+        transSurah.verses.map((v) => canonicalAyahKey(v.key, `coverage translation surah ${key}`)),
+      )
       // Build inverse alias lookup for this surah & riwayah: Madinan ayah →
       // [Hafs ayah]. Hafs is identity. Surahs without aliases fall through
       // to identity.
       const surahAliases = verseAliases?.aliases?.[String(n)]
       const resolveHafsKeys = (ayaNo) => {
-        if (r === 'hafs' || !surahAliases) { return [formatAyahKey(n, ayaNo)] }
+        if (r === 'hafs' || !surahAliases) {
+          return [formatAyahKey(n, ayaNo)]
+        }
         const hits = []
         for (const entry of surahAliases) {
           const target = entry[r]
-          if (target === ayaNo) { hits.push(entry.hafs) }
-          else if (Array.isArray(target) && target.includes(ayaNo)) { hits.push(entry.hafs) }
+          if (target === ayaNo) {
+            hits.push(entry.hafs)
+          } else if (Array.isArray(target) && target.includes(ayaNo)) {
+            hits.push(entry.hafs)
+          }
         }
         return hits.map((h) => formatAyahKey(n, h))
       }
@@ -773,7 +793,9 @@ export function computeJuzMeta(hafsAyat) {
   const seen = new Set()
   const out = []
   for (const a of hafsAyat) {
-    if (seen.has(a.jozz)) { continue }
+    if (seen.has(a.jozz)) {
+      continue
+    }
     seen.add(a.jozz)
     const suraNo = a.sora ?? a.sura_no
     out.push({ n: a.jozz, start: { surah: suraNo, ayah: a.aya_no } })
@@ -795,23 +817,25 @@ function buildSourceIndex(catalog, profile) {
     version: 1,
     profile: profile.name,
     defaults,
-    sources: catalog.sources.filter((source) => runtimeSources.has(`${source.type}:${source.id}`)).map((source) => ({
-      id: source.id,
-      type: source.type,
-      label: source.label,
-      displayLabel: source.displayLabel ?? source.label,
-      role: source.role ?? source.type,
-      trustTier: source.trustTier ?? null,
-      language: source.language ?? null,
-      translator: source.translator ?? null,
-      sourceProvider: source.sourceProvider ?? null,
-      licenseStatus: licensesById(catalog).get(source.licenseId)?.status ?? null,
-      visibility: source.visibility,
-      default: source.default === true,
-      availableInManifest: profile.name !== 'catalog' && runtimeSources.has(`${source.type}:${source.id}`),
-      outputPath: source.outputPath,
-      sourceUrl: source.sourceUrl,
-    })),
+    sources: catalog.sources
+      .filter((source) => runtimeSources.has(`${source.type}:${source.id}`))
+      .map((source) => ({
+        id: source.id,
+        type: source.type,
+        label: source.label,
+        displayLabel: source.displayLabel ?? source.label,
+        role: source.role ?? source.type,
+        trustTier: source.trustTier ?? null,
+        language: source.language ?? null,
+        translator: source.translator ?? null,
+        sourceProvider: source.sourceProvider ?? null,
+        licenseStatus: licensesById(catalog).get(source.licenseId)?.status ?? null,
+        visibility: source.visibility,
+        default: source.default === true,
+        availableInManifest: profile.name !== 'catalog' && runtimeSources.has(`${source.type}:${source.id}`),
+        outputPath: source.outputPath,
+        sourceUrl: source.sourceUrl,
+      })),
   }
 }
 
@@ -839,7 +863,9 @@ export async function main() {
   const sources = {}
   for (const r of RIWAYAT) {
     const path = join(RIWAYAT_SOURCE_DIR, `${r}.json`)
-    if (!existsSync(path)) { throw new Error(`Missing source: ${path}`) }
+    if (!existsSync(path)) {
+      throw new Error(`Missing source: ${path}`)
+    }
     sources[r] = JSON.parse(await readFile(path, 'utf8'))
     if (sources[r].length !== AYAT_COUNTS[r]) {
       throw new Error(`Ayah count mismatch for ${r}: got ${sources[r].length}, expected ${AYAT_COUNTS[r]}`)
@@ -916,11 +942,15 @@ export async function main() {
   await copyFile(VERSE_ALIASES_SOURCE, VERSE_ALIASES_PATH)
   const verseAliases = JSON.parse(await readFile(VERSE_ALIASES_PATH, 'utf8'))
   const vaResult = validateVerseAliases(verseAliases, surahsMeta)
-  console.log(`[build-dataset] verse-aliases: ${vaResult.totalAliasedSurahs} surah alias tables (${vaResult.surahCount} count-divergent + ${vaResult.totalAliasedSurahs - vaResult.surahCount} boundary-drift)`)
+  console.log(
+    `[build-dataset] verse-aliases: ${vaResult.totalAliasedSurahs} surah alias tables (${vaResult.surahCount} count-divergent + ${vaResult.totalAliasedSurahs - vaResult.surahCount} boundary-drift)`,
+  )
 
   // 4. juz.json (from Hafs; juz/page constant across Riwayat)
   const juzMeta = computeJuzMeta(sources.hafs)
-  if (juzMeta.length !== 30) { throw new Error(`juz count ${juzMeta.length}, expected 30`) }
+  if (juzMeta.length !== 30) {
+    throw new Error(`juz count ${juzMeta.length}, expected 30`)
+  }
   await writeFile(join(DATASET_DIR, 'juz.json'), JSON.stringify(juzMeta), 'utf8')
 
   // 5. translations — split each shipped translation pack from its raw source.
@@ -944,17 +974,23 @@ export async function main() {
     for (const [key, payload] of Object.entries(perSurah)) {
       await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
     }
-    console.log(`[build-dataset] translation ${t.id}: 114 surahs, ${totals.verses} verses, ${totals.footnotes} footnotes`)
+    console.log(
+      `[build-dataset] translation ${t.id}: 114 surahs, ${totals.verses} verses, ${totals.footnotes} footnotes`,
+    )
 
     // Cross-riwayah coverage: Hafs remains the upstream translation keyspace,
     // and Qaloon is the only current runtime target that needs provenance.
     const coverage = computeTranslationCoverage(perSurah, splits, verseAliases)
     for (const r of TRANSLATION_ALIGNMENT_RIWAYAT) {
       const c = coverage[r]
-      console.log(`[build-dataset]   coverage[${r}]: ${c.covered}/${c.total} (${c.missing} missing across ${c.divergentSurahs.length} divergent surahs)`)
+      console.log(
+        `[build-dataset]   coverage[${r}]: ${c.covered}/${c.total} (${c.missing} missing across ${c.divergentSurahs.length} divergent surahs)`,
+      )
     }
     if (coverage.hafs.missing !== 0) {
-      throw new Error(`translation ${t.id}: Hafs coverage incomplete — ${coverage.hafs.missing} ayat lack a translation key (verse-map keys translations to Hafs)`)
+      throw new Error(
+        `translation ${t.id}: Hafs coverage incomplete — ${coverage.hafs.missing} ayat lack a translation key (verse-map keys translations to Hafs)`,
+      )
     }
 
     translationProvenance.push({
@@ -973,8 +1009,18 @@ export async function main() {
       fetchedAt: raw.fetchedAt,
       primaryRiwayah: 'hafs',
       coverage: {
-        hafs:   { total: coverage.hafs.total,   covered: coverage.hafs.covered,   missing: coverage.hafs.missing,   divergentSurahs: coverage.hafs.divergentSurahs },
-        qaloon: { total: coverage.qaloon.total, covered: coverage.qaloon.covered, missing: coverage.qaloon.missing, divergentSurahs: coverage.qaloon.divergentSurahs },
+        hafs: {
+          total: coverage.hafs.total,
+          covered: coverage.hafs.covered,
+          missing: coverage.hafs.missing,
+          divergentSurahs: coverage.hafs.divergentSurahs,
+        },
+        qaloon: {
+          total: coverage.qaloon.total,
+          covered: coverage.qaloon.covered,
+          missing: coverage.qaloon.missing,
+          divergentSurahs: coverage.qaloon.divergentSurahs,
+        },
       },
     })
   }
@@ -1065,9 +1111,14 @@ export async function main() {
   })
   await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
 
-  console.log(`[build-dataset] done — wrote per-surah riwayat + translation files, surahs.json, juz.json, provenance.json, manifest.json`)
+  console.log(
+    `[build-dataset] done — wrote per-surah riwayat + translation files, surahs.json, juz.json, provenance.json, manifest.json`,
+  )
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().catch((e) => { console.error(e); process.exit(1) })
+  main().catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
 }

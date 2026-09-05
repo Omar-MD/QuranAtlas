@@ -1,11 +1,17 @@
-import type { SearchQueryAstV1, SearchResultDto, SearchResultMatchLane, SearchResultWindow, SearchSort } from '../../shared/search'
+import type {
+  SearchQueryAstV1,
+  SearchResultDto,
+  SearchResultMatchLane,
+  SearchResultWindow,
+  SearchSort,
+} from '../../shared/search'
 import { createSearchResultCursor, assertSearchCursorValid } from '../search/cursors'
 import { parseSearchReference } from '../search/reference-parser'
 import { mapSearchRefToSearchSource } from '../search/result-mapping'
 import { stableQueryHash } from '../search/query-parser'
 import { rankSearchResults, SEARCH_RANK_VERSION } from '../search/ranking'
 import type { SearchAyahRow, SearchGraphRef, SearchPostingRow } from '../search/schema'
-import { SearchPackReader } from '../search/pack-reader'
+import type { SearchPackReader } from '../search/pack-reader'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
 import { SearchMorphologyExecutor } from './morphology-executor'
 import { buildSearchBrief, evidenceForCandidate } from './search-brief'
@@ -60,18 +66,21 @@ export class SearchQueryExecutor {
       ? await this.morphology.execute(query, token)
       : await this.toDtos(await this.collectCandidates(query, token), query, token)
     const ranked = rankSearchResults(dtos, sort)
-    const start = cursor ? Math.max(0, ranked.findIndex((result) => result.rankKey === cursor.lastStableResultKey) + 1) : 0
+    const start = cursor
+      ? Math.max(0, ranked.findIndex((result) => result.rankKey === cursor.lastStableResultKey) + 1)
+      : 0
     const windowResults = ranked.slice(start, start + limit)
     const last = windowResults.length > 0 ? windowResults[windowResults.length - 1] : undefined
-    const nextCursor = last && start + limit < ranked.length
-      ? createSearchResultCursor({
-        packId: this.reader.manifest.packId,
-        packVersion: this.reader.manifest.packVersion,
-        queryHash,
-        sort,
-        lastStableResultKey: last.rankKey,
-      })
-      : null
+    const nextCursor =
+      last && start + limit < ranked.length
+        ? createSearchResultCursor({
+            packId: this.reader.manifest.packId,
+            packVersion: this.reader.manifest.packVersion,
+            queryHash,
+            sort,
+            lastStableResultKey: last.rankKey,
+          })
+        : null
     return {
       results: windowResults,
       cursor: nextCursor,
@@ -95,15 +104,31 @@ export class SearchQueryExecutor {
     }
 
     if (query.mode === 'phrase') return this.collectPhraseCandidates(query.tokens, token)
-    if (query.mode === 'exact-word-form') return this.collectPostingCandidates('exact-word', 'exact-word-form', query.tokens, token)
-    if (query.mode === 'translation' || query.mode === 'context') return this.collectPostingCandidates('translation', query.mode, query.tokens, token, { requireAllTerms: true })
-    if (query.mode === 'arabic-text') return this.collectPostingCandidates('arabic', 'arabic-text', query.tokens, token, { requireAllTerms: true })
+    if (query.mode === 'exact-word-form')
+      return this.collectPostingCandidates('exact-word', 'exact-word-form', query.tokens, token)
+    if (query.mode === 'translation' || query.mode === 'context')
+      return this.collectPostingCandidates('translation', query.mode, query.tokens, token, { requireAllTerms: true })
+    if (query.mode === 'arabic-text')
+      return this.collectPostingCandidates('arabic', 'arabic-text', query.tokens, token, { requireAllTerms: true })
 
     const lanes = query.filters.sourceLane ?? ['arabic-text', 'translation', 'context']
     const all: Candidate[] = []
-    if (lanes.includes('arabic-text')) all.push(...await this.collectPostingCandidates('arabic', 'arabic-text', query.tokens, token, { requireAllTerms: true }))
+    if (lanes.includes('arabic-text'))
+      all.push(
+        ...(await this.collectPostingCandidates('arabic', 'arabic-text', query.tokens, token, {
+          requireAllTerms: true,
+        })),
+      )
     if (lanes.includes('translation') || lanes.includes('context')) {
-      all.push(...await this.collectPostingCandidates('translation', lanes.includes('translation') ? 'translation' : 'context', query.tokens, token, { requireAllTerms: true }))
+      all.push(
+        ...(await this.collectPostingCandidates(
+          'translation',
+          lanes.includes('translation') ? 'translation' : 'context',
+          query.tokens,
+          token,
+          { requireAllTerms: true },
+        )),
+      )
     }
     return all
   }
@@ -118,11 +143,13 @@ export class SearchQueryExecutor {
     for (const shard of shards) {
       const row = shard.payload.postings.find((posting) => posting.term === term)
       if (!row) continue
-      candidates.push(...await this.rowToCandidates(row, ayahsById, 'phrase', token, {
-        matchedQueryTokens: tokens,
-        matchedSourceTokens: tokens,
-        phraseLength: tokens.length,
-      }))
+      candidates.push(
+        ...(await this.rowToCandidates(row, ayahsById, 'phrase', token, {
+          matchedQueryTokens: tokens,
+          matchedSourceTokens: tokens,
+          phraseLength: tokens.length,
+        })),
+      )
     }
     return candidates
   }
@@ -145,15 +172,16 @@ export class SearchQueryExecutor {
     for (const term of terms) {
       for (const payload of payloads) {
         const rows = payload.postings.filter((posting) => postingMatchesTerm(posting.term, term, lane))
-        for (const row of rows) for (const candidate of await this.rowToCandidates(row, ayahsById, matchLane, token, {
-          matchedQueryTokens: [term],
-          matchedSourceTokens: [row.term],
-        })) {
-          const key = `${candidate.ayah.ref}:${candidate.lane}:${candidate.position}:${row.term}`
-          if (seen.has(key)) continue
-          seen.add(key)
-          candidates.push(candidate)
-        }
+        for (const row of rows)
+          for (const candidate of await this.rowToCandidates(row, ayahsById, matchLane, token, {
+            matchedQueryTokens: [term],
+            matchedSourceTokens: [row.term],
+          })) {
+            const key = `${candidate.ayah.ref}:${candidate.lane}:${candidate.position}:${row.term}`
+            if (seen.has(key)) continue
+            seen.add(key)
+            candidates.push(candidate)
+          }
       }
     }
     return candidates
@@ -171,12 +199,15 @@ export class SearchQueryExecutor {
     const references = await this.reader.getReferences()
     const ayahsById = new Map(references.ayahs.map((ayah) => [ayah.ayahId, ayah]))
     const payloads = await this.reader.getPostings(lane)
-    const grouped = new Map<number, {
-      ayah: SearchAyahRow
-      matchedTerms: Set<string>
-      positions: number[]
-      rowTerms: string[]
-    }>()
+    const grouped = new Map<
+      number,
+      {
+        ayah: SearchAyahRow
+        matchedTerms: Set<string>
+        positions: number[]
+        rowTerms: string[]
+      }
+    >()
 
     for (const term of uniqueTerms) {
       let termMatched = false
@@ -234,9 +265,8 @@ export class SearchQueryExecutor {
     } = {},
   ): Promise<Candidate[]> {
     const candidates: Candidate[] = []
-    for (let index = 0; index < row.postings.length; index += 1) {
+    for (const [index, posting] of row.postings.entries()) {
       await cooperativeYield(token, 500, index)
-      const posting = row.postings[index]!
       const ayah = ayahsById.get(posting.ayahId)
       if (!ayah) continue
       candidates.push({
@@ -252,11 +282,14 @@ export class SearchQueryExecutor {
     return candidates
   }
 
-  private async toDtos(candidates: Candidate[], query: SearchQueryAstV1, token: SearchCancellationToken): Promise<SearchResultDto[]> {
+  private async toDtos(
+    candidates: Candidate[],
+    query: SearchQueryAstV1,
+    token: SearchCancellationToken,
+  ): Promise<SearchResultDto[]> {
     const rows: SearchResultDto[] = []
-    for (let index = 0; index < candidates.length; index += 1) {
+    for (const [index, candidate] of candidates.entries()) {
       await cooperativeYield(token, 250, index)
-      const candidate = candidates[index]!
       const mapping = mapSearchRefToSearchSource(candidate.ayah.sourceRef as SearchGraphRef)
       rows.push({
         resultId: `${this.reader.manifest.packId}:${candidate.ayah.ref}:${candidate.lane}:${candidate.position}:${candidate.term}`,
@@ -269,18 +302,20 @@ export class SearchQueryExecutor {
         matchEvidence: evidenceForCandidate({
           lane: candidate.lane,
           query,
-          matchedText: candidate.matchedQueryTokens && candidate.matchedQueryTokens.length > 1 && !candidate.phraseLength
-            ? undefined
-            : candidate.term,
+          matchedText:
+            candidate.matchedQueryTokens && candidate.matchedQueryTokens.length > 1 && !candidate.phraseLength
+              ? undefined
+              : candidate.term,
           matchedQueryTokens: candidate.matchedQueryTokens,
           matchedSourceTokens: candidate.matchedSourceTokens,
           sourceToken: candidate.matchedSourceTokens?.length === 1 ? candidate.matchedSourceTokens[0] : candidate.term,
           sourcePosition: candidate.position,
           sourcePositions: candidate.sourcePositions,
           phraseLength: candidate.phraseLength,
-          translationContextExcerpt: candidate.lane === 'translation' || candidate.lane === 'context'
-            ? candidate.ayah.translationText
-            : undefined,
+          translationContextExcerpt:
+            candidate.lane === 'translation' || candidate.lane === 'context'
+              ? candidate.ayah.translationText
+              : undefined,
         }),
         snippet: snippetFor(candidate),
         rankKey: `${candidate.position}`,
@@ -314,7 +349,11 @@ function uniqueTermsForLane(terms: string[], lane: 'arabic' | 'exact-word' | 'tr
   return unique
 }
 
-function postingMatchesTerm(postingTerm: string, queryTerm: string, lane: 'arabic' | 'exact-word' | 'translation'): boolean {
+function postingMatchesTerm(
+  postingTerm: string,
+  queryTerm: string,
+  lane: 'arabic' | 'exact-word' | 'translation',
+): boolean {
   const postingKey = postingTermKey(postingTerm, lane)
   return exactTermAlternatives(queryTerm, lane).some((term) => postingTermKey(term, lane) === postingKey)
 }

@@ -89,10 +89,17 @@ const synchronizedReaderResources = {
 }
 const synchronizedVerseText = 'I seek refuge with the Lord of mankind'
 
-async function cachedResources(page: Parameters<typeof expectControlledServiceWorker>[0], resources: Record<string, string>) {
-  return page.evaluate(async (urls) => Object.fromEntries(
-    await Promise.all(Object.entries(urls).map(async ([name, url]) => [name, Boolean(await caches.match(url))])),
-  ), resources)
+async function cachedResources(
+  page: Parameters<typeof expectControlledServiceWorker>[0],
+  resources: Record<string, string>,
+) {
+  return page.evaluate(
+    async (urls) =>
+      Object.fromEntries(
+        await Promise.all(Object.entries(urls).map(async ([name, url]) => [name, Boolean(await caches.match(url))])),
+      ),
+    resources,
+  )
 }
 
 test('preserves the production reader through offline, fallback, retry, and resynchronization', async ({ page }) => {
@@ -124,7 +131,10 @@ test('preserves the production reader through offline, fallback, retry, and resy
     })
 
     await test.step('confirm the synchronized surah is still unfetched while offline', async () => {
-      await expect(cachedResources(page, synchronizedReaderResources)).resolves.toEqual({ text: false, translation: false })
+      await expect(cachedResources(page, synchronizedReaderResources)).resolves.toEqual({
+        text: false,
+        translation: false,
+      })
     })
 
     await goOnline()
@@ -132,7 +142,10 @@ test('preserves the production reader through offline, fallback, retry, and resy
       await page.goto(`${ORIGIN}/#/s/114`)
       await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
       await expect(page.getByText(synchronizedVerseText)).toBeVisible()
-      await expect(cachedResources(page, synchronizedReaderResources)).resolves.toEqual({ text: true, translation: true })
+      await expect(cachedResources(page, synchronizedReaderResources)).resolves.toEqual({
+        text: true,
+        translation: true,
+      })
     })
 
     await goOffline()

@@ -23,7 +23,7 @@ export function normalizeSearchToken(input, mode = 'normalized') {
   }
   output = output.replace(ARABIC_INDIC_DIGITS_RE, (digit) => {
     const code = digit.codePointAt(0) ?? 0
-    const zero = code >= 0x06F0 ? 0x06F0 : 0x0660
+    const zero = code >= 0x06f0 ? 0x06f0 : 0x0660
     return String(code - zero)
   })
   return output.trim()

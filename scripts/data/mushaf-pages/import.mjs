@@ -93,13 +93,13 @@ export async function hasReusableSvgDocument(path) {
 
 async function hasCompleteReusableSvgSet(dir, pageCount) {
   for (let page = 1; page <= pageCount; page += 1) {
-    if (!await hasReusableSvgDocument(join(dir, `${pad3(page)}.svg`))) return false
+    if (!(await hasReusableSvgDocument(join(dir, `${pad3(page)}.svg`)))) return false
   }
   return true
 }
 
 async function promoteLegacyQuranWsPages({ legacySvgDir, editionSvgDir, pageCount }) {
-  if (existsSync(editionSvgDir) || !await hasCompleteReusableSvgSet(legacySvgDir, pageCount)) return false
+  if (existsSync(editionSvgDir) || !(await hasCompleteReusableSvgSet(legacySvgDir, pageCount))) return false
   const editionDir = dirname(editionSvgDir)
   const stageDir = `${editionDir}.stage-${process.pid}-${Date.now()}`
   const stagePages = join(stageDir, 'pages')
@@ -122,7 +122,9 @@ export async function main(argv = process.argv.slice(2)) {
   const pdfPath = argValue(argv, 'pdf')
   if (editionId || pdfPath) {
     if (!editionId || !pdfPath || argv.some((arg) => arg.startsWith('--riwayah=') || arg.startsWith('--pages='))) {
-      throw new Error('Usage: pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"')
+      throw new Error(
+        'Usage: pnpm run data -- mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf"',
+      )
     }
     const { importPrivatePdfEdition } = await import('./private-pdf.mjs')
     await importPrivatePdfEdition({ editionId, pdfPath })

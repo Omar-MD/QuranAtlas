@@ -91,9 +91,10 @@ function findCenteredVersePosition(surah: number): ReaderPosition | null {
     const rect = element.getBoundingClientRect()
     if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
 
-    const distance = rect.top <= centerY && rect.bottom >= centerY
-      ? 0
-      : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
+    const distance =
+      rect.top <= centerY && rect.bottom >= centerY
+        ? 0
+        : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
     if (!closest || distance < closest.distance) closest = { distance, position }
     if (distance === 0) break
   }
@@ -119,22 +120,30 @@ export function useReaderPositionSync(
   const suspendAutoSync = options.suspendAutoSync ?? false
   const enableWirdProgress = options.enableWirdProgress ?? false
 
-  const enqueuePersistPosition = useCallback((
-    position: ReaderPosition,
-    wirdCounts: ReadonlyArray<SurahCount>,
-    persistToken: string,
-  ) => {
-    const key = positionKey(position)
-    persistQueueRef.current = persistQueueRef.current.catch(() => undefined).then(async () => {
-      const committed = await persistPosition(position.surah, position.verse, enableWirdProgress, wirdCounts, () => {
-        const latest = latestPositionRef.current
-        return isLatestPersistToken(persistToken) && (latest ? positionKey(latest) === key : true)
-      })
-      if (!committed) return
-      lastPersistedKeyRef.current = key
-      if (wirdCounts.length > 0) lastWirdAdvancedKeyRef.current = key
-    }).catch(() => undefined)
-  }, [enableWirdProgress])
+  const enqueuePersistPosition = useCallback(
+    (position: ReaderPosition, wirdCounts: ReadonlyArray<SurahCount>, persistToken: string) => {
+      const key = positionKey(position)
+      persistQueueRef.current = persistQueueRef.current
+        .catch(() => undefined)
+        .then(async () => {
+          const committed = await persistPosition(
+            position.surah,
+            position.verse,
+            enableWirdProgress,
+            wirdCounts,
+            () => {
+              const latest = latestPositionRef.current
+              return isLatestPersistToken(persistToken) && (latest ? positionKey(latest) === key : true)
+            },
+          )
+          if (!committed) return
+          lastPersistedKeyRef.current = key
+          if (wirdCounts.length > 0) lastWirdAdvancedKeyRef.current = key
+        })
+        .catch(() => undefined)
+    },
+    [enableWirdProgress],
+  )
 
   useEffect(() => {
     wirdCountsRef.current = options.wirdCounts ?? []
@@ -152,34 +161,37 @@ export function useReaderPositionSync(
     enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
   }, [enableWirdProgress, enqueuePersistPosition, options.wirdCounts, suspendAutoSync])
 
-  const commitPosition = useCallback((position: ReaderPosition, persistMode: 'deferred' | 'immediate') => {
-    latestPositionRef.current = position
-    const key = positionKey(position)
-    const persistToken = createPersistToken(key)
-    latestPersistTokenRef.current = persistToken
-    markLatestPersistToken(persistToken)
+  const commitPosition = useCallback(
+    (position: ReaderPosition, persistMode: 'deferred' | 'immediate') => {
+      latestPositionRef.current = position
+      const key = positionKey(position)
+      const persistToken = createPersistToken(key)
+      latestPersistTokenRef.current = persistToken
+      markLatestPersistToken(persistToken)
 
-    const runPersist = () => {
-      if (lastPersistedKeyRef.current === key) return
-      enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
-    }
-
-    if (persistMode === 'immediate') {
-      if (persistTimerRef.current) {
-        clearTimeout(persistTimerRef.current)
-        persistTimerRef.current = null
+      const runPersist = () => {
+        if (lastPersistedKeyRef.current === key) return
+        enqueuePersistPosition(position, [...wirdCountsRef.current], persistToken)
       }
-      runPersist()
-      return
-    }
 
-    if (lastPersistedKeyRef.current === key) return
-    if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
-    persistTimerRef.current = setTimeout(() => {
-      persistTimerRef.current = null
-      runPersist()
-    }, SCROLL_PERSIST_DELAY_MS)
-  }, [enqueuePersistPosition])
+      if (persistMode === 'immediate') {
+        if (persistTimerRef.current) {
+          clearTimeout(persistTimerRef.current)
+          persistTimerRef.current = null
+        }
+        runPersist()
+        return
+      }
+
+      if (lastPersistedKeyRef.current === key) return
+      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+      persistTimerRef.current = setTimeout(() => {
+        persistTimerRef.current = null
+        runPersist()
+      }, SCROLL_PERSIST_DELAY_MS)
+    },
+    [enqueuePersistPosition],
+  )
 
   useEffect(() => {
     if (!surahNumber || !firstVerseSurah || !firstVerseNumber || suspendAutoSync) return
@@ -210,11 +222,14 @@ export function useReaderPositionSync(
     }
   }, [commitPosition, enqueuePersistPosition, firstVerseNumber, firstVerseSurah, surahNumber, suspendAutoSync])
 
-  const syncPosition = useCallback((verseKey: string) => {
-    const position = parseVerseKey(verseKey)
-    if (!position) return
-    commitPosition(position, 'immediate')
-  }, [commitPosition])
+  const syncPosition = useCallback(
+    (verseKey: string) => {
+      const position = parseVerseKey(verseKey)
+      if (!position) return
+      commitPosition(position, 'immediate')
+    },
+    [commitPosition],
+  )
 
   const getCurrentPosition = useCallback(() => {
     if (corpus.status === 'ready') {

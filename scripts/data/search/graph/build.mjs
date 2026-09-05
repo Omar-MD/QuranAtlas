@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { stableJson } from '../abi-writer.mjs'
-import { SEARCH_GRAPH_POLICY, assertGraphMaterializationBudgets, enumeratePhraseWindows } from './phrase-windows.mjs'
+import { assertGraphMaterializationBudgets, enumeratePhraseWindows } from './phrase-windows.mjs'
 import { buildGraphCounts } from './counts.mjs'
 
 export const GRAPH_REQUIRED_SHARDS = [
@@ -30,59 +30,87 @@ export function buildSearchGraphPayloads({
   const sourcePolicy = sourcePolicyRows(policy)
 
   const payloads = [
-    ...chunkRows(following, 8000).map((rows, index) => [`following-wording-${index + 1}.qas`, {
-      kind: 'following-wording',
-      policy,
-      sourcePolicy,
-      rows,
-    }]),
-    ...chunkRows(adjacency.rows, 2500).map((rows, index) => [`shared-wording-${index + 1}.qas`, {
-      kind: 'shared-wording',
-      policy,
-      sourcePolicy,
-      rows,
-    }]),
-    ...chunkRows(phrases.repeated, 12000).map((rows, index) => [`repeated-phrases-${index + 1}.qas`, {
-      kind: 'repeated-phrases',
-      policy,
-      sourcePolicy,
-      rows,
-    }]),
-    ...chunkRows(phrases.occursOnce, 12000).map((rows, index) => [`occurs-once-${index + 1}.qas`, {
-      kind: 'occurs-once',
-      policy,
-      sourcePolicy,
-      rows,
-    }]),
-    ['ayah-endings.qas', {
-      kind: 'ayah-endings',
-      policy,
-      sourcePolicy,
-      rows: ayahEndings,
-      topEndings: counts.ayahEndings.slice(0, 60),
-    }],
-    ['counts-patterns.qas', {
-      kind: 'counts-patterns',
-      policy,
-      sourcePolicy,
-      tokenCounts: counts.tokenCounts,
-      phraseCounts: counts.phraseCounts,
-      rootCounts: counts.rootCounts,
-      surahDistribution: counts.surahDistribution,
-      ayahEndings: counts.ayahEndings.slice(0, 60),
-      adjacencyCounts: {
-        ayahsWithSharedWording: adjacency.rows.length,
-        sharedEdges: adjacency.edgeCount,
+    ...chunkRows(following, 8000).map((rows, index) => [
+      `following-wording-${index + 1}.qas`,
+      {
+        kind: 'following-wording',
+        policy,
+        sourcePolicy,
+        rows,
       },
-      graphStats: stats,
-    }],
-    ['graph-provenance.qas', {
-      kind: 'graph-provenance',
-      policy,
-      sourcePolicy,
-      sourceIds: ['search-hafs-text-tanzil-v1', 'search-qac-morphology-0-4'],
-      generatedFeatureIds: ['following-wording', 'shared-wording', 'repeated-phrases', 'occurs-once', 'ayah-endings', 'counts-patterns'],
-    }],
+    ]),
+    ...chunkRows(adjacency.rows, 2500).map((rows, index) => [
+      `shared-wording-${index + 1}.qas`,
+      {
+        kind: 'shared-wording',
+        policy,
+        sourcePolicy,
+        rows,
+      },
+    ]),
+    ...chunkRows(phrases.repeated, 12000).map((rows, index) => [
+      `repeated-phrases-${index + 1}.qas`,
+      {
+        kind: 'repeated-phrases',
+        policy,
+        sourcePolicy,
+        rows,
+      },
+    ]),
+    ...chunkRows(phrases.occursOnce, 12000).map((rows, index) => [
+      `occurs-once-${index + 1}.qas`,
+      {
+        kind: 'occurs-once',
+        policy,
+        sourcePolicy,
+        rows,
+      },
+    ]),
+    [
+      'ayah-endings.qas',
+      {
+        kind: 'ayah-endings',
+        policy,
+        sourcePolicy,
+        rows: ayahEndings,
+        topEndings: counts.ayahEndings.slice(0, 60),
+      },
+    ],
+    [
+      'counts-patterns.qas',
+      {
+        kind: 'counts-patterns',
+        policy,
+        sourcePolicy,
+        tokenCounts: counts.tokenCounts,
+        phraseCounts: counts.phraseCounts,
+        rootCounts: counts.rootCounts,
+        surahDistribution: counts.surahDistribution,
+        ayahEndings: counts.ayahEndings.slice(0, 60),
+        adjacencyCounts: {
+          ayahsWithSharedWording: adjacency.rows.length,
+          sharedEdges: adjacency.edgeCount,
+        },
+        graphStats: stats,
+      },
+    ],
+    [
+      'graph-provenance.qas',
+      {
+        kind: 'graph-provenance',
+        policy,
+        sourcePolicy,
+        sourceIds: ['search-hafs-text-tanzil-v1', 'search-qac-morphology-0-4'],
+        generatedFeatureIds: [
+          'following-wording',
+          'shared-wording',
+          'repeated-phrases',
+          'occurs-once',
+          'ayah-endings',
+          'counts-patterns',
+        ],
+      },
+    ],
   ]
 
   const shardEstimates = payloads.map(([filename, payload]) => {

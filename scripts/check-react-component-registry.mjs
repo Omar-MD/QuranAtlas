@@ -46,7 +46,9 @@ function sourceFiles(dir) {
 
 function matchesPattern(path, pattern) {
   const expression = pattern
-    .split('**').map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*')
+    .split('**')
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('.*')
     .replace(/\\\*/g, '[^/]*')
   return new RegExp(`^${expression}$`).test(path)
 }
@@ -114,7 +116,13 @@ export function validateRegistryData(data, options = {}) {
     if (checkFiles && component.exportPath && !existsSync(exportFile)) {
       failures.push(`${component.id}: exportPath does not exist: ${component.exportPath}`)
     }
-    if (checkFiles && exportFile && component.namedExport && existsSync(exportFile) && !fileHasNamedExport(exportFile, component.namedExport)) {
+    if (
+      checkFiles &&
+      exportFile &&
+      component.namedExport &&
+      existsSync(exportFile) &&
+      !fileHasNamedExport(exportFile, component.namedExport)
+    ) {
       failures.push(`${component.id}: namedExport ${component.namedExport} was not found in ${component.exportPath}`)
     }
 
@@ -137,20 +145,28 @@ export function validateRegistryData(data, options = {}) {
     }
     checkConsumerBoundary(component, files, failures)
 
-    if (!Array.isArray(component.stories) || component.stories.length === 0) failures.push(`${component.id}: stories must be non-empty`)
+    if (!Array.isArray(component.stories) || component.stories.length === 0)
+      failures.push(`${component.id}: stories must be non-empty`)
     for (const story of component.stories ?? []) {
       if (typeof story?.path !== 'string') failures.push(`${component.id}: story path must be a string`)
-      if (!Array.isArray(story?.states) || story.states.length === 0) failures.push(`${component.id}: story ${story?.path ?? '(unknown)'} must list covered states`)
+      if (!Array.isArray(story?.states) || story.states.length === 0)
+        failures.push(`${component.id}: story ${story?.path ?? '(unknown)'} must list covered states`)
     }
-    if (!Array.isArray(component.tests) || component.tests.length === 0) failures.push(`${component.id}: tests must be non-empty`)
+    if (!Array.isArray(component.tests) || component.tests.length === 0)
+      failures.push(`${component.id}: tests must be non-empty`)
     for (const test of component.tests ?? []) {
       if (typeof test?.path !== 'string') failures.push(`${component.id}: test path must be a string`)
-      if (!Array.isArray(test?.behaviors) || test.behaviors.length === 0) failures.push(`${component.id}: test ${test?.path ?? '(unknown)'} must list covered behaviors`)
+      if (!Array.isArray(test?.behaviors) || test.behaviors.length === 0)
+        failures.push(`${component.id}: test ${test?.path ?? '(unknown)'} must list covered behaviors`)
     }
-    if (!Array.isArray(component.accessibility) || component.accessibility.length === 0) failures.push(`${component.id}: accessibility must be non-empty`)
-    if (!component.visualProof || typeof component.visualProof !== 'object') failures.push(`${component.id}: visualProof must be an object`)
-    if (!Array.isArray(component.allowedConsumers) || component.allowedConsumers.length === 0) failures.push(`${component.id}: allowedConsumers must be non-empty`)
-    if (!Array.isArray(component.forbiddenUses) || component.forbiddenUses.length === 0) failures.push(`${component.id}: forbiddenUses must be non-empty`)
+    if (!Array.isArray(component.accessibility) || component.accessibility.length === 0)
+      failures.push(`${component.id}: accessibility must be non-empty`)
+    if (!component.visualProof || typeof component.visualProof !== 'object')
+      failures.push(`${component.id}: visualProof must be an object`)
+    if (!Array.isArray(component.allowedConsumers) || component.allowedConsumers.length === 0)
+      failures.push(`${component.id}: allowedConsumers must be non-empty`)
+    if (!Array.isArray(component.forbiddenUses) || component.forbiddenUses.length === 0)
+      failures.push(`${component.id}: forbiddenUses must be non-empty`)
   })
 
   const sortedIds = [...ids].sort()

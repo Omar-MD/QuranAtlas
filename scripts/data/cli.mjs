@@ -34,7 +34,13 @@ function skipSet(argv) {
   return new Set(
     argv
       .filter((arg) => arg.startsWith('--skip='))
-      .flatMap((arg) => arg.slice('--skip='.length).split(',').map((item) => item.trim()).filter(Boolean)),
+      .flatMap((arg) =>
+        arg
+          .slice('--skip='.length)
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
   )
 }
 
@@ -56,14 +62,18 @@ async function main(argv = process.argv.slice(2)) {
       const archive = rest.find((arg) => arg.startsWith('--archive='))?.slice('--archive='.length)
       const check = rest.length === 1 && rest[0] === '--check'
       if (!check && (!archive || !isAbsolute(archive) || rest.length !== 1)) {
-        console.error('Usage: pnpm run data -- mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)')
+        console.error(
+          'Usage: pnpm run data -- mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)',
+        )
         process.exit(1)
       }
       run('mushaf-pages/release-archive.mjs', check ? ['--check'] : [`--archive=${archive}`])
       return
     }
     console.error(`Unknown mushaf-pages command: ${subcommand}`)
-    console.error('Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)')
+    console.error(
+      'Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)',
+    )
     process.exit(1)
   }
 
@@ -76,7 +86,9 @@ async function main(argv = process.argv.slice(2)) {
     const args = normalizedArgv.slice(1)
     const profile = parseProfile(args)
     if (profile !== 'baseline') {
-      console.error('Top-level data check supports only --profile=baseline; use mushaf-pages build --profile=private --check for a read-only private Mushaf check')
+      console.error(
+        'Top-level data check supports only --profile=baseline; use mushaf-pages build --profile=private --check for a read-only private Mushaf check',
+      )
       process.exit(1)
     }
     run('source-catalog.mjs')
@@ -101,13 +113,18 @@ async function main(argv = process.argv.slice(2)) {
       if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
       run('riwayah-packages/build.mjs', [`--profile=${profile}`])
     }
-    await writeFile(BUILD_STAMP, new Date().toISOString() + '\n', 'utf8')
+    await writeFile(BUILD_STAMP, `${new Date().toISOString()}\n`, 'utf8')
     return
   }
 
   console.error(`Unknown data command: ${command}`)
-  console.error('Usage: pnpm run data -- build [--profile=baseline|full|private|catalog] | check [--profile=baseline] | aliases | mushaf-pages')
+  console.error(
+    'Usage: pnpm run data -- build [--profile=baseline|full|private|catalog] | check [--profile=baseline] | aliases | mushaf-pages',
+  )
   process.exit(1)
 }
 
-main().catch((error) => { console.error(error); process.exit(1) })
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

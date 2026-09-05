@@ -1,8 +1,4 @@
-import type {
-  AnswerBlockerLite,
-  NoAnswerRecoveryLite,
-  QueryUnderstandingLite,
-} from '../../../shared/search'
+import type { AnswerBlockerLite, NoAnswerRecoveryLite, QueryUnderstandingLite } from '../../../shared/search'
 
 type BoundaryRule = {
   blocker: AnswerBlockerLite
@@ -10,19 +6,48 @@ type BoundaryRule = {
 }
 
 const BOUNDARY_RULES: BoundaryRule[] = [
-  { blocker: 'absence-claim-unproven', pattern: /\b(does not mention|never mentions?|nowhere says|not mentioned|absent from)\b/i },
+  {
+    blocker: 'absence-claim-unproven',
+    pattern: /\b(does not mention|never mentions?|nowhere says|not mentioned|absent from)\b/i,
+  },
   { blocker: 'legal-boundary', pattern: /\b(legal advice|immigration advice|contract advice|criminal defense)\b/i },
-  { blocker: 'legal-boundary', pattern: /\b(should i|can i|do i need|my|me|for me)\b.{0,40}\b(lawyer|attorney|lawsuit|sue|court|contract|immigration|criminal)\b/i },
-  { blocker: 'legal-boundary', pattern: /\b(lawyer|attorney|lawsuit|sue|court|contract|immigration|criminal).{0,40}\b(for me|my case|advice)\b/i },
+  {
+    blocker: 'legal-boundary',
+    pattern:
+      /\b(should i|can i|do i need|my|me|for me)\b.{0,40}\b(lawyer|attorney|lawsuit|sue|court|contract|immigration|criminal)\b/i,
+  },
+  {
+    blocker: 'legal-boundary',
+    pattern: /\b(lawyer|attorney|lawsuit|sue|court|contract|immigration|criminal).{0,40}\b(for me|my case|advice)\b/i,
+  },
   { blocker: 'medical-boundary', pattern: /\b(medical advice|diagnose me|diagnose my|diagnosis for me)\b/i },
-  { blocker: 'medical-boundary', pattern: /\b(treat my|treatment for me|treatment for my|medicine for me|my symptoms)\b/i },
+  {
+    blocker: 'medical-boundary',
+    pattern: /\b(treat my|treatment for me|treatment for my|medicine for me|my symptoms)\b/i,
+  },
   { blocker: 'medical-boundary', pattern: /\b(symptoms?).{0,40}\b(doctor|medicine|diagnosis|treatment)\b/i },
-  { blocker: 'medical-boundary', pattern: /\b(doctor|medicine|diagnosis|treatment).{0,40}\b(for me|my symptoms|advice)\b/i },
+  {
+    blocker: 'medical-boundary',
+    pattern: /\b(doctor|medicine|diagnosis|treatment).{0,40}\b(for me|my symptoms|advice)\b/i,
+  },
   { blocker: 'fiqh-boundary', pattern: /\b(fatwa|halal for me|haram for me|ruling for me|personal fiqh)\b/i },
-  { blocker: 'personal-crisis-boundary', pattern: /\b(suicide|self[-\s]?harm|harm myself|kill myself|want to die|end my life|immediate danger|hurt myself)\b/i },
-  { blocker: 'personal-pastoral-boundary', pattern: /\b(what should i do spiritually|personal spiritual advice|counsel me|my crisis)\b/i },
-  { blocker: 'broad-theological-boundary', pattern: /\b(islam says|what does islam say|the qur'?an teaches|what does islam think|all muslims believe)\b/i },
-  { blocker: 'inflammatory-religious-attack-boundary', pattern: /\b(prove.*evil|attack.*religion|why.*inferior|mock.*islam)\b/i },
+  {
+    blocker: 'personal-crisis-boundary',
+    pattern:
+      /\b(suicide|self[-\s]?harm|harm myself|kill myself|want to die|end my life|immediate danger|hurt myself)\b/i,
+  },
+  {
+    blocker: 'personal-pastoral-boundary',
+    pattern: /\b(what should i do spiritually|personal spiritual advice|counsel me|my crisis)\b/i,
+  },
+  {
+    blocker: 'broad-theological-boundary',
+    pattern: /\b(islam says|what does islam say|the qur'?an teaches|what does islam think|all muslims believe)\b/i,
+  },
+  {
+    blocker: 'inflammatory-religious-attack-boundary',
+    pattern: /\b(prove.*evil|attack.*religion|why.*inferior|mock.*islam)\b/i,
+  },
   { blocker: 'requires-deferred-source', pattern: /\b(tafsir|asbab|hadith|theme|cross-reference|cross reference)\b/i },
 ]
 
@@ -56,9 +81,12 @@ export function recoveryForAskBlockers(query: string, blockers: AnswerBlockerLit
 }
 
 function messageForBlockers(blockers: AnswerBlockerLite[]): string {
-  if (blockers.includes('absence-claim-unproven')) return 'This v1 search can show related evidence, but it cannot answer absence claims as prose.'
-  if (blockers.includes('requires-tafsir')) return 'This v1 search does not include tafsir evidence. Search the available text and translation evidence instead.'
-  if (blockers.some((blocker) => blocker.endsWith('-boundary'))) return 'This query needs a safer evidence-only response in v1.'
+  if (blockers.includes('absence-claim-unproven'))
+    return 'This v1 search can show related evidence, but it cannot answer absence claims as prose.'
+  if (blockers.includes('requires-tafsir'))
+    return 'This v1 search does not include tafsir evidence. Search the available text and translation evidence instead.'
+  if (blockers.some((blocker) => blocker.endsWith('-boundary')))
+    return 'This query needs a safer evidence-only response in v1.'
   if (blockers.includes('ambiguous-query')) return 'This query needs a clearer reference, wording, or source lane.'
   return 'The available v1 sources are not enough to answer this query as prose.'
 }

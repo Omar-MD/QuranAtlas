@@ -8,10 +8,42 @@ export type SearchWorkerEpoch = number
 export type SearchWorkerRequest =
   | { type: 'init'; requestId: string; packId: string }
   | { type: 'preloadCore'; requestId: string }
-  | { type: 'askPreview'; requestId: string; query: string; lens?: SearchLensLite; queryAst?: SearchQueryAstV1; sort?: SearchSort }
-  | { type: 'askMatchesPage'; requestId: string; previewId: string; query: string; lens?: SearchLensLite; queryAst?: SearchQueryAstV1; cursor?: SearchResultCursor; limit: number; sort?: SearchSort }
-  | { type: 'query'; requestId: string; query: SearchQueryAstV1; cursor?: SearchResultCursor; limit: number; sort: SearchSort }
-  | { type: 'explore'; requestId: string; query: SearchQueryAstV1; result: SearchResultDto; sections?: string[]; cursor?: { sectionId: string; offset: number }; limit?: number }
+  | {
+      type: 'askPreview'
+      requestId: string
+      query: string
+      lens?: SearchLensLite
+      queryAst?: SearchQueryAstV1
+      sort?: SearchSort
+    }
+  | {
+      type: 'askMatchesPage'
+      requestId: string
+      previewId: string
+      query: string
+      lens?: SearchLensLite
+      queryAst?: SearchQueryAstV1
+      cursor?: SearchResultCursor
+      limit: number
+      sort?: SearchSort
+    }
+  | {
+      type: 'query'
+      requestId: string
+      query: SearchQueryAstV1
+      cursor?: SearchResultCursor
+      limit: number
+      sort: SearchSort
+    }
+  | {
+      type: 'explore'
+      requestId: string
+      query: SearchQueryAstV1
+      result: SearchResultDto
+      sections?: string[]
+      cursor?: { sectionId: string; offset: number }
+      limit?: number
+    }
   | { type: 'loadFeature'; requestId: string; featureId: SearchFeatureId }
   | { type: 'cancel'; requestId: string; targetRequestId: string }
   | { type: 'dispose'; requestId: string }
@@ -29,7 +61,7 @@ export const SEARCH_WORKER_ERROR_CODES = [
   'quota-unavailable',
 ] as const
 
-export type SearchWorkerErrorCode = typeof SEARCH_WORKER_ERROR_CODES[number]
+export type SearchWorkerErrorCode = (typeof SEARCH_WORKER_ERROR_CODES)[number]
 
 export type SearchBriefSourceLane = 'arabic-text' | 'translation' | 'context'
 export type SearchBriefMorphologyMode = 'same-written-form' | 'same-root' | 'lemma' | 'surah-context'
@@ -110,7 +142,12 @@ export interface SearchBriefDto {
   }
   evidenceTypes: SearchBriefEvidenceType[]
   representativeRefs: Array<{
-    label: 'top-ranked' | 'first-in-mushaf-order' | 'different-surah-example' | 'translation-context-example' | 'arabic-text-example'
+    label:
+      | 'top-ranked'
+      | 'first-in-mushaf-order'
+      | 'different-surah-example'
+      | 'translation-context-example'
+      | 'arabic-text-example'
     ref: `${number}:${number}`
   }>
   mappingStateCounts?: Partial<Record<SearchMappingState, number>>

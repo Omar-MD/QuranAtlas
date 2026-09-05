@@ -67,43 +67,58 @@ export async function buildSearchMorphologyPayloads({ corePostings }) {
     sourceDigest: imported.sourceSha256,
     source: imported,
     payloads: [
-      ['morphology-root-dictionary.qas', {
-        kind: 'morphology-dictionary',
-        dictionary: 'roots',
-        entries: dictionaryEntries(rootPostings),
-      }],
-      ['morphology-lemma-dictionary.qas', {
-        kind: 'morphology-dictionary',
-        dictionary: 'lemmas',
-        entries: dictionaryEntries(lemmaPostings),
-      }],
-      ...chunkRows(morphologyRows, 8_000).map((rows, index) => [`morphology-rows-${index + 1}.qas`, {
-        kind: 'morphology-rows',
-        rows,
-      }]),
+      [
+        'morphology-root-dictionary.qas',
+        {
+          kind: 'morphology-dictionary',
+          dictionary: 'roots',
+          entries: dictionaryEntries(rootPostings),
+        },
+      ],
+      [
+        'morphology-lemma-dictionary.qas',
+        {
+          kind: 'morphology-dictionary',
+          dictionary: 'lemmas',
+          entries: dictionaryEntries(lemmaPostings),
+        },
+      ],
+      ...chunkRows(morphologyRows, 8_000).map((rows, index) => [
+        `morphology-rows-${index + 1}.qas`,
+        {
+          kind: 'morphology-rows',
+          rows,
+        },
+      ]),
       ...chunkPostingRows('same-written-form-postings', writtenFormPostings),
       ...chunkPostingRows('same-root-postings', rootPostings),
       ...chunkPostingRows('lemma-postings', lemmaPostings),
-      ['surah-context.qas', {
-        kind: 'surah-context',
-        roots: contextRows(rootCountsBySurah),
-        lemmas: contextRows(lemmaCountsBySurah),
-        writtenForms: contextRows(formCountsBySurah),
-      }],
-      ['morphology-provenance.qas', {
-        kind: 'morphology-provenance',
-        sourceId: QAC_SOURCE_ID,
-        sourceVersion: imported.sourceVersion,
-        sourcePath: imported.sourcePath,
-        sourceUrl: imported.sourceUrl,
-        sourceSha256: imported.sourceSha256,
-        acceptedSha256: imported.acceptedSha256,
-        licenseIds: imported.licenseIds,
-        sourceAvailability: imported.sourceAvailability,
-        transformedDataNotes: imported.transformedDataNotes,
-        requiredNotice: imported.requiredNotice,
-        coverage: imported.coverage,
-      }],
+      [
+        'surah-context.qas',
+        {
+          kind: 'surah-context',
+          roots: contextRows(rootCountsBySurah),
+          lemmas: contextRows(lemmaCountsBySurah),
+          writtenForms: contextRows(formCountsBySurah),
+        },
+      ],
+      [
+        'morphology-provenance.qas',
+        {
+          kind: 'morphology-provenance',
+          sourceId: QAC_SOURCE_ID,
+          sourceVersion: imported.sourceVersion,
+          sourcePath: imported.sourcePath,
+          sourceUrl: imported.sourceUrl,
+          sourceSha256: imported.sourceSha256,
+          acceptedSha256: imported.acceptedSha256,
+          licenseIds: imported.licenseIds,
+          sourceAvailability: imported.sourceAvailability,
+          transformedDataNotes: imported.transformedDataNotes,
+          requiredNotice: imported.requiredNotice,
+          coverage: imported.coverage,
+        },
+      ],
     ],
   }
 }
@@ -135,11 +150,14 @@ function postingRows(postingsMap) {
 
 function chunkPostingRows(prefix, postingsMap) {
   const rows = postingRows(postingsMap)
-  return chunkRows(rows, 6_000).map((chunk, index) => [`${prefix}-${index + 1}.qas`, {
-    kind: 'morphology-postings',
-    lane: prefix,
-    postings: chunk,
-  }])
+  return chunkRows(rows, 6_000).map((chunk, index) => [
+    `${prefix}-${index + 1}.qas`,
+    {
+      kind: 'morphology-postings',
+      lane: prefix,
+      postings: chunk,
+    },
+  ])
 }
 
 function contextRows(countsMap) {
@@ -148,9 +166,7 @@ function contextRows(countsMap) {
     .map(([term, counts]) => ({
       term,
       total: [...counts.values()].reduce((sum, count) => sum + count, 0),
-      surahs: [...counts.entries()]
-        .sort(([a], [b]) => a - b)
-        .map(([surah, count]) => ({ surah, count })),
+      surahs: [...counts.entries()].sort(([a], [b]) => a - b).map(([surah, count]) => ({ surah, count })),
     }))
 }
 

@@ -9,16 +9,23 @@ export type SavedPosition = { surah: number; verse: number }
 export type LaunchRestoreState =
   | { status: 'loading'; hash: string; sourceHash: string }
   | { status: 'ready'; hash: string; sourceHash: string }
-  | { status: 'setup'; hash: string; sourceHash: string; setup: Exclude<MushafEditionSetupState, { status: 'complete' }> }
+  | {
+      status: 'setup'
+      hash: string
+      sourceHash: string
+      setup: Exclude<MushafEditionSetupState, { status: 'complete' }>
+    }
 
 const EXCLUDED = new Set(['#/onboarding', '#/settings', '#/assets', '#/search'])
 
 export function isValidReaderHash(hash: string): boolean {
-  return /^#\/s\/(?:[1-9]|[1-9]\d|10\d|11[0-4])(?:\/\d{1,3})?$/.test(hash)
-    || /^#\/m\/(?:[1-9]\d{0,2})$/.test(hash)
-    || hash === '#/surahs'
-    || hash === '#/bookmarks'
-    || hash === '#/about'
+  return (
+    /^#\/s\/(?:[1-9]|[1-9]\d|10\d|11[0-4])(?:\/\d{1,3})?$/.test(hash) ||
+    /^#\/m\/(?:[1-9]\d{0,2})$/.test(hash) ||
+    hash === '#/surahs' ||
+    hash === '#/bookmarks' ||
+    hash === '#/about'
+  )
 }
 
 export function shouldPersistLastSurface(hash: string): boolean {
@@ -90,12 +97,11 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
   const hasResolvedOnceRef = useRef(false)
   const setupPendingRef = useRef(false)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refreshVersion intentionally retriggers restoration.
   useEffect(() => {
     let active = true
-    const canKeepReady = hasResolvedOnceRef.current
-      && !setupPendingRef.current
-      && !isLaunchHash(hash)
-      && hash !== '#/onboarding'
+    const canKeepReady =
+      hasResolvedOnceRef.current && !setupPendingRef.current && !isLaunchHash(hash) && hash !== '#/onboarding'
 
     if (canKeepReady) {
       setState({ status: 'ready', hash, sourceHash: hash })

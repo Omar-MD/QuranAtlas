@@ -24,11 +24,14 @@ export async function resolveMushafHrefForVerseRef(ref: QuranRef): Promise<strin
   }
 }
 
-export async function resolveMushafHrefForVerseRoute(routeRef: QuranRef & { explicitVerse?: boolean }): Promise<string> {
+export async function resolveMushafHrefForVerseRoute(
+  routeRef: QuranRef & { explicitVerse?: boolean },
+): Promise<string> {
   const persisted = await readCurrentPosition()
-  const ref = !routeRef.explicitVerse && persisted?.surah === routeRef.surah
-    ? persisted
-    : { surah: routeRef.surah, verse: routeRef.verse }
+  const ref =
+    !routeRef.explicitVerse && persisted?.surah === routeRef.surah
+      ? persisted
+      : { surah: routeRef.surah, verse: routeRef.verse }
   return resolveMushafHrefForVerseRef(ref)
 }
 
@@ -39,7 +42,7 @@ export async function resolveVerseHrefForMushafPage(page: number, fallbackRef?: 
     const ref = firstVerseForMushafPage(manifest, page)
     return REACT_ROUTES.surah(ref.surah, ref.verse)
   } catch {
-    const fallback = fallbackRef ?? await readCurrentPosition()
+    const fallback = fallbackRef ?? (await readCurrentPosition())
     return fallback ? REACT_ROUTES.surah(fallback.surah, fallback.verse) : REACT_ROUTES.surah(1)
   }
 }

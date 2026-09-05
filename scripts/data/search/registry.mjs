@@ -20,17 +20,19 @@ export function buildSearchRegistry({ generatedAt, manifest }) {
     registryVersion: 1,
     registryUrl: SEARCH_PACK_REGISTRY_RUNTIME_URL,
     generatedAt,
-    packs: [{
-      packId: manifest.packId,
-      packVersion: manifest.packVersion,
-      contentHash: manifest.contentHash,
-      manifestUrl: `${SEARCH_PACKS_RUNTIME_PREFIX}${manifest.contentHash}/manifest.json`,
-      sourceRiwayah: manifest.sourceRiwayah,
-      features: manifest.features,
-      minAppVersion: manifest.minAppVersion,
-      minWorkerVersion: manifest.minWorkerVersion,
-      totalBytes: manifest.totalBytes,
-    }],
+    packs: [
+      {
+        packId: manifest.packId,
+        packVersion: manifest.packVersion,
+        contentHash: manifest.contentHash,
+        manifestUrl: `${SEARCH_PACKS_RUNTIME_PREFIX}${manifest.contentHash}/manifest.json`,
+        sourceRiwayah: manifest.sourceRiwayah,
+        features: manifest.features,
+        minAppVersion: manifest.minAppVersion,
+        minWorkerVersion: manifest.minWorkerVersion,
+        totalBytes: manifest.totalBytes,
+      },
+    ],
   }
   assertNoStableMutableSearchUrls(registry)
   return registry

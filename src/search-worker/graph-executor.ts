@@ -8,7 +8,7 @@ import {
   type SearchGraphSectionId,
 } from '../search/graph'
 import { tokenizeSearchText } from '../search/normalizer'
-import { SearchPackReader, SearchPackReaderError } from '../search/pack-reader'
+import { type SearchPackReader, SearchPackReaderError } from '../search/pack-reader'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
 
 const DEFAULT_SECTIONS: SearchGraphSectionId[] = [
@@ -41,9 +41,8 @@ export class SearchGraphExecutor {
     token: SearchCancellationToken
   }): Promise<SearchGraphExploreResponse> {
     const responseSections: SearchGraphSection[] = []
-    for (let index = 0; index < sections.length; index += 1) {
+    for (const [index, section] of sections.entries()) {
       await cooperativeYield(token, 1, index)
-      const section = sections[index]!
       responseSections.push(await this.section(section, query, result, limit))
     }
     return { sections: responseSections }
@@ -56,7 +55,8 @@ export class SearchGraphExecutor {
     limit: number,
   ): Promise<SearchGraphSection> {
     try {
-      if (!this.reader.manifest.features.includes(section)) throw new SearchPackReaderError('missing-feature', `Search pack is missing ${section}`, true)
+      if (!this.reader.manifest.features.includes(section))
+        throw new SearchPackReaderError('missing-feature', `Search pack is missing ${section}`, true)
       if (section === 'following-wording') return await this.following(query, limit)
       if (section === 'shared-wording') return await this.shared(result, limit)
       if (section === 'repeated-phrases') return await this.repeated(query, limit)
@@ -64,7 +64,10 @@ export class SearchGraphExecutor {
       if (section === 'ayah-endings') return await this.ayahEndings(result, limit)
       return await this.countsPatterns()
     } catch (error) {
-      if (error instanceof SearchPackReaderError && (error.code === 'missing-feature' || error.code === 'offline-miss')) {
+      if (
+        error instanceof SearchPackReaderError &&
+        (error.code === 'missing-feature' || error.code === 'offline-miss')
+      ) {
         return unavailableSection(section, error.message, error.retryable)
       }
       throw error
@@ -111,7 +114,9 @@ export class SearchGraphExecutor {
       id: 'repeated-phrases' as const,
       title: 'Repeated phrases',
       sourcePolicy: payloads[0]?.sourcePolicy ?? [],
-      rows: prioritizePhrase(rows, phrase).slice(0, limit).map((row) => ({ phrase: row.term, count: row.count, refs: row.refs })),
+      rows: prioritizePhrase(rows, phrase)
+        .slice(0, limit)
+        .map((row) => ({ phrase: row.term, count: row.count, refs: row.refs })),
       cursor: null,
     }
   }
@@ -125,7 +130,9 @@ export class SearchGraphExecutor {
       title: 'Occurs once in this index',
       note: SEARCH_OCCURS_ONCE_NOTE,
       sourcePolicy: payloads[0]?.sourcePolicy ?? [],
-      rows: prioritizePhrase(rows, phrase).slice(0, limit).map((row) => ({ phrase: row.term, count: row.count, refs: row.refs })),
+      rows: prioritizePhrase(rows, phrase)
+        .slice(0, limit)
+        .map((row) => ({ phrase: row.term, count: row.count, refs: row.refs })),
       cursor: null,
     }
   }
@@ -179,21 +186,27 @@ function phraseForQuery(query: SearchQueryAstV1): string {
 }
 
 function prioritizePhrase<TRow extends { term: string; count: number }>(rows: TRow[], phrase: string): TRow[] {
-  return rows.slice().sort((a, b) => Number(b.term === phrase) - Number(a.term === phrase) || b.count - a.count || a.term.localeCompare(b.term))
+  return rows
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(b.term === phrase) - Number(a.term === phrase) || b.count - a.count || a.term.localeCompare(b.term),
+    )
 }
 
 function unavailableSection(section: SearchGraphSectionId, reason: string, retryable: boolean): SearchGraphSection {
-  const title = section === 'counts-patterns'
-    ? 'Counts & patterns'
-    : section === 'following-wording'
-      ? 'Attested following wording'
-      : section === 'shared-wording'
-        ? 'Shared wording'
-        : section === 'repeated-phrases'
-          ? 'Repeated phrases'
-          : section === 'occurs-once'
-            ? 'Occurs once in this index'
-            : 'Ayah endings'
+  const title =
+    section === 'counts-patterns'
+      ? 'Counts & patterns'
+      : section === 'following-wording'
+        ? 'Attested following wording'
+        : section === 'shared-wording'
+          ? 'Shared wording'
+          : section === 'repeated-phrases'
+            ? 'Repeated phrases'
+            : section === 'occurs-once'
+              ? 'Occurs once in this index'
+              : 'Ayah endings'
   return {
     id: section,
     title,

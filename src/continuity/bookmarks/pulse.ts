@@ -29,7 +29,11 @@ export function pulseBookmarkLanding(verseKey: string, root: ParentNode = docume
   return true
 }
 
-export function pulseBookmarkLandingWhenReady(verseKey: string, root: ParentNode = document, deadline = Date.now() + PULSE_POLL_TIMEOUT_MS): void {
+export function pulseBookmarkLandingWhenReady(
+  verseKey: string,
+  root: ParentNode = document,
+  deadline = Date.now() + PULSE_POLL_TIMEOUT_MS,
+): void {
   if (pulseBookmarkLanding(verseKey, root)) return
   if (Date.now() >= deadline) return
   window.setTimeout(() => pulseBookmarkLandingWhenReady(verseKey, root, deadline), PULSE_POLL_INTERVAL_MS)
@@ -48,5 +52,8 @@ export function pulseBookmarkLandingWhenRouteReady(
     return
   }
   if (Date.now() >= deadline) return
-  window.setTimeout(() => pulseBookmarkLandingWhenRouteReady(verseKey, routeHash, root, deadline), PULSE_POLL_INTERVAL_MS)
+  window.setTimeout(
+    () => pulseBookmarkLandingWhenRouteReady(verseKey, routeHash, root, deadline),
+    PULSE_POLL_INTERVAL_MS,
+  )
 }

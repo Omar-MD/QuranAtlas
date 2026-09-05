@@ -35,15 +35,21 @@ export const Loading: Story = {
 }
 
 export const OverviewBroad: Story = {
-  render: () => <WorkspaceStory activeTab="overview" brief={fixtureBrief} results={[fixtureResult, fixtureArabicResult]} />,
+  render: () => (
+    <WorkspaceStory activeTab="overview" brief={fixtureBrief} results={[fixtureResult, fixtureArabicResult]} />
+  ),
 }
 
 export const OverviewMorphology: Story = {
-  render: () => <WorkspaceStory activeTab="overview" brief={fixtureMorphologyBrief} results={[fixtureMorphologyResult]} />,
+  render: () => (
+    <WorkspaceStory activeTab="overview" brief={fixtureMorphologyBrief} results={[fixtureMorphologyResult]} />
+  ),
 }
 
 export const AnswerPreviewDefault: Story = {
-  render: () => <WorkspaceStory activeTab="overview" answerPreview={fixtureAnswerPreview()} brief={fixtureBrief} results={[]} />,
+  render: () => (
+    <WorkspaceStory activeTab="overview" answerPreview={fixtureAnswerPreview()} brief={fixtureBrief} results={[]} />
+  ),
 }
 
 export const EvidenceOnlyBoundary: Story = {
@@ -82,7 +88,15 @@ export const AllMatchesOpen: Story = {
   render: () => (
     <WorkspaceStory
       activeTab="overview"
-      allMatches={[fixtureMatchCard(), fixtureMatchCard({ id: 'match-1-1', refLabel: '1:1', snippet: 'In the name of Allah, the Entirely Merciful...', readerAction: { type: 'unavailable', reason: 'No mapped Reader target is available.' } })]}
+      allMatches={[
+        fixtureMatchCard(),
+        fixtureMatchCard({
+          id: 'match-1-1',
+          refLabel: '1:1',
+          snippet: 'In the name of Allah, the Entirely Merciful...',
+          readerAction: { type: 'unavailable', reason: 'No mapped Reader target is available.' },
+        }),
+      ]}
       allMatchesOpen
       answerPreview={fixtureAnswerPreview()}
       brief={fixtureBrief}
@@ -93,11 +107,27 @@ export const AllMatchesOpen: Story = {
 }
 
 export const VersesReference: Story = {
-  render: () => <WorkspaceStory activeTab="verses" brief={fixtureReferenceBrief} defaultTab="verses" results={[fixtureArabicResult]} selectedResult={fixtureArabicResult} />,
+  render: () => (
+    <WorkspaceStory
+      activeTab="verses"
+      brief={fixtureReferenceBrief}
+      defaultTab="verses"
+      results={[fixtureArabicResult]}
+      selectedResult={fixtureArabicResult}
+    />
+  ),
 }
 
 export const VersesPhrase: Story = {
-  render: () => <WorkspaceStory activeTab="verses" brief={fixturePhraseBrief} defaultTab="verses" results={[fixtureArabicResult]} selectedResult={fixtureArabicResult} />,
+  render: () => (
+    <WorkspaceStory
+      activeTab="verses"
+      brief={fixturePhraseBrief}
+      defaultTab="verses"
+      results={[fixtureArabicResult]}
+      selectedResult={fixtureArabicResult}
+    />
+  ),
 }
 
 export const ExploreMissingPacks: Story = {
@@ -119,8 +149,20 @@ export const Sources: Story = {
 
 export const DetailsNoMapping: Story = {
   render: () => {
-    const noMappingResult = { ...fixtureResult, canOpenInRead: false, mappingState: 'hafs-source-only' as const, readerRefs: [] }
-    return <WorkspaceStory activeTab="verses" brief={fixtureBrief} results={[noMappingResult]} selectedResult={noMappingResult} />
+    const noMappingResult = {
+      ...fixtureResult,
+      canOpenInRead: false,
+      mappingState: 'hafs-source-only' as const,
+      readerRefs: [],
+    }
+    return (
+      <WorkspaceStory
+        activeTab="verses"
+        brief={fixtureBrief}
+        results={[noMappingResult]}
+        selectedResult={noMappingResult}
+      />
+    )
   },
 }
 
@@ -131,13 +173,15 @@ export const MobileDetails: Story = {
   render: () => (
     <main className="qar:max-w-sm qar:p-4" aria-label="Search">
       <SearchResultDetail
-        details={deriveSearchOutputViewModel({
-          brief: fixtureBrief,
-          defaultTab: 'verses',
-          hasMoreResults: false,
-          results: [fixtureResult],
-          selectedResult: fixtureResult,
-        }).details}
+        details={
+          deriveSearchOutputViewModel({
+            brief: fixtureBrief,
+            defaultTab: 'verses',
+            hasMoreResults: false,
+            results: [fixtureResult],
+            selectedResult: fixtureResult,
+          }).details
+        }
         onClose={() => undefined}
       />
     </main>
@@ -154,8 +198,20 @@ export const SavedSearches: Story = {
 
 export const NoMapping: Story = {
   render: () => {
-    const noMappingResult = { ...fixtureResult, canOpenInRead: false, mappingState: 'hafs-source-only' as const, readerRefs: [] }
-    return <WorkspaceStory activeTab="verses" brief={fixtureBrief} results={[noMappingResult]} selectedResult={noMappingResult} />
+    const noMappingResult = {
+      ...fixtureResult,
+      canOpenInRead: false,
+      mappingState: 'hafs-source-only' as const,
+      readerRefs: [],
+    }
+    return (
+      <WorkspaceStory
+        activeTab="verses"
+        brief={fixtureBrief}
+        results={[noMappingResult]}
+        selectedResult={noMappingResult}
+      />
+    )
   },
 }
 
@@ -244,43 +300,49 @@ function fixtureAnswerPreview(overrides: Partial<AnswerPreview> = {}): AnswerPre
     },
     mode: 'answer',
     answerability: { status: 'answerable', reasons: [], renderPermission: 'answer-preview' },
-    claims: [{
-      id: 'claim-mercy',
-      text: 'The indexed translation renders mercy language for this query.',
-      templateId: 'translation-renders',
-      slots: { query: 'mercy' },
-      attribution: 'translation-renders',
-      predicate: 'renders',
-      supportId: 'support-mercy',
-    }],
+    claims: [
+      {
+        id: 'claim-mercy',
+        text: 'The indexed translation renders mercy language for this query.',
+        templateId: 'translation-renders',
+        slots: { query: 'mercy' },
+        attribution: 'translation-renders',
+        predicate: 'renders',
+        supportId: 'support-mercy',
+      },
+    ],
     claimSupports: [{ id: 'support-mercy', claimId: 'claim-mercy', supportIds: ['atom-mercy'], verdict: 'supported' }],
-    evidenceAtoms: [{
-      id: 'atom-mercy',
-      evidenceType: 'translation',
-      sourceKind: 'translation',
-      sourceId: 'bridges-translation',
-      sourceVersion: 'fixture',
-      refs: ['2:255'],
-      displayTarget: { type: 'verse-ref', refs: ['2:255'] },
-      translationId: 'bridges-translation',
-    }],
+    evidenceAtoms: [
+      {
+        id: 'atom-mercy',
+        evidenceType: 'translation',
+        sourceKind: 'translation',
+        sourceId: 'bridges-translation',
+        sourceVersion: 'fixture',
+        refs: ['2:255'],
+        displayTarget: { type: 'verse-ref', refs: ['2:255'] },
+        translationId: 'bridges-translation',
+      },
+    ],
     evidenceBasis: {
       quranText: 'available-not-used',
       translation: 'used',
       morphology: 'available-not-used',
       note: 'Translation evidence was used; Quran text and morphology remain available as bounded evidence.',
     },
-    evidenceCards: [{
-      id: 'evidence-mercy',
-      refLabel: '2:255',
-      evidenceAtomIds: ['atom-mercy'],
-      claimSupportIds: ['support-mercy'],
-      title: '2:255',
-      snippet: 'Allah - there is no deity except Him, the Ever-Living...',
-      snippetSource: 'translation',
-      matchReason: 'The indexed translation contains the query.',
-      readerAction: { type: 'open-in-reader', ref: '2:255' },
-    }],
+    evidenceCards: [
+      {
+        id: 'evidence-mercy',
+        refLabel: '2:255',
+        evidenceAtomIds: ['atom-mercy'],
+        claimSupportIds: ['support-mercy'],
+        title: '2:255',
+        snippet: 'Allah - there is no deity except Him, the Ever-Living...',
+        snippetSource: 'translation',
+        matchReason: 'The indexed translation contains the query.',
+        readerAction: { type: 'open-in-reader', ref: '2:255' },
+      },
+    ],
     sourceFamilyStatuses: [
       { sourceKind: 'translation', availability: 'available', canSupportClaims: true },
       { sourceKind: 'quran-text', availability: 'available', canSupportClaims: true },
@@ -411,8 +473,20 @@ const fixtureBrief: SearchBriefDto = {
     rankVersion: 'phase-1-rank-v1',
   },
   laneCounts: [
-    { lane: 'translation', matchedSourceAyahCount: 18, matchedResultCount: 114, occurrenceCount: 114, occurrenceCountKnown: true },
-    { lane: 'arabic-text', matchedSourceAyahCount: 3, matchedResultCount: 3, occurrenceCount: 3, occurrenceCountKnown: true },
+    {
+      lane: 'translation',
+      matchedSourceAyahCount: 18,
+      matchedResultCount: 114,
+      occurrenceCount: 114,
+      occurrenceCountKnown: true,
+    },
+    {
+      lane: 'arabic-text',
+      matchedSourceAyahCount: 3,
+      matchedResultCount: 3,
+      occurrenceCount: 3,
+      occurrenceCountKnown: true,
+    },
   ],
   distribution: {
     firstRef: '1:1',

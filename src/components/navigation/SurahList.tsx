@@ -38,10 +38,7 @@ export function SurahList({
     () => filterSurahs(rows, parsedQuery, filter, recentSurahs, riwayah),
     [filter, parsedQuery, recentSurahs, riwayah, rows],
   )
-  const recentBySurah = useMemo(
-    () => new Map(recentSurahs.map((row) => [row.surah, row])),
-    [recentSurahs],
-  )
+  const recentBySurah = useMemo(() => new Map(recentSurahs.map((row) => [row.surah, row])), [recentSurahs])
   const searchHint = useMemo(() => getSearchHint(rows, parsedQuery, riwayah), [parsedQuery, riwayah, rows])
 
   useEffect(() => {
@@ -67,25 +64,42 @@ export function SurahList({
   }, [initialRows])
 
   if (status === 'loading') {
-    return <p className="qar-react-nav-drawer-list-state" role="status">Loading...</p>
+    return (
+      <p className="qar-react-nav-drawer-list-state" role="status">
+        Loading...
+      </p>
+    )
   }
 
   if (status === 'error') {
-    return <p className="qar-react-nav-drawer-list-state" role="status">Surah list unavailable.</p>
+    return (
+      <p className="qar-react-nav-drawer-list-state" role="status">
+        Surah list unavailable.
+      </p>
+    )
   }
 
   if (visibleRows.length === 0) {
-    return <p className="qar-react-nav-drawer-list-state" role="status">No surahs match your search.</p>
+    return (
+      <p className="qar-react-nav-drawer-list-state" role="status">
+        No surahs match your search.
+      </p>
+    )
   }
 
   return (
     <>
-      {searchHint && <p className="qar-react-nav-drawer-search-hint" role="status">{searchHint}</p>}
+      {searchHint && (
+        <p className="qar-react-nav-drawer-search-hint" role="status">
+          {searchHint}
+        </p>
+      )}
       <ul className="qar-react-nav-drawer-surah-list" aria-label="Surah list">
         {visibleRows.map((surah) => {
           const recent = filter === 'recent' ? recentBySurah.get(surah.n) : undefined
           const recentVerse = recent ? Math.min(recent.verse, surah.counts[riwayah]) : null
-          const targetVerse = parsedQuery.kind === 'ref' && parsedQuery.surah === surah.n ? parsedQuery.verse : recentVerse
+          const targetVerse =
+            parsedQuery.kind === 'ref' && parsedQuery.surah === surah.n ? parsedQuery.verse : recentVerse
           const label = targetVerse ? `Open ${surah.name} verse ${targetVerse}` : `Open ${surah.name}`
           const hash = targetVerse ? `#/s/${surah.n}/${targetVerse}` : `#/s/${surah.n}`
           const meta = recentVerse ? `Last reached ${surah.n}:${recentVerse}` : `${surah.counts[riwayah]} verses`
@@ -94,18 +108,29 @@ export function SurahList({
               className={[
                 'qar-react-nav-drawer-surah-row',
                 currentSurah === surah.n ? 'qar-react-nav-drawer-surah-row--current' : '',
-              ].filter(Boolean).join(' ')}
+              ]
+                .filter(Boolean)
+                .join(' ')}
               data-surah={surah.n}
               key={surah.n}
             >
-              <Button aria-label={label} className="qar-react-nav-drawer-surah-btn" onClick={() => onNavigate?.(hash)} variant="ghost">
+              <Button
+                aria-label={label}
+                className="qar-react-nav-drawer-surah-btn"
+                onClick={() => onNavigate?.(hash)}
+                variant="ghost"
+              >
                 <span className="qar-react-nav-drawer-surah-num">{surah.n}</span>
                 <span className="qar-react-nav-drawer-surah-copy">
                   <span className="qar-react-nav-drawer-surah-name">{surah.name}</span>
                   <span className="qar-react-nav-drawer-surah-meta">{meta}</span>
                 </span>
-                <span className="qar-react-nav-drawer-surah-ar" dir="rtl" lang="ar">{surah.name_ar}</span>
-                <span className="qar-react-nav-drawer-surah-chev" aria-hidden="true">›</span>
+                <span className="qar-react-nav-drawer-surah-ar" dir="rtl" lang="ar">
+                  {surah.name_ar}
+                </span>
+                <span className="qar-react-nav-drawer-surah-chev" aria-hidden="true">
+                  ›
+                </span>
               </Button>
             </li>
           )
@@ -143,7 +168,8 @@ function filterSurahs(
   if (parsedQuery.kind === 'empty') return items
   if (parsedQuery.kind === 'surahNum') return items.filter((row) => row.n === parsedQuery.n)
   if (parsedQuery.kind === 'verseNum') return items.filter((row) => row.counts[riwayah] >= parsedQuery.v)
-  if (parsedQuery.kind === 'ref') return items.filter((row) => row.n === parsedQuery.surah && row.counts[riwayah] >= parsedQuery.verse)
+  if (parsedQuery.kind === 'ref')
+    return items.filter((row) => row.n === parsedQuery.surah && row.counts[riwayah] >= parsedQuery.verse)
   return items.filter((row) => {
     const name = row.name.toLowerCase()
     const arabic = row.name_ar.toLowerCase()
@@ -155,7 +181,8 @@ function getSearchHint(rows: ReaderSurahIndexEntry[], parsedQuery: ParsedQuery, 
   if (parsedQuery.kind === 'ref') {
     const meta = rows.find((row) => row.n === parsedQuery.surah)
     if (!meta) return `No surah ${parsedQuery.surah}`
-    if (parsedQuery.verse < 1 || parsedQuery.verse > meta.counts[riwayah]) return `${meta.name} has ${meta.counts[riwayah]} verses`
+    if (parsedQuery.verse < 1 || parsedQuery.verse > meta.counts[riwayah])
+      return `${meta.name} has ${meta.counts[riwayah]} verses`
     return `Press Enter to jump to ${meta.name} ${parsedQuery.verse}`
   }
   if (parsedQuery.kind === 'verseNum') {

@@ -17,10 +17,13 @@ export async function buildSearchCorePostings({ hafsPath, translationPath }) {
   const seenTextRefs = new Set()
 
   for (const [rowIndex, row] of hafsRows.entries()) {
-    const parsedRef = parseAyahKey({
-      surah: row.sora ?? row.sura_no,
-      ayah: row.aya_no,
-    }, `Hafs Search text row[${rowIndex}]`)
+    const parsedRef = parseAyahKey(
+      {
+        surah: row.sora ?? row.sura_no,
+        ayah: row.aya_no,
+      },
+      `Hafs Search text row[${rowIndex}]`,
+    )
     const { surah, ayah, key: ref } = parsedRef
     if (seenTextRefs.has(ref)) {
       throw new Error(`Hafs Search text duplicate ayah ref ${ref}`)
@@ -52,7 +55,7 @@ export async function buildSearchCorePostings({ hafsPath, translationPath }) {
     })
 
     arabicTokens.forEach((token, position) => {
-      const normalizedTokenId = intern(tokenIds, token)
+      intern(tokenIds, token)
       addPosting(arabicPostings, token, { ayahId, position })
       const surfaceToken = exactTokens[position] ?? token
       intern(surfaceIds, surfaceToken)
@@ -74,8 +77,8 @@ export async function buildSearchCorePostings({ hafsPath, translationPath }) {
   const extraTranslationRefs = [...translationByRef.keys()].filter((ref) => !seenTextRefs.has(ref))
   if (extraTranslationRefs.length > 0) {
     throw new Error(
-      `Search translation source contains ${extraTranslationRefs.length} refs not present in Hafs Search text: `
-      + extraTranslationRefs.slice(0, 8).join(', '),
+      `Search translation source contains ${extraTranslationRefs.length} refs not present in Hafs Search text: ` +
+        extraTranslationRefs.slice(0, 8).join(', '),
     )
   }
   assertCompleteHafsAyahCoverage(seenTextRefs, 'Hafs Search text')
@@ -117,7 +120,9 @@ function buildTranslationTextByRef(translation) {
     const surahKey = canonicalSurahKey(rawSurahKey, `Search translation surah key ${rawSurahKey}`)
     const previousRawKey = seenSurahs.get(surahKey)
     if (previousRawKey !== undefined) {
-      throw new Error(`Search translation duplicate surah key ${rawSurahKey}; ${previousRawKey} also canonicalizes to ${surahKey}`)
+      throw new Error(
+        `Search translation duplicate surah key ${rawSurahKey}; ${previousRawKey} also canonicalizes to ${surahKey}`,
+      )
     }
     seenSurahs.set(surahKey, rawSurahKey)
 
@@ -168,7 +173,5 @@ function entriesFromMap(map) {
 }
 
 function mapToRows(map) {
-  return [...map.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([term, postings]) => ({ term, postings }))
+  return [...map.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([term, postings]) => ({ term, postings }))
 }

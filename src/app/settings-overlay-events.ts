@@ -13,10 +13,7 @@ type ReaderSettingsAnchorWindow = Window & {
   [READER_SETTINGS_ANCHOR_KEY]?: ReaderSettingsAnchor
 }
 
-export function requestReactSettingsOverlay(
-  mode: SettingsRouteMode,
-  returnFocusId = 'reader-settings-trigger',
-): void {
+export function requestReactSettingsOverlay(mode: SettingsRouteMode, returnFocusId = 'reader-settings-trigger'): void {
   if (typeof window === 'undefined') return
   captureReactSettingsReaderAnchor()
   window.dispatchEvent(new CustomEvent(REACT_OPEN_SETTINGS_EVENT, { detail: { mode, returnFocusId } }))
@@ -52,7 +49,7 @@ export function clearReactSettingsReaderAnchor(): void {
 function captureReactSettingsReaderAnchor(): void {
   const anchor = findCurrentReaderAnchor()
   if (anchor) {
-    (window as ReaderSettingsAnchorWindow)[READER_SETTINGS_ANCHOR_KEY] = anchor
+    ;(window as ReaderSettingsAnchorWindow)[READER_SETTINGS_ANCHOR_KEY] = anchor
   }
 }
 
@@ -66,9 +63,10 @@ function findCurrentReaderAnchor(): ReaderSettingsAnchor | null {
     if (!key) continue
     const rect = element.getBoundingClientRect()
     if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
-    const distance = rect.top <= centerY && rect.bottom >= centerY
-      ? 0
-      : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
+    const distance =
+      rect.top <= centerY && rect.bottom >= centerY
+        ? 0
+        : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
     if (!closest || distance < closest.distance) closest = { distance, element }
     if (distance === 0) break
   }

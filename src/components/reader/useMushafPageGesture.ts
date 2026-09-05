@@ -36,8 +36,10 @@ type MushafPageGestureOptions = {
   stageRef: RefObject<HTMLElement | null>
 }
 
-type MushafStageHandlers = Pick<JSX.IntrinsicElements['div'],
-  'onLostPointerCapture' | 'onPointerCancel' | 'onPointerDown' | 'onPointerMove' | 'onPointerUp'>
+type MushafStageHandlers = Pick<
+  JSX.IntrinsicElements['div'],
+  'onLostPointerCapture' | 'onPointerCancel' | 'onPointerDown' | 'onPointerMove' | 'onPointerUp'
+>
 
 const CLICK_SUPPRESSION_MS = 600
 const SETTLE_FALLBACK_MS = 280
@@ -112,20 +114,23 @@ export function useMushafPageGesture(options: MushafPageGestureOptions): {
     suppressClickUntilRef.current = Date.now() + CLICK_SUPPRESSION_MS
   }, [])
 
-  const settle = useCallback((direction: MushafPageDirection | null, width: number) => {
-    pendingCommitRef.current = direction
-    updatePhase('settling')
-    clearSettleCompletion()
+  const settle = useCallback(
+    (direction: MushafPageDirection | null, width: number) => {
+      pendingCommitRef.current = direction
+      updatePhase('settling')
+      clearSettleCompletion()
 
-    if (window.matchMedia?.(REDUCED_MOTION_QUERY).matches) {
-      setDragX(0)
-      settleFrameRef.current = window.requestAnimationFrame(finishSettle)
-      return
-    }
+      if (window.matchMedia?.(REDUCED_MOTION_QUERY).matches) {
+        setDragX(0)
+        settleFrameRef.current = window.requestAnimationFrame(finishSettle)
+        return
+      }
 
-    setDragX(direction === 'next' ? width : direction === 'previous' ? -width : 0)
-    settleTimerRef.current = window.setTimeout(finishSettle, SETTLE_FALLBACK_MS)
-  }, [clearSettleCompletion, finishSettle, updatePhase])
+      setDragX(direction === 'next' ? width : direction === 'previous' ? -width : 0)
+      settleTimerRef.current = window.setTimeout(finishSettle, SETTLE_FALLBACK_MS)
+    },
+    [clearSettleCompletion, finishSettle, updatePhase],
+  )
 
   const shouldSuppressClick = useCallback(() => Date.now() < suppressClickUntilRef.current, [])
 
@@ -242,5 +247,9 @@ export function useMushafPageGesture(options: MushafPageGestureOptions): {
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false
-  return target.closest('a, button, input, select, textarea, summary, label, [contenteditable="true"], [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"]') !== null
+  return (
+    target.closest(
+      'a, button, input, select, textarea, summary, label, [contenteditable="true"], [role="button"], [role="link"], [role="menuitem"], [role="option"], [role="tab"]',
+    ) !== null
+  )
 }

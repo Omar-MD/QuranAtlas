@@ -35,15 +35,17 @@ function asPositiveInteger(value: unknown, fallback: number): number {
 }
 
 function asUnit(value: unknown): WirdUnit {
-  return typeof value === 'string' && VALID_UNITS.has(value as WirdUnit) ? value as WirdUnit : 'verse'
+  return typeof value === 'string' && VALID_UNITS.has(value as WirdUnit) ? (value as WirdUnit) : 'verse'
 }
 
 function asReminder(value: unknown) {
   if (!value || typeof value !== 'object') return DEFAULT_REMINDER
   const raw = value as { browserNotifications?: unknown; enabled?: unknown; time?: unknown }
-  const browserNotifications = typeof raw.browserNotifications === 'string' && VALID_NOTIFICATION_STATES.has(raw.browserNotifications as BrowserNotificationState)
-    ? raw.browserNotifications as BrowserNotificationState
-    : DEFAULT_REMINDER.browserNotifications
+  const browserNotifications =
+    typeof raw.browserNotifications === 'string' &&
+    VALID_NOTIFICATION_STATES.has(raw.browserNotifications as BrowserNotificationState)
+      ? (raw.browserNotifications as BrowserNotificationState)
+      : DEFAULT_REMINDER.browserNotifications
   return {
     browserNotifications,
     enabled: typeof raw.enabled === 'boolean' ? raw.enabled : DEFAULT_REMINDER.enabled,
@@ -74,7 +76,7 @@ export function normalizeWirdPlan(value: unknown): WirdPlan | null {
       progress: {
         completedThroughRef,
         dayKey,
-        lastReadRef: isQuranRef(progress.lastReadRef) ? progress.lastReadRef : completedThroughRef ?? raw.startRef,
+        lastReadRef: isQuranRef(progress.lastReadRef) ? progress.lastReadRef : (completedThroughRef ?? raw.startRef),
         nextRef: next,
         todayEndRef: isQuranRef(progress.todayEndRef) ? progress.todayEndRef : next,
         todayStartRef: isQuranRef(progress.todayStartRef) ? progress.todayStartRef : next,
@@ -147,7 +149,7 @@ export function notifyWirdPlanChanged(plan: WirdPlan | null): void {
 export function subscribeWirdPlanChanged(listener: (plan: WirdPlan | null) => void): () => void {
   if (typeof window === 'undefined') return () => undefined
   function onWirdPlanChanged(event: Event): void {
-    listener(((event as CustomEvent<WirdPlan | null>).detail ?? null))
+    listener((event as CustomEvent<WirdPlan | null>).detail ?? null)
   }
   window.addEventListener(REACT_WIRD_PLAN_CHANGED_EVENT, onWirdPlanChanged)
   return () => window.removeEventListener(REACT_WIRD_PLAN_CHANGED_EVENT, onWirdPlanChanged)

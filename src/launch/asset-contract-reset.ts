@@ -1,4 +1,8 @@
-import { DEFAULT_READER_ASSET_PROFILE, MVP_ASSET_CONTRACT_ID, RESET_CACHE_NAME_PREFIXES } from '../../shared/reader-assets/default-profile'
+import {
+  DEFAULT_READER_ASSET_PROFILE,
+  MVP_ASSET_CONTRACT_ID,
+  RESET_CACHE_NAME_PREFIXES,
+} from '../../shared/reader-assets/default-profile'
 import { readNativeSetting, resetNativeReaderStores } from '../storage/native-reader-store'
 
 export type ReactMvpAssetContractReset = {

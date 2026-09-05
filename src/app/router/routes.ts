@@ -2,7 +2,7 @@ export const REACT_ROUTES = {
   home: '#/s/1',
   launch: '#/',
   onboarding: '#/onboarding',
-  surah: (surah: number, ayah?: number) => ayah ? `#/s/${surah}/${ayah}` : `#/s/${surah}`,
+  surah: (surah: number, ayah?: number) => (ayah ? `#/s/${surah}/${ayah}` : `#/s/${surah}`),
   mushaf: (page: number) => `#/m/${page}`,
   surahs: '#/surahs',
   search: '#/search',

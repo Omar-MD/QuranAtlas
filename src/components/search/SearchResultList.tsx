@@ -25,11 +25,7 @@ export function SearchResultList({
   selectedResultId?: string
 }) {
   if (cards.length === 0) {
-    return (
-      <p className="qar-search-results-empty">
-        {emptyMessage ?? 'Enter a word, phrase, or ayah reference.'}
-      </p>
-    )
+    return <p className="qar-search-results-empty">{emptyMessage ?? 'Enter a word, phrase, or ayah reference.'}</p>
   }
   return (
     <section aria-label="Verses" className="qar-search-result-list">

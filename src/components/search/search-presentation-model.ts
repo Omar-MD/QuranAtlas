@@ -131,7 +131,9 @@ export function toOverviewViewModel(
   facts.push({
     label: 'Shown results',
     scope: 'shown results',
-    value: hasMoreResults ? `${brief.counts.shownWindowCount} shown; more available` : String(brief.counts.shownWindowCount),
+    value: hasMoreResults
+      ? `${brief.counts.shownWindowCount} shown; more available`
+      : String(brief.counts.shownWindowCount),
   })
 
   return {
@@ -174,15 +176,23 @@ export function toDetailsViewModel(result: SearchResultDto | null): SearchDetail
   const evidenceRows: Array<{ label: string; value: string }> = [
     { label: 'Matched in', value: laneLabel(evidence.lane) },
   ]
-  if (evidence.sourcePosition !== undefined) evidenceRows.push({ label: 'Source word position', value: String(evidence.sourcePosition) })
-  if (evidence.sourcePositions?.length) evidenceRows.push({ label: 'Source word positions', value: evidence.sourcePositions.join(', ') })
-  if (evidence.wordPosition !== undefined) evidenceRows.push({ label: 'Morphology word position', value: String(evidence.wordPosition) })
-  if (evidence.phraseLength !== undefined) evidenceRows.push({ label: 'Phrase length', value: String(evidence.phraseLength) })
+  if (evidence.sourcePosition !== undefined)
+    evidenceRows.push({ label: 'Source word position', value: String(evidence.sourcePosition) })
+  if (evidence.sourcePositions?.length)
+    evidenceRows.push({ label: 'Source word positions', value: evidence.sourcePositions.join(', ') })
+  if (evidence.wordPosition !== undefined)
+    evidenceRows.push({ label: 'Morphology word position', value: String(evidence.wordPosition) })
+  if (evidence.phraseLength !== undefined)
+    evidenceRows.push({ label: 'Phrase length', value: String(evidence.phraseLength) })
   if (evidence.matchedQueryToken) evidenceRows.push({ label: 'Matched query token', value: evidence.matchedQueryToken })
-  if (evidence.matchedQueryTokens?.length) evidenceRows.push({ label: 'Matched query tokens', value: evidence.matchedQueryTokens.join(', ') })
-  if (evidence.matchedSourceToken) evidenceRows.push({ label: 'Matched source token', value: evidence.matchedSourceToken })
-  if (evidence.matchedSourceTokens?.length) evidenceRows.push({ label: 'Matched source tokens', value: evidence.matchedSourceTokens.join(', ') })
-  if (evidence.normalizedTokens?.length) evidenceRows.push({ label: 'Normalized tokens', value: evidence.normalizedTokens.join(', ') })
+  if (evidence.matchedQueryTokens?.length)
+    evidenceRows.push({ label: 'Matched query tokens', value: evidence.matchedQueryTokens.join(', ') })
+  if (evidence.matchedSourceToken)
+    evidenceRows.push({ label: 'Matched source token', value: evidence.matchedSourceToken })
+  if (evidence.matchedSourceTokens?.length)
+    evidenceRows.push({ label: 'Matched source tokens', value: evidence.matchedSourceTokens.join(', ') })
+  if (evidence.normalizedTokens?.length)
+    evidenceRows.push({ label: 'Normalized tokens', value: evidence.normalizedTokens.join(', ') })
   if (evidence.morphology?.root) evidenceRows.push({ label: 'Root', value: evidence.morphology.root })
   if (evidence.morphology?.lemma) evidenceRows.push({ label: 'Lemma', value: evidence.morphology.lemma })
 
@@ -206,7 +216,9 @@ export function toDetailsViewModel(result: SearchResultDto | null): SearchDetail
     textRows: [
       { label: 'Search text', value: result.sourceText },
       ...(result.readerText ? [{ label: 'Reader text', value: result.readerText }] : []),
-      ...(evidence.translationContextExcerpt ? [{ label: 'Translation/context excerpt', value: evidence.translationContextExcerpt }] : []),
+      ...(evidence.translationContextExcerpt
+        ? [{ label: 'Translation/context excerpt', value: evidence.translationContextExcerpt }]
+        : []),
     ],
     title: formatSearchReference(result.sourceRef),
     whyMatched: evidence.whyMatched,
@@ -223,14 +235,20 @@ export function toSourcesViewModel(brief: SearchBriefDto | null): SearchSourcesV
       { label: 'Pack id', value: frame.packId },
       { label: 'Pack version', value: frame.packVersion },
       { label: 'Pack hash', value: frame.contentHash },
-      { label: 'Search source', value: frame.sourceRiwayah === 'hafs' ? 'Hafs analytical Search source' : frame.sourceRiwayah },
+      {
+        label: 'Search source',
+        value: frame.sourceRiwayah === 'hafs' ? 'Hafs analytical Search source' : frame.sourceRiwayah,
+      },
       { label: 'Source ids', value: frame.sourceIds.join(', ') },
       { label: 'License ids', value: frame.licenseIds.join(', ') },
       { label: 'Normalizer version', value: String(frame.normalizerVersion) },
       { label: 'Query AST version', value: String(frame.queryAstVersion) },
       { label: 'Rank version', value: frame.rankVersion },
       { label: 'Tokenization policy', value: `Search normalizer/tokenizer policy v${frame.normalizerVersion}` },
-      { label: 'Boundary policy', value: 'Search matches and graph windows are bounded to indexed source ayah policy.' },
+      {
+        label: 'Boundary policy',
+        value: 'Search matches and graph windows are bounded to indexed source ayah policy.',
+      },
     ],
   }
 }
@@ -334,10 +352,11 @@ function exploreSummariesForBrief(brief: SearchBriefDto | null, results: SearchR
   const summaries: SearchExploreSummary[] = []
   const topSurahs = brief.distribution.surahsWithMostIndexedMatches.slice(0, 8).map((item) => ({
     label: `Surah ${item.surah}`,
-    scope: item.occurrenceCount === undefined ? 'all indexed matches' as const : 'all indexed matches' as const,
-    value: item.occurrenceCount === undefined
-      ? `${item.matchedSourceAyahCount} matched ayat`
-      : `${item.matchedSourceAyahCount} matched ayat, ${item.occurrenceCount} occurrence${item.occurrenceCount === 1 ? '' : 's'}`,
+    scope: item.occurrenceCount === undefined ? ('all indexed matches' as const) : ('all indexed matches' as const),
+    value:
+      item.occurrenceCount === undefined
+        ? `${item.matchedSourceAyahCount} matched ayat`
+        : `${item.matchedSourceAyahCount} matched ayat, ${item.occurrenceCount} occurrence${item.occurrenceCount === 1 ? '' : 's'}`,
   }))
   if (topSurahs.length > 0) {
     summaries.push({
@@ -377,9 +396,10 @@ function exploreSummariesForBrief(brief: SearchBriefDto | null, results: SearchR
       .map((row) => ({
         label: laneLabel(row.lane),
         scope: 'all indexed matches' as const,
-        value: row.occurrenceCountKnown && row.occurrenceCount !== null
-          ? `${row.matchedResultCount} rows, ${row.occurrenceCount} occurrences`
-          : `${row.matchedResultCount} rows`,
+        value:
+          row.occurrenceCountKnown && row.occurrenceCount !== null
+            ? `${row.matchedResultCount} rows, ${row.occurrenceCount} occurrences`
+            : `${row.matchedResultCount} rows`,
       }))
     summaries.push({
       description: 'These terms are matched against indexed translation/context text, not Arabic source wording.',
@@ -414,7 +434,11 @@ function topFormsForShownResults(results: SearchResultDto[]): SearchOverviewRank
   return Array.from(counts.entries())
     .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
     .slice(0, 4)
-    .map(([label, count]) => ({ label, scope: 'shown results', value: `${count} shown result${count === 1 ? '' : 's'}` }))
+    .map(([label, count]) => ({
+      label,
+      scope: 'shown results',
+      value: `${count} shown result${count === 1 ? '' : 's'}`,
+    }))
 }
 
 function readerTargetLabel(result: SearchResultDto): string {

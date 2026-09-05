@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 function withoutPwaPlugins(plugins: PluginOption[] | undefined): PluginOption[] | undefined {
   if (!Array.isArray(plugins)) return plugins
   return plugins
-    .flatMap((plugin) => Array.isArray(plugin) ? withoutPwaPlugins(plugin) ?? [] : plugin)
+    .flatMap((plugin) => (Array.isArray(plugin) ? (withoutPwaPlugins(plugin) ?? []) : plugin))
     .filter((plugin) => {
       if (!plugin || typeof plugin !== 'object' || !('name' in plugin)) return true
       return !String(plugin.name).toLowerCase().includes('pwa')

@@ -64,7 +64,10 @@ export function normalizeTanzilHafsSearchRows({ simpleCleanText, uthmaniText }) 
       aya_text_emlaey: simple.text,
     }
   })
-  assertCompleteHafsAyahCoverage(rows.map((row) => `${row.sora}:${row.aya_no}`), 'Tanzil Hafs Search text')
+  assertCompleteHafsAyahCoverage(
+    rows.map((row) => `${row.sora}:${row.aya_no}`),
+    'Tanzil Hafs Search text',
+  )
   return rows
 }
 

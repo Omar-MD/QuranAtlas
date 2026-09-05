@@ -8,14 +8,8 @@ import { fileURLToPath } from 'node:url'
 
 import { buildManifestPayload } from '../manifest/inventory.mjs'
 import { deriveMushafDisplayViewBox } from './display-view-box.mjs'
-import {
-  assertThemeableSvgIntegrity,
-  themeMushafSvg,
-} from './theme-svg.mjs'
-import {
-  loadPrivateMushafEditionContract,
-  validateLegacyMetadata,
-} from './private-pdf.mjs'
+import { assertThemeableSvgIntegrity, themeMushafSvg } from './theme-svg.mjs'
+import { loadPrivateMushafEditionContract, validateLegacyMetadata } from './private-pdf.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -60,7 +54,13 @@ function argValue(argv, name, fallback = null) {
 function argList(argv, name) {
   return argv
     .filter((arg) => arg.startsWith(`--${name}=`))
-    .flatMap((arg) => arg.slice(name.length + 3).split(',').map((item) => item.trim()).filter(Boolean))
+    .flatMap((arg) =>
+      arg
+        .slice(name.length + 3)
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    )
 }
 
 function sourceSurahNo(ayah) {
@@ -73,7 +73,10 @@ function pagesFromSourcePage(raw) {
   if (range) {
     const start = Number.parseInt(range[1], 10)
     const end = Number.parseInt(range[2], 10)
-    ensure(Number.isInteger(start) && Number.isInteger(end) && start >= 1 && end >= start, `Invalid Mushaf page range: ${text}`)
+    ensure(
+      Number.isInteger(start) && Number.isInteger(end) && start >= 1 && end >= start,
+      `Invalid Mushaf page range: ${text}`,
+    )
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }
   const page = Number.parseInt(text, 10)
@@ -90,11 +93,11 @@ async function readJson(path) {
 }
 
 async function writeJson(path, value) {
-  await writeFile(path, JSON.stringify(value, null, 2) + '\n', 'utf8')
+  await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
 }
 
 function jsonText(value) {
-  return JSON.stringify(value, null, 2) + '\n'
+  return `${JSON.stringify(value, null, 2)}\n`
 }
 
 function sha256Hex(bytes) {
@@ -143,7 +146,10 @@ export function riwayatForProfile(profile = 'baseline') {
 export function editionIdsForProfile(profile, catalog) {
   if (profile === 'catalog') return []
   const defaultEdition = catalog?.defaults?.qaloon
-  ensure(typeof defaultEdition === 'string' && defaultEdition.length > 0, 'Mushaf asset catalog missing default Qaloon edition')
+  ensure(
+    typeof defaultEdition === 'string' && defaultEdition.length > 0,
+    'Mushaf asset catalog missing default Qaloon edition',
+  )
   if (profile === 'baseline' || profile === 'full') return [defaultEdition]
   if (profile === 'private') return [defaultEdition, PRIVATE_EDITION_ID]
   throw new Error(`Unsupported Mushaf page profile: ${profile}`)
@@ -220,7 +226,10 @@ export function viewBoxForThemedPage(text, filename) {
 }
 
 function localName(name) {
-  return String(name ?? '').split(':').pop().toLowerCase()
+  return String(name ?? '')
+    .split(':')
+    .pop()
+    .toLowerCase()
 }
 
 function hasUnsafeCssUrlReference(value) {
@@ -261,7 +270,7 @@ function normalizeCssEscapes(value) {
 
 function isUnsafeReference(value) {
   const normalized = normalizeCssEscapes(decodeHtmlEntities(value))
-    .replace(/[\u0000-\u001f\u007f\s]+/g, '')
+    .replace(/[\p{Cc}\s]+/gu, '')
     .toLowerCase()
   return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/.test(normalized)
 }
@@ -364,8 +373,14 @@ export async function writeMushafManifest(options) {
 async function loadCatalog() {
   const catalog = await readJson(CATALOG_PATH)
   ensure(catalog.provider === 'quran.ws', 'Mushaf page catalog provider must be quran.ws')
-  ensure(Number.isInteger(catalog.pageCount) && catalog.pageCount > 0, 'Mushaf page catalog pageCount must be a positive integer')
-  ensure(catalog.themeColorMap && typeof catalog.themeColorMap === 'object', 'Mushaf page catalog missing themeColorMap')
+  ensure(
+    Number.isInteger(catalog.pageCount) && catalog.pageCount > 0,
+    'Mushaf page catalog pageCount must be a positive integer',
+  )
+  ensure(
+    catalog.themeColorMap && typeof catalog.themeColorMap === 'object',
+    'Mushaf page catalog missing themeColorMap',
+  )
   ensure(catalog.themeColorMap['#ffffff'] === 'ground', 'Mushaf page catalog must map #ffffff to ground')
   ensure(catalog.themeColorMap['#000000'] === 'ink', 'Mushaf page catalog must map #000000 to ink')
   for (const riwayah of RIWAYAT) {
@@ -436,17 +451,25 @@ async function readJsonIfPresent(path) {
   }
 }
 
-async function readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests = false, outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR }) {
+async function readCurrentMushafOutput({
+  riwayah,
+  asset,
+  sourceDigest,
+  pageCount,
+  verifyOutputDigests = false,
+  outRoot = OUT_ROOT,
+  normalizedRoot = NORMALIZED_DIR,
+}) {
   const outDir = join(outRoot, riwayah, asset.mushafEditionId)
   const legacyOutDir = join(outRoot, riwayah)
   const stamp = await readJsonIfPresent(buildStampPath(riwayah, asset.mushafEditionId, normalizedRoot))
   if (
-    !stamp
-    || stamp.version !== BUILD_STAMP_VERSION
-    || stamp.transform !== BUILD_TRANSFORM_ID
-    || stamp.riwayah !== riwayah
-    || stamp.mushafEditionId !== asset.mushafEditionId
-    || stamp.sourceDigest !== sourceDigest
+    !stamp ||
+    stamp.version !== BUILD_STAMP_VERSION ||
+    stamp.transform !== BUILD_TRANSFORM_ID ||
+    stamp.riwayah !== riwayah ||
+    stamp.mushafEditionId !== asset.mushafEditionId ||
+    stamp.sourceDigest !== sourceDigest
   ) {
     return null
   }
@@ -463,25 +486,27 @@ async function readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount
   const manifest = JSON.parse(editionManifestText.toString('utf8'))
   const legacyManifest = JSON.parse(legacyManifestText.toString('utf8'))
   if (
-    manifest.version !== 1
-    || manifest.riwayah !== riwayah
-    || manifest.mushafEditionId !== asset.mushafEditionId
-    || manifest.pageCount !== pageCount
-    || !Array.isArray(manifest.pages)
-    || manifest.pages.length !== pageCount
-    || legacyManifest.version !== 1
-    || legacyManifest.riwayah !== riwayah
-    || legacyManifest.pageCount !== pageCount
-    || !Array.isArray(legacyManifest.pages)
-    || legacyManifest.pages.length !== pageCount
+    manifest.version !== 1 ||
+    manifest.riwayah !== riwayah ||
+    manifest.mushafEditionId !== asset.mushafEditionId ||
+    manifest.pageCount !== pageCount ||
+    !Array.isArray(manifest.pages) ||
+    manifest.pages.length !== pageCount ||
+    legacyManifest.version !== 1 ||
+    legacyManifest.riwayah !== riwayah ||
+    legacyManifest.pageCount !== pageCount ||
+    !Array.isArray(legacyManifest.pages) ||
+    legacyManifest.pages.length !== pageCount
   ) {
     return null
   }
 
-  const files = [{
-    url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`,
-    bytes: editionManifestText.byteLength,
-  }]
+  const files = [
+    {
+      url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`,
+      bytes: editionManifestText.byteLength,
+    },
+  ]
   const outputFiles = [
     { path: `mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`, bytes: editionManifestText.byteLength },
     { path: `mushaf-pages/${riwayah}/manifest.json`, bytes: legacyManifestText.byteLength },
@@ -503,7 +528,12 @@ async function readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount
       if (error?.code === 'ENOENT') return null
       throw error
     })
-    if (!editionStats || !legacyStats || editionStats.size !== pageEntry.bytes || legacyStats.size !== legacyPageEntry.bytes) {
+    if (
+      !editionStats ||
+      !legacyStats ||
+      editionStats.size !== pageEntry.bytes ||
+      legacyStats.size !== legacyPageEntry.bytes
+    ) {
       return null
     }
     if (verifyOutputDigests) {
@@ -550,17 +580,29 @@ function outputDigestRows(files) {
   })
 }
 
-async function writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot = NORMALIZED_DIR }) {
-  await writeIfChanged(buildStampPath(riwayah, asset.mushafEditionId, normalizedRoot), jsonText({
-    version: BUILD_STAMP_VERSION,
-    transform: BUILD_TRANSFORM_ID,
-    riwayah,
-    mushafEditionId: asset.mushafEditionId,
-    sourceDigest,
-    editionManifestDigest: sha256Hex(Buffer.from(jsonText(editionManifest))),
-    legacyManifestDigest: sha256Hex(Buffer.from(jsonText(legacyManifest))),
-    outputs: outputDigestRows([...(editionFiles ?? []), ...(legacyFiles ?? [])]),
-  }))
+async function writeBuildStamp({
+  riwayah,
+  asset,
+  sourceDigest,
+  editionManifest,
+  legacyManifest,
+  editionFiles,
+  legacyFiles,
+  normalizedRoot = NORMALIZED_DIR,
+}) {
+  await writeIfChanged(
+    buildStampPath(riwayah, asset.mushafEditionId, normalizedRoot),
+    jsonText({
+      version: BUILD_STAMP_VERSION,
+      transform: BUILD_TRANSFORM_ID,
+      riwayah,
+      mushafEditionId: asset.mushafEditionId,
+      sourceDigest,
+      editionManifestDigest: sha256Hex(Buffer.from(jsonText(editionManifest))),
+      legacyManifestDigest: sha256Hex(Buffer.from(jsonText(legacyManifest))),
+      outputs: outputDigestRows([...(editionFiles ?? []), ...(legacyFiles ?? [])]),
+    }),
+  )
 }
 
 async function readExistingBytes(path) {
@@ -575,7 +617,7 @@ async function readExistingBytes(path) {
 async function writeIfChanged(path, content) {
   const expected = Buffer.isBuffer(content) ? content : Buffer.from(content)
   const existing = await readExistingBytes(path)
-  if (existing && existing.equals(expected)) return false
+  if (existing?.equals(expected)) return false
   await mkdir(dirname(path), { recursive: true })
   await writeFile(path, content)
   return true
@@ -614,7 +656,11 @@ export async function pruneMushafOutput(resolvedAssets, { outRoot = OUT_ROOT } =
 
   for (const riwayah of allowedRiwayat) {
     const selectedAssets = resolvedAssets.filter((asset) => asset.riwayah === riwayah)
-    const defaultAsset = selectedAssets.find((asset) => asset.mushafEditionId === selectedAssets.find((candidate) => candidate.sourceKind === 'quran-ws')?.mushafEditionId)
+    const defaultAsset = selectedAssets.find(
+      (asset) =>
+        asset.mushafEditionId ===
+        selectedAssets.find((candidate) => candidate.sourceKind === 'quran-ws')?.mushafEditionId,
+    )
     const riwayahDir = join(outRoot, riwayah)
     const allowedRootEntries = new Set(selectedAssets.map((asset) => asset.mushafEditionId))
     if (defaultAsset) {
@@ -622,27 +668,39 @@ export async function pruneMushafOutput(resolvedAssets, { outRoot = OUT_ROOT } =
       allowedRootEntries.add('pages')
     }
     await removeEntriesExcept(riwayahDir, allowedRootEntries)
-    if (defaultAsset) await removeEntriesExcept(join(riwayahDir, 'pages'), new Set(pageFilenames(defaultAsset.pageCount)))
+    if (defaultAsset)
+      await removeEntriesExcept(join(riwayahDir, 'pages'), new Set(pageFilenames(defaultAsset.pageCount)))
     for (const asset of selectedAssets) {
       const editionDir = join(riwayahDir, asset.mushafEditionId)
       await removeEntriesExcept(editionDir, new Set(['manifest.json', 'pages']))
       const extension = asset.sourceKind === 'local-pdf' ? '.webp' : '.svg'
-      const names = asset.sourceKind === 'local-pdf'
-        ? new Set(Array.from({ length: asset.pageCount }, (_, index) => [
-          `${pad3(index + 1)}-1280.webp`,
-          `${pad3(index + 1)}-2136.webp`,
-        ]).flat())
-        : new Set(pageFilenames(asset.pageCount, extension))
+      const names =
+        asset.sourceKind === 'local-pdf'
+          ? new Set(
+              Array.from({ length: asset.pageCount }, (_, index) => [
+                `${pad3(index + 1)}-1280.webp`,
+                `${pad3(index + 1)}-2136.webp`,
+              ]).flat(),
+            )
+          : new Set(pageFilenames(asset.pageCount, extension))
       await removeEntriesExcept(join(editionDir, 'pages'), names)
     }
   }
 }
 
-async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {}) {
+async function buildQuranWsEdition(
+  asset,
+  catalog,
+  assetCatalog,
+  { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {},
+) {
   const riwayah = asset.riwayah
   validateRiwayahId(riwayah)
   const mushafEditionId = assetCatalog.defaults[riwayah]
-  ensure(asset.mushafEditionId === mushafEditionId, `Only the default quran.ws edition may write legacy Mushaf output for ${riwayah}`)
+  ensure(
+    asset.mushafEditionId === mushafEditionId,
+    `Only the default quran.ws edition may write legacy Mushaf output for ${riwayah}`,
+  )
   const sourceSlug = asset.sourceSlug ?? catalog.riwayat[riwayah].sourceSlug
   const pageCount = catalog.pageCount
   const scopedPagesDir = join(normalizedRoot, riwayah, asset.mushafEditionId, 'pages')
@@ -657,7 +715,15 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
   const sourceDigest = await buildInputDigest({ riwayah, sourceFiles, catalog, asset, sourceSlug, pageCount })
   const currentOutput = check
     ? null
-    : await readCurrentMushafOutput({ riwayah, asset, sourceDigest, pageCount, verifyOutputDigests: true, outRoot, normalizedRoot })
+    : await readCurrentMushafOutput({
+        riwayah,
+        asset,
+        sourceDigest,
+        pageCount,
+        verifyOutputDigests: true,
+        outRoot,
+        normalizedRoot,
+      })
   if (currentOutput) {
     console.log(`[mushaf-pages] current ${riwayah}: ${pageCount} pages (build stamp validated)`)
     return currentOutput
@@ -686,8 +752,16 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     pageViewBoxes.set(page, viewBoxForThemedPage(themed, filename))
     pageDisplayViewBoxes.set(page, deriveMushafDisplayViewBox(themed, filename))
     pageBytes.set(page, Buffer.byteLength(themed))
-    editionFiles.push([join(outDir, 'pages', filename), themed, `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`])
-    legacyFiles.push([join(legacyOutDir, 'pages', filename), themed, `public/dataset/mushaf-pages/${riwayah}/pages/${filename}`])
+    editionFiles.push([
+      join(outDir, 'pages', filename),
+      themed,
+      `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`,
+    ])
+    legacyFiles.push([
+      join(legacyOutDir, 'pages', filename),
+      themed,
+      `public/dataset/mushaf-pages/${riwayah}/pages/${filename}`,
+    ])
   }
 
   const editionManifest = await buildMushafManifestPayload({
@@ -715,8 +789,16 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
     pageDisplayViewBoxes,
     pageBytes,
   })
-  editionFiles.push([join(outDir, 'manifest.json'), jsonText(editionManifest), `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`])
-  legacyFiles.push([join(legacyOutDir, 'manifest.json'), jsonText(legacyManifest), `public/dataset/mushaf-pages/${riwayah}/manifest.json`])
+  editionFiles.push([
+    join(outDir, 'manifest.json'),
+    jsonText(editionManifest),
+    `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`,
+  ])
+  legacyFiles.push([
+    join(legacyOutDir, 'manifest.json'),
+    jsonText(legacyManifest),
+    `public/dataset/mushaf-pages/${riwayah}/manifest.json`,
+  ])
 
   const manifestUrl = `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`
   const manifestBytes = Buffer.byteLength(jsonText(editionManifest))
@@ -747,7 +829,9 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
       await compareExpectedFile(path, content, label, stale)
     }
     if (stale.missing.length || stale.mismatched.length) {
-      throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
+      throw new Error(
+        `Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`,
+      )
     }
     return model
   }
@@ -755,16 +839,35 @@ async function buildQuranWsEdition(asset, catalog, assetCatalog, { check = false
   for (const [path, content] of [...editionFiles, ...legacyFiles]) {
     if (await writeIfChanged(path, content)) written += 1
   }
-  await writeBuildStamp({ riwayah, asset, sourceDigest, editionManifest, legacyManifest, editionFiles, legacyFiles, normalizedRoot })
+  await writeBuildStamp({
+    riwayah,
+    asset,
+    sourceDigest,
+    editionManifest,
+    legacyManifest,
+    editionFiles,
+    legacyFiles,
+    normalizedRoot,
+  })
   const unchanged = editionFiles.length + legacyFiles.length - written
-  console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${riwayah}: ${pageCount} pages (${written} files written, ${unchanged} unchanged)`)
+  console.log(
+    `[mushaf-pages] ${written ? 'updated' : 'current'} ${riwayah}: ${pageCount} pages (${written} files written, ${unchanged} unchanged)`,
+  )
   return model
 }
 
-async function preflightQuranWsEdition(asset, catalog, assetCatalog, { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+async function preflightQuranWsEdition(
+  asset,
+  catalog,
+  assetCatalog,
+  { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {},
+) {
   const riwayah = asset.riwayah
   validateRiwayahId(riwayah)
-  ensure(asset.mushafEditionId === assetCatalog.defaults[riwayah], `Only the default quran.ws edition may write legacy Mushaf output for ${riwayah}`)
+  ensure(
+    asset.mushafEditionId === assetCatalog.defaults[riwayah],
+    `Only the default quran.ws edition may write legacy Mushaf output for ${riwayah}`,
+  )
   const pageCount = catalog.pageCount
   const scopedPagesDir = join(normalizedRoot, riwayah, asset.mushafEditionId, 'pages')
   const sourcePagesDir = existsSync(scopedPagesDir) ? scopedPagesDir : join(normalizedRoot, riwayah, 'pages')
@@ -777,17 +880,37 @@ async function preflightQuranWsEdition(asset, catalog, assetCatalog, { missing =
 function assertUnitRect(rect, label) {
   ensure(rect && typeof rect === 'object', `${label} must be an object`)
   for (const key of ['x', 'y', 'width', 'height']) ensure(Number.isFinite(rect[key]), `${label}.${key} must be finite`)
-  ensure(rect.x >= 0 && rect.y >= 0 && rect.width > 0 && rect.height > 0 && rect.x + rect.width <= 1 && rect.y + rect.height <= 1, `${label} must stay within the emitted Full frame`)
+  ensure(
+    rect.x >= 0 &&
+      rect.y >= 0 &&
+      rect.width > 0 &&
+      rect.height > 0 &&
+      rect.x + rect.width <= 1 &&
+      rect.y + rect.height <= 1,
+    `${label} must stay within the emitted Full frame`,
+  )
 }
 
 function privateRenditionDescriptor(row, page, role) {
   const rendition = row.renditions?.find((entry) => entry?.role === role)
   const width = role === 'preview' ? 1280 : 2136
   const expectedPath = `pages/${pad3(page)}-${width}.webp`
-  ensure(rendition && rendition.assetPath === expectedPath, `Private Mushaf page ${page} ${role} rendition path is invalid`)
-  ensure(Number.isInteger(rendition.bytes) && rendition.bytes > 0, `Private Mushaf page ${page} ${role} rendition bytes are invalid`)
-  ensure(typeof rendition.sha256 === 'string' && /^[a-f0-9]{64}$/.test(rendition.sha256), `Private Mushaf page ${page} ${role} rendition digest is invalid`)
-  ensure(rendition.width === width && Number.isInteger(rendition.height) && rendition.height > 0, `Private Mushaf page ${page} ${role} rendition dimensions are invalid`)
+  ensure(
+    rendition && rendition.assetPath === expectedPath,
+    `Private Mushaf page ${page} ${role} rendition path is invalid`,
+  )
+  ensure(
+    Number.isInteger(rendition.bytes) && rendition.bytes > 0,
+    `Private Mushaf page ${page} ${role} rendition bytes are invalid`,
+  )
+  ensure(
+    typeof rendition.sha256 === 'string' && /^[a-f0-9]{64}$/.test(rendition.sha256),
+    `Private Mushaf page ${page} ${role} rendition digest is invalid`,
+  )
+  ensure(
+    rendition.width === width && Number.isInteger(rendition.height) && rendition.height > 0,
+    `Private Mushaf page ${page} ${role} rendition dimensions are invalid`,
+  )
   ensure(rendition.mimeType === PRIVATE_MIME_TYPE, `Private Mushaf page ${page} ${role} rendition MIME type is invalid`)
   return {
     assetPath: rendition.assetPath,
@@ -808,23 +931,42 @@ function privateRuntimeTextFrame(sourceTextFrame, sourceFullFrame) {
   }
 }
 
-function assertPrivateNormalizedProvenance(metadata, contract, asset) {
-  ensure(metadata.sourcePdfSha256 === contract.source.sha256, 'Private Mushaf normalized source PDF digest disagrees with the committed source contract')
+function assertPrivateNormalizedProvenance(metadata, contract) {
+  ensure(
+    metadata.sourcePdfSha256 === contract.source.sha256,
+    'Private Mushaf normalized source PDF digest disagrees with the committed source contract',
+  )
   validateLegacyMetadata(metadata)
-  ensure(metadata.contractDigest === contract.emissionContractDigest, 'Private Mushaf normalized contract digest disagrees with the committed emission contract')
+  ensure(
+    metadata.contractDigest === contract.emissionContractDigest,
+    'Private Mushaf normalized contract digest disagrees with the committed emission contract',
+  )
   for (const tool of ['pdftocairo', 'cwebp', 'webpinfo']) {
-    ensure(typeof metadata.toolVersions?.[tool] === 'string' && metadata.toolVersions[tool].length > 0, `Private Mushaf normalized ${tool} version provenance is invalid`)
+    ensure(
+      typeof metadata.toolVersions?.[tool] === 'string' && metadata.toolVersions[tool].length > 0,
+      `Private Mushaf normalized ${tool} version provenance is invalid`,
+    )
   }
-  ensure(typeof metadata.contentDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contentDigest), 'Private Mushaf normalized metadata content digest is invalid')
+  ensure(
+    typeof metadata.contentDigest === 'string' && /^[a-f0-9]{64}$/.test(metadata.contentDigest),
+    'Private Mushaf normalized metadata content digest is invalid',
+  )
   const { contentDigest, ...unsignedMetadata } = metadata
-  ensure(contentDigest === sha256Hex(Buffer.from(jsonText(unsignedMetadata))), 'Private Mushaf normalized metadata content digest is stale or forged')
-  ensure(JSON.stringify(metadata.media) === JSON.stringify({
-    kind: contract.mediaPolicy.kind,
-    mimeType: contract.mediaPolicy.mimeType,
-    renderDpi: contract.mediaPolicy.renderDpi,
-    encoder: contract.mediaPolicy.encoder,
-    renditions: contract.mediaPolicy.renditions,
-  }), 'Private Mushaf normalized media policy disagrees with the committed media contract')
+  ensure(
+    contentDigest === sha256Hex(Buffer.from(jsonText(unsignedMetadata))),
+    'Private Mushaf normalized metadata content digest is stale or forged',
+  )
+  ensure(
+    JSON.stringify(metadata.media) ===
+      JSON.stringify({
+        kind: contract.mediaPolicy.kind,
+        mimeType: contract.mediaPolicy.mimeType,
+        renderDpi: contract.mediaPolicy.renderDpi,
+        encoder: contract.mediaPolicy.encoder,
+        renditions: contract.mediaPolicy.renditions,
+      }),
+    'Private Mushaf normalized media policy disagrees with the committed media contract',
+  )
 
   for (let index = 0; index < metadata.pages.length; index += 1) {
     const page = index + 1
@@ -832,16 +974,27 @@ function assertPrivateNormalizedProvenance(metadata, contract, asset) {
     const review = contract.pageStartReviews[index]
     const framing = contract.framingPages[index]
     const expectedTextFrame = privateRuntimeTextFrame(framing.sourceTextFrame, framing.sourceFullFrame)
-    ensure(row.sourcePdfPage === review.sourcePdfPage && row.firstVerse?.surah === review.canonicalFirstVerse.surah && row.firstVerse?.verse === review.canonicalFirstVerse.verse, `Private Mushaf normalized page ${page} disagrees with the committed page review`)
-    ensure(row.framing?.sideLane === framing.sideLane
-      && row.framing.textFrame?.x === expectedTextFrame.x
-      && row.framing.textFrame?.y === expectedTextFrame.y
-      && row.framing.textFrame?.width === expectedTextFrame.width
-      && row.framing.textFrame?.height === expectedTextFrame.height, `Private Mushaf normalized page ${page} disagrees with the committed framing contract`)
+    ensure(
+      row.sourcePdfPage === review.sourcePdfPage &&
+        row.firstVerse?.surah === review.canonicalFirstVerse.surah &&
+        row.firstVerse?.verse === review.canonicalFirstVerse.verse,
+      `Private Mushaf normalized page ${page} disagrees with the committed page review`,
+    )
+    ensure(
+      row.framing?.sideLane === framing.sideLane &&
+        row.framing.textFrame?.x === expectedTextFrame.x &&
+        row.framing.textFrame?.y === expectedTextFrame.y &&
+        row.framing.textFrame?.width === expectedTextFrame.width &&
+        row.framing.textFrame?.height === expectedTextFrame.height,
+      `Private Mushaf normalized page ${page} disagrees with the committed framing contract`,
+    )
   }
 }
 
-async function loadPrivateNormalizedPages(asset, { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+async function loadPrivateNormalizedPages(
+  asset,
+  { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {},
+) {
   const normalizedDir = join(normalizedRoot, asset.riwayah, asset.mushafEditionId)
   const importPath = join(normalizedDir, 'import.json')
   const bytes = await readExistingBytes(importPath)
@@ -850,49 +1003,89 @@ async function loadPrivateNormalizedPages(asset, { contractDir, missing = 'error
     throw new Error(`Mushaf missing private normalized input: ${importPath}`)
   }
   const metadata = JSON.parse(bytes.toString('utf8'))
-  ensure(metadata?.version === 1 && metadata.riwayah === asset.riwayah && metadata.mushafEditionId === asset.mushafEditionId, 'Private Mushaf normalized metadata identity is invalid')
+  ensure(
+    metadata?.version === 1 && metadata.riwayah === asset.riwayah && metadata.mushafEditionId === asset.mushafEditionId,
+    'Private Mushaf normalized metadata identity is invalid',
+  )
   const contract = await loadPrivateMushafEditionContract(asset.mushafEditionId, { contractDir })
-  assertPrivateNormalizedProvenance(metadata, contract, asset)
-  ensure(metadata.media?.kind === PRIVATE_MEDIA_KIND && metadata.media.mimeType === PRIVATE_MIME_TYPE && metadata.media.renderDpi === 300, 'Private Mushaf normalized media policy is invalid')
-  ensure(metadata.media.encoder?.command === 'cwebp' && metadata.media.encoder.quality === 88 && metadata.media.encoder.method === 6, 'Private Mushaf normalized encoder policy is invalid')
-  ensure(Array.isArray(metadata.media.renditions) && metadata.media.renditions.length === 2
-    && metadata.media.renditions[0]?.role === 'preview' && metadata.media.renditions[0]?.width === 1280
-    && metadata.media.renditions[1]?.role === 'full' && metadata.media.renditions[1]?.width === 2136, 'Private Mushaf normalized rendition policy is incomplete')
-  ensure(Array.isArray(metadata.pages) && metadata.pages.length === asset.pageCount, 'Private Mushaf normalized pages are incomplete')
+  assertPrivateNormalizedProvenance(metadata, contract)
+  ensure(
+    metadata.media?.kind === PRIVATE_MEDIA_KIND &&
+      metadata.media.mimeType === PRIVATE_MIME_TYPE &&
+      metadata.media.renderDpi === 300,
+    'Private Mushaf normalized media policy is invalid',
+  )
+  ensure(
+    metadata.media.encoder?.command === 'cwebp' &&
+      metadata.media.encoder.quality === 88 &&
+      metadata.media.encoder.method === 6,
+    'Private Mushaf normalized encoder policy is invalid',
+  )
+  ensure(
+    Array.isArray(metadata.media.renditions) &&
+      metadata.media.renditions.length === 2 &&
+      metadata.media.renditions[0]?.role === 'preview' &&
+      metadata.media.renditions[0]?.width === 1280 &&
+      metadata.media.renditions[1]?.role === 'full' &&
+      metadata.media.renditions[1]?.width === 2136,
+    'Private Mushaf normalized rendition policy is incomplete',
+  )
+  ensure(
+    Array.isArray(metadata.pages) && metadata.pages.length === asset.pageCount,
+    'Private Mushaf normalized pages are incomplete',
+  )
 
   const pages = []
   for (let index = 0; index < metadata.pages.length; index += 1) {
     const page = index + 1
     const row = metadata.pages[index]
     ensure(row?.page === page, `Private Mushaf normalized page ${page} is invalid`)
-    ensure(Number.isInteger(row.firstVerse?.surah) && Number.isInteger(row.firstVerse?.verse), `Private Mushaf page ${page} first verse is invalid`)
+    ensure(
+      Number.isInteger(row.firstVerse?.surah) && Number.isInteger(row.firstVerse?.verse),
+      `Private Mushaf page ${page} first verse is invalid`,
+    )
     assertUnitRect(row.framing?.textFrame, `Private Mushaf page ${page} textFrame`)
     ensure(['left', 'right', 'none'].includes(row.framing?.sideLane), `Private Mushaf page ${page} sideLane is invalid`)
-    ensure(Array.isArray(row.renditions) && row.renditions.length === 2, `Private Mushaf page ${page} renditions are incomplete`)
+    ensure(
+      Array.isArray(row.renditions) && row.renditions.length === 2,
+      `Private Mushaf page ${page} renditions are incomplete`,
+    )
     const preview = privateRenditionDescriptor(row, page, 'preview')
     const fallback = privateRenditionDescriptor(row, page, 'full')
     for (const descriptor of [preview, fallback]) {
       const path = join(normalizedDir, descriptor.assetPath)
       const file = await readExistingBytes(path)
-      ensure(file && file.byteLength === descriptor.bytes && sha256Hex(file) === descriptor.sha256, `Private Mushaf page ${page} ${descriptor.assetPath} bytes are invalid`)
+      ensure(
+        file && file.byteLength === descriptor.bytes && sha256Hex(file) === descriptor.sha256,
+        `Private Mushaf page ${page} ${descriptor.assetPath} bytes are invalid`,
+      )
     }
     pages.push({ page, firstVerse: row.firstVerse, framing: row.framing, preview, fallback })
   }
   return { normalizedDir, metadata, pages, sourceDigest: metadata.contentDigest }
 }
 
-async function preflightPrivateEdition(asset, { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+async function preflightPrivateEdition(
+  asset,
+  { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {},
+) {
   const normalized = await loadPrivateNormalizedPages(asset, { contractDir, missing, normalizedRoot })
   if (!normalized) return false
   const mappings = await deriveRiwayahMappings(asset.riwayah, asset.pageCount)
   for (const row of normalized.pages) {
     const expectedFirstVerse = mappings.firstVerse.get(row.page)
-    ensure(expectedFirstVerse?.surah === row.firstVerse.surah && expectedFirstVerse?.verse === row.firstVerse.verse, `Private Mushaf page ${row.page} first verse disagrees with the canonical map`)
+    ensure(
+      expectedFirstVerse?.surah === row.firstVerse.surah && expectedFirstVerse?.verse === row.firstVerse.verse,
+      `Private Mushaf page ${row.page} first verse disagrees with the canonical map`,
+    )
   }
   return true
 }
 
-async function buildPrivateEdition(asset, { check = false, contractDir, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {}) {
+async function buildPrivateEdition(
+  asset,
+  { check = false, contractDir, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {},
+) {
   const normalized = await loadPrivateNormalizedPages(asset, { contractDir, missing, normalizedRoot })
   if (!normalized) {
     console.warn(`[mushaf-pages] skipping ${asset.mushafEditionId}: missing local normalized image artifacts`)
@@ -903,9 +1096,18 @@ async function buildPrivateEdition(asset, { check = false, contractDir, missing 
   const pageFiles = []
   const manifestPages = normalized.pages.map((row) => {
     const expectedFirstVerse = mappings.firstVerse.get(row.page)
-    ensure(expectedFirstVerse?.surah === row.firstVerse.surah && expectedFirstVerse?.verse === row.firstVerse.verse, `Private Mushaf page ${row.page} first verse disagrees with the canonical map`)
+    ensure(
+      expectedFirstVerse?.surah === row.firstVerse.surah && expectedFirstVerse?.verse === row.firstVerse.verse,
+      `Private Mushaf page ${row.page} first verse disagrees with the canonical map`,
+    )
     const sources = [row.preview, row.fallback]
-    for (const descriptor of sources) pageFiles.push([join(outDir, descriptor.assetPath), join(normalized.normalizedDir, descriptor.assetPath), descriptor, row.page])
+    for (const descriptor of sources)
+      pageFiles.push([
+        join(outDir, descriptor.assetPath),
+        join(normalized.normalizedDir, descriptor.assetPath),
+        descriptor,
+        row.page,
+      ])
     return {
       page: row.page,
       firstVerse: expectedFirstVerse,
@@ -926,23 +1128,38 @@ async function buildPrivateEdition(asset, { check = false, contractDir, missing 
   const manifestPath = join(outDir, 'manifest.json')
   const manifestText = jsonText(manifest)
   const stale = { missing: [], mismatched: [] }
-  await compareExpectedFile(manifestPath, manifestText, `public/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/manifest.json`, stale)
+  await compareExpectedFile(
+    manifestPath,
+    manifestText,
+    `public/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/manifest.json`,
+    stale,
+  )
   for (const [outputPath, inputPath, descriptor] of pageFiles) {
     const source = await readFile(inputPath)
-    await compareExpectedFile(outputPath, source, `public/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`, stale)
+    await compareExpectedFile(
+      outputPath,
+      source,
+      `public/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`,
+      stale,
+    )
   }
   const manifestUrl = `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/manifest.json`
   const files = [{ url: manifestUrl, bytes: Buffer.byteLength(manifestText) }]
   for (const page of manifestPages) {
     for (const descriptor of page.media.sources) {
-      files.push({ url: `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`, ...descriptor })
+      files.push({
+        url: `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${descriptor.assetPath}`,
+        ...descriptor,
+      })
     }
   }
   const model = {
     asset: {
       ...asset,
       manifestUrl,
-      pageUrls: manifestPages.map((page) => `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${page.media.fallback.assetPath}`),
+      pageUrls: manifestPages.map(
+        (page) => `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/${page.media.fallback.assetPath}`,
+      ),
       files,
       totalBytes: files.reduce((total, file) => total + file.bytes, 0),
       pageCount: asset.pageCount,
@@ -955,23 +1172,28 @@ async function buildPrivateEdition(asset, { check = false, contractDir, missing 
     })),
   }
   if (check) {
-    if (stale.missing.length || stale.mismatched.length) throw new Error(`Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
+    if (stale.missing.length || stale.mismatched.length)
+      throw new Error(
+        `Mushaf page output is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`,
+      )
     return model
   }
-  let written = await writeIfChanged(manifestPath, manifestText) ? 1 : 0
+  let written = (await writeIfChanged(manifestPath, manifestText)) ? 1 : 0
   for (const [outputPath, inputPath] of pageFiles) {
     if (await writeIfChanged(outputPath, await readFile(inputPath))) written += 1
   }
-  console.log(`[mushaf-pages] ${written ? 'updated' : 'current'} ${asset.mushafEditionId}: ${asset.pageCount} pages (${written} files written)`)
+  console.log(
+    `[mushaf-pages] ${written ? 'updated' : 'current'} ${asset.mushafEditionId}: ${asset.pageCount} pages (${written} files written)`,
+  )
   return model
 }
 
 function buildMushafAssetIndexPayload(resolvedAssets, assetCatalog) {
   const emittedKeys = new Set(resolvedAssets.map((asset) => `${asset.riwayah}:${asset.mushafEditionId}`))
   const defaults = Object.fromEntries(
-    Object.entries(assetCatalog.defaults).filter(([riwayah, mushafEditionId]) => (
-      emittedKeys.has(`${riwayah}:${mushafEditionId}`)
-    )),
+    Object.entries(assetCatalog.defaults).filter(([riwayah, mushafEditionId]) =>
+      emittedKeys.has(`${riwayah}:${mushafEditionId}`),
+    ),
   )
   return {
     version: 1,
@@ -1037,7 +1259,9 @@ async function assertExactMushafTree(models, outRoot) {
   const missing = [...directoryDiff.missing, ...fileDiff.missing]
   const extra = [...directoryDiff.extra, ...fileDiff.extra]
   if (missing.length || extra.length) {
-    throw new Error(`Mushaf output membership is stale: missing=${missing.join(',') || 'none'} extra=${extra.join(',') || 'none'}`)
+    throw new Error(
+      `Mushaf output membership is stale: missing=${missing.join(',') || 'none'} extra=${extra.join(',') || 'none'}`,
+    )
   }
 }
 
@@ -1050,7 +1274,9 @@ async function assertExpectedIndex(payload, datasetDir) {
     stale,
   )
   if (stale.missing.length || stale.mismatched.length) {
-    throw new Error(`Mushaf asset index is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`)
+    throw new Error(
+      `Mushaf asset index is stale: missing=${stale.missing.join(',') || 'none'} mismatched=${stale.mismatched.join(',') || 'none'}`,
+    )
   }
 }
 
@@ -1059,12 +1285,14 @@ async function assertDatasetManifestMembership(models, indexPayload, profile, da
   const manifest = await readJsonIfPresent(manifestPath)
   if (!manifest) throw new Error('Mushaf dataset manifest is stale: public/dataset/manifest.json is missing')
   const expected = [
-    ...models.flatMap((model) => model.outputFiles).map((file) => ({
-      path: file.path,
-      lane: 'pages',
-      category: 'pages',
-      bytes: file.bytes,
-    })),
+    ...models
+      .flatMap((model) => model.outputFiles)
+      .map((file) => ({
+        path: file.path,
+        lane: 'pages',
+        category: 'pages',
+        bytes: file.bytes,
+      })),
     {
       path: 'indexes/mushaf-assets.json',
       lane: 'text',
@@ -1081,7 +1309,11 @@ async function assertDatasetManifestMembership(models, indexPayload, profile, da
     files: pageFiles.length,
     bytes: pageFiles.reduce((total, file) => total + file.bytes, 0),
   }
-  if (manifest.profile !== profile || JSON.stringify(actual) !== JSON.stringify(expected) || JSON.stringify(manifest.lanes?.pages) !== JSON.stringify(expectedPagesLane)) {
+  if (
+    manifest.profile !== profile ||
+    JSON.stringify(actual) !== JSON.stringify(expected) ||
+    JSON.stringify(manifest.lanes?.pages) !== JSON.stringify(expectedPagesLane)
+  ) {
     throw new Error('Mushaf dataset manifest membership is stale')
   }
 }
@@ -1142,10 +1374,12 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
   })
   const selectedRiwayat = new Set(selectedAssets.map((asset) => asset.riwayah))
   for (const riwayah of requiredRiwayat) {
-    if (!selectedRiwayat.has(riwayah)) throw new Error(`Required Mushaf page riwayah ${riwayah} is not part of profile ${profile}`)
+    if (!selectedRiwayat.has(riwayah))
+      throw new Error(`Required Mushaf page riwayah ${riwayah} is not part of profile ${profile}`)
   }
   for (const editionId of requiredEditions) {
-    if (!selectedEditionIds.includes(editionId)) throw new Error(`Required Mushaf page edition ${editionId} is not part of profile ${profile}`)
+    if (!selectedEditionIds.includes(editionId))
+      throw new Error(`Required Mushaf page edition ${editionId} is not part of profile ${profile}`)
   }
   if (selectedAssets.length === 0) {
     console.warn(`[mushaf-pages] skipping profile=${profile}: no Mushaf page body output`)
@@ -1153,11 +1387,10 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
   }
 
   const selectionIsStrict = profile === 'private'
-  const missingPolicy = (asset) => (
+  const missingPolicy = (asset) =>
     selectionIsStrict || requiredRiwayat.has(asset.riwayah) || requiredEditions.has(asset.mushafEditionId)
       ? 'error'
       : 'skip'
-  )
   for (const asset of selectedAssets) {
     const options = { contractDir, missing: missingPolicy(asset), normalizedRoot }
     if (asset.sourceKind === 'local-pdf') {
@@ -1169,20 +1402,21 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
 
   const models = []
   for (const asset of selectedAssets) {
-    const model = asset.sourceKind === 'local-pdf'
-      ? await buildPrivateEdition(asset, {
-        check,
-        contractDir,
-        missing: missingPolicy(asset),
-        outRoot,
-        normalizedRoot,
-      })
-      : await buildQuranWsEdition(asset, catalog, assetCatalog, {
-        check,
-        missing: missingPolicy(asset),
-        outRoot,
-        normalizedRoot,
-      })
+    const model =
+      asset.sourceKind === 'local-pdf'
+        ? await buildPrivateEdition(asset, {
+            check,
+            contractDir,
+            missing: missingPolicy(asset),
+            outRoot,
+            normalizedRoot,
+          })
+        : await buildQuranWsEdition(asset, catalog, assetCatalog, {
+            check,
+            missing: missingPolicy(asset),
+            outRoot,
+            normalizedRoot,
+          })
     if (model && typeof model === 'object') models.push(model)
   }
 
@@ -1196,7 +1430,9 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
       const anchorText = await readFile(ASSET_INDEX_ANCHOR_PATH, 'utf8')
       const datasetText = await readFile(datasetIndexPath, 'utf8')
       if (anchorText !== datasetText) {
-        throw new Error('Mushaf asset index drifted from data/catalog/mushaf-asset-index.json — rerun a mushaf-pages build or restore the anchor')
+        throw new Error(
+          'Mushaf asset index drifted from data/catalog/mushaf-asset-index.json — rerun a mushaf-pages build or restore the anchor',
+        )
       }
       return
     }

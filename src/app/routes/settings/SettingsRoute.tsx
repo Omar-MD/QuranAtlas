@@ -32,7 +32,10 @@ export function SettingsRoute({
   const [includedAssetsVisible, setIncludedAssetsVisible] = useState(
     () => initialAssetsExpanded ?? shouldShowIncludedAssetsByDefault(),
   )
-  const [framingCapability, setFramingCapability] = useState<{ hasValidFraming: boolean; representativeTextFrame?: NormalizedRect }>({ hasValidFraming: false })
+  const [framingCapability, setFramingCapability] = useState<{
+    hasValidFraming: boolean
+    representativeTextFrame?: NormalizedRect
+  }>({ hasValidFraming: false })
   const {
     mushafFramingWriteStatus,
     retryMushafPageFraming,
@@ -52,13 +55,21 @@ export function SettingsRoute({
   useEffect(() => {
     let active = true
     void readNativeSettings(['riwayah', 'mushafEditionId'])
-      .then(([riwayah, mushafEditionId]) => loadMushafFramingCapability({
-        mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : 'qalun-quran-ws-v1',
-        riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : 'qaloon',
-      }))
-      .then((value) => { if (active) setFramingCapability(value) })
-      .catch(() => { if (active) setFramingCapability({ hasValidFraming: false }) })
-    return () => { active = false }
+      .then(([riwayah, mushafEditionId]) =>
+        loadMushafFramingCapability({
+          mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : 'qalun-quran-ws-v1',
+          riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : 'qaloon',
+        }),
+      )
+      .then((value) => {
+        if (active) setFramingCapability(value)
+      })
+      .catch(() => {
+        if (active) setFramingCapability({ hasValidFraming: false })
+      })
+    return () => {
+      active = false
+    }
   }, [])
 
   useEffect(() => {
@@ -102,10 +113,7 @@ export function SettingsRoute({
           representativeTextFrame={framingCapability.representativeTextFrame}
         />
       )}
-      <WirdSettingsSection
-        enabled={preferences.wirdReaderStatusVisible}
-        onEnabledChange={setWirdReaderStatusVisible}
-      />
+      <WirdSettingsSection enabled={preferences.wirdReaderStatusVisible} onEnabledChange={setWirdReaderStatusVisible} />
       <SettingsGroup title="Appearance">
         <ThemeNightControls
           nightMode={preferences.nightMode}
@@ -121,7 +129,7 @@ export function SettingsRoute({
 }
 
 function shouldShowIncludedAssetsByDefault(): boolean {
-  return window.matchMedia?.('(max-width: 767px)').matches ? false : true
+  return !window.matchMedia?.('(max-width: 767px)').matches
 }
 
 function scheduleReaderAnchorRestore(): void {

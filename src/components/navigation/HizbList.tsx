@@ -68,14 +68,22 @@ export function HizbList({
   }, [initialSurahRows])
 
   if (status === 'loading') {
-    return <p className="qar-react-nav-drawer-list-state" role="status">Loading Hizb</p>
+    return (
+      <p className="qar-react-nav-drawer-list-state" role="status">
+        Loading Hizb
+      </p>
+    )
   }
   if (status === 'error') {
-    return <p className="qar-react-nav-drawer-list-state" role="status">Hizb list unavailable.</p>
+    return (
+      <p className="qar-react-nav-drawer-list-state" role="status">
+        Hizb list unavailable.
+      </p>
+    )
   }
 
   return (
-    <div className="qar-react-hizb-list" aria-label="Hizb list" data-hizb-list="">
+    <section className="qar-react-hizb-list" aria-label="Hizb list" data-hizb-list="">
       {groups.map((group) => (
         <section className="qar-react-hizb-group" data-surah={group.surahNumber} key={group.surahNumber}>
           <div className="qar-react-hizb-group-head">
@@ -83,8 +91,9 @@ export function HizbList({
             <span className="qar-react-hizb-group-ar" dir="rtl" lang="ar">
               {group.surah?.name_ar ?? ''}
             </span>
-            <span className="qar-react-hizb-group-count" aria-label={`${group.rows.length} hizb starts in this surah`}>
-              {group.rows.length}
+            <span className="qar-react-hizb-group-count">
+              <span className="qar:sr-only">{`${group.rows.length} hizb starts in this surah`}</span>
+              <span aria-hidden="true">{group.rows.length}</span>
             </span>
           </div>
           <ul className="qar-react-hizb-group-rows">
@@ -99,7 +108,7 @@ export function HizbList({
           </ul>
         </section>
       ))}
-    </div>
+    </section>
   )
 }
 
@@ -130,7 +139,9 @@ function HizbRow({
         ) : (
           <span className="qar-react-hizb-marker-spacer" aria-hidden="true" />
         )}
-        <span className="qar-react-hizb-chev" aria-hidden="true">›</span>
+        <span className="qar-react-hizb-chev" aria-hidden="true">
+          ›
+        </span>
       </Button>
     </li>
   )

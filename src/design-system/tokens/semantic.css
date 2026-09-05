@@ -83,19 +83,19 @@
     --qa-react-transition-fast: var(--qar-motion-fast) var(--qar-ease-standard);
   }
 
-  :root[data-riwayah='hafs'] {
+  :root[data-riwayah="hafs"] {
     --qa-react-font-arabic: var(--ff-kfgqpc-hafs);
   }
 
-  :root[data-riwayah='warsh'] {
+  :root[data-riwayah="warsh"] {
     --qa-react-font-arabic: var(--ff-kfgqpc-warsh);
   }
 
-  :root[data-riwayah='qaloon'] {
+  :root[data-riwayah="qaloon"] {
     --qa-react-font-arabic: var(--ff-kfgqpc-qaloon);
   }
 
-  html[data-theme='sepia'] {
+  html[data-theme="sepia"] {
     --qa-react-canvas: #f7ebd0;
     --qa-react-surface: #f4e6c4;
     --qa-react-surface-raised: var(--qa-react-surface);
@@ -126,7 +126,7 @@
     --qa-react-nav-shadow-control: 0 8px 18px rgb(64 43 18 / 5%);
   }
 
-  html[data-theme='dark'] {
+  html[data-theme="dark"] {
     --qa-react-canvas: #0f1215;
     --qa-react-surface: #181c21;
     --qa-react-surface-raised: var(--qa-react-surface);

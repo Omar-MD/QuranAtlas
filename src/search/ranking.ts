@@ -24,20 +24,19 @@ export function rankSearchResults(results: SearchResultDto[], sort: SearchSort):
 }
 
 export function stableResultKey(result: Pick<SearchResultDto, 'sourceRef' | 'matchLanes' | 'resultId'>): string {
-  return [
-    sourceRefOrderKey(result.sourceRef),
-    bestLane(result.matchLanes),
-    result.resultId,
-  ].join('|')
+  return [sourceRefOrderKey(result.sourceRef), bestLane(result.matchLanes), result.resultId].join('|')
 }
 
 function compareResults(left: SearchResultDto, right: SearchResultDto, sort: SearchSort): number {
-  if (sort === 'mushaf-order' || sort === 'surah-order') return compareRefs(left.sourceRef, right.sourceRef) || left.resultId.localeCompare(right.resultId)
+  if (sort === 'mushaf-order' || sort === 'surah-order')
+    return compareRefs(left.sourceRef, right.sourceRef) || left.resultId.localeCompare(right.resultId)
   if (sort === 'recent') return right.resultId.localeCompare(left.resultId)
-  return compareLane(left, right)
-    || compareRefs(left.sourceRef, right.sourceRef)
-    || left.rankKey.localeCompare(right.rankKey)
-    || left.resultId.localeCompare(right.resultId)
+  return (
+    compareLane(left, right) ||
+    compareRefs(left.sourceRef, right.sourceRef) ||
+    left.rankKey.localeCompare(right.rankKey) ||
+    left.resultId.localeCompare(right.resultId)
+  )
 }
 
 function compareLane(left: SearchResultDto, right: SearchResultDto): number {
@@ -51,7 +50,7 @@ function bestLane(lanes: SearchResultDto['matchLanes']): SearchResultDto['matchL
 function compareRefs(left: string, right: string): number {
   const [leftSurah, leftAyah] = left.split(':').map(Number)
   const [rightSurah, rightAyah] = right.split(':').map(Number)
-  return (leftSurah - rightSurah) || (leftAyah - rightAyah)
+  return leftSurah - rightSurah || leftAyah - rightAyah
 }
 
 function sourceRefOrderKey(ref: string): string {

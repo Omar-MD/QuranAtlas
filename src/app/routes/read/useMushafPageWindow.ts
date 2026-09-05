@@ -27,11 +27,7 @@ export type { MushafPageWindowEntry } from './mushaf-page-window-state'
 type State = { entries: readonly MushafPageWindowEntry[]; profileKey: string | null }
 type Request = { controller: AbortController; generation: number; promise: Promise<void> }
 
-export function useMushafPageWindow(input: {
-  enabled: boolean
-  page: number
-  session: MushafProfileSession
-}): {
+export function useMushafPageWindow(input: { enabled: boolean; page: number; session: MushafProfileSession }): {
   entries: readonly MushafPageWindowEntry[]
   request: (page: number) => void
   requested: MushafPageWindowEntry | null
@@ -41,8 +37,13 @@ export function useMushafPageWindow(input: {
   const profileKey = input.enabled ? input.session.key : null
   const pageCount = context?.manifest.pageCount ?? 604
   const requestedPage = Math.min(pageCount, Math.max(1, input.page))
-  const pages = useMemo(() => Array.from({ length: 5 }, (_, index) => requestedPage - 2 + index)
-    .filter((page) => page >= 1 && page <= pageCount), [pageCount, requestedPage])
+  const pages = useMemo(
+    () =>
+      Array.from({ length: 5 }, (_, index) => requestedPage - 2 + index).filter(
+        (page) => page >= 1 && page <= pageCount,
+      ),
+    [pageCount, requestedPage],
+  )
   const [state, setState] = useState<State>({ entries: [], profileKey: null })
   const stateRef = useRef(state)
   const activeProfileKeyRef = useRef<string | null>(null)
@@ -57,116 +58,142 @@ export function useMushafPageWindow(input: {
   stateRef.current = state
   requestedPageRef.current = requestedPage
 
-  const updateEntry = useCallback((page: number, generation: number, update: (entry: MushafPageWindowEntry) => MushafPageWindowEntry) => {
-    setState((current) => {
-      if (current.profileKey !== activeProfileKeyRef.current) return current
-      const existing = current.entries.find((entry) => entry.page === page)
-      if (!existing) return current
-      const entries = writeMushafPageGeneration(
-        current.entries,
-        update(existing),
-        generation,
-        generationsRef.current.get(page),
+  const updateEntry = useCallback(
+    (page: number, generation: number, update: (entry: MushafPageWindowEntry) => MushafPageWindowEntry) => {
+      setState((current) => {
+        if (current.profileKey !== activeProfileKeyRef.current) return current
+        const existing = current.entries.find((entry) => entry.page === page)
+        if (!existing) return current
+        const entries = writeMushafPageGeneration(
+          current.entries,
+          update(existing),
+          generation,
+          generationsRef.current.get(page),
+        )
+        if (entries === current.entries) return current
+        const next = { ...current, entries }
+        stateRef.current = next
+        return next
+      })
+    },
+    [],
+  )
+
+  const ensureFull = useCallback(
+    (page: number) => {
+      if (requestedPageRef.current !== page || !ownedPagesRef.current.has(page)) return
+      const descriptor = descriptorsRef.current.get(page)
+      const generation = generationsRef.current.get(page)
+      const entry = stateRef.current.entries.find((candidate) => candidate.page === page)
+      if (
+        descriptor?.kind !== 'external-image' ||
+        generation === undefined ||
+        entry?.status !== 'ready' ||
+        entry.rendition === 'full' ||
+        entry.upgradeStatus !== 'idle'
       )
-      if (entries === current.entries) return current
-      const next = { ...current, entries }
-      stateRef.current = next
-      return next
-    })
-  }, [])
-
-  const ensureFull = useCallback((page: number) => {
-    if (requestedPageRef.current !== page || !ownedPagesRef.current.has(page)) return
-    const descriptor = descriptorsRef.current.get(page)
-    const generation = generationsRef.current.get(page)
-    const entry = stateRef.current.entries.find((candidate) => candidate.page === page)
-    if (!descriptor || descriptor.kind !== 'external-image' || generation === undefined
-      || entry?.status !== 'ready' || entry.rendition === 'full' || entry.upgradeStatus !== 'idle') return
-    const key = requestKey(page, 'full')
-    if (requestsRef.current.has(key)) return
-    const controller = new AbortController()
-    const promise = (async () => {
-      for (let attempt = 0; attempt <= MUSHAF_RETRY_DELAYS_MS.length; attempt += 1) {
-        if (controller.signal.aborted || requestedPageRef.current !== page) return
-        updateEntry(page, generation, (current) => setMushafPageUpgradeAttempt(current, attempt))
-        try {
-          const media = await prepareMushafDescriptorMedia(descriptor, 'full', controller.signal)
-          const asset = await prepareReadyAsset(descriptor, media, controller.signal)
+        return
+      const key = requestKey(page, 'full')
+      if (requestsRef.current.has(key)) return
+      const controller = new AbortController()
+      const promise = (async () => {
+        for (let attempt = 0; attempt <= MUSHAF_RETRY_DELAYS_MS.length; attempt += 1) {
           if (controller.signal.aborted || requestedPageRef.current !== page) return
-          updateEntry(page, generation, (current) => commitMushafPageFull(current, descriptor, asset))
-          return
-        } catch (error) {
-          if (isAbort(error, controller.signal)) return
-          const kind = classifyMushafPageFailure(error)
-          if (kind !== 'transient' || attempt === MUSHAF_RETRY_DELAYS_MS.length) {
-            updateEntry(page, generation, preserveMushafPageOnUpgradeFailure)
-            return
-          }
+          updateEntry(page, generation, (current) => setMushafPageUpgradeAttempt(current, attempt))
           try {
-            await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt]!, controller.signal)
-          } catch (delayError) {
-            if (isAbort(delayError, controller.signal)) return
-            throw delayError
-          }
-        }
-      }
-    })().finally(() => {
-      if (requestsRef.current.get(key)?.controller === controller) requestsRef.current.delete(key)
-    })
-    requestsRef.current.set(key, { controller, generation, promise })
-  }, [updateEntry])
-  ensureFullRef.current = ensureFull
-
-  const ensureReadable = useCallback((page: number) => {
-    if (!ownedPagesRef.current.has(page)) return
-    const descriptor = descriptorsRef.current.get(page)
-    const generation = generationsRef.current.get(page)
-    if (!descriptor || generation === undefined) return
-    const existing = stateRef.current.entries.find((entry) => entry.page === page)
-    if (existing?.status === 'ready') {
-      if (requestedPageRef.current === page) ensureFullRef.current(page)
-      return
-    }
-    if (existing?.status === 'transient-error' || existing?.status === 'contract-error'
-      || existing?.status === 'confirmed-missing') return
-    const key = requestKey(page, 'readable')
-    if (requestsRef.current.has(key)) return
-    const controller = new AbortController()
-    const promise = (async () => {
-      for (let attempt = 0; attempt <= MUSHAF_RETRY_DELAYS_MS.length; attempt += 1) {
-        if (controller.signal.aborted || !ownedPagesRef.current.has(page)) return
-        updateEntry(page, generation, () => setMushafPageAttempt(descriptor, attempt))
-        try {
-          const media = await prepareMushafDescriptorMedia(descriptor, 'readable', controller.signal)
-          const asset = await prepareReadyAsset(descriptor, media, controller.signal)
-          if (controller.signal.aborted || !ownedPagesRef.current.has(page)) return
-          updateEntry(page, generation, () => commitMushafPagePreview(descriptor, asset))
-          if (requestedPageRef.current === page) queueMicrotask(() => ensureFullRef.current(page))
-          return
-        } catch (error) {
-          if (isAbort(error, controller.signal)) return
-          const kind = classifyMushafPageFailure(error)
-          if (kind === 'transient' && attempt < MUSHAF_RETRY_DELAYS_MS.length) {
+            const media = await prepareMushafDescriptorMedia(descriptor, 'full', controller.signal)
+            const asset = await prepareReadyAsset(descriptor, media, controller.signal)
+            if (controller.signal.aborted || requestedPageRef.current !== page) return
+            updateEntry(page, generation, (current) => commitMushafPageFull(current, descriptor, asset))
+            return
+          } catch (error) {
+            if (isAbort(error, controller.signal)) return
+            const kind = classifyMushafPageFailure(error)
+            if (kind !== 'transient' || attempt === MUSHAF_RETRY_DELAYS_MS.length) {
+              updateEntry(page, generation, preserveMushafPageOnUpgradeFailure)
+              return
+            }
             try {
-              await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt]!, controller.signal)
+              await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt], controller.signal)
             } catch (delayError) {
               if (isAbort(delayError, controller.signal)) return
               throw delayError
             }
-            continue
           }
-          const normalized = error instanceof Error ? error : new Error('Mushaf page preparation failed')
-          updateEntry(page, generation, () => kind === 'confirmed-missing'
-            ? { descriptor, page, reason: normalized.message, status: 'confirmed-missing' }
-            : { descriptor, error: normalized, page, status: kind === 'transient' ? 'transient-error' : 'contract-error' })
-          return
         }
+      })().finally(() => {
+        if (requestsRef.current.get(key)?.controller === controller) requestsRef.current.delete(key)
+      })
+      requestsRef.current.set(key, { controller, generation, promise })
+    },
+    [updateEntry],
+  )
+  ensureFullRef.current = ensureFull
+
+  const ensureReadable = useCallback(
+    (page: number) => {
+      if (!ownedPagesRef.current.has(page)) return
+      const descriptor = descriptorsRef.current.get(page)
+      const generation = generationsRef.current.get(page)
+      if (!descriptor || generation === undefined) return
+      const existing = stateRef.current.entries.find((entry) => entry.page === page)
+      if (existing?.status === 'ready') {
+        if (requestedPageRef.current === page) ensureFullRef.current(page)
+        return
       }
-    })().finally(() => {
-      if (requestsRef.current.get(key)?.controller === controller) requestsRef.current.delete(key)
-    })
-    requestsRef.current.set(key, { controller, generation, promise })
-  }, [updateEntry])
+      if (
+        existing?.status === 'transient-error' ||
+        existing?.status === 'contract-error' ||
+        existing?.status === 'confirmed-missing'
+      )
+        return
+      const key = requestKey(page, 'readable')
+      if (requestsRef.current.has(key)) return
+      const controller = new AbortController()
+      const promise = (async () => {
+        for (let attempt = 0; attempt <= MUSHAF_RETRY_DELAYS_MS.length; attempt += 1) {
+          if (controller.signal.aborted || !ownedPagesRef.current.has(page)) return
+          updateEntry(page, generation, () => setMushafPageAttempt(descriptor, attempt))
+          try {
+            const media = await prepareMushafDescriptorMedia(descriptor, 'readable', controller.signal)
+            const asset = await prepareReadyAsset(descriptor, media, controller.signal)
+            if (controller.signal.aborted || !ownedPagesRef.current.has(page)) return
+            updateEntry(page, generation, () => commitMushafPagePreview(descriptor, asset))
+            if (requestedPageRef.current === page) queueMicrotask(() => ensureFullRef.current(page))
+            return
+          } catch (error) {
+            if (isAbort(error, controller.signal)) return
+            const kind = classifyMushafPageFailure(error)
+            if (kind === 'transient' && attempt < MUSHAF_RETRY_DELAYS_MS.length) {
+              try {
+                await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt], controller.signal)
+              } catch (delayError) {
+                if (isAbort(delayError, controller.signal)) return
+                throw delayError
+              }
+              continue
+            }
+            const normalized = error instanceof Error ? error : new Error('Mushaf page preparation failed')
+            updateEntry(page, generation, () =>
+              kind === 'confirmed-missing'
+                ? { descriptor, page, reason: normalized.message, status: 'confirmed-missing' }
+                : {
+                    descriptor,
+                    error: normalized,
+                    page,
+                    status: kind === 'transient' ? 'transient-error' : 'contract-error',
+                  },
+            )
+            return
+          }
+        }
+      })().finally(() => {
+        if (requestsRef.current.get(key)?.controller === controller) requestsRef.current.delete(key)
+      })
+      requestsRef.current.set(key, { controller, generation, promise })
+    },
+    [updateEntry],
+  )
 
   useEffect(() => {
     const profileChanged = activeProfileKeyRef.current !== profileKey || activeContextRef.current !== context
@@ -233,19 +260,25 @@ export function useMushafPageWindow(input: {
 
   useEffect(() => () => abortAll(requestsRef.current), [])
 
-  const retry = useCallback((page: number) => {
-    const descriptor = descriptorsRef.current.get(page)
-    if (!descriptor || !ownedPagesRef.current.has(page)) return
-    abortPage(requestsRef.current, page)
-    const generation = ++nextGenerationRef.current
-    generationsRef.current.set(page, generation)
-    updateEntry(page, generation, () => ({ descriptor, page, status: 'descriptor' }))
-    queueMicrotask(() => ensureReadable(page))
-  }, [ensureReadable, updateEntry])
+  const retry = useCallback(
+    (page: number) => {
+      const descriptor = descriptorsRef.current.get(page)
+      if (!descriptor || !ownedPagesRef.current.has(page)) return
+      abortPage(requestsRef.current, page)
+      const generation = ++nextGenerationRef.current
+      generationsRef.current.set(page, generation)
+      updateEntry(page, generation, () => ({ descriptor, page, status: 'descriptor' }))
+      queueMicrotask(() => ensureReadable(page))
+    },
+    [ensureReadable, updateEntry],
+  )
 
-  const request = useCallback((page: number) => {
-    void ensureReadable(page)
-  }, [ensureReadable])
+  const request = useCallback(
+    (page: number) => {
+      void ensureReadable(page)
+    },
+    [ensureReadable],
+  )
 
   const entries = state.profileKey === profileKey ? state.entries : []
   const requested = entries.find((entry) => entry.page === requestedPage)

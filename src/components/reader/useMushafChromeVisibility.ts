@@ -34,50 +34,56 @@ export function useMushafChromeVisibility(readable: boolean): MushafChromeContro
     deadlineRef.current = null
   }, [])
 
-  const startDiscoveryTimer = useCallback((duration: number) => {
-    clearDiscoveryTimer()
-    if (duration <= 0) {
-      remainingRef.current = 0
-      updateVisible(false)
-      return
-    }
-    remainingRef.current = duration
-    deadlineRef.current = Date.now() + duration
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null
-      deadlineRef.current = null
-      remainingRef.current = 0
-      updateVisible(false)
-    }, duration)
-  }, [clearDiscoveryTimer, updateVisible])
+  const startDiscoveryTimer = useCallback(
+    (duration: number) => {
+      clearDiscoveryTimer()
+      if (duration <= 0) {
+        remainingRef.current = 0
+        updateVisible(false)
+        return
+      }
+      remainingRef.current = duration
+      deadlineRef.current = Date.now() + duration
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null
+        deadlineRef.current = null
+        remainingRef.current = 0
+        updateVisible(false)
+      }, duration)
+    },
+    [clearDiscoveryTimer, updateVisible],
+  )
 
   const hide = useCallback(() => updateVisible(false), [updateVisible])
   const reveal = useCallback(() => updateVisible(true), [updateVisible])
   const toggle = useCallback(() => updateVisible(!visibleRef.current), [updateVisible])
 
-  const setPinned = useCallback((source: MushafChromePin, pinned: boolean) => {
-    const pins = pinsRef.current
-    const wasPinned = pins.size > 0
-    if (pinned) pins.add(source)
-    else pins.delete(source)
-    const isPinned = pins.size > 0
+  const setPinned = useCallback(
+    (source: MushafChromePin, pinned: boolean) => {
+      const pins = pinsRef.current
+      const wasPinned = pins.size > 0
+      if (pinned) pins.add(source)
+      else pins.delete(source)
+      const isPinned = pins.size > 0
 
-    if (!wasPinned && isPinned) {
-      const deadline = deadlineRef.current
-      resumeDiscoveryAfterPinsRef.current = deadline !== null
-      if (deadline !== null) {
-        remainingRef.current = Math.max(0, deadline - Date.now())
+      if (!wasPinned && isPinned) {
+        const deadline = deadlineRef.current
+        resumeDiscoveryAfterPinsRef.current = deadline !== null
+        if (deadline !== null) {
+          remainingRef.current = Math.max(0, deadline - Date.now())
+        }
+        clearDiscoveryTimer()
+        updateVisible(true)
+        return
       }
-      clearDiscoveryTimer()
-      updateVisible(true)
-      return
-    }
 
-    if (wasPinned && !isPinned && resumeDiscoveryAfterPinsRef.current) {
-      resumeDiscoveryAfterPinsRef.current = false
-      startDiscoveryTimer(remainingRef.current)
-    }
-  }, [clearDiscoveryTimer, startDiscoveryTimer, updateVisible])
+      if (wasPinned && !isPinned && resumeDiscoveryAfterPinsRef.current) {
+        resumeDiscoveryAfterPinsRef.current = false
+        startDiscoveryTimer(remainingRef.current)
+      }
+    },
+    [clearDiscoveryTimer, startDiscoveryTimer, updateVisible],
+  )
 
   useEffect(() => {
     const becameReadable = !readableRef.current && readable
@@ -97,11 +103,13 @@ export function useMushafChromeVisibility(readable: boolean): MushafChromeContro
     // React StrictMode replays effect cleanup and setup without ending the
     // mounted route session. Restore the same remaining one-shot timer after
     // that replay; ordinary rerenders do not rerun this readable-keyed effect.
-    if (readable
-      && discoveryStartedRef.current
-      && timerRef.current === null
-      && remainingRef.current > 0
-      && pinsRef.current.size === 0) {
+    if (
+      readable &&
+      discoveryStartedRef.current &&
+      timerRef.current === null &&
+      remainingRef.current > 0 &&
+      pinsRef.current.size === 0
+    ) {
       startDiscoveryTimer(remainingRef.current)
     }
   }, [readable, startDiscoveryTimer, updateVisible])

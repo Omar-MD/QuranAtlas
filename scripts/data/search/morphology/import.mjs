@@ -129,7 +129,17 @@ export function parseQacMorphology(text) {
     surahs.add(String(surah))
 
     const parsedFeatures = featureValues(features)
-    const row = { surah, ayah, word, segment, transliteration, pos, features, lemma: parsedFeatures.lemma, root: parsedFeatures.root }
+    const row = {
+      surah,
+      ayah,
+      word,
+      segment,
+      transliteration,
+      pos,
+      features,
+      lemma: parsedFeatures.lemma,
+      root: parsedFeatures.root,
+    }
     rows.push(row)
 
     const wordKey = `${surah}:${ayah}:${word}`
@@ -144,16 +154,21 @@ export function parseQacMorphology(text) {
       transliteration: '',
       segments: [],
     }
-    current.segments.push({ segment, transliteration, pos, features, lemma: parsedFeatures.lemma, root: parsedFeatures.root })
+    current.segments.push({
+      segment,
+      transliteration,
+      pos,
+      features,
+      lemma: parsedFeatures.lemma,
+      root: parsedFeatures.root,
+    })
     if (!current.root && parsedFeatures.root) current.root = parsedFeatures.root
     if (!current.lemma && parsedFeatures.lemma) current.lemma = parsedFeatures.lemma
     current.transliteration += transliteration
     wordsByKey.set(wordKey, current)
   }
 
-  const words = [...wordsByKey.values()].sort((a, b) => (
-    a.surah - b.surah || a.ayah - b.ayah || a.word - b.word
-  ))
+  const words = [...wordsByKey.values()].sort((a, b) => a.surah - b.surah || a.ayah - b.ayah || a.word - b.word)
   return {
     rows,
     words,
@@ -178,7 +193,8 @@ export function validateParsedMorphology(parsed, metadata) {
     if (!Number.isInteger(row.surah) || row.surah < 1 || row.surah > 114) errors.push(`invalid surah ${row.surah}`)
     if (!Number.isInteger(row.ayah) || row.ayah < 1) errors.push(`invalid ayah ${row.surah}:${row.ayah}`)
     if (!Number.isInteger(row.word) || row.word < 1) errors.push(`invalid word ${row.surah}:${row.ayah}:${row.word}`)
-    if (!Number.isInteger(row.segment) || row.segment < 1) errors.push(`invalid segment ${row.surah}:${row.ayah}:${row.word}:${row.segment}`)
+    if (!Number.isInteger(row.segment) || row.segment < 1)
+      errors.push(`invalid segment ${row.surah}:${row.ayah}:${row.word}:${row.segment}`)
     if (row.root && !SAFE_VALUE_RE.test(row.root)) errors.push(`invalid root ${row.root}`)
     if (row.lemma && !SAFE_VALUE_RE.test(row.lemma)) errors.push(`invalid lemma ${row.lemma}`)
   }

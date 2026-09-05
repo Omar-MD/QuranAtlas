@@ -1,7 +1,11 @@
 import { useEffect } from 'react'
 
 import { readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
-import { getBrowserNotificationState, syncWirdReminderBackgroundRegistration, updateReminderPermission } from './reminders'
+import {
+  getBrowserNotificationState,
+  syncWirdReminderBackgroundRegistration,
+  updateReminderPermission,
+} from './reminders'
 import { normalizeWirdPlan, notifyWirdPlanChanged } from './store'
 import type { BrowserNotificationState, WirdPlan } from './types'
 
@@ -39,7 +43,10 @@ async function requestFirstLaunchNotificationPermission(isCancelled: () => boole
   await syncStoredPlanPermission(getBrowserNotificationState(permission), isCancelled)
 }
 
-async function markPromptedAndSyncPermission(state: BrowserNotificationState, isCancelled: () => boolean): Promise<void> {
+async function markPromptedAndSyncPermission(
+  state: BrowserNotificationState,
+  isCancelled: () => boolean,
+): Promise<void> {
   await writeNativeSetting({ key: FIRST_LAUNCH_NOTIFICATION_PROMPTED_KEY, value: true }, () => !isCancelled())
   await syncStoredPlanPermission(state, isCancelled)
 }

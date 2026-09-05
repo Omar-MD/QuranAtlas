@@ -43,10 +43,12 @@ export function ThemeNightControls({
   theme: ReactThemePreference
 }) {
   return (
-    <div className="qar-react-settings-theme-night" aria-label="Theme and night mode">
+    <div className="qar-react-settings-theme-night">
       <section className="qar-react-settings-appearance-panel" aria-labelledby="qar-react-settings-theme">
-        <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-theme">Theme</h4>
-        <div className="qar-react-settings-theme-strip" role="group" aria-label="Theme">
+        <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-theme">
+          Theme
+        </h4>
+        <fieldset className="qar-react-settings-theme-strip" aria-label="Theme">
           {THEMES.map((option) => (
             <AppearanceChoice
               active={theme === option.id}
@@ -59,11 +61,13 @@ export function ThemeNightControls({
               swatch={option.swatch}
             />
           ))}
-        </div>
+        </fieldset>
       </section>
       <section className="qar-react-settings-appearance-panel" aria-labelledby="qar-react-settings-night">
-        <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-night">Night mode</h4>
-        <div className="qar-react-settings-night-strip" role="group" aria-label="Night mode">
+        <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-night">
+          Night mode
+        </h4>
+        <fieldset className="qar-react-settings-night-strip" aria-label="Night mode">
           {NIGHT_MODES.map((option) => {
             const Icon = option.icon
             return (
@@ -78,7 +82,7 @@ export function ThemeNightControls({
               />
             )
           })}
-        </div>
+        </fieldset>
       </section>
     </div>
   )
@@ -124,10 +128,10 @@ function AppearanceChoice({
   )
 }
 
-function NightOffIcon({ size = 19, strokeWidth = 1.55, 'aria-hidden': ariaHidden = true }: AppearanceIconProps) {
+function NightOffIcon({ size = 19, strokeWidth = 1.55 }: AppearanceIconProps) {
   return (
     <svg
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
       data-night-icon="sun"
       fill="none"
       height={size}
@@ -145,10 +149,10 @@ function NightOffIcon({ size = 19, strokeWidth = 1.55, 'aria-hidden': ariaHidden
   )
 }
 
-function NightOnIcon({ size = 19, 'aria-hidden': ariaHidden = true }: AppearanceIconProps) {
+function NightOnIcon({ size = 19 }: AppearanceIconProps) {
   return (
     <svg
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
       data-night-icon="crescent"
       fill="currentColor"
       height={size}
@@ -161,10 +165,10 @@ function NightOnIcon({ size = 19, 'aria-hidden': ariaHidden = true }: Appearance
   )
 }
 
-function NightAutoIcon({ size = 19, 'aria-hidden': ariaHidden = true }: AppearanceIconProps) {
+function NightAutoIcon({ size = 19 }: AppearanceIconProps) {
   return (
     <svg
-      aria-hidden={ariaHidden}
+      aria-hidden="true"
       data-night-icon="crescent-sparkles"
       fill="currentColor"
       height={size}

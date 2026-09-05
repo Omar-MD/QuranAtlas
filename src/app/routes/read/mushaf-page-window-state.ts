@@ -1,7 +1,4 @@
-import type {
-  MushafPageDescriptor,
-  MushafReadyPageAssetState,
-} from '../../../packs/mushaf-page-asset'
+import type { MushafPageDescriptor, MushafReadyPageAssetState } from '../../../packs/mushaf-page-asset'
 
 export type MushafPageWindowEntry =
   | { page: number; descriptor: MushafPageDescriptor; status: 'descriptor' }
@@ -23,10 +20,7 @@ export function readableAsset(entry: MushafPageWindowEntry | undefined): MushafR
   return entry?.status === 'ready' ? entry.asset : null
 }
 
-export function setMushafPageAttempt(
-  descriptor: MushafPageDescriptor,
-  attempt: number,
-): MushafPageWindowEntry {
+export function setMushafPageAttempt(descriptor: MushafPageDescriptor, attempt: number): MushafPageWindowEntry {
   return {
     attempt,
     descriptor,
@@ -65,10 +59,7 @@ export function commitMushafPageFull(
   }
 }
 
-export function setMushafPageUpgradeAttempt(
-  current: MushafPageWindowEntry,
-  attempt: number,
-): MushafPageWindowEntry {
+export function setMushafPageUpgradeAttempt(current: MushafPageWindowEntry, attempt: number): MushafPageWindowEntry {
   if (current.status !== 'ready') return current
   return {
     ...current,
@@ -76,16 +67,12 @@ export function setMushafPageUpgradeAttempt(
   }
 }
 
-export function preserveMushafPageOnUpgradeFailure(
-  current: MushafPageWindowEntry,
-): MushafPageWindowEntry {
+export function preserveMushafPageOnUpgradeFailure(current: MushafPageWindowEntry): MushafPageWindowEntry {
   if (current.status !== 'ready') return current
   return { ...current, upgradeStatus: 'failed' }
 }
 
-export function resetMushafPageUpgrade(
-  current: MushafPageWindowEntry,
-): MushafPageWindowEntry {
+export function resetMushafPageUpgrade(current: MushafPageWindowEntry): MushafPageWindowEntry {
   if (current.status !== 'ready' || current.upgradeStatus === 'idle') return current
   return { ...current, upgradeStatus: 'idle' }
 }
@@ -97,5 +84,5 @@ export function writeMushafPageGeneration(
   activeGeneration: number | undefined,
 ): readonly MushafPageWindowEntry[] {
   if (generation !== activeGeneration) return entries
-  return entries.map((current) => current.page === entry.page ? entry : current)
+  return entries.map((current) => (current.page === entry.page ? entry : current))
 }

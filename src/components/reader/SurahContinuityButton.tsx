@@ -37,9 +37,17 @@ export function SurahContinuityButton({
       onClick={() => navigateToSurah(targetSurah, direction)}
       variant="ghost"
     >
-      {isPrevious && <span className="qar-reader-continue-arrow" aria-hidden="true">↑</span>}
+      {isPrevious && (
+        <span className="qar-reader-continue-arrow" aria-hidden="true">
+          ↑
+        </span>
+      )}
       <span className="qar-reader-continue-title">{target.name}</span>
-      {!isPrevious && <span className="qar-reader-continue-arrow" aria-hidden="true">↓</span>}
+      {!isPrevious && (
+        <span className="qar-reader-continue-arrow" aria-hidden="true">
+          ↓
+        </span>
+      )}
     </Button>
   )
 }

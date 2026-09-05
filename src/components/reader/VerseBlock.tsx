@@ -60,7 +60,8 @@ export function VerseBlock({
   verseKey,
 }: VerseBlockProps) {
   const [openFootnote, setOpenFootnote] = useState<string | null>(null)
-  const hasTranslation = translationVisible && translationRole !== 'none' && (translationRole === 'continuation' || Boolean(translation))
+  const hasTranslation =
+    translationVisible && translationRole !== 'none' && (translationRole === 'continuation' || Boolean(translation))
   const tokens = parseTranslationTokens(translation ?? '')
   const openFootnoteText = openFootnote ? footnotes[openFootnote] : null
   const footnotePanelId = openFootnote ? `fn-${verseKey}-${openFootnote}` : undefined
@@ -82,7 +83,12 @@ export function VerseBlock({
       data-token-key={verseKey}
     >
       <div className="qar-reader-verse-head">
-        <VerseNumber bookmarked={bookmarked} onSelect={onSelect} onToggleBookmark={handleToggleBookmark} verse={verse} />
+        <VerseNumber
+          bookmarked={bookmarked}
+          onSelect={onSelect}
+          onToggleBookmark={handleToggleBookmark}
+          verse={verse}
+        />
         {showBookmarkHint && <span className="qar-reader-verse-bookmark-hint">tap to bookmark</span>}
       </div>
       <div className="qar-reader-verse-body">
@@ -90,35 +96,36 @@ export function VerseBlock({
           {arabic}
         </p>
         {hasTranslation && translationRole === 'continuation' && (
-          <p className="qar-reader-verse-translation qar-reader-verse-continuation" data-reader-translation="true" dir="ltr">
+          <p
+            className="qar-reader-verse-translation qar-reader-verse-continuation"
+            data-reader-translation="true"
+            dir="ltr"
+          >
             ↑ continued from the previous Hafs-keyed verse
           </p>
         )}
         {hasTranslation && translationRole !== 'continuation' && (
           <p className="qar-reader-verse-translation" data-reader-translation="true" dir="ltr">
-            {tokens.map((token, index) => (
-              token.type === 'text'
-                ? <span key={`${verseKey}-text-${index}`}>{token.value}</span>
-                : (
-                    <TranslationFootnote
-                      controlsId={footnotes[token.marker] ? `fn-${verseKey}-${token.marker}` : undefined}
-                      key={`${verseKey}-fn-${token.marker}`}
-                      marker={token.marker}
-                      onToggle={() => setOpenFootnote((value) => value === token.marker ? null : token.marker)}
-                      open={openFootnote === token.marker}
-                    />
-                  )
-            ))}
+            {tokens.map((token, index) =>
+              token.type === 'text' ? (
+                <span key={`${verseKey}-text-${index}`}>{token.value}</span>
+              ) : (
+                <TranslationFootnote
+                  controlsId={footnotes[token.marker] ? `fn-${verseKey}-${token.marker}` : undefined}
+                  key={`${verseKey}-fn-${token.marker}`}
+                  marker={token.marker}
+                  onToggle={() => setOpenFootnote((value) => (value === token.marker ? null : token.marker))}
+                  open={openFootnote === token.marker}
+                />
+              ),
+            )}
           </p>
         )}
         {translationVisible && openFootnote && openFootnoteText && (
-          <div
-            className="qar-reader-fn-panel"
-            data-reader-footnote-panel="true"
-            id={footnotePanelId}
-            role="note"
-          >
-            <span className="qar-reader-fn-panel-number" aria-hidden="true">[{openFootnote}]</span>
+          <div className="qar-reader-fn-panel" data-reader-footnote-panel="true" id={footnotePanelId} role="note">
+            <span className="qar-reader-fn-panel-number" aria-hidden="true">
+              [{openFootnote}]
+            </span>
             <span>{openFootnoteText}</span>
             <Button
               aria-label="Close footnote"

@@ -8,10 +8,5 @@ type SearchBriefProps = {
 }
 
 export function SearchBrief({ brief, hasMoreResults }: SearchBriefProps) {
-  return (
-    <SearchOverview
-      onAction={() => undefined}
-      overview={toOverviewViewModel(brief, hasMoreResults, [])}
-    />
-  )
+  return <SearchOverview onAction={() => undefined} overview={toOverviewViewModel(brief, hasMoreResults, [])} />
 }

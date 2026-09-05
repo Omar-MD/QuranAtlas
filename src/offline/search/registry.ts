@@ -7,7 +7,7 @@ import {
 export async function fetchSearchPackRegistry(fetcher: typeof fetch = fetch): Promise<SearchPackRegistry> {
   const response = await fetcher(SEARCH_PACK_REGISTRY_RUNTIME_URL)
   if (!response.ok) throw new Error('failed to fetch Search pack registry')
-  const registry = await response.json() as SearchPackRegistry
+  const registry = (await response.json()) as SearchPackRegistry
   assertSearchPackRegistry(registry)
   return registry
 }
@@ -17,10 +17,13 @@ export function selectCompatibleSearchPack(
   appVersion = '0.0.0',
   workerVersion = '1.0.0',
 ) {
-  return registry.packs.find((pack) =>
-    compareVersion(appVersion, pack.minAppVersion) >= 0
-    && compareVersion(workerVersion, pack.minWorkerVersion) >= 0
-  ) ?? null
+  return (
+    registry.packs.find(
+      (pack) =>
+        compareVersion(appVersion, pack.minAppVersion) >= 0 &&
+        compareVersion(workerVersion, pack.minWorkerVersion) >= 0,
+    ) ?? null
+  )
 }
 
 export function assertSearchRegistryRuntimeUrl(url: string): void {

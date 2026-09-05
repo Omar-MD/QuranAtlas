@@ -67,15 +67,15 @@ const OFFLINE = args.includes('--offline')
 // same alif phoneme, so they must tokenise identically.
 function normaliseArabic(s) {
   let out = s.normalize('NFKD')
-  out = out.replace(/\u0670/g, '\u0627')               // alif khanjariyah → ا
-  out = out.replace(/\p{M}/gu, '')                      // strip remaining combining marks
+  out = out.replace(/\u0670/g, '\u0627') // alif khanjariyah → ا
+  out = out.replace(/\p{M}/gu, '') // strip remaining combining marks
   out = out.replace(/[\u0671\u0622\u0623\u0625]/g, '\u0627') // alif-wasla, madda-alif, alif-hamza → ا
-  out = out.replace(/[\u0649\u0626\u06D2]/g, '\u064A')        // alif-maqsura, hamza-on-ya, yeh-barree → ي
-  out = out.replace(/\u0629/g, '\u0647')               // taa marbuta → ه
-  out = out.replace(/[\u0621\u0624]/g, '')             // drop hamza-on-line, hamza-on-waw
-  out = out.replace(/[\u200C-\u200F\uFEFF]/g, '')     // strip zero-widths
-  out = out.replace(/\u0640/g, '')                    // strip tatweel (kashida \u2014 decorative, no phonetic content)
-  out = out.replace(/[^\u0620-\u064A\s]/g, '')        // keep Arabic letter block + whitespace
+  out = out.replace(/[\u0649\u0626\u06D2]/g, '\u064A') // alif-maqsura, hamza-on-ya, yeh-barree → ي
+  out = out.replace(/\u0629/g, '\u0647') // taa marbuta → ه
+  out = out.replace(/[\u0621\u0624]/g, '') // drop hamza-on-line, hamza-on-waw
+  out = out.replace(/[\u200C-\u200F\uFEFF]/g, '') // strip zero-widths
+  out = out.replace(/\u0640/g, '') // strip tatweel (kashida \u2014 decorative, no phonetic content)
+  out = out.replace(/[^\u0620-\u064A\s]/g, '') // keep Arabic letter block + whitespace
   return out.replace(/\s+/g, ' ').trim()
 }
 
@@ -94,9 +94,15 @@ function wordList(s) {
 function jaccardSim(words1, words2) {
   const s1 = new Set(words1)
   const s2 = new Set(words2)
-  if (s1.size === 0 && s2.size === 0) { return 1 }
+  if (s1.size === 0 && s2.size === 0) {
+    return 1
+  }
   let inter = 0
-  for (const w of s1) { if (s2.has(w)) { inter++ } }
+  for (const w of s1) {
+    if (s2.has(w)) {
+      inter++
+    }
+  }
   const union = s1.size + s2.size - inter
   return union === 0 ? 1 : inter / union
 }
@@ -110,7 +116,10 @@ function computeWordCumulative(ayat) {
   const lens = ayat.map((a) => normaliseArabic(a.aya_text).split(' ').filter(Boolean).length)
   const cum = []
   let s = 0
-  for (const l of lens) { s += l; cum.push(s) }
+  for (const l of lens) {
+    s += l
+    cum.push(s)
+  }
   return { lens, cum, total: s }
 }
 
@@ -123,11 +132,17 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
   const n = oLens.length
   const dp = Array.from({ length: m + 1 }, () => new Float64Array(n + 1))
   const back = Array.from({ length: m + 1 }, () => Array.from({ length: n + 1 }, () => [-1, -1]))
-  for (let i = 0; i <= m; i++) { for (let j = 0; j <= n; j++) { dp[i][j] = Infinity } }
+  for (let i = 0; i <= m; i++) {
+    for (let j = 0; j <= n; j++) {
+      dp[i][j] = Infinity
+    }
+  }
   dp[0][0] = 0
   for (let i = 0; i <= m; i++) {
     for (let j = 0; j <= n; j++) {
-      if (dp[i][j] === Infinity) { continue }
+      if (dp[i][j] === Infinity) {
+        continue
+      }
       if (i < m && j < n) {
         const cost = Math.abs(hLens[i] - oLens[j])
         if (dp[i][j] + cost < dp[i + 1][j + 1]) {
@@ -137,7 +152,9 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
       }
       for (let k = 2; k <= MAX_GROUP_SIZE && j + k <= n && i < m; k++) {
         let oSum = 0
-        for (let kk = 0; kk < k; kk++) { oSum += oLens[j + kk] }
+        for (let kk = 0; kk < k; kk++) {
+          oSum += oLens[j + kk]
+        }
         const cost = Math.abs(hLens[i] - oSum)
         if (dp[i][j] + cost < dp[i + 1][j + k]) {
           dp[i + 1][j + k] = dp[i][j] + cost
@@ -146,7 +163,9 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
       }
       for (let k = 2; k <= MAX_GROUP_SIZE && i + k <= m && j < n; k++) {
         let hSum = 0
-        for (let kk = 0; kk < k; kk++) { hSum += hLens[i + kk] }
+        for (let kk = 0; kk < k; kk++) {
+          hSum += hLens[i + kk]
+        }
         const cost = Math.abs(hSum - oLens[j])
         if (dp[i][j] + cost < dp[i + k][j + 1]) {
           dp[i + k][j + 1] = dp[i][j] + cost
@@ -159,27 +178,36 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
     throw new Error(`ayah-DP alignment found no path: hafs=${m}, ${otherKey}=${n}`)
   }
   const groups = []
-  let i = m, j = n
+  let i = m,
+    j = n
   while (i > 0 || j > 0) {
     const [pi, pj] = back[i][j]
     groups.push([pi, i, pj, j])
-    i = pi; j = pj
+    i = pi
+    j = pj
   }
   groups.reverse()
   const aliases = []
   for (let hi = 1; hi <= m; hi++) {
     const g = groups.find(([hs, he]) => hi - 1 >= hs && hi - 1 < he)
-    if (!g) { aliases.push({ hafs: hi, [otherKey]: null }); continue }
+    if (!g) {
+      aliases.push({ hafs: hi, [otherKey]: null })
+      continue
+    }
     const [hs, he, os, oe] = g
     if (he - hs === 1 && oe - os === 1) {
       aliases.push({ hafs: hi, [otherKey]: os + 1 })
     } else if (he - hs === 1 && oe - os > 1) {
       const list = []
-      for (let oi = os; oi < oe; oi++) { list.push(oi + 1) }
+      for (let oi = os; oi < oe; oi++) {
+        list.push(oi + 1)
+      }
       aliases.push({ hafs: hi, [otherKey]: list })
     } else {
       const list = []
-      for (let oi = os; oi < oe; oi++) { list.push(oi + 1) }
+      for (let oi = os; oi < oe; oi++) {
+        list.push(oi + 1)
+      }
       aliases.push({ hafs: hi, [otherKey]: list.length === 1 ? list[0] : list })
     }
   }
@@ -191,13 +219,12 @@ function alignWordStream(hafsAyat, otherAyat, otherKey, bismillahDrop) {
   const o = computeWordCumulative(otherAyat)
   if (bismillahDrop) {
     if (h.total - h.lens[0] !== o.total) {
-      throw new Error(`bismillah-drop alignment fails: hafs[1:] total ${h.total - h.lens[0]}, ${otherKey} total ${o.total}`)
+      throw new Error(
+        `bismillah-drop alignment fails: hafs[1:] total ${h.total - h.lens[0]}, ${otherKey} total ${o.total}`,
+      )
     }
     const subAliases = alignWordStream(hafsAyat.slice(1), otherAyat, otherKey, false)
-    return [
-      { hafs: 1, [otherKey]: null },
-      ...subAliases.map((a) => ({ hafs: a.hafs + 1, [otherKey]: a[otherKey] })),
-    ]
+    return [{ hafs: 1, [otherKey]: null }, ...subAliases.map((a) => ({ hafs: a.hafs + 1, [otherKey]: a[otherKey] }))]
   }
   if (h.total !== o.total) {
     throw new Error(`word-stream totals diverge: hafs ${h.total}, ${otherKey} ${o.total}`)
@@ -213,13 +240,13 @@ function alignWordStream(hafsAyat, otherAyat, otherKey, bismillahDrop) {
     }
     if (oIdx < o.cum.length) {
       const oStart = oIdx === 0 ? 0 : o.cum[oIdx - 1]
-      if (oStart < hEnd) { otherAyatHere.push(oIdx + 1) }
+      if (oStart < hEnd) {
+        otherAyatHere.push(oIdx + 1)
+      }
     }
     aliases.push({
       hafs: i + 1,
-      [otherKey]: otherAyatHere.length === 0 ? null
-        : otherAyatHere.length === 1 ? otherAyatHere[0]
-        : otherAyatHere,
+      [otherKey]: otherAyatHere.length === 0 ? null : otherAyatHere.length === 1 ? otherAyatHere[0] : otherAyatHere,
     })
   }
   return aliases
@@ -236,7 +263,9 @@ function alignSafe(hafsAyat, otherAyat, otherKey, bismillahDrop) {
 
 function isIdentityAlias(merged) {
   for (const a of merged) {
-    if (a.warsh !== a.hafs || a.qaloon !== a.hafs) { return false }
+    if (a.warsh !== a.hafs || a.qaloon !== a.hafs) {
+      return false
+    }
   }
   return true
 }
@@ -296,7 +325,10 @@ async function checkAliasCoverage(surahsMeta, shippedAliases) {
         message: `Surah ${n} (${meta.name}) has non-identity alignment but is absent from _verse-aliases.json. Reader will identity-map → wrong translation.`,
         warshMethod: w.method,
         qaloonMethod: q.method,
-        sampleDivergent: merged.slice(0, 6).filter((a) => a.warsh !== a.hafs || a.qaloon !== a.hafs).slice(0, 3),
+        sampleDivergent: merged
+          .slice(0, 6)
+          .filter((a) => a.warsh !== a.hafs || a.qaloon !== a.hafs)
+          .slice(0, 3),
       })
     }
     if (identity && inShipped && n !== 1) {
@@ -317,11 +349,15 @@ async function checkAliasCoverage(surahsMeta, shippedAliases) {
 async function getJSON(url, retries = 3) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'application/json' } })
-      if (!res.ok) { throw new Error(`HTTP ${res.status} for ${url}`) }
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } })
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} for ${url}`)
+      }
       return await res.json()
     } catch (e) {
-      if (attempt === retries - 1) { throw e }
+      if (attempt === retries - 1) {
+        throw e
+      }
       await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
     }
   }
@@ -331,13 +367,15 @@ async function checkTranslationSource(surahsMeta) {
   const findings = []
   const catalog = await loadSourceCatalog()
   const source = catalog.sources.find((item) => item.type === 'translation' && item.id === 'saheeh')
-  if (!source?.fetch || source.fetch.provider !== 'quran-db-translation') {
-    return [{
-      severity: 'error',
-      check: 'B',
-      kind: 'saheeh-fetch-config-missing',
-      message: 'Saheeh source must use quran-db-translation fetch metadata',
-    }]
+  if (source?.fetch?.provider !== 'quran-db-translation') {
+    return [
+      {
+        severity: 'error',
+        check: 'B',
+        kind: 'saheeh-fetch-config-missing',
+        message: 'Saheeh source must use quran-db-translation fetch metadata',
+      },
+    ]
   }
 
   let localSource
@@ -366,7 +404,10 @@ async function checkTranslationSource(surahsMeta) {
     return findings
   }
 
-  if (remoteSource.counts.surahs !== localSource.counts?.surahs || remoteSource.counts.verses !== localSource.counts?.verses) {
+  if (
+    remoteSource.counts.surahs !== localSource.counts?.surahs ||
+    remoteSource.counts.verses !== localSource.counts?.verses
+  ) {
     findings.push({
       severity: 'error',
       check: 'B',
@@ -385,7 +426,10 @@ async function checkTranslationSource(surahsMeta) {
     }
     if (remoteSurah.verses.length !== localSurah.verses.length) {
       findings.push({
-        severity: 'error', check: 'B', surah: n, kind: 'translation-count-mismatch',
+        severity: 'error',
+        check: 'B',
+        surah: n,
+        kind: 'translation-count-mismatch',
         message: `remote ${remoteSurah.verses.length} vs local ${localSurah.verses.length}`,
       })
     }
@@ -396,20 +440,31 @@ async function checkTranslationSource(surahsMeta) {
       const expectedKey = `${n}:${i + 1}`
       if (remote.key !== expectedKey) {
         findings.push({
-          severity: 'error', check: 'B', surah: n, ayah: i + 1, kind: 'remote-key-drift',
+          severity: 'error',
+          check: 'B',
+          surah: n,
+          ayah: i + 1,
+          kind: 'remote-key-drift',
           message: `remote key ${remote.key} != expected ${expectedKey}`,
         })
       }
       if (local.key !== expectedKey) {
         findings.push({
-          severity: 'error', check: 'B', surah: n, ayah: i + 1, kind: 'local-saheeh-key-drift',
+          severity: 'error',
+          check: 'B',
+          surah: n,
+          ayah: i + 1,
+          kind: 'local-saheeh-key-drift',
           message: `local saheeh key ${local.key} != expected ${expectedKey}`,
         })
       }
       if (remote.text !== local.text) {
         findings.push({
           severity: 'error',
-          check: 'B', surah: n, ayah: i + 1, kind: 'translation-text-drift',
+          check: 'B',
+          surah: n,
+          ayah: i + 1,
+          kind: 'translation-text-drift',
           firstDiffAt: firstDiffOffset(remote.text, local.text),
           sample: { remote: remote.text.slice(0, 120), local: local.text.slice(0, 120) },
         })
@@ -423,7 +478,11 @@ async function checkTranslationSource(surahsMeta) {
 
 function firstDiffOffset(a, b) {
   const len = Math.min(a.length, b.length)
-  for (let i = 0; i < len; i++) { if (a[i] !== b[i]) { return i } }
+  for (let i = 0; i < len; i++) {
+    if (a[i] !== b[i]) {
+      return i
+    }
+  }
   return a.length === b.length ? -1 : len
 }
 
@@ -440,10 +499,16 @@ function resolveTranslationFor(surahAliases, riwayah, surahNo, ayahNo) {
       hits.push({ hafs: entry.hafs, isContinuation: false })
     } else if (Array.isArray(target) && target.includes(ayahNo)) {
       const first = target[0]
-      hits.push({ hafs: entry.hafs, isContinuation: ayahNo !== first, splitFirst: ayahNo !== first ? first : undefined })
+      hits.push({
+        hafs: entry.hafs,
+        isContinuation: ayahNo !== first,
+        splitFirst: ayahNo !== first ? first : undefined,
+      })
     }
   }
-  if (hits.length === 0) { return { role: 'none', hafsKeys: [] } }
+  if (hits.length === 0) {
+    return { role: 'none', hafsKeys: [] }
+  }
   if (hits.length === 1) {
     const h = hits[0]
     if (h.isContinuation) {
@@ -467,7 +532,10 @@ async function checkCrossRiwayahRender(surahsMeta, shippedAliases) {
     const qaloon = await loadRiwayahSurah('qaloon', n)
     const surahAliases = shippedAliases.aliases?.[String(n)] ?? null
 
-    for (const [riwayah, ayat] of [['warsh', warsh.ayat], ['qaloon', qaloon.ayat]]) {
+    for (const [riwayah, ayat] of [
+      ['warsh', warsh.ayat],
+      ['qaloon', qaloon.ayat],
+    ]) {
       // Group consecutive primary/continuation Madinan ayat by their primary Hafs key
       // so a Hafs split (1 hafs → [w_a, w_b]) is checked as a single unit
       // (concat of madinan parts ↔ that single Hafs ayah).
@@ -479,7 +547,12 @@ async function checkCrossRiwayahRender(surahsMeta, shippedAliases) {
         const res = resolveTranslationFor(surahAliases, riwayah, n, ayahNo)
         if (res.role === 'none') {
           findings.push({
-            severity: 'warning', check: 'C', surah: n, riwayah, ayah: ayahNo, kind: 'no-hafs-equivalent',
+            severity: 'warning',
+            check: 'C',
+            surah: n,
+            riwayah,
+            ayah: ayahNo,
+            kind: 'no-hafs-equivalent',
             message: `${riwayah} ${n}:${ayahNo} resolves to role=none; reader will hide translation.`,
           })
           continue
@@ -499,11 +572,12 @@ async function checkCrossRiwayahRender(surahsMeta, shippedAliases) {
       const flagPair = (info, madinanText, hafsText) => {
         const w1 = wordList(madinanText)
         const w2 = wordList(hafsText)
-        if (w1.length === 0 && w2.length === 0) { return }
+        if (w1.length === 0 && w2.length === 0) {
+          return
+        }
         const j = jaccardSim(w1, w2)
-        const lenRatio = w1.length === 0 || w2.length === 0
-          ? Infinity
-          : Math.max(w1.length / w2.length, w2.length / w1.length)
+        const lenRatio =
+          w1.length === 0 || w2.length === 0 ? Infinity : Math.max(w1.length / w2.length, w2.length / w1.length)
         if (j < JACCARD_THRESHOLD || lenRatio > WORD_COUNT_RATIO_MAX) {
           findings.push({
             ...info,
@@ -521,28 +595,48 @@ async function checkCrossRiwayahRender(surahsMeta, shippedAliases) {
         const madinanText = g.madinanAyat.map((m) => ayat[m - 1].aya_text).join(' ')
         const [hafsSurah, hafsAyahStr] = g.hafsKey.split(':')
         const hafsAyah = Number(hafsAyahStr)
-        if (Number(hafsSurah) !== n) { continue }
+        if (Number(hafsSurah) !== n) {
+          continue
+        }
         const hafsText = hafs.ayat[hafsAyah - 1]?.aya_text ?? ''
-        flagPair({
-          check: 'C', surah: n, riwayah, ayat: g.madinanAyat, hafsKey: g.hafsKey,
-          kind: 'split-group-text-mismatch',
-          message: `${riwayah} ${n}:[${g.madinanAyat.join(',')}] concat ↔ Hafs ${g.hafsKey} similarity below threshold`,
-        }, madinanText, hafsText)
+        flagPair(
+          {
+            check: 'C',
+            surah: n,
+            riwayah,
+            ayat: g.madinanAyat,
+            hafsKey: g.hafsKey,
+            kind: 'split-group-text-mismatch',
+            message: `${riwayah} ${n}:[${g.madinanAyat.join(',')}] concat ↔ Hafs ${g.hafsKey} similarity below threshold`,
+          },
+          madinanText,
+          hafsText,
+        )
       }
 
       // Verify identity / merged: madinan ayah ↔ concatenated hafs ayat.
       for (const item of standaloneCheckQueue) {
         const madinanText = ayat[item.ayahNo - 1].aya_text
-        const hafsText = item.hafsKeys.map((k) => {
-          const [, ay] = k.split(':')
-          return hafs.ayat[Number(ay) - 1]?.aya_text ?? ''
-        }).join(' ')
-        flagPair({
-          check: 'C', surah: n, riwayah, ayah: item.ayahNo,
-          hafsKeys: item.hafsKeys, role: item.role,
-          kind: 'render-text-mismatch',
-          message: `${riwayah} ${n}:${item.ayahNo} (role=${item.role}) ↔ Hafs ${item.hafsKeys.join(',')} similarity below threshold`,
-        }, madinanText, hafsText)
+        const hafsText = item.hafsKeys
+          .map((k) => {
+            const [, ay] = k.split(':')
+            return hafs.ayat[Number(ay) - 1]?.aya_text ?? ''
+          })
+          .join(' ')
+        flagPair(
+          {
+            check: 'C',
+            surah: n,
+            riwayah,
+            ayah: item.ayahNo,
+            hafsKeys: item.hafsKeys,
+            role: item.role,
+            kind: 'render-text-mismatch',
+            message: `${riwayah} ${n}:${item.ayahNo} (role=${item.role}) ↔ Hafs ${item.hafsKeys.join(',')} similarity below threshold`,
+          },
+          madinanText,
+          hafsText,
+        )
       }
     }
   }
@@ -568,7 +662,6 @@ async function main() {
   const shippedAliases = JSON.parse(await readFile(join(TRANSLATIONS_DIR, '_verse-aliases.json'), 'utf8'))
 
   const findings = []
-  let derived = {}
 
   const runA = checkArg === 'all' || checkArg === 'A'
   const runB = (checkArg === 'all' || checkArg === 'B') && !OFFLINE
@@ -578,7 +671,6 @@ async function main() {
     console.log('[A] alias-coverage — running alignment for all 114 surahs')
     const a = await checkAliasCoverage(surahsMeta, shippedAliases)
     findings.push(...a.findings)
-    derived = a.derived
   }
 
   if (runB) {
@@ -595,29 +687,45 @@ async function main() {
 
   const summary = summarize(findings)
   await mkdir(dirname(REPORT_PATH), { recursive: true })
-  await writeFile(REPORT_PATH, JSON.stringify({
-    generatedAt: new Date().toISOString(),
-    args: { check: checkArg, offline: OFFLINE },
-    summary,
-    findings,
-  }, null, 2), 'utf8')
+  await writeFile(
+    REPORT_PATH,
+    JSON.stringify(
+      {
+        generatedAt: new Date().toISOString(),
+        args: { check: checkArg, offline: OFFLINE },
+        summary,
+        findings,
+      },
+      null,
+      2,
+    ),
+    'utf8',
+  )
 
   console.log('\n=== summary ===')
   console.log('severity:', summary.bySev)
   console.log('by check:', summary.byCheck)
   console.log('by kind:', summary.byKind)
   console.log(`\nreport: ${REPORT_PATH}`)
-  if (findings.length === 0) { console.log('no findings.') }
-  else {
+  if (findings.length === 0) {
+    console.log('no findings.')
+  } else {
     console.log('\nfirst 10 errors:')
     let n = 0
     for (const f of findings) {
-      if (f.severity !== 'error') { continue }
+      if (f.severity !== 'error') {
+        continue
+      }
       console.log(' ', JSON.stringify(f).slice(0, 240))
-      if (++n >= 10) { break }
+      if (++n >= 10) {
+        break
+      }
     }
   }
   process.exit(summary.bySev.error > 0 ? 1 : 0)
 }
 
-main().catch((e) => { console.error(e); process.exit(2) })
+main().catch((e) => {
+  console.error(e)
+  process.exit(2)
+})

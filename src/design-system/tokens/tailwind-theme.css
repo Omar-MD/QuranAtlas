@@ -1,4 +1,4 @@
-@import 'tailwindcss' prefix(qar) source(none);
+@import "tailwindcss" prefix(qar) source(none);
 
 @source "../../../src";
 @source "../../../.storybook";

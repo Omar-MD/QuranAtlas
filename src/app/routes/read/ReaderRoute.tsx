@@ -11,7 +11,10 @@ import { applyReactReaderTypography, subscribeReactReaderPreferencesChanged } fr
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import { ReaderVerseSurface } from '../../../components/reader/ReaderVerseSurface'
 import { consumeReactReaderAnchor } from '../../../components/reader/SurahContinuityButton'
-import { resolveMushafHrefForVerseRef, resolveMushafHrefForVerseRoute } from '../../../components/reader/reader-mode-routing'
+import {
+  resolveMushafHrefForVerseRef,
+  resolveMushafHrefForVerseRoute,
+} from '../../../components/reader/reader-mode-routing'
 import { useReaderPositionSync } from '../../../components/reader/useReaderPositionSync'
 import { useVerseInteractionReducer } from '../../../components/reader/useVerseInteractionReducer'
 import { readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
@@ -57,15 +60,21 @@ function asRiwayah(value: unknown): Riwayah | null {
 
 async function readReaderSettings(): Promise<ReaderSettings> {
   try {
-    const [riwayah, quranTextStyleId, translationId] = await readNativeSettings(['riwayah', 'quranTextStyleId', 'translationId'])
+    const [riwayah, quranTextStyleId, translationId] = await readNativeSettings([
+      'riwayah',
+      'quranTextStyleId',
+      'translationId',
+    ])
     const preferences = await readNativeReactReaderPreferences()
     return {
       fontSize: preferences.fontSize,
       lineSpacing: preferences.lineSpacing,
-      quranTextStyleId: typeof quranTextStyleId?.value === 'string' ? quranTextStyleId.value : DEFAULT_READER_SETTINGS.quranTextStyleId,
+      quranTextStyleId:
+        typeof quranTextStyleId?.value === 'string' ? quranTextStyleId.value : DEFAULT_READER_SETTINGS.quranTextStyleId,
       readerMargin: preferences.readerMargin,
       riwayah: asRiwayah(riwayah?.value) ?? DEFAULT_READER_SETTINGS.riwayah,
-      translationId: typeof translationId?.value === 'string' ? translationId.value : DEFAULT_READER_SETTINGS.translationId,
+      translationId:
+        typeof translationId?.value === 'string' ? translationId.value : DEFAULT_READER_SETTINGS.translationId,
       translationVisible: preferences.translationVisible,
       verseSpacing: preferences.verseSpacing,
       wordSpacing: preferences.wordSpacing,
@@ -76,18 +85,38 @@ async function readReaderSettings(): Promise<ReaderSettings> {
   }
 }
 
-export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: number; preservePosition?: boolean; surah: number }) {
+export function ReaderRoute({
+  ayah,
+  preservePosition = false,
+  surah,
+}: {
+  ayah?: number
+  preservePosition?: boolean
+  surah: number
+}) {
   const [corpus, setCorpus] = useState<ReaderCorpusState>({ status: 'loading' })
   const [metadata, setMetadata] = useState<Map<string, VerseMetadata>>(new Map())
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
-  const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(DEFAULT_READER_SETTINGS.wirdReaderStatusVisible)
+  const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(
+    DEFAULT_READER_SETTINGS.wirdReaderStatusVisible,
+  )
   const lastFocusedRouteKeyRef = useRef<string | null>(null)
+  const lastRouteKeyRef = useRef<string | null>(null)
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex, corpus), [corpus, surahIndex])
-  const wirdProgressCounts = useMemo(() => surahIndex.length === 114 ? wirdCounts : [], [surahIndex.length, wirdCounts])
-  const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
-  const wirdSummary = useMemo(() => deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries), [wirdBoundaries, wirdCounts, wirdPlan])
+  const wirdProgressCounts = useMemo(
+    () => (surahIndex.length === 114 ? wirdCounts : []),
+    [surahIndex.length, wirdCounts],
+  )
+  const wirdBoundaries = useMemo(
+    () => createWirdBoundaries(wirdCounts, wirdPageBoundaries),
+    [wirdCounts, wirdPageBoundaries],
+  )
+  const wirdSummary = useMemo(
+    () => deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries),
+    [wirdBoundaries, wirdCounts, wirdPlan],
+  )
   const enableWirdProgress = hasWirdProgressIntent()
   const { selectedVerseKey, selectVerse } = useVerseInteractionReducer()
   const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus, {
@@ -96,21 +125,28 @@ export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: 
     wirdCounts: wirdProgressCounts,
   })
   const { bookmarkedVerseKeys, bookmarks, status: bookmarkStatus, toggleBookmark } = useBookmarks()
-  const showVerseBookmarkHint = bookmarkStatus === 'ready' && !bookmarks.some((bookmark) => !isMushafPageBookmark(bookmark))
+  const showVerseBookmarkHint =
+    bookmarkStatus === 'ready' && !bookmarks.some((bookmark) => !isMushafPageBookmark(bookmark))
 
   useReaderScrollLock(preservePosition)
 
-  useEffect(() => subscribeReactReaderPreferencesChanged((preferences) => {
-    applyReactReaderTypography(preferences)
-    if (preferences.translationVisible !== undefined) {
-      setCorpus((current) => current.status === 'ready'
-        ? { ...current, translationVisible: preferences.translationVisible ?? current.translationVisible }
-        : current)
-    }
-    if (preferences.wirdReaderStatusVisible !== undefined) {
-      setWirdReaderStatusVisible(preferences.wirdReaderStatusVisible)
-    }
-  }), [])
+  useEffect(
+    () =>
+      subscribeReactReaderPreferencesChanged((preferences) => {
+        applyReactReaderTypography(preferences)
+        if (preferences.translationVisible !== undefined) {
+          setCorpus((current) =>
+            current.status === 'ready'
+              ? { ...current, translationVisible: preferences.translationVisible ?? current.translationVisible }
+              : current,
+          )
+        }
+        if (preferences.wirdReaderStatusVisible !== undefined) {
+          setWirdReaderStatusVisible(preferences.wirdReaderStatusVisible)
+        }
+      }),
+    [],
+  )
 
   useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
 
@@ -150,7 +186,8 @@ export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: 
         if (!controller.signal.aborted) setCorpus(loaded)
       })
       .catch((error) => {
-        if (!controller.signal.aborted) setCorpus({ status: 'error', error: error instanceof Error ? error : new Error('Reader corpus unavailable') })
+        if (!controller.signal.aborted)
+          setCorpus({ status: 'error', error: error instanceof Error ? error : new Error('Reader corpus unavailable') })
       })
 
     void readWirdPlan(nativeSettingsReader())
@@ -188,6 +225,9 @@ export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: 
   }, [corpus])
 
   useEffect(() => {
+    const routeKey = `${surah}:${ayah}`
+    if (lastRouteKeyRef.current === routeKey) return
+    lastRouteKeyRef.current = routeKey
     lastFocusedRouteKeyRef.current = null
   }, [ayah, surah])
 
@@ -215,13 +255,13 @@ export function ReaderRoute({ ayah, preservePosition = false, surah }: { ayah?: 
       onModeChange={(nextMode) => {
         if (nextMode === 'mushaf') {
           const currentPosition = getCurrentPosition()
-          const hrefPromise = currentPosition?.surah === surah
-            ? resolveMushafHrefForVerseRef(currentPosition)
-            : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
-          void hrefPromise
-            .then((href) => {
-              window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
-            })
+          const hrefPromise =
+            currentPosition?.surah === surah
+              ? resolveMushafHrefForVerseRef(currentPosition)
+              : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
+          void hrefPromise.then((href) => {
+            window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
+          })
         }
       }}
       showWirdStatus={wirdReaderStatusVisible}
@@ -290,9 +330,10 @@ function findCurrentReaderScrollAnchor(): ReaderScrollAnchor | null {
     if (!verseKey) continue
     const rect = element.getBoundingClientRect()
     if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
-    const distance = rect.top <= centerY && rect.bottom >= centerY
-      ? 0
-      : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
+    const distance =
+      rect.top <= centerY && rect.bottom >= centerY
+        ? 0
+        : Math.min(Math.abs(rect.top - centerY), Math.abs(rect.bottom - centerY))
     if (!closest || distance < closest.distance) closest = { distance, element }
     if (distance === 0) break
   }
@@ -322,5 +363,9 @@ function surahFromVerseKey(verseKey: string): number | null {
 function wirdCountsFromIndex(index: ReaderSurahIndexEntry[], corpus: ReaderCorpusState): SurahCount[] {
   if (index.length > 0) return index.map((row) => ({ count: row.counts.qaloon, n: row.n }))
   if (corpus.status === 'ready') return [{ count: corpus.surah.verseCount, n: corpus.surah.number }]
-  return [{ count: 7, n: 1 }, { count: 286, n: 2 }, { count: 6, n: 114 }]
+  return [
+    { count: 7, n: 1 },
+    { count: 286, n: 2 },
+    { count: 6, n: 114 },
+  ]
 }

@@ -32,7 +32,14 @@ export type SettingRecord = {
 }
 
 export type Riwayah = 'qaloon'
-export type ActivationStatus = 'none' | 'idle' | 'downloading' | 'cached' | 'pending-confirmation' | 'applying' | 'failed'
+export type ActivationStatus =
+  | 'none'
+  | 'idle'
+  | 'downloading'
+  | 'cached'
+  | 'pending-confirmation'
+  | 'applying'
+  | 'failed'
 
 export type ActivationStateRecord = {
   id: 'current'

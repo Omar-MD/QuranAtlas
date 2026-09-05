@@ -99,7 +99,7 @@ export function normalizeSearchInput(
   if (policy.normalizeArabicIndicDigits) {
     output = output.replace(ARABIC_INDIC_DIGITS_RE, (digit) => {
       const code = digit.codePointAt(0) ?? 0
-      const zero = code >= 0x06F0 ? 0x06F0 : 0x0660
+      const zero = code >= 0x06f0 ? 0x06f0 : 0x0660
       return String(code - zero)
     })
   }
@@ -107,10 +107,7 @@ export function normalizeSearchInput(
   return policy.collapseWhitespace ? output.trim().replace(/\s+/g, ' ') : output
 }
 
-export function tokenizeSearchInput(
-  input: string,
-  mode: SearchNormalizationMode = 'normalized',
-): string[] {
+export function tokenizeSearchInput(input: string, mode: SearchNormalizationMode = 'normalized'): string[] {
   const normalized = normalizeSearchInput(input, mode)
   return normalized ? normalized.split(' ') : []
 }

@@ -1,18 +1,9 @@
 import { cp, mkdir, readdir, readFile, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 
-export const publicShellAssetEntries = [
-  '_headers',
-  'favicon.ico',
-  'wird-notification-sw.js',
-  'icons',
-  'fonts',
-]
+export const publicShellAssetEntries = ['_headers', 'favicon.ico', 'wird-notification-sw.js', 'icons', 'fonts']
 
-export const releaseRuntimeAssetEntries = [
-  'dataset',
-  'search-packs',
-]
+export const releaseRuntimeAssetEntries = ['dataset', 'search-packs']
 
 function displayList(entries) {
   return entries.map((entry) => `public/${entry}`).join(', ')
@@ -93,10 +84,7 @@ export async function copyPublicAssetEntries({
   }
 }
 
-export async function removeOutputAssetEntries({
-  outDir,
-  entries,
-} = {}) {
+export async function removeOutputAssetEntries({ outDir, entries } = {}) {
   if (!outDir) throw new Error('removeOutputAssetEntries requires an output directory')
   if (!entries?.length) return
 

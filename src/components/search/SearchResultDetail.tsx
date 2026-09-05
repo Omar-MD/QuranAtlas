@@ -3,25 +3,24 @@ import { forwardRef, type ReactNode } from 'react'
 import { Button } from '../ui'
 import type { SearchDetailsViewModel, SearchExploreModuleId } from './search-presentation-model'
 
-export const SearchResultDetail = forwardRef<HTMLDivElement, {
-  details: SearchDetailsViewModel | null
-  onClose?: () => void
-  onOpenExplore?: (result: SearchDetailsViewModel['result'], module?: SearchExploreModuleId) => void
-}>(function SearchResultDetail({
-  details,
-  onClose,
-  onOpenExplore,
-}, ref) {
+export const SearchResultDetail = forwardRef<
+  HTMLElement,
+  {
+    details: SearchDetailsViewModel | null
+    onClose?: () => void
+    onOpenExplore?: (result: SearchDetailsViewModel['result'], module?: SearchExploreModuleId) => void
+  }
+>(function SearchResultDetail({ details, onClose, onOpenExplore }, ref) {
   if (!details) {
     return (
-      <div aria-label="Search result detail" className="qar-search-result-detail" ref={ref} role="group" tabIndex={-1}>
+      <section aria-label="Search result detail" className="qar-search-result-detail" ref={ref} tabIndex={-1}>
         <p className="qar:m-0 qar:text-sm qar:text-muted">Choose a verse and open Details to inspect why it matched.</p>
-      </div>
+      </section>
     )
   }
 
   return (
-    <div aria-label={`Details for ${details.title}`} className="qar-search-result-detail" ref={ref} role="group" tabIndex={-1}>
+    <section aria-label={`Details for ${details.title}`} className="qar-search-result-detail" ref={ref} tabIndex={-1}>
       <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
         <div>
           <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted">Details</p>
@@ -29,7 +28,11 @@ export const SearchResultDetail = forwardRef<HTMLDivElement, {
             <bdi>{details.title}</bdi>
           </h3>
         </div>
-        {onClose ? <Button onClick={onClose} size="sm" variant="ghost">Close</Button> : null}
+        {onClose ? (
+          <Button onClick={onClose} size="sm" variant="ghost">
+            Close
+          </Button>
+        ) : null}
       </div>
       <DetailSection title="Why this matched">
         <p className="qar:m-0" dir="auto">
@@ -50,7 +53,7 @@ export const SearchResultDetail = forwardRef<HTMLDivElement, {
       <DetailRows rows={details.readerMappingRows} title="Reader mapping" />
       <DetailRows rows={details.evidenceRows} title="Evidence" />
       <DetailRows rows={details.sourceRows} title="Sources" />
-    </div>
+    </section>
   )
 })
 
@@ -71,7 +74,9 @@ function DetailRows({ rows, title }: { rows: Array<{ label: string; value: strin
         {rows.map((row) => (
           <div className="qar:grid qar:gap-1" key={`${title}:${row.label}`}>
             <dt className="qar:text-xs qar:text-muted">{row.label}</dt>
-            <dd className="qar:m-0" dir="auto"><bdi>{row.value}</bdi></dd>
+            <dd className="qar:m-0" dir="auto">
+              <bdi>{row.value}</bdi>
+            </dd>
           </div>
         ))}
       </dl>

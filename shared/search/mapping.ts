@@ -7,8 +7,14 @@ export const SEARCH_MAPPING_STATES = [
   'hafs-source-only',
 ] as const
 
-export type SearchMappingState = typeof SEARCH_MAPPING_STATES[number]
-export type SearchMappingAliasRole = 'identity-verified' | 'alias-verified' | 'split' | 'merged' | 'missing' | 'source-only'
+export type SearchMappingState = (typeof SEARCH_MAPPING_STATES)[number]
+export type SearchMappingAliasRole =
+  | 'identity-verified'
+  | 'alias-verified'
+  | 'split'
+  | 'merged'
+  | 'missing'
+  | 'source-only'
 export type SearchMappingBoundaryRole = 'same-ayah' | 'reader-spans-multiple' | 'source-spans-multiple' | 'no-alignment'
 
 export interface SearchReaderRef {

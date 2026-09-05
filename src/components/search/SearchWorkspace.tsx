@@ -9,7 +9,11 @@ import { SearchOverview } from './SearchOverview'
 import { SearchResultDetail } from './SearchResultDetail'
 import { SearchResultList } from './SearchResultList'
 import { SearchSourcePanel } from './SearchSourcePanel'
-import { deriveSearchOutputViewModel, type SearchExploreModuleId, type SearchWorkspaceTab } from './search-presentation-model'
+import {
+  deriveSearchOutputViewModel,
+  type SearchExploreModuleId,
+  type SearchWorkspaceTab,
+} from './search-presentation-model'
 import type { SearchExploreGraphState } from './useSearchRouteState'
 
 type SearchWorkspaceProps = {
@@ -45,15 +49,19 @@ type SearchWorkspaceProps = {
 
 export function SearchWorkspace(props: SearchWorkspaceProps) {
   const detailsTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const detailPanelRef = useRef<HTMLDivElement | null>(null)
+  const detailPanelRef = useRef<HTMLElement | null>(null)
   const [detailsRequestId, setDetailsRequestId] = useState(0)
-  const viewModel = useMemo(() => deriveSearchOutputViewModel({
-    brief: props.brief,
-    defaultTab: props.defaultTab,
-    hasMoreResults: props.hasMore,
-    results: props.results,
-    selectedResult: props.selectedResult,
-  }), [props.brief, props.defaultTab, props.hasMore, props.results, props.selectedResult])
+  const viewModel = useMemo(
+    () =>
+      deriveSearchOutputViewModel({
+        brief: props.brief,
+        defaultTab: props.defaultTab,
+        hasMoreResults: props.hasMore,
+        results: props.results,
+        selectedResult: props.selectedResult,
+      }),
+    [props.brief, props.defaultTab, props.hasMore, props.results, props.selectedResult],
+  )
   const hasPreviewOnlyData = Boolean(props.answerPreview && !props.brief && props.results.length === 0)
 
   function openTab(tab: SearchWorkspaceTab, focusModule?: SearchExploreModuleId) {
@@ -80,101 +88,109 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
           {
             label: 'Overview',
             value: 'overview',
-            content: props.answerPreview || !viewModel.overview ? (
-              <SearchAnswerPreview
-                allMatches={props.allMatches}
-                allMatchesOpen={props.allMatchesOpen}
-                canLoadAllMatches={props.canLoadAllMatches}
-                loadingAllMatches={props.loadingAllMatches}
-                onLoadMoreAllMatches={props.onLoadMoreAllMatches}
-                onOpenAllMatches={props.onOpenAllMatches}
-                onOpenInRead={props.onOpenPreviewInRead}
-                preview={props.answerPreview}
-              />
-            ) : (
-              <SearchOverview
-                onAction={(action) => openTab(action.target, action.focusModule)}
-                overview={viewModel.overview}
-              />
-            ),
+            content:
+              props.answerPreview || !viewModel.overview ? (
+                <SearchAnswerPreview
+                  allMatches={props.allMatches}
+                  allMatchesOpen={props.allMatchesOpen}
+                  canLoadAllMatches={props.canLoadAllMatches}
+                  loadingAllMatches={props.loadingAllMatches}
+                  onLoadMoreAllMatches={props.onLoadMoreAllMatches}
+                  onOpenAllMatches={props.onOpenAllMatches}
+                  onOpenInRead={props.onOpenPreviewInRead}
+                  preview={props.answerPreview}
+                />
+              ) : (
+                <SearchOverview
+                  onAction={(action) => openTab(action.target, action.focusModule)}
+                  overview={viewModel.overview}
+                />
+              ),
           },
           {
             label: 'Verses',
             value: 'verses',
-            content: hasPreviewOnlyData && props.answerPreview ? (
-              <PreviewOnlyTabPanel
-                allMatchesOpen={props.allMatchesOpen}
-                loadingAllMatches={props.loadingAllMatches}
-                onOpenAllMatches={props.onOpenAllMatches}
-                onOpenOverview={() => openTab('overview')}
-                preview={props.answerPreview}
-                tab="verses"
-              />
-            ) : (
-              <div className="qar-search-verses-panel">
-                {props.resultCountMessage ? <p className="qar-search-result-count">{props.resultCountMessage}</p> : null}
-                <SearchResultList
-                  canLoadMore={props.canLoadMore}
-                  cards={viewModel.verseCards}
-                  emptyMessage={props.emptyMessage}
-                  hasMore={props.hasMore}
-                  onDetailsTrigger={(node) => {
-                    detailsTriggerRef.current = node
-                    if (node) setDetailsRequestId((current) => current + 1)
-                  }}
-                  onLoadMore={props.onLoadMore}
-                  onOpenInRead={props.onOpenInRead}
-                  onSelect={props.onSelectResult}
-                  selectedResultId={props.selectedResult?.resultId}
+            content:
+              hasPreviewOnlyData && props.answerPreview ? (
+                <PreviewOnlyTabPanel
+                  allMatchesOpen={props.allMatchesOpen}
+                  loadingAllMatches={props.loadingAllMatches}
+                  onOpenAllMatches={props.onOpenAllMatches}
+                  onOpenOverview={() => openTab('overview')}
+                  preview={props.answerPreview}
+                  tab="verses"
                 />
-                <SearchResultDetail
-                  details={viewModel.details}
-                  onClose={() => {
-                    props.onSelectResult(null)
-                    detailsTriggerRef.current?.focus()
-                  }}
-                  onOpenExplore={props.onOpenResultExplore}
-                  ref={detailPanelRef}
-                />
-              </div>
-            ),
+              ) : (
+                <div className="qar-search-verses-panel">
+                  {props.resultCountMessage ? (
+                    <p className="qar-search-result-count">{props.resultCountMessage}</p>
+                  ) : null}
+                  <SearchResultList
+                    canLoadMore={props.canLoadMore}
+                    cards={viewModel.verseCards}
+                    emptyMessage={props.emptyMessage}
+                    hasMore={props.hasMore}
+                    onDetailsTrigger={(node) => {
+                      detailsTriggerRef.current = node
+                      if (node) setDetailsRequestId((current) => current + 1)
+                    }}
+                    onLoadMore={props.onLoadMore}
+                    onOpenInRead={props.onOpenInRead}
+                    onSelect={props.onSelectResult}
+                    selectedResultId={props.selectedResult?.resultId}
+                  />
+                  <SearchResultDetail
+                    details={viewModel.details}
+                    onClose={() => {
+                      props.onSelectResult(null)
+                      detailsTriggerRef.current?.focus()
+                    }}
+                    onOpenExplore={props.onOpenResultExplore}
+                    ref={detailPanelRef}
+                  />
+                </div>
+              ),
           },
           {
             label: 'Explore',
             value: 'explore',
-            content: hasPreviewOnlyData && props.answerPreview ? (
-              <PreviewOnlyTabPanel
-                allMatchesOpen={props.allMatchesOpen}
-                loadingAllMatches={props.loadingAllMatches}
-                onOpenAllMatches={props.onOpenAllMatches}
-                onOpenOverview={() => openTab('overview')}
-                preview={props.answerPreview}
-                tab="explore"
-              />
-            ) : (
-              <SearchExplorePanel
-                focusedModule={props.focusedExploreModule}
-                graph={props.exploreGraph}
-                modules={viewModel.exploreModules}
-                onLoadGraph={props.onLoadExploreGraph}
-                seedResult={props.exploreSeedResult}
-                summaries={viewModel.exploreSummaries}
-              />
-            ),
+            content:
+              hasPreviewOnlyData && props.answerPreview ? (
+                <PreviewOnlyTabPanel
+                  allMatchesOpen={props.allMatchesOpen}
+                  loadingAllMatches={props.loadingAllMatches}
+                  onOpenAllMatches={props.onOpenAllMatches}
+                  onOpenOverview={() => openTab('overview')}
+                  preview={props.answerPreview}
+                  tab="explore"
+                />
+              ) : (
+                <SearchExplorePanel
+                  focusedModule={props.focusedExploreModule}
+                  graph={props.exploreGraph}
+                  modules={viewModel.exploreModules}
+                  onLoadGraph={props.onLoadExploreGraph}
+                  seedResult={props.exploreSeedResult}
+                  summaries={viewModel.exploreSummaries}
+                />
+              ),
           },
           {
             label: 'Sources',
             value: 'sources',
-            content: hasPreviewOnlyData && props.answerPreview ? (
-              <PreviewOnlyTabPanel
-                allMatchesOpen={props.allMatchesOpen}
-                loadingAllMatches={props.loadingAllMatches}
-                onOpenAllMatches={props.onOpenAllMatches}
-                onOpenOverview={() => openTab('overview')}
-                preview={props.answerPreview}
-                tab="sources"
-              />
-            ) : <SearchSourcePanel packVersion={props.packVersion} sources={viewModel.sources} />,
+            content:
+              hasPreviewOnlyData && props.answerPreview ? (
+                <PreviewOnlyTabPanel
+                  allMatchesOpen={props.allMatchesOpen}
+                  loadingAllMatches={props.loadingAllMatches}
+                  onOpenAllMatches={props.onOpenAllMatches}
+                  onOpenOverview={() => openTab('overview')}
+                  preview={props.answerPreview}
+                  tab="sources"
+                />
+              ) : (
+                <SearchSourcePanel packVersion={props.packVersion} sources={viewModel.sources} />
+              ),
           },
         ]}
         label="Search result views"
@@ -211,11 +227,12 @@ function PreviewOnlyTabPanel({
       <p className="qar-search-overview-eyebrow">Answer preview active</p>
       <h3 id={titleId}>{previewOnlyTitle(tab)}</h3>
       <p dir="auto">
-        <bdi>{preview.query}</bdi>
-        {' '}
-        is loaded as an Ask preview. This tab has no separate result window for the preview state.
+        <bdi>{preview.query}</bdi> is loaded as an Ask preview. This tab has no separate result window for the preview
+        state.
       </p>
-      <p>Open Overview for supported claims and best evidence. Use Show all matches to expand the source-backed matches.</p>
+      <p>
+        Open Overview for supported claims and best evidence. Use Show all matches to expand the source-backed matches.
+      </p>
       <div className="qar-search-preview-tab-actions">
         <Button onClick={onOpenOverview} size="sm" variant="primary">
           View Overview

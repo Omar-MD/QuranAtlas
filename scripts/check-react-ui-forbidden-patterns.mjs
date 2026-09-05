@@ -11,7 +11,7 @@ async function walk(dir) {
   const files = []
   for (const entry of entries) {
     const path = join(dir, entry.name)
-    if (entry.isDirectory()) files.push(...await walk(path))
+    if (entry.isDirectory()) files.push(...(await walk(path)))
     else if (checkedExtensions.has(extname(entry.name))) files.push(path)
   }
   return files

@@ -28,10 +28,12 @@ export function parseSearchReference(input: string): ParsedSearchReference | nul
 }
 
 export function isValidSearchReference(surah: number, ayah: number): boolean {
-  return Number.isInteger(surah)
-    && Number.isInteger(ayah)
-    && surah >= 1
-    && surah <= MAX_SURAH
-    && ayah >= 1
-    && ayah <= MAX_AYAH
+  return (
+    Number.isInteger(surah) &&
+    Number.isInteger(ayah) &&
+    surah >= 1 &&
+    surah <= MAX_SURAH &&
+    ayah >= 1 &&
+    ayah <= MAX_AYAH
+  )
 }

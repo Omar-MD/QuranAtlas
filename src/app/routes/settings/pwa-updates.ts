@@ -23,7 +23,7 @@ export async function fetchLatestAppChanges(): Promise<AppUpdateCheckResult> {
   }
 
   const updatedRegistration = await registration.update()
-  const pendingWorker = updatedRegistration.waiting ?? await waitForInstallingWorker(updatedRegistration)
+  const pendingWorker = updatedRegistration.waiting ?? (await waitForInstallingWorker(updatedRegistration))
 
   if (!pendingWorker) {
     return {
@@ -55,11 +55,7 @@ async function waitForInstallingWorker(registration: ServiceWorkerRegistration):
     }, SERVICE_WORKER_READY_TIMEOUT_MS)
 
     function handleStateChange() {
-      if (
-        worker.state !== 'installed'
-        && worker.state !== 'activated'
-        && worker.state !== 'redundant'
-      ) return
+      if (worker.state !== 'installed' && worker.state !== 'activated' && worker.state !== 'redundant') return
 
       window.clearTimeout(timeoutId)
       worker.removeEventListener('statechange', handleStateChange)

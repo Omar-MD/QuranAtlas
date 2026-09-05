@@ -8,30 +8,37 @@ self.addEventListener('notificationclick', (event) => {
   const data = event.notification.data || {}
   const targetUrl = typeof data.url === 'string' ? data.url : '/#/s/1'
 
-  event.waitUntil((async () => {
-    const target = new URL(targetUrl, self.location.origin)
-    const windows = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+  event.waitUntil(
+    (async () => {
+      const target = new URL(targetUrl, self.location.origin)
+      const windows = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
 
-    for (const client of windows) {
-      const clientUrl = new URL(client.url)
-      if (clientUrl.origin !== target.origin) continue
-      if ('navigate' in client) await client.navigate(target.href)
-      await client.focus()
-      return
-    }
+      for (const client of windows) {
+        const clientUrl = new URL(client.url)
+        if (clientUrl.origin !== target.origin) continue
+        if ('navigate' in client) await client.navigate(target.href)
+        await client.focus()
+        return
+      }
 
-    await self.clients.openWindow(target.href)
-  })())
+      await self.clients.openWindow(target.href)
+    })(),
+  )
 })
 
 async function showStoredWirdReminder() {
   const plan = normalizeWirdPlan(await readSettingValue('wirdPlan'))
-  if (!plan || !plan.reminder.enabled) return
-  if (self.Notification && self.Notification.permission !== 'granted' && plan.reminder.browserNotifications !== 'granted') return
+  if (!plan?.reminder.enabled) return
+  if (
+    self.Notification &&
+    self.Notification.permission !== 'granted' &&
+    plan.reminder.browserNotifications !== 'granted'
+  )
+    return
   if (!isReminderTimeDue(plan.reminder.time)) return
 
   const dayKey = getLocalDayKey()
-  if (await readSettingValue('wirdReminderLastSentDay') === dayKey) return
+  if ((await readSettingValue('wirdReminderLastSentDay')) === dayKey) return
 
   const current = plan.progress.dayKey === dayKey ? plan : await recomputeStoredWirdPlan(plan, dayKey)
   if (!current || !shouldSendStoredWirdReminder(current)) return
@@ -89,7 +96,7 @@ async function loadWirdCounts() {
     const rows = await response.json()
     if (!Array.isArray(rows)) return []
     return rows
-      .map((row) => ({ count: row && row.counts ? Number(row.counts.qaloon) : 0, n: Number(row && row.n) }))
+      .map((row) => ({ count: row?.counts ? Number(row.counts.qaloon) : 0, n: Number(row?.n) }))
       .filter((row) => Number.isInteger(row.n) && row.n >= 1 && Number.isInteger(row.count) && row.count >= 1)
   } catch {
     return []
@@ -151,7 +158,8 @@ function compareRefs(a, b) {
 
 function normalizeWirdPlan(value) {
   if (!value || typeof value !== 'object') return null
-  if (!isQuranRef(value.startRef) || !isQuranRef(value.endRef) || !value.progress || typeof value.progress !== 'object') return null
+  if (!isQuranRef(value.startRef) || !isQuranRef(value.endRef) || !value.progress || typeof value.progress !== 'object')
+    return null
   const reminder = value.reminder && typeof value.reminder === 'object' ? value.reminder : {}
   const progress = value.progress
   const dayKey = getLocalDayKey()
@@ -177,12 +185,14 @@ function normalizeWirdPlan(value) {
 }
 
 function isQuranRef(value) {
-  return Boolean(value)
-    && typeof value === 'object'
-    && Number.isInteger(value.surah)
-    && value.surah >= 1
-    && Number.isInteger(value.verse)
-    && value.verse >= 1
+  return (
+    Boolean(value) &&
+    typeof value === 'object' &&
+    Number.isInteger(value.surah) &&
+    value.surah >= 1 &&
+    Number.isInteger(value.verse) &&
+    value.verse >= 1
+  )
 }
 
 function isReminderTimeDue(time) {
@@ -218,7 +228,7 @@ async function writeSettingValue(key, value) {
 
 async function withSettingsStore(mode, callback) {
   const db = await openQuranAtlasDb()
-  if (!db || !db.objectStoreNames.contains('settings')) {
+  if (!db?.objectStoreNames.contains('settings')) {
     db?.close()
     return undefined
   }
@@ -234,12 +244,14 @@ async function withSettingsStore(mode, callback) {
       db.close()
       reject(transaction.error || new Error('Settings transaction failed'))
     }
-    Promise.resolve(callback(store)).then((value) => {
-      result = value
-    }).catch((error) => {
-      transaction.abort()
-      reject(error)
-    })
+    Promise.resolve(callback(store))
+      .then((value) => {
+        result = value
+      })
+      .catch((error) => {
+        transaction.abort()
+        reject(error)
+      })
   })
 }
 

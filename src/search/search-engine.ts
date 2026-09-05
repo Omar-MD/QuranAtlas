@@ -1,5 +1,5 @@
 import type { SearchQueryAstV1, SearchResultWindow, SearchSort } from '../../shared/search'
-import { SearchPackReader } from './pack-reader'
+import type { SearchPackReader } from './pack-reader'
 import { SearchQueryExecutor } from '../search-worker/query-executor'
 import { SearchCancellationToken } from '../search-worker/cancellation'
 

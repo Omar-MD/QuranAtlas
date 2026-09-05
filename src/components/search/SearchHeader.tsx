@@ -47,7 +47,15 @@ export function SearchHeader({
         >
           Search
         </Button>
-        <Button className="qar-search-save" disabled={!canSave} onClick={onSaveSearch} type="button" variant="secondary">Save search</Button>
+        <Button
+          className="qar-search-save"
+          disabled={!canSave}
+          onClick={onSaveSearch}
+          type="button"
+          variant="secondary"
+        >
+          Save search
+        </Button>
       </div>
     </form>
   )

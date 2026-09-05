@@ -33,7 +33,8 @@ export function understandAskQuery(query: string, lens?: SearchLensLite): AskQue
   } catch (error) {
     return {
       parsed: null,
-      parseError: error instanceof SearchQueryParseError ? error : new SearchQueryParseError('Search query is unsupported'),
+      parseError:
+        error instanceof SearchQueryParseError ? error : new SearchQueryParseError('Search query is unsupported'),
       understanding: {
         originalQuery,
         normalizedQuery: trimmed,
@@ -77,10 +78,12 @@ function lensForRawQuery(query: string, isReference: boolean): SearchLensLite {
 }
 
 function hasPairedQuotePhrase(query: string): boolean {
-  return /"[^"\n]+"/.test(query)
-    || /“[^”\n]+”/.test(query)
-    || /‘[^’\n]+’/.test(query)
-    || /(?:^|[\s([{])'[^'\n]+'(?=$|[\s.,!?;:)\]}])/.test(query)
+  return (
+    /"[^"\n]+"/.test(query) ||
+    /“[^”\n]+”/.test(query) ||
+    /‘[^’\n]+’/.test(query) ||
+    /(?:^|[\s([{])'[^'\n]+'(?=$|[\s.,!?;:)\]}])/.test(query)
+  )
 }
 
 function modeForLens(lens: SearchLensLite) {
@@ -99,7 +102,11 @@ function intentForQuery(query: string, lens: SearchLensLite): QueryUnderstanding
   return 'find-occurrences'
 }
 
-function confidenceFor(query: string, lens: SearchLensLite, phraseTokenCount: number): QueryUnderstandingLite['confidence'] {
+function confidenceFor(
+  query: string,
+  lens: SearchLensLite,
+  phraseTokenCount: number,
+): QueryUnderstandingLite['confidence'] {
   if (query.length < 2) return 'low'
   if (lens === 'phrase' && phraseTokenCount < 2) return 'low'
   if (lens === 'mixed') return 'medium'

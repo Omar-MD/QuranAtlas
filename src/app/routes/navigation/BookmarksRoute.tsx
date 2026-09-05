@@ -8,11 +8,21 @@ export function BookmarksRoute() {
   return (
     <NavigationPageRecipe title="Bookmarks">
       {status === 'loading' ? (
-        <p className="qar:m-0 qar:text-sm qar:text-muted" role="status">Loading bookmarks</p>
+        <p className="qar:m-0 qar:text-sm qar:text-muted" role="status">
+          Loading bookmarks
+        </p>
       ) : status === 'error' ? (
-        <p className="qar:m-0 qar:text-sm qar:text-danger" role="status">Bookmarks unavailable.</p>
+        <p className="qar:m-0 qar:text-sm qar:text-danger" role="status">
+          Bookmarks unavailable.
+        </p>
       ) : (
-        <BookmarksList bookmarks={bookmarks} onDeleteBookmark={deleteBookmark} onNavigate={(hash) => { window.location.hash = hash }} />
+        <BookmarksList
+          bookmarks={bookmarks}
+          onDeleteBookmark={deleteBookmark}
+          onNavigate={(hash) => {
+            window.location.hash = hash
+          }}
+        />
       )}
     </NavigationPageRecipe>
   )

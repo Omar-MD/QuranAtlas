@@ -34,7 +34,9 @@ export function SearchCountsPatterns({ section }: { section: SearchCountsPattern
         title="Ayah endings"
       />
       <PatternList
-        items={section.summary.surahDistribution.slice(0, 6).map((row) => [`Surah ${row.surah}`, `${row.tokenCount.toLocaleString()} tokens`])}
+        items={section.summary.surahDistribution
+          .slice(0, 6)
+          .map((row) => [`Surah ${row.surah}`, `${row.tokenCount.toLocaleString()} tokens`])}
         title="Surah distribution"
       />
     </div>
@@ -49,7 +51,9 @@ function PatternList({ items, title }: { items: Array<[string, string]>; title: 
       <ul className="qar:m-0 qar:grid qar:list-none qar:gap-1 qar:p-0">
         {items.map(([label, value]) => (
           <li className="qar:flex qar:justify-between qar:gap-3" key={`${title}:${label}`}>
-            <span dir="auto"><bdi>{label}</bdi></span>
+            <span dir="auto">
+              <bdi>{label}</bdi>
+            </span>
             <span>{value}</span>
           </li>
         ))}

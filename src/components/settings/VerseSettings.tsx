@@ -67,7 +67,9 @@ function FontSizeControl({
         <span className="qar-react-settings-row-control">{labelStep(value)}</span>
       </span>
       <div className="qar-react-settings-font-slider">
-        <span className="qar-react-settings-font-size-mark qar-react-settings-font-size-mark--small" aria-hidden="true">A</span>
+        <span className="qar-react-settings-font-size-mark qar-react-settings-font-size-mark--small" aria-hidden="true">
+          A
+        </span>
         <Slider
           className="qar-react-settings-font-size-slider"
           hideLabel
@@ -78,7 +80,9 @@ function FontSizeControl({
           step={1}
           value={[index]}
         />
-        <span className="qar-react-settings-font-size-mark qar-react-settings-font-size-mark--large" aria-hidden="true">A</span>
+        <span className="qar-react-settings-font-size-mark qar-react-settings-font-size-mark--large" aria-hidden="true">
+          A
+        </span>
       </div>
     </div>
   )

@@ -4,13 +4,7 @@ import { BookOpen, Check } from 'lucide-react'
 import { IconButton, Tooltip } from '../../ui'
 import type { WirdSummary } from '../../../continuity/wird/types'
 
-export function ReaderWirdStatusIndicator({
-  onOpen,
-  summary,
-}: {
-  onOpen: () => void
-  summary: WirdSummary
-}) {
+export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => void; summary: WirdSummary }) {
   if (!summary.plan || summary.state === 'no-plan') return null
 
   const complete = summary.state === 'today-complete' || summary.state === 'plan-complete'

@@ -17,7 +17,7 @@ export async function installSearchPack(
   manifest: SearchPackManifestV1,
   options: { db?: QuranAtlasReactDb; fetcher?: typeof fetch; now?: number } = {},
 ): Promise<SearchPackStagingRecord> {
-  const db = options.db ?? await openReactDb()
+  const db = options.db ?? (await openReactDb())
   const now = options.now ?? Date.now()
   await assertSearchPackQuota(manifest)
   const { cacheName, bytesWritten } = await stageSearchPackResponses(manifest, options.fetcher)
@@ -41,12 +41,17 @@ export async function verifyStagedSearchPack(
   manifest: SearchPackManifestV1,
   options: { db?: QuranAtlasReactDb; now?: number } = {},
 ): Promise<SearchPackStagingRecord> {
-  const db = options.db ?? await openReactDb()
+  const db = options.db ?? (await openReactDb())
   const existing = await db.searchPackStaging.get(manifest.contentHash)
   if (!existing) throw new Error('Search pack is not staged')
   await db.searchPackStaging.put({ ...existing, status: 'verifying', updatedAt: options.now ?? Date.now() })
   await verifyCachedSearchPack(manifest)
-  const verified = { ...existing, status: 'staged' as const, verifiedBytes: manifest.totalBytes, updatedAt: options.now ?? Date.now() }
+  const verified = {
+    ...existing,
+    status: 'staged' as const,
+    verifiedBytes: manifest.totalBytes,
+    updatedAt: options.now ?? Date.now(),
+  }
   await db.searchPackStaging.put(verified)
   return verified
 }
@@ -55,12 +60,16 @@ export async function activateSearchPack(
   manifest: SearchPackManifestV1,
   options: { db?: QuranAtlasReactDb; expectedGeneration?: number; now?: number } = {},
 ): Promise<SearchPackActivationRecord> {
-  const db = options.db ?? await openReactDb()
+  const db = options.db ?? (await openReactDb())
   const now = options.now ?? Date.now()
   let record: SearchPackActivationRecord | null = null
   await db.transaction('rw', db.searchPackActivations, db.searchPackStaging, async () => {
     const current = await db.searchPackActivations.get(SEARCH_PACK_ACTIVATION_ID)
-    if (typeof options.expectedGeneration === 'number' && current && current.generation !== options.expectedGeneration) {
+    if (
+      typeof options.expectedGeneration === 'number' &&
+      current &&
+      current.generation !== options.expectedGeneration
+    ) {
       throw new Error('Search pack activation generation changed')
     }
     const nextGeneration = (current?.generation ?? 0) + 1
@@ -91,14 +100,21 @@ export async function rollbackSearchPack(
   previous: SearchPackActivationRecord,
   options: { db?: QuranAtlasReactDb; now?: number } = {},
 ): Promise<SearchPackActivationRecord> {
-  const db = options.db ?? await openReactDb()
-  const record = { ...previous, generation: previous.generation + 1, status: 'active' as const, updatedAt: options.now ?? Date.now() }
+  const db = options.db ?? (await openReactDb())
+  const record = {
+    ...previous,
+    generation: previous.generation + 1,
+    status: 'active' as const,
+    updatedAt: options.now ?? Date.now(),
+  }
   await db.searchPackActivations.put(record)
   announceSearchPackActivation(record)
   return record
 }
 
-export function announceSearchPackActivation(record: Pick<SearchPackActivationRecord, 'generation' | 'contentHash'>): void {
+export function announceSearchPackActivation(
+  record: Pick<SearchPackActivationRecord, 'generation' | 'contentHash'>,
+): void {
   const message: SearchPackActivationMessage = {
     type: 'search-pack-activation',
     generation: record.generation,

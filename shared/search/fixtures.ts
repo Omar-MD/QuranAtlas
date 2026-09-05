@@ -19,7 +19,7 @@ export const SEARCH_FIXTURE_IDS = {
   workerProtocol: 'search-fixture-worker-protocol-v1',
 } as const
 
-export type SearchFixtureId = typeof SEARCH_FIXTURE_IDS[keyof typeof SEARCH_FIXTURE_IDS]
+export type SearchFixtureId = (typeof SEARCH_FIXTURE_IDS)[keyof typeof SEARCH_FIXTURE_IDS]
 
 export const SEARCH_TEXT_FIXTURES = {
   diacritizedArabic: 'قُلْ هُوَ ٱللَّهُ أَحَدٌ',

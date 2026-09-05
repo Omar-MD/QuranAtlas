@@ -37,7 +37,10 @@ export async function readNativeSettings(keys: readonly string[]): Promise<Array
   })
 }
 
-export async function writeNativeSetting(record: SettingRecord, shouldWrite: NativeWriteGuard = () => true): Promise<boolean> {
+export async function writeNativeSetting(
+  record: SettingRecord,
+  shouldWrite: NativeWriteGuard = () => true,
+): Promise<boolean> {
   return withNativeReaderDb(async (db) => {
     if (!shouldWrite()) return false
     const tx = db.transaction('settings', 'readwrite')
@@ -47,7 +50,10 @@ export async function writeNativeSetting(record: SettingRecord, shouldWrite: Nat
   })
 }
 
-export async function writeNativeSettings(records: SettingRecord[], shouldWrite: NativeWriteGuard = () => true): Promise<boolean> {
+export async function writeNativeSettings(
+  records: SettingRecord[],
+  shouldWrite: NativeWriteGuard = () => true,
+): Promise<boolean> {
   return withNativeReaderDb(async (db) => {
     if (!shouldWrite()) return false
     const tx = db.transaction('settings', 'readwrite')
@@ -143,8 +149,8 @@ function verseNumber(verseKey: string): number {
 }
 
 function compareBookmarks(a: BookmarkRecord, b: BookmarkRecord): number {
-  const aPage = a.kind === 'page' ? a.page ?? 0 : null
-  const bPage = b.kind === 'page' ? b.page ?? 0 : null
+  const aPage = a.kind === 'page' ? (a.page ?? 0) : null
+  const bPage = b.kind === 'page' ? (b.page ?? 0) : null
   if (aPage !== null || bPage !== null) {
     if (aPage !== null && bPage !== null) return aPage - bPage
     return aPage !== null ? 1 : -1

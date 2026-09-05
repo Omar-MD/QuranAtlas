@@ -14,7 +14,7 @@ export const SEARCH_QUERY_MODES = [
   'surah-context',
 ] as const
 
-export type SearchQueryMode = typeof SEARCH_QUERY_MODES[number]
+export type SearchQueryMode = (typeof SEARCH_QUERY_MODES)[number]
 export type SearchSort = 'relevance' | 'mushaf-order' | 'surah-order' | 'recent'
 
 export interface SearchQueryAstV1 {

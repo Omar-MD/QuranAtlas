@@ -36,15 +36,17 @@ export function trackRecentSurahPosition(
   position: Pick<RecentSurahPosition, 'surah' | 'verse'>,
   updatedAt = Date.now(),
 ): Promise<void> {
-  recentWriteQueue = recentWriteQueue.catch(() => undefined).then(async () => {
-    const record = await db.settings.get('recentSurahs')
-    const previous = normalizeRecentSurahs(record?.value)
-    const next = [
-      { surah: position.surah, updatedAt, verse: position.verse },
-      ...previous.filter((row) => row.surah !== position.surah),
-    ].slice(0, RECENT_SURAH_LIMIT)
-    await db.settings.put({ key: 'recentSurahs', value: next })
-  })
+  recentWriteQueue = recentWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const record = await db.settings.get('recentSurahs')
+      const previous = normalizeRecentSurahs(record?.value)
+      const next = [
+        { surah: position.surah, updatedAt, verse: position.verse },
+        ...previous.filter((row) => row.surah !== position.surah),
+      ].slice(0, RECENT_SURAH_LIMIT)
+      await db.settings.put({ key: 'recentSurahs', value: next })
+    })
   return recentWriteQueue
 }
 

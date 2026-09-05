@@ -13,9 +13,10 @@ import {
 } from './scripts/ci/public-assets.mjs'
 
 export const datasetRuntimeCaching = {
-  urlPattern: ({ url }) => url.pathname.startsWith('/dataset/')
-    && !url.pathname.startsWith('/dataset/search/')
-    && url.pathname !== '/dataset/indexes/mushaf-assets.json',
+  urlPattern: ({ url }) =>
+    url.pathname.startsWith('/dataset/') &&
+    !url.pathname.startsWith('/dataset/search/') &&
+    url.pathname !== '/dataset/indexes/mushaf-assets.json',
   handler: 'CacheFirst',
   options: {
     cacheName: 'quran-atlas-runtime-dataset-v1',
@@ -135,10 +136,7 @@ export default defineConfig(() => {
           navigateFallback: '/index.html',
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
           globIgnores: ['**/dataset/**', '**/search-packs/**'],
-          runtimeCaching: [
-            mushafIndexRuntimeCaching,
-            datasetRuntimeCaching,
-          ],
+          runtimeCaching: [mushafIndexRuntimeCaching, datasetRuntimeCaching],
         },
       }),
     ],

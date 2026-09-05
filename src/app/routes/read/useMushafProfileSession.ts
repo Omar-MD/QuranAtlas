@@ -9,9 +9,28 @@ import {
 import type { Riwayah } from '../../../storage/types'
 
 export type MushafProfileSession =
-  | { status: 'idle' | 'loading'; key: string | null; context: null; framingCapability: MushafFramingCapability; retry: () => void }
-  | { status: 'ready'; key: string; context: MushafPageProfileContext; framingCapability: MushafFramingCapability; retry: () => void }
-  | { status: 'error'; key: string; context: null; error: Error; framingCapability: MushafFramingCapability; retry: () => void }
+  | {
+      status: 'idle' | 'loading'
+      key: string | null
+      context: null
+      framingCapability: MushafFramingCapability
+      retry: () => void
+    }
+  | {
+      status: 'ready'
+      key: string
+      context: MushafPageProfileContext
+      framingCapability: MushafFramingCapability
+      retry: () => void
+    }
+  | {
+      status: 'error'
+      key: string
+      context: null
+      error: Error
+      framingCapability: MushafFramingCapability
+      retry: () => void
+    }
 
 type MushafProfileSessionState =
   | { status: 'idle' | 'loading'; key: string | null; context: null; framingCapability: MushafFramingCapability }
@@ -29,24 +48,32 @@ export function useMushafProfileSession(input: {
   enabled: boolean
   profile: { mushafEditionId: string; riwayah: Riwayah } | null
 }): MushafProfileSession {
-  const key = input.enabled && input.profile ? `${input.profile.riwayah}:${input.profile.mushafEditionId}` : null
+  const riwayah = input.enabled ? input.profile?.riwayah : undefined
+  const mushafEditionId = input.enabled ? input.profile?.mushafEditionId : undefined
+  const key = riwayah && mushafEditionId ? `${riwayah}:${mushafEditionId}` : null
   const [retryGeneration, setRetryGeneration] = useState(0)
   const [state, setState] = useState<MushafProfileSessionState>({
-    status: 'idle', key: null, context: null, framingCapability: NO_FRAMING,
+    status: 'idle',
+    key: null,
+    context: null,
+    framingCapability: NO_FRAMING,
   })
   const retry = useCallback(() => setRetryGeneration((generation) => generation + 1), [])
-  const profile = input.profile
   const activeRequestsRef = useRef(new Map<string, Set<MushafProfileRequest>>())
   const latestRequestRef = useRef<MushafProfileRequest | null>(null)
 
-  useEffect(() => () => {
-    for (const requests of activeRequestsRef.current.values()) {
-      for (const request of requests) request.controller.abort()
-    }
-    activeRequestsRef.current.clear()
-    latestRequestRef.current = null
-  }, [])
+  useEffect(
+    () => () => {
+      for (const requests of activeRequestsRef.current.values()) {
+        for (const request of requests) request.controller.abort()
+      }
+      activeRequestsRef.current.clear()
+      latestRequestRef.current = null
+    },
+    [],
+  )
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: retryGeneration intentionally restarts the request.
   useEffect(() => {
     for (const [requestKey, requests] of activeRequestsRef.current) {
       if (requestKey === key) continue
@@ -54,7 +81,7 @@ export function useMushafProfileSession(input: {
       activeRequestsRef.current.delete(requestKey)
     }
     if (latestRequestRef.current?.key !== key) latestRequestRef.current = null
-    if (!key || !profile) {
+    if (!key || !riwayah || !mushafEditionId) {
       setState({ status: 'idle', key: null, context: null, framingCapability: NO_FRAMING })
       return undefined
     }
@@ -65,7 +92,7 @@ export function useMushafProfileSession(input: {
     activeRequestsRef.current.set(key, activeRequests)
     latestRequestRef.current = request
     setState({ status: 'loading', key, context: null, framingCapability: NO_FRAMING })
-    void loadMushafPageProfileContext({ ...profile, signal: controller.signal })
+    void loadMushafPageProfileContext({ mushafEditionId, riwayah, signal: controller.signal })
       .then((context) => {
         const requests = activeRequestsRef.current.get(key)
         requests?.delete(request)
@@ -88,7 +115,7 @@ export function useMushafProfileSession(input: {
           framingCapability: NO_FRAMING,
         })
       })
-  }, [key, profile?.mushafEditionId, profile?.riwayah, retryGeneration])
+  }, [key, mushafEditionId, retryGeneration, riwayah])
 
   return useMemo(() => ({ ...state, retry }), [retry, state]) as MushafProfileSession
 }

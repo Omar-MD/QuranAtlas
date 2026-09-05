@@ -13,18 +13,35 @@ import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
-import { advanceWirdProgressFromReaderPosition, compareRefs, deriveWirdSummary, getLocalDayKey } from '../../../continuity/wird/progress'
-import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
-import { normalizeWirdPlan, notifyWirdPlanChanged, readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
-import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import {
-  type MushafReadyPageAssetState,
-} from '../../../packs/mushaf-page-asset'
+  advanceWirdProgressFromReaderPosition,
+  compareRefs,
+  deriveWirdSummary,
+  getLocalDayKey,
+} from '../../../continuity/wird/progress'
+import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
+import {
+  normalizeWirdPlan,
+  notifyWirdPlanChanged,
+  readWirdPlan,
+  subscribeWirdPlanChanged,
+} from '../../../continuity/wird/store'
+import type { QuranRef, SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
+import type { MushafReadyPageAssetState } from '../../../packs/mushaf-page-asset'
 import { clampMushafPageFraming } from '../../../components/reader/mushaf-page-framing'
 import type { Riwayah } from '../../../storage/types'
-import { nativeSettingsReader, readNativeSetting, readNativeSettings, writeNativeSetting } from '../../../storage/native-reader-store'
+import {
+  nativeSettingsReader,
+  readNativeSetting,
+  readNativeSettings,
+  writeNativeSetting,
+} from '../../../storage/native-reader-store'
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
-import { emitReactReaderPreferencesChanged, isReactMushafViewMode, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
+import {
+  emitReactReaderPreferencesChanged,
+  isReactMushafViewMode,
+  subscribeReactReaderPreferencesChanged,
+} from '../../../storage/reader-preferences'
 import { REACT_ROUTES } from '../../router/routes'
 import { readableAsset, type MushafPageWindowEntry } from './mushaf-page-window-state'
 import { useMushafPageWindow } from './useMushafPageWindow'
@@ -81,7 +98,10 @@ export function MushafRoute({
   const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
   const chrome = useMushafChromeVisibility(visiblePage !== null)
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex), [surahIndex])
-  const wirdBoundaries = useMemo(() => createWirdBoundaries(wirdCounts, wirdPageBoundaries), [wirdCounts, wirdPageBoundaries])
+  const wirdBoundaries = useMemo(
+    () => createWirdBoundaries(wirdCounts, wirdPageBoundaries),
+    [wirdCounts, wirdPageBoundaries],
+  )
   const wirdSummary = useMemo(() => {
     if (!wirdPlan || wirdCounts.length !== 114) return undefined
     return deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries)
@@ -89,10 +109,12 @@ export function MushafRoute({
   const enableWirdProgress = hasWirdProgressIntent()
   const profileSession = useMushafProfileSession({
     enabled: assetState === 'ready',
-    profile: activeSettings ? {
-      mushafEditionId: activeSettings.mushafEditionId,
-      riwayah: activeSettings.riwayah,
-    } : null,
+    profile: activeSettings
+      ? {
+          mushafEditionId: activeSettings.mushafEditionId,
+          riwayah: activeSettings.riwayah,
+        }
+      : null,
   })
   const windowState = useMushafPageWindow({
     enabled: assetState === 'ready',
@@ -104,9 +126,8 @@ export function MushafRoute({
     if (!surah) return undefined
     return surahIndex.find((row) => row.n === surah)?.name_ar ?? `سورة ${surah}`
   }, [surahIndex, visiblePage?.resolved.firstVerse.surah])
-  const recoveryEntry = recoveryPage === null
-    ? null
-    : windowState.entries.find((entry) => entry.page === recoveryPage) ?? null
+  const recoveryEntry =
+    recoveryPage === null ? null : (windowState.entries.find((entry) => entry.page === recoveryPage) ?? null)
   const requestedPageFailure = createRequestedPageFailure({
     cancel: () => {
       setPendingPage(null)
@@ -121,9 +142,8 @@ export function MushafRoute({
     },
     visiblePage: visiblePage?.resolved.page,
   })
-  const pendingEntry = pendingPage === null
-    ? null
-    : windowState.entries.find((entry) => entry.page === pendingPage) ?? null
+  const pendingEntry =
+    pendingPage === null ? null : (windowState.entries.find((entry) => entry.page === pendingPage) ?? null)
 
   useEffect(() => {
     const query = window.matchMedia?.(COMPACT_LANDSCAPE_QUERY)
@@ -142,7 +162,7 @@ export function MushafRoute({
 
   useEffect(() => {
     if (!compactLandscape || activeSettings?.mushafFitWidth || isLandscapeFitWidthDisabled()) return
-    setActiveSettings((current) => current ? { ...current, mushafFitWidth: true } : current)
+    setActiveSettings((current) => (current ? { ...current, mushafFitWidth: true } : current))
     void writeNativeSetting({ key: 'mushafFitWidth', value: true })
       .then(() => readNativeReactReaderPreferences())
       .then((preferences) => emitReactReaderPreferencesChanged({ ...preferences, mushafFitWidth: true }))
@@ -155,17 +175,20 @@ export function MushafRoute({
       if (active) setActiveSettings(settings)
     })
     const unsubscribe = subscribeReactReaderPreferencesChanged((preferences) => {
-      setActiveSettings((current) => current ? {
-        ...current,
-        mushafFitWidth: typeof preferences.mushafFitWidth === 'boolean'
-          ? preferences.mushafFitWidth
-          : current.mushafFitWidth,
-        mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
-        mushafViewMode: isReactMushafViewMode(preferences.mushafViewMode)
-          ? preferences.mushafViewMode
-          : current.mushafViewMode,
-        wirdReaderStatusVisible: preferences.wirdReaderStatusVisible ?? current.wirdReaderStatusVisible,
-      } : current)
+      setActiveSettings((current) =>
+        current
+          ? {
+              ...current,
+              mushafFitWidth:
+                typeof preferences.mushafFitWidth === 'boolean' ? preferences.mushafFitWidth : current.mushafFitWidth,
+              mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
+              mushafViewMode: isReactMushafViewMode(preferences.mushafViewMode)
+                ? preferences.mushafViewMode
+                : current.mushafViewMode,
+              wirdReaderStatusVisible: preferences.wirdReaderStatusVisible ?? current.wirdReaderStatusVisible,
+            }
+          : current,
+      )
     })
     return () => {
       active = false
@@ -175,10 +198,13 @@ export function MushafRoute({
 
   useEffect(() => subscribeWirdPlanChanged(setWirdPlan), [])
 
-  const queueMushafWirdAdvance = useCallback((ref: QuranRef | null | undefined) => {
-    if (!enableWirdProgress || !ref) return
-    setPendingWirdRef((current) => !current || compareRefs(ref, current) > 0 ? ref : current)
-  }, [enableWirdProgress])
+  const queueMushafWirdAdvance = useCallback(
+    (ref: QuranRef | null | undefined) => {
+      if (!enableWirdProgress || !ref) return
+      setPendingWirdRef((current) => (!current || compareRefs(ref, current) > 0 ? ref : current))
+    },
+    [enableWirdProgress],
+  )
 
   useEffect(() => {
     if (!pendingWirdRef || !wirdPlan || wirdCounts.length !== 114 || wirdAdvanceInFlight) return
@@ -203,39 +229,51 @@ export function MushafRoute({
     setVisiblePage(next)
   }, [])
 
-  const mushafHash = useCallback((nextPage: number): string => {
-    const href = REACT_ROUTES.mushaf(nextPage)
-    return enableWirdProgress ? withWirdProgressIntent(href) : href
-  }, [enableWirdProgress])
+  const mushafHash = useCallback(
+    (nextPage: number): string => {
+      const href = REACT_ROUTES.mushaf(nextPage)
+      return enableWirdProgress ? withWirdProgressIntent(href) : href
+    },
+    [enableWirdProgress],
+  )
 
-  const replaceMushafHash = useCallback((nextPage: number): void => {
-    const href = mushafHash(nextPage)
-    if (onReplaceHash) onReplaceHash(href)
-    else window.history.replaceState(null, '', href)
-  }, [mushafHash, onReplaceHash])
+  const replaceMushafHash = useCallback(
+    (nextPage: number): void => {
+      const href = mushafHash(nextPage)
+      if (onReplaceHash) onReplaceHash(href)
+      else window.history.replaceState(null, '', href)
+    },
+    [mushafHash, onReplaceHash],
+  )
 
-  const commitDiscretePage = useCallback((next: MushafReadyPageAssetState): void => {
-    const current = visiblePageRef.current
-    if (current && next.resolved.page > current.resolved.page) {
-      queueMushafWirdAdvance(current.resolved.lastVerse ?? current.resolved.firstVerse)
-    }
-    commitVisiblePage(next)
-    setPendingPage(null)
-    setRecoveryPage(null)
-    chrome.hide()
-    window.location.hash = mushafHash(next.resolved.page)
-  }, [chrome.hide, commitVisiblePage, mushafHash, queueMushafWirdAdvance])
+  const commitDiscretePage = useCallback(
+    (next: MushafReadyPageAssetState): void => {
+      const current = visiblePageRef.current
+      if (current && next.resolved.page > current.resolved.page) {
+        queueMushafWirdAdvance(current.resolved.lastVerse ?? current.resolved.firstVerse)
+      }
+      commitVisiblePage(next)
+      setPendingPage(null)
+      setRecoveryPage(null)
+      chrome.hide()
+      window.location.hash = mushafHash(next.resolved.page)
+    },
+    [chrome.hide, commitVisiblePage, mushafHash, queueMushafWirdAdvance],
+  )
 
-  const requestDiscretePage = useCallback((nextPage: number): void => {
-    const ready = readyWindowPage(windowState.entries, nextPage)
-    if (ready) {
-      commitDiscretePage(ready)
-      return
-    }
-    setRecoveryPage(null)
-    setPendingPage(nextPage)
-    windowState.request(nextPage)
-  }, [commitDiscretePage, windowState.entries, windowState.request])
+  const requestDiscretePage = useCallback(
+    (nextPage: number): void => {
+      const ready = readyWindowPage(windowState.entries, nextPage)
+      if (ready) {
+        commitDiscretePage(ready)
+        return
+      }
+      setRecoveryPage(null)
+      setPendingPage(nextPage)
+      windowState.request(nextPage)
+    },
+    [commitDiscretePage, windowState.entries, windowState.request],
+  )
 
   useEffect(() => {
     const controller = new AbortController()
@@ -288,8 +326,10 @@ export function MushafRoute({
     const requested = windowState.requested
     if (requested?.status !== 'ready') return
     const current = visiblePageRef.current
-    if ((!current || current.resolved.page === requested.asset.resolved.page)
-      && !isSameVisibleMushafPage(current, requested.asset)) {
+    if (
+      (!current || current.resolved.page === requested.asset.resolved.page) &&
+      !isSameVisibleMushafPage(current, requested.asset)
+    ) {
       commitVisiblePage(requested.asset)
     }
     if (!current && requested.asset.resolved.page !== page) {
@@ -318,15 +358,21 @@ export function MushafRoute({
     if (ready) commitDiscretePage(ready)
   }, [commitDiscretePage, interactionSuspended, pendingPage, windowState.entries])
 
+  const lastProfileKeyRef = useRef(profileSession.key)
   useEffect(() => {
+    if (lastProfileKeyRef.current === profileSession.key) return
+    lastProfileKeyRef.current = profileSession.key
     setPendingPage(null)
     setRecoveryPage(null)
   }, [profileSession.key])
 
-  const handleChromePin = useCallback((source: MushafChromePin, pinned: boolean) => {
-    chrome.setPinned(source, pinned)
-    if (pinned && (source === 'drawer' || source === 'interaction')) setPendingPage(null)
-  }, [chrome.setPinned])
+  const handleChromePin = useCallback(
+    (source: MushafChromePin, pinned: boolean) => {
+      chrome.setPinned(source, pinned)
+      if (pinned && (source === 'drawer' || source === 'interaction')) setPendingPage(null)
+    },
+    [chrome.setPinned],
+  )
 
   useEffect(() => {
     chrome.setPinned('recovery', requestedPageFailure !== null)
@@ -339,7 +385,7 @@ export function MushafRoute({
       label={`Page ${visiblePage?.resolved.page ?? page}`}
       mode="mushaf"
       onChromePinChange={handleChromePin}
-      onChromeVisibleChange={(visible) => visible ? chrome.reveal() : chrome.hide()}
+      onChromeVisibleChange={(visible) => (visible ? chrome.reveal() : chrome.hide())}
       onModeChange={(nextMode) => {
         if (nextMode === 'verse') {
           const visibleRef = visiblePage?.resolved.firstVerse
@@ -353,7 +399,9 @@ export function MushafRoute({
           })
         }
       }}
-      showWirdStatus={activeSettings?.wirdReaderStatusVisible ?? DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible}
+      showWirdStatus={
+        activeSettings?.wirdReaderStatusVisible ?? DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible
+      }
       surahLabel={currentSurahLabel}
       wirdSummary={wirdSummary}
     >
@@ -364,9 +412,11 @@ export function MushafRoute({
           <MushafPageViewer
             bookmarked={bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))}
             chromeVisible={chrome.visible}
-            fitWidth={profileSession.framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
-              ? true
-              : activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth}
+            fitWidth={
+              profileSession.framingCapability.hasValidFraming && (activeSettings?.mushafPageFraming ?? 0) > 0
+                ? true
+                : (activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth)
+            }
             framingValue={profileSession.framingCapability.hasValidFraming ? activeSettings?.mushafPageFraming : 0}
             inlineSvg={visiblePage.media.kind === 'inline-svg' ? visiblePage.media.inlineSvg : emptyInlineSvg}
             onDominantPageChange={(nextPage) => {
@@ -404,8 +454,12 @@ export function MushafRoute({
             <section aria-live="polite" className="qar-react-mushaf-request-failure" role="status">
               <p>{requestedPageFailure.message}</p>
               <div className="qar-react-mushaf-request-failure-actions">
-                <Button onClick={requestedPageFailure.retry} size="sm">Retry page {requestedPageFailure.requestedPage}</Button>
-                <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">Stay on page {requestedPageFailure.visiblePage}</Button>
+                <Button onClick={requestedPageFailure.retry} size="sm">
+                  Retry page {requestedPageFailure.requestedPage}
+                </Button>
+                <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">
+                  Stay on page {requestedPageFailure.visiblePage}
+                </Button>
               </div>
             </section>
           ) : pendingPage !== null && (pendingEntry?.status === 'loading' || pendingEntry?.status === 'retrying') ? (
@@ -415,17 +469,35 @@ export function MushafRoute({
           ) : null}
         </>
       ) : profileSession.status === 'error' ? (
-        <ReaderAssetGate label="Mushaf" onManageAssets={openAssetSettings} onRetry={profileSession.retry} state="error" />
+        <ReaderAssetGate
+          label="Mushaf"
+          onManageAssets={openAssetSettings}
+          onRetry={profileSession.retry}
+          state="error"
+        />
       ) : windowState.requested?.status === 'transient-error' || windowState.requested?.status === 'contract-error' ? (
-        <ReaderAssetGate label="Mushaf" onManageAssets={openAssetSettings} onRetry={() => windowState.retry(page)} state="error" />
+        <ReaderAssetGate
+          label="Mushaf"
+          onManageAssets={openAssetSettings}
+          onRetry={() => windowState.retry(page)}
+          state="error"
+        />
       ) : windowState.requested?.status === 'confirmed-missing' ? (
-        <ReaderAssetGate label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : activeSettings?.riwayah ?? 'Mushaf'} onManageAssets={openAssetSettings} onRetry={() => windowState.retry(page)} state="missing" />
+        <ReaderAssetGate
+          label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : (activeSettings?.riwayah ?? 'Mushaf')}
+          onManageAssets={openAssetSettings}
+          onRetry={() => windowState.retry(page)}
+          state="missing"
+        />
       ) : (
-        <section className="qar:m-5 qar:min-h-28 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Loading Mushaf page" aria-live="polite" />
+        <section
+          className="qar:m-5 qar:min-h-28 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4"
+          aria-label="Loading Mushaf page"
+          aria-live="polite"
+        />
       )}
     </ReaderPageShell>
   )
-
 }
 
 function createRequestedPageFailure({
@@ -444,9 +516,10 @@ function createRequestedPageFailure({
   }
   return {
     cancel,
-    message: requested.status === 'confirmed-missing'
-      ? `Mushaf page ${requested.page} is unavailable. Page ${visiblePage} remains open.`
-      : `Mushaf page ${requested.page} could not be loaded. Page ${visiblePage} remains open.`,
+    message:
+      requested.status === 'confirmed-missing'
+        ? `Mushaf page ${requested.page} is unavailable. Page ${visiblePage} remains open.`
+        : `Mushaf page ${requested.page} could not be loaded. Page ${visiblePage} remains open.`,
     requestedPage: requested.page,
     retry: () => retry(requested.page),
     visiblePage,
@@ -454,9 +527,9 @@ function createRequestedPageFailure({
 }
 
 function isTerminalMushafEntry(entry: MushafPageWindowEntry | undefined): boolean {
-  return entry?.status === 'transient-error'
-    || entry?.status === 'contract-error'
-    || entry?.status === 'confirmed-missing'
+  return (
+    entry?.status === 'transient-error' || entry?.status === 'contract-error' || entry?.status === 'confirmed-missing'
+  )
 }
 
 function openAssetSettings(): void {
@@ -522,18 +595,19 @@ function clearLandscapeFitWidthDisabled(): void {
   }
 }
 
-function isSameVisibleMushafPage(
-  current: MushafReadyPageAssetState | null,
-  next: MushafReadyPageAssetState,
-): boolean {
-  if (current?.resolved.page !== next.resolved.page
-    || current.resolved.mushafEditionId !== next.resolved.mushafEditionId
-    || current.resolved.riwayah !== next.resolved.riwayah
-    || current.media.kind !== next.media.kind) {
+function isSameVisibleMushafPage(current: MushafReadyPageAssetState | null, next: MushafReadyPageAssetState): boolean {
+  if (
+    current?.resolved.page !== next.resolved.page ||
+    current.resolved.mushafEditionId !== next.resolved.mushafEditionId ||
+    current.resolved.riwayah !== next.resolved.riwayah ||
+    current.media.kind !== next.media.kind
+  ) {
     return false
   }
-  return current.media.kind === 'inline-svg'
-    || (next.media.kind === 'external-image' && current.media.source.assetUrl === next.media.source.assetUrl)
+  return (
+    current.media.kind === 'inline-svg' ||
+    (next.media.kind === 'external-image' && current.media.source.assetUrl === next.media.source.assetUrl)
+  )
 }
 
 function readyWindowPage(

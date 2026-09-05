@@ -34,13 +34,15 @@ export function searchPlanForPreview(input: {
 }): SearchPlanLite {
   return {
     primaryLens: input.lens,
-    lanes: [{
-      id: input.lens,
-      sourceKinds: input.sourceKinds,
-      queryForm: input.queryForm,
-      status: input.failed ? 'failed' : 'executed',
-      skipReason: input.failed ? 'Search execution failed for this source lane.' : undefined,
-    }],
+    lanes: [
+      {
+        id: input.lens,
+        sourceKinds: input.sourceKinds,
+        queryForm: input.queryForm,
+        status: input.failed ? 'failed' : 'executed',
+        skipReason: input.failed ? 'Search execution failed for this source lane.' : undefined,
+      },
+    ],
     excludedSources: [],
   }
 }
@@ -124,18 +126,31 @@ export function matchCardForResult(result: SearchResultDto, evidenceAtomId: stri
 
 function sourceIdForLane(lane: SearchResultDto['matchEvidence']['lane'], manifest: SearchPackManifestV1): string {
   if (lane === 'translation' || lane === 'context') {
-    return manifest.sourceIds.find((id) => id.includes('translation') || id.includes('bridges')) ?? manifest.sourceIds[0] ?? manifest.packId
+    return (
+      manifest.sourceIds.find((id) => id.includes('translation') || id.includes('bridges')) ??
+      manifest.sourceIds[0] ??
+      manifest.packId
+    )
   }
   if (lane === 'same-written-form' || lane === 'same-root' || lane === 'lemma' || lane === 'surah-context') {
-    return manifest.sourceIds.find((id) => id.includes('qac') || id.includes('morphology')) ?? manifest.sourceIds[0] ?? manifest.packId
+    return (
+      manifest.sourceIds.find((id) => id.includes('qac') || id.includes('morphology')) ??
+      manifest.sourceIds[0] ??
+      manifest.packId
+    )
   }
-  return manifest.sourceIds.find((id) => id.includes('hafs') || id.includes('tanzil')) ?? manifest.sourceIds[0] ?? manifest.packId
+  return (
+    manifest.sourceIds.find((id) => id.includes('hafs') || id.includes('tanzil')) ??
+    manifest.sourceIds[0] ??
+    manifest.packId
+  )
 }
 
 function snippetSourceForResult(result: SearchResultDto): EvidenceCardLite['snippetSource'] {
   const lane = result.matchEvidence.lane
   if (lane === 'translation' || lane === 'context') return 'translation'
-  if (lane === 'same-written-form' || lane === 'same-root' || lane === 'lemma' || lane === 'surah-context') return 'deterministic-template'
+  if (lane === 'same-written-form' || lane === 'same-root' || lane === 'lemma' || lane === 'surah-context')
+    return 'deterministic-template'
   return 'quran-text'
 }
 
@@ -149,10 +164,9 @@ function readerActionForResult(result: SearchResultDto): EvidenceCardLite['reade
   return { type: 'open-source-in-reader', sourceRef: result.sourceRef, mappingWarning }
 }
 
-function morphologyEvidenceTargetForResult(result: SearchResultDto): Pick<
-  MorphologyEvidence,
-  'rowId' | 'sourceToken' | 'normalizedSourceToken'
-> & { wordPosition: number } | null {
+function morphologyEvidenceTargetForResult(
+  result: SearchResultDto,
+): (Pick<MorphologyEvidence, 'rowId' | 'sourceToken' | 'normalizedSourceToken'> & { wordPosition: number }) | null {
   const wordPosition = result.matchEvidence.wordPosition ?? result.morphology?.wordPosition
   const rowId = result.matchEvidence.morphology?.rowId
   const sourceToken = result.matchEvidence.morphology?.sourceToken ?? result.morphology?.sourceToken

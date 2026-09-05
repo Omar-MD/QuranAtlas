@@ -94,7 +94,10 @@ function clampMushafPageFraming(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
 }
 
-export async function writeReaderAssetBundleSettings(db: QuranAtlasReactDb, settings: ReaderAssetBundleSettings): Promise<void> {
+export async function writeReaderAssetBundleSettings(
+  db: QuranAtlasReactDb,
+  settings: ReaderAssetBundleSettings,
+): Promise<void> {
   const records: SettingRecord[] = [
     { key: 'riwayah', value: settings.riwayah },
     { key: 'quranTextStyleId', value: settings.quranTextStyleId },
@@ -105,7 +108,10 @@ export async function writeReaderAssetBundleSettings(db: QuranAtlasReactDb, sett
   })
 }
 
-export async function writeMushafEditionSelection(db: QuranAtlasReactDb, settings: MushafEditionSelectionSettings): Promise<void> {
+export async function writeMushafEditionSelection(
+  db: QuranAtlasReactDb,
+  settings: MushafEditionSelectionSettings,
+): Promise<void> {
   await db.transaction('rw', db.settings, async () => {
     await db.settings.bulkPut([
       { key: 'mushafEditionId', value: settings.mushafEditionId },
@@ -130,28 +136,34 @@ function reactReaderPreferencesFromRecords(records: Array<SettingRecord | undefi
   return {
     fontSize: asStep(values.fontSize) ?? DEFAULT_REACT_READER_PREFERENCES.fontSize,
     lineSpacing: asStep(values.lineSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.lineSpacing,
-    mushafFitWidth: typeof values.mushafFitWidth === 'boolean'
-      ? values.mushafFitWidth
-      : legacyMushafViewMode === 'fit-width'
-        ? true
-        : DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth,
+    mushafFitWidth:
+      typeof values.mushafFitWidth === 'boolean'
+        ? values.mushafFitWidth
+        : legacyMushafViewMode === 'fit-width'
+          ? true
+          : DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth,
     mushafPageFraming: clampMushafPageFraming(values.mushafPageFraming),
     mushafViewMode: normalizeMushafViewMode(legacyMushafViewMode) ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode,
     nightMode: asNightMode(values.nightMode) ?? DEFAULT_REACT_READER_PREFERENCES.nightMode,
     readerMargin: asStep(values.readerMargin) ?? DEFAULT_REACT_READER_PREFERENCES.readerMargin,
     theme: asTheme(values.theme) ?? DEFAULT_REACT_READER_PREFERENCES.theme,
-    translationVisible: typeof values.translationVisible === 'boolean'
-      ? values.translationVisible
-      : DEFAULT_REACT_READER_PREFERENCES.translationVisible,
+    translationVisible:
+      typeof values.translationVisible === 'boolean'
+        ? values.translationVisible
+        : DEFAULT_REACT_READER_PREFERENCES.translationVisible,
     verseSpacing: asStep(values.verseSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
     wordSpacing: asStep(values.wordSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.wordSpacing,
-    wirdReaderStatusVisible: typeof values.wirdReaderStatusVisible === 'boolean'
-      ? values.wirdReaderStatusVisible
-      : DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
+    wirdReaderStatusVisible:
+      typeof values.wirdReaderStatusVisible === 'boolean'
+        ? values.wirdReaderStatusVisible
+        : DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
   }
 }
 
-export async function writeReactReaderPreferences(db: QuranAtlasReactDb, preferences: ReactReaderPreferences): Promise<void> {
+export async function writeReactReaderPreferences(
+  db: QuranAtlasReactDb,
+  preferences: ReactReaderPreferences,
+): Promise<void> {
   const records: SettingRecord[] = [
     { key: 'translationVisible', value: preferences.translationVisible },
     { key: 'wirdReaderStatusVisible', value: preferences.wirdReaderStatusVisible },
@@ -171,7 +183,10 @@ export async function writeReactReaderPreferences(db: QuranAtlasReactDb, prefere
   })
 }
 
-export async function writeOnboardingCompletion(db: QuranAtlasReactDb, settings: OnboardingCompletionSettings): Promise<void> {
+export async function writeOnboardingCompletion(
+  db: QuranAtlasReactDb,
+  settings: OnboardingCompletionSettings,
+): Promise<void> {
   const records: SettingRecord[] = [
     { key: 'onboardingComplete', value: true },
     { key: 'riwayah', value: settings.riwayah },

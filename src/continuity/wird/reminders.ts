@@ -13,13 +13,18 @@ export type WirdReminderNotification = {
   url: string
 }
 
-export function getBrowserNotificationState(permission: NotificationPermission | undefined = globalThis.Notification?.permission): BrowserNotificationState {
+export function getBrowserNotificationState(
+  permission: NotificationPermission | undefined = globalThis.Notification?.permission,
+): BrowserNotificationState {
   if (typeof globalThis.Notification === 'undefined') return 'unsupported'
   if (permission === 'granted' || permission === 'denied') return permission
   return 'default'
 }
 
-export function updateReminderPermission(reminder: WirdReminder, browserNotifications: BrowserNotificationState): WirdReminder {
+export function updateReminderPermission(
+  reminder: WirdReminder,
+  browserNotifications: BrowserNotificationState,
+): WirdReminder {
   return { ...reminder, browserNotifications }
 }
 
@@ -35,7 +40,10 @@ export function shouldSendWirdReminder(summary: WirdSummary | null): summary is 
   return Boolean(summary?.nextRef && (summary.state === 'active' || summary.state === 'behind-target'))
 }
 
-export function createWirdReminderNotification(summary: WirdSummary & { nextRef: QuranRef }, origin = globalThis.location?.origin ?? ''): WirdReminderNotification {
+export function createWirdReminderNotification(
+  summary: WirdSummary & { nextRef: QuranRef },
+  origin = globalThis.location?.origin ?? '',
+): WirdReminderNotification {
   const hash = withWirdProgressIntent(`#/s/${summary.nextRef.surah}/${summary.nextRef.verse}`)
   return {
     body: `Tap to continue at ${summary.nextRef.surah}:${summary.nextRef.verse}. ${summary.remainingLabel}.`,
@@ -73,7 +81,9 @@ export async function showWirdReminderNotification(notification: WirdReminderNot
 }
 
 function playWirdReminderSound(): void {
-  const AudioContextConstructor = globalThis.AudioContext ?? (globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  const AudioContextConstructor =
+    globalThis.AudioContext ??
+    (globalThis as typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (!AudioContextConstructor) return
   try {
     const context = new AudioContextConstructor()
@@ -115,10 +125,7 @@ export async function clearWirdReminderNotifications(): Promise<void> {
 export async function syncWirdReminderBackgroundRegistration(reminder: WirdReminder | null): Promise<void> {
   const registration = await getReadyServiceWorkerRegistration()
   const periodicSync = getPeriodicSyncManager(registration)
-  const shouldRegister = Boolean(
-    reminder?.enabled
-    && getBrowserNotificationState() === 'granted',
-  )
+  const shouldRegister = Boolean(reminder?.enabled && getBrowserNotificationState() === 'granted')
 
   if (!shouldRegister) {
     await clearWirdReminderNotifications()
@@ -126,9 +133,11 @@ export async function syncWirdReminderBackgroundRegistration(reminder: WirdRemin
     return
   }
 
-  await periodicSync?.register(WIRD_REMINDER_PERIODIC_SYNC_TAG, {
-    minInterval: WIRD_REMINDER_PERIODIC_SYNC_INTERVAL_MS,
-  }).catch(() => undefined)
+  await periodicSync
+    ?.register(WIRD_REMINDER_PERIODIC_SYNC_TAG, {
+      minInterval: WIRD_REMINDER_PERIODIC_SYNC_INTERVAL_MS,
+    })
+    .catch(() => undefined)
 }
 
 async function getReadyServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
@@ -147,8 +156,11 @@ type PeriodicSyncManagerLike = {
 
 function getPeriodicSyncManager(registration: ServiceWorkerRegistration | null): PeriodicSyncManagerLike | null {
   if (!registration || !('periodicSync' in registration)) return null
-  const periodicSync = (registration as ServiceWorkerRegistration & { periodicSync?: PeriodicSyncManagerLike }).periodicSync
-  return typeof periodicSync?.register === 'function' && typeof periodicSync.unregister === 'function' ? periodicSync : null
+  const periodicSync = (registration as ServiceWorkerRegistration & { periodicSync?: PeriodicSyncManagerLike })
+    .periodicSync
+  return typeof periodicSync?.register === 'function' && typeof periodicSync.unregister === 'function'
+    ? periodicSync
+    : null
 }
 
 function parseReminderTime(time: string): [number, number] {

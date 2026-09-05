@@ -47,18 +47,20 @@ const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riway
 // both denote the same alif phoneme, so they must tokenise identically.
 function normalise(s) {
   let out = s.normalize('NFKD')
-  out = out.replace(/\u0670/g, '\u0627')               // alif khanjariyah → ا
-  out = out.replace(/\p{M}/gu, '')                      // strip remaining combining marks
+  out = out.replace(/\u0670/g, '\u0627') // alif khanjariyah → ا
+  out = out.replace(/\p{M}/gu, '') // strip remaining combining marks
   out = out.replace(/[\u0671\u0622\u0623\u0625]/g, '\u0627') // alif-wasla, madda-alif, alif-hamza → ا
-  out = out.replace(/[\u0649\u0626\u06D2]/g, '\u064A')        // alif-maqsura, hamza-on-ya, yeh-barree → ي
-  out = out.replace(/\u0629/g, '\u0647')               // taa marbuta → ه
-  out = out.replace(/[\u0621\u0624]/g, '')             // drop hamza-on-line, hamza-on-waw
-  out = out.replace(/[\u200C-\u200F\uFEFF]/g, '')     // strip zero-widths
-  out = out.replace(/[^\u0620-\u064A\s]/g, '')        // keep Arabic letter block + whitespace
+  out = out.replace(/[\u0649\u0626\u06D2]/g, '\u064A') // alif-maqsura, hamza-on-ya, yeh-barree → ي
+  out = out.replace(/\u0629/g, '\u0647') // taa marbuta → ه
+  out = out.replace(/[\u0621\u0624]/g, '') // drop hamza-on-line, hamza-on-waw
+  out = out.replace(/[\u200C-\u200F\uFEFF]/g, '') // strip zero-widths
+  out = out.replace(/[^\u0620-\u064A\s]/g, '') // keep Arabic letter block + whitespace
   return out.replace(/\s+/g, ' ').trim()
 }
 
-function pad3(n) { return String(n).padStart(3, '0') }
+function pad3(n) {
+  return String(n).padStart(3, '0')
+}
 
 async function loadRiwayahSplits() {
   const splits = {}
@@ -77,7 +79,10 @@ function computeWordCumulative(ayat) {
   const lens = ayat.map((a) => normalise(a.aya_text).split(' ').filter(Boolean).length)
   const cum = []
   let s = 0
-  for (const l of lens) { s += l; cum.push(s) }
+  for (const l of lens) {
+    s += l
+    cum.push(s)
+  }
   return { lens, cum, total: s }
 }
 
@@ -113,11 +118,17 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
   const dp = Array.from({ length: m + 1 }, () => new Float64Array(n + 1))
   // back[i][j]: [prevI, prevJ] — best predecessor.
   const back = Array.from({ length: m + 1 }, () => Array.from({ length: n + 1 }, () => [-1, -1]))
-  for (let i = 0; i <= m; i++) { for (let j = 0; j <= n; j++) { dp[i][j] = Infinity } }
+  for (let i = 0; i <= m; i++) {
+    for (let j = 0; j <= n; j++) {
+      dp[i][j] = Infinity
+    }
+  }
   dp[0][0] = 0
   for (let i = 0; i <= m; i++) {
     for (let j = 0; j <= n; j++) {
-      if (dp[i][j] === Infinity) { continue }
+      if (dp[i][j] === Infinity) {
+        continue
+      }
       // Option A: 1:1 — Hafs ayah i+1 matches Other ayah j+1.
       if (i < m && j < n) {
         const cost = Math.abs(hLens[i] - oLens[j])
@@ -129,7 +140,9 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
       // Option B: Madinan split — Hafs ayah i+1 matches Other ayat j+1..j+k.
       for (let k = 2; k <= MAX_GROUP_SIZE && j + k <= n && i < m; k++) {
         let oSum = 0
-        for (let kk = 0; kk < k; kk++) { oSum += oLens[j + kk] }
+        for (let kk = 0; kk < k; kk++) {
+          oSum += oLens[j + kk]
+        }
         const cost = Math.abs(hLens[i] - oSum)
         if (dp[i][j] + cost < dp[i + 1][j + k]) {
           dp[i + 1][j + k] = dp[i][j] + cost
@@ -139,7 +152,9 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
       // Option C: Hafs combines — Hafs ayat i+1..i+k match Other ayah j+1.
       for (let k = 2; k <= MAX_GROUP_SIZE && i + k <= m && j < n; k++) {
         let hSum = 0
-        for (let kk = 0; kk < k; kk++) { hSum += hLens[i + kk] }
+        for (let kk = 0; kk < k; kk++) {
+          hSum += hLens[i + kk]
+        }
         const cost = Math.abs(hSum - oLens[j])
         if (dp[i][j] + cost < dp[i + k][j + 1]) {
           dp[i + k][j + 1] = dp[i][j] + cost
@@ -153,11 +168,13 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
   }
   // Backtrack to recover groupings.
   const groups = [] // [hStart, hEnd, oStart, oEnd] (0-indexed half-open)
-  let i = m, j = n
+  let i = m,
+    j = n
   while (i > 0 || j > 0) {
     const [pi, pj] = back[i][j]
     groups.push([pi, i, pj, j])
-    i = pi; j = pj
+    i = pi
+    j = pj
   }
   groups.reverse()
   // Build per-Hafs alias entries.
@@ -175,14 +192,18 @@ function alignByAyahDP(hafsAyat, otherAyat, otherKey) {
     } else if (he - hs === 1 && oe - os > 1) {
       // Madinan split: this Hafs ayah maps to multiple Other ayat
       const list = []
-      for (let oi = os; oi < oe; oi++) { list.push(oi + 1) }
+      for (let oi = os; oi < oe; oi++) {
+        list.push(oi + 1)
+      }
       aliases.push({ hafs: hi, [otherKey]: list })
     } else {
       // Hafs combine: multiple Hafs ayat share the same Other ayah(s).
       // For consumers (translation lookup is Hafs-keyed), each of these
       // Hafs ayat aliases to the same Other ayah.
       const list = []
-      for (let oi = os; oi < oe; oi++) { list.push(oi + 1) }
+      for (let oi = os; oi < oe; oi++) {
+        list.push(oi + 1)
+      }
       aliases.push({ hafs: hi, [otherKey]: list.length === 1 ? list[0] : list })
     }
   }
@@ -204,18 +225,19 @@ function alignWordStream(hafsAyat, otherAyat, otherKey, bismillahDrop) {
 
   if (bismillahDrop) {
     if (h.total - h.lens[0] !== o.total) {
-      throw new Error(`bismillah-drop alignment fails: hafs[1:] total ${h.total - h.lens[0]}, ${otherKey} total ${o.total}`)
+      throw new Error(
+        `bismillah-drop alignment fails: hafs[1:] total ${h.total - h.lens[0]}, ${otherKey} total ${o.total}`,
+      )
     }
     // Hafs ayah 1 = no equivalent; rest aligns Hafs[2..] to Other[1..]
     const subAliases = alignWordStream(hafsAyat.slice(1), otherAyat, otherKey, false)
-    return [
-      { hafs: 1, [otherKey]: null },
-      ...subAliases.map((a) => ({ hafs: a.hafs + 1, [otherKey]: a[otherKey] })),
-    ]
+    return [{ hafs: 1, [otherKey]: null }, ...subAliases.map((a) => ({ hafs: a.hafs + 1, [otherKey]: a[otherKey] }))]
   }
 
   if (h.total !== o.total) {
-    throw new Error(`word-stream totals diverge: hafs ${h.total}, ${otherKey} ${o.total} — qira'at-level word-count drift, manual review required`)
+    throw new Error(
+      `word-stream totals diverge: hafs ${h.total}, ${otherKey} ${o.total} — qira'at-level word-count drift, manual review required`,
+    )
   }
 
   // For each Hafs ayah ending at h.cum[i], collect Other ayat whose range
@@ -239,9 +261,7 @@ function alignWordStream(hafsAyat, otherAyat, otherKey, bismillahDrop) {
     }
     aliases.push({
       hafs: i + 1,
-      [otherKey]: otherAyatHere.length === 0 ? null
-        : otherAyatHere.length === 1 ? otherAyatHere[0]
-        : otherAyatHere,
+      [otherKey]: otherAyatHere.length === 0 ? null : otherAyatHere.length === 1 ? otherAyatHere[0] : otherAyatHere,
     })
   }
   return aliases
@@ -296,14 +316,14 @@ async function main() {
     // — keep it via the bismillah-drop path that produces a `null` for
     // Hafs ayah 1.
     const isIdentity = merged.every((a) => a.warsh === a.hafs && a.qaloon === a.hafs)
-    if (isIdentity && n !== 1) { continue }
+    if (isIdentity && n !== 1) {
+      continue
+    }
     // Per-surah alignment quality. word-stream is the confident path
     // (cumulative-word-position alignment); end-fingerprint is the fallback
     // when qira'at-level word-count drift defeats word-stream — those
     // surahs need scholarly review.
-    const surahQuality = w.method === 'word-stream' && q.method === 'word-stream'
-      ? 'word-stream'
-      : 'ayah-dp'
+    const surahQuality = w.method === 'word-stream' && q.method === 'word-stream' ? 'word-stream' : 'ayah-dp'
     aliasMeta[String(n)] = {
       method: surahQuality,
       warshMethod: w.method,
@@ -331,20 +351,30 @@ async function main() {
       const isDrop = a.warsh === null || a.qaloon === null
       const isCombineW = typeof a.warsh === 'number' && seenWarsh.has(a.warsh)
       const isCombineQ = typeof a.qaloon === 'number' && seenQaloon.has(a.qaloon)
-      if (isSplit || isDrop || isCombineW || isCombineQ) { nonTrivial++ }
-      if (typeof a.warsh === 'number') { seenWarsh.add(a.warsh) }
-      if (typeof a.qaloon === 'number') { seenQaloon.add(a.qaloon) }
+      if (isSplit || isDrop || isCombineW || isCombineQ) {
+        nonTrivial++
+      }
+      if (typeof a.warsh === 'number') {
+        seenWarsh.add(a.warsh)
+      }
+      if (typeof a.qaloon === 'number') {
+        seenQaloon.add(a.qaloon)
+      }
     }
-    console.log(`[verse-aliases] surah ${n}: ${counts.hafs}/${counts.warsh}/${counts.qaloon} — ${merged.length} aliases, ${nonTrivial} non-trivial${methods.length ? ` [${methods.join(', ')}]` : ''}`)
+    console.log(
+      `[verse-aliases] surah ${n}: ${counts.hafs}/${counts.warsh}/${counts.qaloon} — ${merged.length} aliases, ${nonTrivial} non-trivial${methods.length ? ` [${methods.join(', ')}]` : ''}`,
+    )
   }
 
   const output = {
     _meta: {
       version: 1,
-      description: 'Per-ayah verse-equivalence aliases across the three shipped riwayat. DERIVED MECHANICALLY from KFGQPC Madinah Mushaf word-stream alignment — KFGQPC IS the authoritative scholarly source for the splits encoded in this dataset. Identity-mapped (Hafs N → Warsh N → Qaloon N) surahs are NOT included; only surahs whose counts diverge across riwayat. Aliases use Hafs as the canonical key (matches translation packs). `null` value means no equivalent ayah in that riwayah; an array means the Hafs ayah maps to multiple ayat in that riwayah; a number means 1:1 alias.',
+      description:
+        'Per-ayah verse-equivalence aliases across the three shipped riwayat. DERIVED MECHANICALLY from KFGQPC Madinah Mushaf word-stream alignment — KFGQPC IS the authoritative scholarly source for the splits encoded in this dataset. Identity-mapped (Hafs N → Warsh N → Qaloon N) surahs are NOT included; only surahs whose counts diverge across riwayat. Aliases use Hafs as the canonical key (matches translation packs). `null` value means no equivalent ayah in that riwayah; an array means the Hafs ayah maps to multiple ayat in that riwayah; a number means 1:1 alias.',
       generator: 'scripts/data/derive-verse-aliases.mjs',
       source: 'data/normalized/quran/riwayat/{hafs,warsh,qaloon}.json',
-      method: 'Word-stream cumulative alignment. Hafs ayah I aligns to the contiguous Warsh / Qaloon ayat whose normalised-text word ranges overlap Hafs ayah I\'s range. Bismillah carve-out applied to surah 1. Hard-fails on qira\'at-level word-count drift (no surahs in current dataset).',
+      method:
+        "Word-stream cumulative alignment. Hafs ayah I aligns to the contiguous Warsh / Qaloon ayat whose normalised-text word ranges overlap Hafs ayah I's range. Bismillah carve-out applied to surah 1. Hard-fails on qira'at-level word-count drift (no surahs in current dataset).",
       generatedAt: new Date().toISOString(),
     },
     aliases,
@@ -358,4 +388,7 @@ async function main() {
   console.log(`[verse-aliases] wrote ${Object.keys(aliases).length} divergent surah alias tables`)
 }
 
-main().catch((e) => { console.error(e); process.exit(1) })
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

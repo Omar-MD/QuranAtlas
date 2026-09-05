@@ -13,9 +13,7 @@ import type {
   SearchWorkerErrorCode,
 } from '../../shared/search'
 import type { SearchMorphologyPostingRow, SearchMorphologyRow, SearchSurahContextRow } from './morphology'
-import type {
-  SearchGraphPolicyRow,
-} from './graph'
+import type { SearchGraphPolicyRow } from './graph'
 
 export type {
   SearchMappingState,
@@ -97,7 +95,11 @@ export interface SearchFollowingWordingPayload {
   rows: Array<{
     term: string
     length: number
-    followers: Array<{ token: string; count: number; refs: Array<{ ref: SearchGraphRef; position: number; phraseLength: number }> }>
+    followers: Array<{
+      token: string
+      count: number
+      refs: Array<{ ref: SearchGraphRef; position: number; phraseLength: number }>
+    }>
   }>
 }
 
@@ -131,7 +133,11 @@ export interface SearchAyahEndingsPayload {
     ref: SearchGraphRef
     endings: Array<{ term: string; length: number; position: number; countInIndex: number }>
   }>
-  topEndings: Array<{ term: string; count: number; refs: Array<{ ref: SearchGraphRef; position: number; length: number }> }>
+  topEndings: Array<{
+    term: string
+    count: number
+    refs: Array<{ ref: SearchGraphRef; position: number; length: number }>
+  }>
 }
 
 export interface SearchCountsPatternsPayload {

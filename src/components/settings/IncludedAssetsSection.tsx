@@ -35,20 +35,19 @@ export function IncludedAssetsSection({
       })
       .catch(() => {
         if (!controller.signal.aborted) {
-          setRows(readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
-            ...row,
-            label: readerAssetRowFallbackLabel(row),
-          })))
+          setRows(
+            readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
+              ...row,
+              label: readerAssetRowFallbackLabel(row),
+            })),
+          )
         }
       })
     return () => controller.abort()
   }, [])
 
   return (
-    <SettingsGroup
-      description="Read-only inventory for the active reading profile."
-      title="Included reading assets"
-    >
+    <SettingsGroup description="Read-only inventory for the active reading profile." title="Included reading assets">
       <div className="qar-react-settings-assets" aria-busy={rows === pendingRows ? 'true' : undefined}>
         <div className="qar-react-settings-section-heading">
           <Button

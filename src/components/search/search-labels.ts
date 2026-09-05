@@ -115,13 +115,14 @@ export function sourceLaneForMode(mode: SearchQueryMode): Array<'arabic-text' | 
   if (mode === 'translation') return ['translation']
   if (mode === 'context') return ['context']
   if (
-    mode === 'arabic-text'
-    || mode === 'exact-word-form'
-    || mode === 'phrase'
-    || mode === 'same-written-form'
-    || mode === 'same-root'
-    || mode === 'lemma'
-    || mode === 'surah-context'
-  ) return ['arabic-text']
+    mode === 'arabic-text' ||
+    mode === 'exact-word-form' ||
+    mode === 'phrase' ||
+    mode === 'same-written-form' ||
+    mode === 'same-root' ||
+    mode === 'lemma' ||
+    mode === 'surah-context'
+  )
+    return ['arabic-text']
   return ['arabic-text', 'translation', 'context']
 }

@@ -23,15 +23,20 @@ async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSi
 function isReaderSurahIndexEntry(value: unknown): value is ReaderSurahIndexEntry {
   if (!value || typeof value !== 'object') return false
   const row = value as Partial<ReaderSurahIndexEntry>
-  return Number.isInteger(row.n)
-    && typeof row.name === 'string'
-    && row.name.length > 0
-    && typeof row.name_ar === 'string'
-    && row.name_ar.length > 0
-    && Boolean(row.counts)
+  return (
+    Number.isInteger(row.n) &&
+    typeof row.name === 'string' &&
+    row.name.length > 0 &&
+    typeof row.name_ar === 'string' &&
+    row.name_ar.length > 0 &&
+    Boolean(row.counts)
+  )
 }
 
-export async function loadReaderSurahIndex(fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<ReaderSurahIndexEntry[]> {
+export async function loadReaderSurahIndex(
+  fetcher: typeof fetch = fetch,
+  signal?: AbortSignal,
+): Promise<ReaderSurahIndexEntry[]> {
   const rows = await fetchJson<unknown>(fetcher, '/dataset/surahs.json', signal)
   if (!Array.isArray(rows) || rows.length !== LAST_SURAH || !rows.every(isReaderSurahIndexEntry)) {
     throw new Error('Invalid reader Surah index payload')

@@ -127,9 +127,7 @@ function ClaimSupportChip({ claim, support }: { claim: AnswerClaim; support?: Cl
   const count = support?.supportIds.length ?? 0
   return (
     <Badge className="qar-search-citation-chip">
-      {count}
-      {' '}
-      {count === 1 ? 'citation' : 'citations'}
+      {count} {count === 1 ? 'citation' : 'citations'}
       {' · '}
       {claimSourceLabel(claim)}
     </Badge>
@@ -159,7 +157,9 @@ function PreviewEvidenceCard({ card, onOpenInRead }: { card: PreviewCard; onOpen
             <IconButton
               className="qar-search-result-jump"
               label={`Open ${card.refLabel} in Reader`}
-              onClick={() => onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)}
+              onClick={() =>
+                onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)
+              }
             >
               <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.75} />
             </IconButton>

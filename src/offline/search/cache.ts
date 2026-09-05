@@ -1,7 +1,4 @@
-import {
-  assertImmutableSearchPackRuntimeUrl,
-  type SearchPackManifestV1,
-} from '../../../shared/search'
+import { assertImmutableSearchPackRuntimeUrl, type SearchPackManifestV1 } from '../../../shared/search'
 import { searchPackCacheName } from '../cache-names'
 
 export type SearchPackCacheEntryState = 'active' | 'previous-active' | 'visible-tab' | 'live-worker' | 'orphaned'
@@ -20,11 +17,8 @@ export async function openSearchPackCache(contentHash: string): Promise<Cache> {
 }
 
 export function assertSearchPackRequest(request: RequestInfo | URL, contentHash?: string): string {
-  const url = typeof request === 'string'
-    ? request
-    : request instanceof URL
-      ? request.pathname
-      : new URL(request.url).pathname
+  const url =
+    typeof request === 'string' ? request : request instanceof URL ? request.pathname : new URL(request.url).pathname
   assertImmutableSearchPackRuntimeUrl(url, contentHash)
   return url
 }
@@ -43,11 +37,14 @@ export async function stageSearchPackResponses(
     if (!response.ok) throw new Error(`failed to fetch Search shard ${shard.shardId}`)
     const bytes = await response.clone().arrayBuffer()
     await assertSha256(bytes, shard.checksum)
-    await cache.put(shard.url, new Response(bytes, {
-      headers: response.headers,
-      status: response.status,
-      statusText: response.statusText,
-    }))
+    await cache.put(
+      shard.url,
+      new Response(bytes, {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText,
+      }),
+    )
     bytesWritten += bytes.byteLength
   }
 

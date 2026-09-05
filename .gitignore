@@ -16,7 +16,6 @@ storybook-static/
 # Tooling caches
 .vite/
 .cache/
-.eslintcache
 *.tsbuildinfo
 .data-build-complete
 

@@ -8,9 +8,7 @@ export function deriveMushafDisplayViewBox(svgText, filename) {
   const root = document.documentElement
   if (root.localName !== 'svg') throw new Error(`Mushaf page ${filename} is not an SVG document`)
   const source = parseViewBox(root.getAttribute('viewBox'), filename)
-  const display = isQuranWsSource(source)
-    ? displayInkBounds(root, source) ?? QURAN_WS_FALLBACK
-    : source
+  const display = isQuranWsSource(source) ? (displayInkBounds(root, source) ?? QURAN_WS_FALLBACK) : source
   assertContainedViewBox(display, source, filename)
   return serializeViewBox(display)
 }
@@ -21,23 +19,26 @@ export function assertContainedViewBox(display, source, filename) {
   const sourceRight = source.x + source.width
   const sourceBottom = source.y + source.height
   if (
-    !Number.isFinite(display.x)
-    || !Number.isFinite(display.y)
-    || !Number.isFinite(display.width)
-    || !Number.isFinite(display.height)
-    || display.width <= 0
-    || display.height <= 0
-    || display.x < source.x
-    || display.y < source.y
-    || displayRight > sourceRight
-    || displayBottom > sourceBottom
+    !Number.isFinite(display.x) ||
+    !Number.isFinite(display.y) ||
+    !Number.isFinite(display.width) ||
+    !Number.isFinite(display.height) ||
+    display.width <= 0 ||
+    display.height <= 0 ||
+    display.x < source.x ||
+    display.y < source.y ||
+    displayRight > sourceRight ||
+    displayBottom > sourceBottom
   ) {
     throw new Error(`Mushaf page ${filename} display viewBox is outside its source viewBox`)
   }
 }
 
 function parseViewBox(text, filename) {
-  const parts = String(text ?? '').trim().split(/\s+/).map(Number)
+  const parts = String(text ?? '')
+    .trim()
+    .split(/\s+/)
+    .map(Number)
   if (parts.length !== 4 || parts.some((part) => !Number.isFinite(part)) || parts[2] <= 0 || parts[3] <= 0) {
     throw new Error(`Mushaf page ${filename} has an invalid viewBox: ${text}`)
   }
@@ -45,10 +46,12 @@ function parseViewBox(text, filename) {
 }
 
 function isQuranWsSource(viewBox) {
-  return Math.abs(viewBox.x - QURAN_WS_SOURCE.x) < 0.001
-    && Math.abs(viewBox.y - QURAN_WS_SOURCE.y) < 0.001
-    && Math.abs(viewBox.width - QURAN_WS_SOURCE.width) < 0.001
-    && Math.abs(viewBox.height - QURAN_WS_SOURCE.height) < 0.001
+  return (
+    Math.abs(viewBox.x - QURAN_WS_SOURCE.x) < 0.001 &&
+    Math.abs(viewBox.y - QURAN_WS_SOURCE.y) < 0.001 &&
+    Math.abs(viewBox.width - QURAN_WS_SOURCE.width) < 0.001 &&
+    Math.abs(viewBox.height - QURAN_WS_SOURCE.height) < 0.001
+  )
 }
 
 function displayInkBounds(root, source) {
@@ -57,10 +60,12 @@ function displayInkBounds(root, source) {
     .filter((element) => {
       const fill = element.getAttribute('fill')
       const stroke = element.getAttribute('stroke')
-      return fill === 'var(--qa-mushaf-ink)'
-        || fill === 'var(--qa-mushaf-accent)'
-        || stroke === 'var(--qa-mushaf-ink)'
-        || stroke === 'var(--qa-mushaf-accent)'
+      return (
+        fill === 'var(--qa-mushaf-ink)' ||
+        fill === 'var(--qa-mushaf-accent)' ||
+        stroke === 'var(--qa-mushaf-ink)' ||
+        stroke === 'var(--qa-mushaf-accent)'
+      )
     })
     .map((element) => clippedPathBounds(root, element) ?? pathDataBounds(element.getAttribute('d') ?? ''))
     .filter(Boolean)

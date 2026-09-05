@@ -64,11 +64,14 @@ function createLaneSummary(files) {
   return Object.fromEntries(
     LANE_KEYS.map((lane) => {
       const laneFiles = files.filter((entry) => entry.lane === lane)
-      return [lane, {
-        enabled: laneFiles.length > 0,
-        files: laneFiles.length,
-        bytes: laneFiles.reduce((sum, entry) => sum + entry.bytes, 0),
-      }]
+      return [
+        lane,
+        {
+          enabled: laneFiles.length > 0,
+          files: laneFiles.length,
+          bytes: laneFiles.reduce((sum, entry) => sum + entry.bytes, 0),
+        },
+      ]
     }),
   )
 }
@@ -97,11 +100,11 @@ export async function buildManifestPayload({
       continue
     }
     if (
-      manifestTextSources
-      && (
-        (path.startsWith('translations/') && !path.startsWith('translations/_') && !manifestTextSources.has(path.split('/')[1]))
-        || (path.startsWith('tafsir/') && !manifestTextSources.has(path.split('/')[1]))
-      )
+      manifestTextSources &&
+      ((path.startsWith('translations/') &&
+        !path.startsWith('translations/_') &&
+        !manifestTextSources.has(path.split('/')[1])) ||
+        (path.startsWith('tafsir/') && !manifestTextSources.has(path.split('/')[1])))
     ) {
       continue
     }

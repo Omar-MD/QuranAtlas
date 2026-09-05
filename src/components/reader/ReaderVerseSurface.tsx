@@ -34,11 +34,19 @@ export function ReaderVerseSurface({
   surahIndex = [],
 }: ReaderVerseSurfaceProps) {
   if (corpus.status === 'loading' || corpus.status === 'idle') {
-    return <section className="qar:px-5 qar:py-8 qar:text-muted" aria-live="polite">Loading reader text...</section>
+    return (
+      <section className="qar:px-5 qar:py-8 qar:text-muted" aria-live="polite">
+        Loading reader text...
+      </section>
+    )
   }
 
   if (corpus.status === 'aborted') {
-    return <section className="qar:px-5 qar:py-8 qar:text-muted" aria-live="polite">Reader request was cancelled.</section>
+    return (
+      <section className="qar:px-5 qar:py-8 qar:text-muted" aria-live="polite">
+        Reader request was cancelled.
+      </section>
+    )
   }
 
   if (corpus.status === 'unavailable') {
@@ -71,11 +79,7 @@ export function ReaderVerseSurface({
         <SurahContinuityButton currentSurah={readyCorpus.surah.number} direction="previous" target={previousSurah} />
       )}
       {startsAtSurahBeginning && !surahHeaderHidden && (
-        <header
-          aria-label={`Surah ${readyCorpus.surah.number} header`}
-          className="qar-reader-surah-header"
-          data-surah-header="true"
-        >
+        <header className="qar-reader-surah-header" data-surah-header="true">
           <div className="qar-reader-surah-meta-col">
             <p className="qar-reader-surah-meta">
               Surah {readyCorpus.surah.number} · {readyCorpus.surah.verseCount} verses
@@ -83,15 +87,21 @@ export function ReaderVerseSurface({
             <p className="qar:m-0 qar:text-sm qar:text-muted">{readyCorpus.surah.nameEnglish}</p>
           </div>
           <h1 className="qar-reader-surah-name" dir="rtl" lang="ar">
-            <span className="qar-reader-surah-ornament" aria-hidden="true">﴿</span>
+            <span className="qar-reader-surah-ornament" aria-hidden="true">
+              ﴿
+            </span>
             {readyCorpus.surah.nameArabic}
-            <span className="qar-reader-surah-ornament" aria-hidden="true">﴾</span>
+            <span className="qar-reader-surah-ornament" aria-hidden="true">
+              ﴾
+            </span>
           </h1>
         </header>
       )}
       {startsAtSurahBeginning && shouldRenderBasmala(readyCorpus) && (
         <section className="qar-reader-basmala" aria-label="Basmala">
-          <span className="qar-reader-basmala-text" dir="rtl" lang="ar" aria-label="بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ" role="img">﷽</span>
+          <span className="qar-reader-basmala-text" dir="rtl" lang="ar" aria-label="بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ" role="img">
+            ﷽
+          </span>
           <p className="qar-reader-basmala-translation">In the Name of Allah - the Most Compassionate, Most Merciful</p>
         </section>
       )}

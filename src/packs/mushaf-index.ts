@@ -58,7 +58,8 @@ export function validateMushafAssetIndexEntry(entry: MushafAssetIndexEntry): Mus
   if (entry.pageUrls && entry.pageUrls.length !== entry.pageCount) {
     throw new Error(`${entry.packId}: page URL count must match page count`)
   }
-  if (!entry.pageUrls?.length && !entry.pageUrlTemplate) throw new Error(`${entry.packId}: index requires page URLs or a deterministic page URL template`)
+  if (!entry.pageUrls?.length && !entry.pageUrlTemplate)
+    throw new Error(`${entry.packId}: index requires page URLs or a deterministic page URL template`)
   if (entry.pageUrlTemplate) {
     const sample = entry.pageUrlTemplate.replace('{page}', '001')
     assertReactMushafUrl(sample)

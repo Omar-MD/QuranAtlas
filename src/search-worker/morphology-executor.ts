@@ -5,7 +5,7 @@ import {
   type SearchMorphologyRow,
   type SearchSurahContextRow,
 } from '../search/morphology'
-import { SearchPackReader, SearchPackReaderError } from '../search/pack-reader'
+import { type SearchPackReader, SearchPackReaderError } from '../search/pack-reader'
 import type { SearchAyahRow, SearchGraphRef, SearchMatchLane } from '../search/schema'
 import { mapSearchRefToSearchSource } from '../search/result-mapping'
 import { cooperativeYield, type SearchCancellationToken } from './cancellation'
@@ -25,7 +25,8 @@ export class SearchMorphologyExecutor {
 
   async execute(query: SearchQueryAstV1, token: SearchCancellationToken): Promise<SearchResultDto[]> {
     this.assertMorphologyFeature()
-    if (query.mode === 'same-written-form') return this.executePostingQuery(query, 'same-written-form-postings', 'same-written-form', token)
+    if (query.mode === 'same-written-form')
+      return this.executePostingQuery(query, 'same-written-form-postings', 'same-written-form', token)
     if (query.mode === 'same-root') return this.executePostingQuery(query, 'same-root-postings', 'same-root', token)
     if (query.mode === 'lemma') return this.executePostingQuery(query, 'lemma-postings', 'lemma', token)
     if (query.mode === 'surah-context') return this.executeSurahContextQuery(query, token)
@@ -48,15 +49,16 @@ export class SearchMorphologyExecutor {
     const payloads = await this.reader.getMorphologyPostings(lane)
     const postings: SearchMorphologyPostingRow['postings'] = []
     for (const payload of payloads) {
-      const row = payload.postings.find((entry) => entry.term === term || entry.term.toLowerCase() === term.toLowerCase())
+      const row = payload.postings.find(
+        (entry) => entry.term === term || entry.term.toLowerCase() === term.toLowerCase(),
+      )
       if (row) postings.push(...row.postings)
     }
     const rowsByPosition = await this.loadRowsByAyahIdPosition()
     const results: SearchResultDto[] = []
     const seen = new Set<string>()
-    for (let index = 0; index < postings.length; index += 1) {
+    for (const [index, posting] of postings.entries()) {
       await cooperativeYield(token, 250, index)
-      const posting = postings[index]!
       const row = rowsByPosition.get(`${posting.ayahId}:${posting.position}`)
       if (!row) continue
       const key = `${row.ref}:${row.tokenOrdinal}:${matchLane}`
@@ -67,7 +69,10 @@ export class SearchMorphologyExecutor {
     return results
   }
 
-  private async executeSurahContextQuery(query: SearchQueryAstV1, token: SearchCancellationToken): Promise<SearchResultDto[]> {
+  private async executeSurahContextQuery(
+    query: SearchQueryAstV1,
+    token: SearchCancellationToken,
+  ): Promise<SearchResultDto[]> {
     const root = await this.resolveTerm(query, 'same-root-postings')
     if (!root) return []
     const context = await this.reader.getSurahContext()
@@ -93,7 +98,11 @@ export class SearchMorphologyExecutor {
     return direct
   }
 
-  private async toResult(row: SearchMorphologyRow, lane: SearchMatchLane, query: SearchQueryAstV1): Promise<SearchResultDto> {
+  private async toResult(
+    row: SearchMorphologyRow,
+    lane: SearchMatchLane,
+    query: SearchQueryAstV1,
+  ): Promise<SearchResultDto> {
     const mapping = mapSearchRefToSearchSource(row.ref as SearchGraphRef)
     const counts = await this.countsFor(row)
     const ayah = await this.ayahFor(row)
@@ -141,7 +150,9 @@ export class SearchMorphologyExecutor {
   }> {
     const [sameRoot, sameWritten, lemma] = await Promise.all([
       row.root ? this.countPostings('same-root-postings', row.root) : Promise.resolve(undefined),
-      row.normalizedSourceToken ? this.countPostings('same-written-form-postings', row.normalizedSourceToken) : Promise.resolve(undefined),
+      row.normalizedSourceToken
+        ? this.countPostings('same-written-form-postings', row.normalizedSourceToken)
+        : Promise.resolve(undefined),
       row.lemma ? this.countPostings('lemma-postings', row.lemma) : Promise.resolve(undefined),
     ])
     return { sameRootCount: sameRoot, sameWrittenFormCount: sameWritten, lemmaCount: lemma }
@@ -159,7 +170,15 @@ export class SearchMorphologyExecutor {
     if (!this.reader.manifest.features.includes('morphology')) {
       throw new SearchPackReaderError('missing-feature', 'Search morphology feature is not active')
     }
-    for (const required of ['morphology-root-dictionary', 'morphology-lemma-dictionary', 'morphology-rows', 'same-written-form-postings', 'same-root-postings', 'lemma-postings', 'surah-context']) {
+    for (const required of [
+      'morphology-root-dictionary',
+      'morphology-lemma-dictionary',
+      'morphology-rows',
+      'same-written-form-postings',
+      'same-root-postings',
+      'lemma-postings',
+      'surah-context',
+    ]) {
       if (!this.reader.manifest.requires.some((entry) => entry === required || entry.startsWith(`${required}-`))) {
         throw new SearchPackReaderError('missing-feature', `Search morphology dependency is missing: ${required}`)
       }

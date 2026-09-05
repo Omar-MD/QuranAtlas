@@ -13,13 +13,23 @@ import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-s
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
 
 const AboutRoute = lazy(() => import('./routes/settings/AboutRoute').then((module) => ({ default: module.AboutRoute })))
-const BookmarksRoute = lazy(() => import('./routes/navigation/BookmarksRoute').then((module) => ({ default: module.BookmarksRoute })))
+const BookmarksRoute = lazy(() =>
+  import('./routes/navigation/BookmarksRoute').then((module) => ({ default: module.BookmarksRoute })),
+)
 const MushafRoute = lazy(() => import('./routes/read/MushafRoute').then((module) => ({ default: module.MushafRoute })))
-const OnboardingRoute = lazy(() => import('./routes/onboarding/OnboardingRoute').then((module) => ({ default: module.OnboardingRoute })))
+const OnboardingRoute = lazy(() =>
+  import('./routes/onboarding/OnboardingRoute').then((module) => ({ default: module.OnboardingRoute })),
+)
 const ReaderRoute = lazy(() => import('./routes/read/ReaderRoute').then((module) => ({ default: module.ReaderRoute })))
-const SearchRoute = lazy(() => import('./routes/search/SearchRoute').then((module) => ({ default: module.SearchRoute })))
-const SettingsRoute = lazy(() => import('./routes/settings/SettingsRoute').then((module) => ({ default: module.SettingsRoute })))
-const SurahsRoute = lazy(() => import('./routes/navigation/SurahsRoute').then((module) => ({ default: module.SurahsRoute })))
+const SearchRoute = lazy(() =>
+  import('./routes/search/SearchRoute').then((module) => ({ default: module.SearchRoute })),
+)
+const SettingsRoute = lazy(() =>
+  import('./routes/settings/SettingsRoute').then((module) => ({ default: module.SettingsRoute })),
+)
+const SurahsRoute = lazy(() =>
+  import('./routes/navigation/SurahsRoute').then((module) => ({ default: module.SurahsRoute })),
+)
 
 export function App() {
   useWirdReminderScheduler()
@@ -34,13 +44,12 @@ export function App() {
     returnFocusId?: string
   } | null>(null)
   const launchRestore = useLaunchRestore(hash, launchRefreshVersion)
-  const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : launchRestore.status === 'setup' ? '#/onboarding' : hash
+  const activeHash =
+    launchRestore.status === 'ready' ? launchRestore.hash : launchRestore.status === 'setup' ? '#/onboarding' : hash
   const activeRoute = matchReactRoute(activeHash)
   useFirstLaunchNotificationPermission(launchRestore.status === 'ready')
-  const transientSettingsHash = !settingsOverlay
-    && activeRoute.type === 'settings'
-    && lastReaderHash
-    && isReaderHash(lastReaderHash)
+  const transientSettingsHash =
+    !settingsOverlay && activeRoute.type === 'settings' && lastReaderHash && isReaderHash(lastReaderHash)
       ? lastReaderHash
       : null
   const route = settingsOverlay
@@ -49,7 +58,8 @@ export function App() {
       ? matchReactRoute(transientSettingsHash)
       : activeRoute
   const containsMushafViewport = route.type === 'mushaf'
-  const showHeader = launchRestore.status === 'loading' || !['about', 'onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
+  const showHeader =
+    launchRestore.status === 'loading' || !['about', 'onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
 
   useEffect(() => {
     if (!window.location.hash) {
@@ -85,16 +95,20 @@ export function App() {
     }
   }, [])
 
-  useEffect(() => subscribeReactSettingsOverlayRequests((request) => {
-    const previousHash = window.location.hash
-    if (!isReaderHash(previousHash)) return
-    setLastReaderHash(previousHash)
-    setSettingsOverlay({
-      mode: settingsModeForHash(previousHash),
-      previousHash,
-      returnFocusId: request.returnFocusId,
-    })
-  }), [])
+  useEffect(
+    () =>
+      subscribeReactSettingsOverlayRequests((request) => {
+        const previousHash = window.location.hash
+        if (!isReaderHash(previousHash)) return
+        setLastReaderHash(previousHash)
+        setSettingsOverlay({
+          mode: settingsModeForHash(previousHash),
+          previousHash,
+          returnFocusId: request.returnFocusId,
+        })
+      }),
+    [],
+  )
 
   useEffect(() => {
     if (settingsOverlay) return
@@ -164,23 +178,28 @@ export function App() {
           <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">QuranAtlas</h1>
         </header>
       )}
-      {launchRestore.status === 'loading' && (
-        <LaunchSplash />
-      )}
+      {launchRestore.status === 'loading' && <LaunchSplash />}
       {launchRestore.status === 'setup' && (
         <Suspense fallback={<LaunchSplash />}>
-          <OnboardingRoute onComplete={(nextHash) => {
-            window.history.replaceState(null, '', nextHash)
-            setLaunchRefreshVersion((version) => version + 1)
-            setHash(nextHash)
-          }} onRetryAvailability={() => {
-            setLaunchRefreshVersion((version) => version + 1)
-          }} pendingHash={launchRestore.hash} setup={launchRestore.setup} />
+          <OnboardingRoute
+            onComplete={(nextHash) => {
+              window.history.replaceState(null, '', nextHash)
+              setLaunchRefreshVersion((version) => version + 1)
+              setHash(nextHash)
+            }}
+            onRetryAvailability={() => {
+              setLaunchRefreshVersion((version) => version + 1)
+            }}
+            pendingHash={launchRestore.hash}
+            setup={launchRestore.setup}
+          />
         </Suspense>
       )}
       {launchRestore.status === 'ready' && (
         <Suspense fallback={<LaunchSplash />}>
-          {route.type === 'reader' && <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />}
+          {route.type === 'reader' && (
+            <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />
+          )}
           {route.type === 'mushaf' && (
             <MushafRoute
               interactionSuspended={Boolean(settingsOverlay)}
@@ -238,7 +257,10 @@ function isReaderHash(hash: string): boolean {
 
 function UnsupportedRoute() {
   return (
-    <main className="qar:grid qar:mx-auto qar:w-full qar:max-w-2xl qar:gap-3 qar:px-5 qar:py-8" aria-label="Unsupported route">
+    <main
+      className="qar:grid qar:mx-auto qar:w-full qar:max-w-2xl qar:gap-3 qar:px-5 qar:py-8"
+      aria-label="Unsupported route"
+    >
       <p className="qar:m-0 qar:text-xs qar:font-medium qar:uppercase qar:tracking-wide qar:text-muted">Unavailable</p>
       <h2 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Route unavailable</h2>
       <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">

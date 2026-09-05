@@ -1,11 +1,6 @@
 import type { SearchSourcesViewModel } from './search-presentation-model'
 
-export function SearchSourcePanel({
-  sources,
-}: {
-  packVersion?: string
-  sources: SearchSourcesViewModel | null
-}) {
+export function SearchSourcePanel({ sources }: { packVersion?: string; sources: SearchSourcesViewModel | null }) {
   if (!sources) {
     return <p className="qar-search-results-empty">Run a search to inspect query sources.</p>
   }
@@ -27,7 +22,9 @@ function SourceRows({ rows, title }: { rows: Array<{ label: string; value: strin
         {rows.map((row) => (
           <div className="qar:grid qar:gap-1" key={`${title}:${row.label}`}>
             <dt className="qar:text-muted">{row.label}</dt>
-            <dd className="qar:m-0" dir="auto"><bdi>{row.value}</bdi></dd>
+            <dd className="qar:m-0" dir="auto">
+              <bdi>{row.value}</bdi>
+            </dd>
           </div>
         ))}
       </dl>

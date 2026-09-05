@@ -12,7 +12,10 @@ export function Tooltip({ children, content }: TooltipProps) {
       <TooltipPrimitive.Root>
         <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
         <TooltipPrimitive.Portal>
-          <TooltipPrimitive.Content className="qar:z-50 qar:rounded-control qar:border qar:border-border qar:bg-text qar:px-2 qar:py-1 qar:text-xs qar:text-surface" sideOffset={6}>
+          <TooltipPrimitive.Content
+            className="qar:z-50 qar:rounded-control qar:border qar:border-border qar:bg-text qar:px-2 qar:py-1 qar:text-xs qar:text-surface"
+            sideOffset={6}
+          >
             {content}
             <TooltipPrimitive.Arrow className="qar:fill-text" />
           </TooltipPrimitive.Content>

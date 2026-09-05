@@ -7,7 +7,17 @@ export const MUSHAF_COLOR_TOKENS = {
 
 const COLORLESS_VALUES = new Set(['none', 'transparent', 'inherit', 'currentcolor'])
 const ALLOWED_ELEMENTS = new Set(['svg', 'defs', 'clippath', 'g', 'path'])
-const PRESERVED_ATTRS = ['viewBox', 'd', 'fill-rule', 'clip-path', 'opacity', 'fill-opacity', 'stroke-opacity', 'transform', 'id']
+const PRESERVED_ATTRS = [
+  'viewBox',
+  'd',
+  'fill-rule',
+  'clip-path',
+  'opacity',
+  'fill-opacity',
+  'stroke-opacity',
+  'transform',
+  'id',
+]
 
 export function normalizeColorLiteral(value) {
   const raw = String(value ?? '').trim()
@@ -16,7 +26,9 @@ export function normalizeColorLiteral(value) {
   if (shortHex) return `#${shortHex[1]}${shortHex[1]}${shortHex[2]}${shortHex[2]}${shortHex[3]}${shortHex[3]}`
   if (/^#[0-9a-f]{6}$/.test(lower)) return lower
 
-  const rgb = lower.match(/^rgba?\(\s*(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*[,/]\s*(?:1|100%))?\s*\)$/)
+  const rgb = lower.match(
+    /^rgba?\(\s*(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*[,/]\s*(?:1|100%))?\s*\)$/,
+  )
   if (rgb) {
     const parts = rgb.slice(1, 4).map((part) => Number.parseInt(part, 10))
     if (parts.every((part) => part >= 0 && part <= 255)) {
@@ -24,7 +36,9 @@ export function normalizeColorLiteral(value) {
     }
   }
 
-  const percentRgb = lower.match(/^rgba?\(\s*(\d+(?:\.\d+)?)%(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)%(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)%(?:\s*[,/]\s*(?:1|100%))?\s*\)$/)
+  const percentRgb = lower.match(
+    /^rgba?\(\s*(\d+(?:\.\d+)?)%(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)%(?:\s*,\s*|\s+)(\d+(?:\.\d+)?)%(?:\s*[,/]\s*(?:1|100%))?\s*\)$/,
+  )
   if (percentRgb) {
     const parts = percentRgb.slice(1, 4).map((part) => Math.round((Number.parseFloat(part) / 100) * 255))
     if (parts.every((part) => part >= 0 && part <= 255)) {
@@ -101,7 +115,12 @@ export function assertThemeableSvgIntegrity(before, after, filename = 'unknown.s
   }
 
   for (const attrName of PRESERVED_ATTRS) {
-    assertSame(JSON.stringify(extractAttributeValues(source, attrName)), JSON.stringify(extractAttributeValues(themed, attrName)), filename, attrName)
+    assertSame(
+      JSON.stringify(extractAttributeValues(source, attrName)),
+      JSON.stringify(extractAttributeValues(themed, attrName)),
+      filename,
+      attrName,
+    )
   }
 
   const refs = extractSameDocumentReferences(themed)
@@ -200,8 +219,9 @@ function extractRootViewBox(text) {
 }
 
 function extractTagAttrs(text, tagName) {
-  return [...String(text).matchAll(new RegExp(`<\\s*(?:[\\w.-]+:)?${tagName}\\b([^>]*)>`, 'gi'))]
-    .map((match) => Object.fromEntries(parseAttributes(match[1], tagName).map((attr) => [attr.name, attr.value])))
+  return [...String(text).matchAll(new RegExp(`<\\s*(?:[\\w.-]+:)?${tagName}\\b([^>]*)>`, 'gi'))].map((match) =>
+    Object.fromEntries(parseAttributes(match[1], tagName).map((attr) => [attr.name, attr.value])),
+  )
 }
 
 function extractAttributeValues(text, attrName) {
@@ -228,7 +248,10 @@ function assertSame(before, after, filename, subject) {
 }
 
 function localName(name) {
-  return String(name ?? '').split(':').pop().toLowerCase()
+  return String(name ?? '')
+    .split(':')
+    .pop()
+    .toLowerCase()
 }
 
 function hasUnsafeCssUrlReference(value) {
@@ -260,7 +283,7 @@ function normalizeCssEscapes(value) {
 
 function isUnsafeReference(value) {
   const normalized = normalizeCssEscapes(decodeHtmlEntities(value))
-    .replace(/[\u0000-\u001f\u007f\s]+/g, '')
+    .replace(/[\p{Cc}\s]+/gu, '')
     .toLowerCase()
   return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/.test(normalized)
 }

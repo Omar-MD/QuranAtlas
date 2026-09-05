@@ -15,11 +15,7 @@ import {
   buildSearchRegistry,
   assertNoStableMutableSearchUrls,
 } from './registry.mjs'
-import {
-  SEARCH_NORMALIZER_VERSION,
-  SEARCH_PHASE1_MAX_PHRASE_TOKENS,
-  SEARCH_QUERY_AST_VERSION,
-} from './normalizer.mjs'
+import { SEARCH_NORMALIZER_VERSION, SEARCH_PHASE1_MAX_PHRASE_TOKENS, SEARCH_QUERY_AST_VERSION } from './normalizer.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -60,55 +56,80 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     maxResidentWorkerBytes: MAX_RESIDENT_WORKER_BYTES,
   })
   sourceDigests['search-qac-morphology-0-4'] = morphology.sourceDigest
-  const contentHash = sha256Hex(Buffer.from(stableJson({
-    builder: 'quranatlas-search-phase-3-memory-graph-display-hafs-v2',
-    graphPolicy: graph.policy,
-    graphStats: graph.stats,
-    morphologyPayloadVersion: 2,
-    packVersion: PACK_VERSION,
-    sourceDigests,
-  }))).slice(0, 32)
+  const contentHash = sha256Hex(
+    Buffer.from(
+      stableJson({
+        builder: 'quranatlas-search-phase-3-memory-graph-display-hafs-v2',
+        graphPolicy: graph.policy,
+        graphStats: graph.stats,
+        morphologyPayloadVersion: 2,
+        packVersion: PACK_VERSION,
+        sourceDigests,
+      }),
+    ),
+  ).slice(0, 32)
   const shardPayloads = [
-    ['core-references.qas', {
-      kind: 'references',
-      ayahs: postings.ayahs,
-    }],
-    ['core-dictionaries.qas', {
-      kind: 'dictionaries',
-      dictionaries: postings.dictionaries,
-    }],
-    ['arabic-postings.qas', {
-      kind: 'postings',
-      lane: 'arabic',
-      postings: postings.postings.arabic,
-    }],
-    ['exact-word-postings.qas', {
-      kind: 'postings',
-      lane: 'exact-word',
-      postings: postings.postings.exactWord,
-    }],
-    ['translation-postings.qas', {
-      kind: 'postings',
-      lane: 'translation',
-      postings: postings.postings.translation,
-    }],
-    ['core-provenance.qas', {
-      kind: 'provenance',
-      sourceIds: Object.keys(sourceDigests),
-      buildInputDigests: sourceDigests,
-      generatedAt: GENERATED_AT,
-    }],
+    [
+      'core-references.qas',
+      {
+        kind: 'references',
+        ayahs: postings.ayahs,
+      },
+    ],
+    [
+      'core-dictionaries.qas',
+      {
+        kind: 'dictionaries',
+        dictionaries: postings.dictionaries,
+      },
+    ],
+    [
+      'arabic-postings.qas',
+      {
+        kind: 'postings',
+        lane: 'arabic',
+        postings: postings.postings.arabic,
+      },
+    ],
+    [
+      'exact-word-postings.qas',
+      {
+        kind: 'postings',
+        lane: 'exact-word',
+        postings: postings.postings.exactWord,
+      },
+    ],
+    [
+      'translation-postings.qas',
+      {
+        kind: 'postings',
+        lane: 'translation',
+        postings: postings.postings.translation,
+      },
+    ],
+    [
+      'core-provenance.qas',
+      {
+        kind: 'provenance',
+        sourceIds: Object.keys(sourceDigests),
+        buildInputDigests: sourceDigests,
+        generatedAt: GENERATED_AT,
+      },
+    ],
   ]
   for (const [length, rows] of phrasePostingGroups(postings.postings.phrase)) {
     let chunk = 1
     for (const postingsChunk of chunkRows(rows, 25_000)) {
-      shardPayloads.push([`phrase-postings-l${length}-${chunk}.qas`, {
-        kind: 'postings',
-        lane: 'phrase',
-        phraseLength: Number(length),
-        phrasePolicy: postings.phrasePolicy,
-        postings: postingsChunk,
-      }])
+      shardPayloads.push([
+        `phrase-postings-l${length}-${chunk}.qas`,
+        {
+          kind: 'postings',
+          lane: 'phrase',
+          phraseLength: Number(length),
+          phrasePolicy: postings.phrasePolicy,
+          postings: postingsChunk,
+        },
+      ])
       chunk += 1
     }
   }
@@ -172,7 +193,12 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     ],
     requires: ['core-references', 'core-dictionaries', ...MORPHOLOGY_REQUIRED_SHARDS, ...GRAPH_REQUIRED_SHARDS],
     compatibleWith: ['quranatlas-search-phase-1', 'quranatlas-search-phase-2', 'quranatlas-search-phase-3'],
-    licenseIds: [HAFS_SEARCH_LICENSE_ID, 'search-qul-bridges-context', 'search-pack-metadata-quranatlas', 'search-qac-gpl-v3-terms'],
+    licenseIds: [
+      HAFS_SEARCH_LICENSE_ID,
+      'search-qul-bridges-context',
+      'search-pack-metadata-quranatlas',
+      'search-qac-gpl-v3-terms',
+    ],
     sourceIds: Object.keys(sourceDigests),
     normalizerVersion: SEARCH_NORMALIZER_VERSION,
     queryAstVersion: SEARCH_QUERY_AST_VERSION,
@@ -244,7 +270,8 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     phase3: {
       graphPolicy: graph.policy,
       graphStats: graph.stats,
-      sourceBoundaryPolicy: 'Phrase windows stay within one ayah and one surah; they do not cross Bismillah boundaries.',
+      sourceBoundaryPolicy:
+        'Phrase windows stay within one ayah and one surah; they do not cross Bismillah boundaries.',
       followingWordingIsAttestedOnly: true,
     },
   }
@@ -266,8 +293,10 @@ export async function validateSearchCorePack() {
   if (!existsSync(REGISTRY_PATH)) throw new Error('missing public/search-packs/registry.json')
   const registry = JSON.parse(await readFile(REGISTRY_PATH, 'utf8'))
   assertNoStableMutableSearchUrls(registry)
-  if (registry.registryUrl !== '/search-packs/registry.json') throw new Error('Search registry URL must be /search-packs/registry.json')
-  if (!Array.isArray(registry.packs) || registry.packs.length === 0) throw new Error('Search registry must include at least one generated core pack')
+  if (registry.registryUrl !== '/search-packs/registry.json')
+    throw new Error('Search registry URL must be /search-packs/registry.json')
+  if (!Array.isArray(registry.packs) || registry.packs.length === 0)
+    throw new Error('Search registry must include at least one generated core pack')
   for (const entry of registry.packs) {
     if (!entry.manifestUrl.startsWith(`${SEARCH_PACKS_RUNTIME_PREFIX}${entry.contentHash}/`)) {
       throw new Error(`Search registry entry ${entry.packId} must use immutable pack manifest URL`)
@@ -314,7 +343,9 @@ async function verifyGeneratedFiles(files, manifest) {
     if (!actual.equals(expectedBuffer)) mismatched.push(path)
   }
   if (missing.length || mismatched.length) {
-    throw new Error(`Search pack output is stale: missing=${missing.join(',') || 'none'} mismatched=${mismatched.join(',') || 'none'}`)
+    throw new Error(
+      `Search pack output is stale: missing=${missing.join(',') || 'none'} mismatched=${mismatched.join(',') || 'none'}`,
+    )
   }
   const packDir = join(PACKS_ROOT, manifest.contentHash)
   for (const path of [REGISTRY_PATH, packDir]) {
@@ -341,12 +372,13 @@ function featureForShard(filename) {
   if (filename.startsWith('exact-word-postings')) return 'arabic-text'
   if (filename.startsWith('phrase-postings')) return 'phrase'
   if (
-    filename.startsWith('morphology-')
-    || filename.startsWith('same-written-form-')
-    || filename.startsWith('same-root-')
-    || filename.startsWith('lemma-')
-    || filename.startsWith('surah-context')
-  ) return 'morphology'
+    filename.startsWith('morphology-') ||
+    filename.startsWith('same-written-form-') ||
+    filename.startsWith('same-root-') ||
+    filename.startsWith('lemma-') ||
+    filename.startsWith('surah-context')
+  )
+    return 'morphology'
   if (filename.startsWith('following-wording')) return 'following-wording'
   if (filename.startsWith('shared-wording')) return 'shared-wording'
   if (filename.startsWith('repeated-phrases')) return 'repeated-phrases'

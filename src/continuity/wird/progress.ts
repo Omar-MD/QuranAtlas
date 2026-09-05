@@ -137,7 +137,12 @@ export function recomputeForDay(plan: WirdPlan, counts: ReadonlyArray<SurahCount
   }
 }
 
-export function advanceWirdProgress(plan: WirdPlan, readRef: QuranRef, counts: ReadonlyArray<SurahCount>, dayKey = getLocalDayKey()): WirdPlan {
+export function advanceWirdProgress(
+  plan: WirdPlan,
+  readRef: QuranRef,
+  counts: ReadonlyArray<SurahCount>,
+  dayKey = getLocalDayKey(),
+): WirdPlan {
   const current = recomputeForDay(plan, counts, dayKey)
   if (compareRefs(readRef, current.startRef) < 0 || compareRefs(readRef, current.endRef) > 0) return current
 
@@ -161,7 +166,12 @@ export function advanceWirdProgress(plan: WirdPlan, readRef: QuranRef, counts: R
   }
 }
 
-export function advanceWirdProgressFromReaderPosition(plan: WirdPlan, readRef: QuranRef, counts: ReadonlyArray<SurahCount>, dayKey = getLocalDayKey()): WirdPlan {
+export function advanceWirdProgressFromReaderPosition(
+  plan: WirdPlan,
+  readRef: QuranRef,
+  counts: ReadonlyArray<SurahCount>,
+  dayKey = getLocalDayKey(),
+): WirdPlan {
   if (!counts.length) return plan
   const current = recomputeForDay(plan, counts, dayKey)
   if (!isWirdReaderProgressRefEligible(current, readRef)) return current
@@ -261,16 +271,16 @@ export function deriveWirdSummary(
   const remainingStart = Math.min(end, completed + 1)
   const remaining = completed >= end ? 0 : countRemainingUnits(current.unit, counts, boundaries, remainingStart, end)
   const todayRemainingStart = Math.min(todayEnd, Math.max(todayStart, completed + 1))
-  const todayRemaining = todayDone >= todaySpan
-    ? 0
-    : countRemainingUnits(current.unit, counts, boundaries, todayRemainingStart, todayEnd)
-  const state = percent >= 100
-    ? 'plan-complete'
-    : todayPercent >= 100
-      ? 'today-complete'
-      : current.progress.dayKey > current.startedOn && completed < todayStart
-        ? 'behind-target'
-        : 'active'
+  const todayRemaining =
+    todayDone >= todaySpan ? 0 : countRemainingUnits(current.unit, counts, boundaries, todayRemainingStart, todayEnd)
+  const state =
+    percent >= 100
+      ? 'plan-complete'
+      : todayPercent >= 100
+        ? 'today-complete'
+        : current.progress.dayKey > current.startedOn && completed < todayStart
+          ? 'behind-target'
+          : 'active'
 
   return {
     nextRef: current.progress.nextRef,

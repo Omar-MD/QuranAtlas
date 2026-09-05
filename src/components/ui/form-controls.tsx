@@ -3,7 +3,7 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import * as SliderPrimitive from '@radix-ui/react-slider'
 import * as SwitchPrimitive from '@radix-ui/react-switch'
 import { Check, ChevronDown } from 'lucide-react'
-import { forwardRef, useRef, useState } from 'react'
+import { forwardRef, useState } from 'react'
 import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
@@ -18,7 +18,10 @@ export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> &
   labelClassName?: string
   prefix?: ReactNode
 }
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ hideLabel = false, label, labelClassName, className, id, prefix, ...props }, ref) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { hideLabel = false, label, labelClassName, className, id, prefix, ...props },
+  ref,
+) {
   const inputId = id ?? `qa-input-${label.replace(/\W+/g, '-').toLowerCase()}`
   return (
     <label className={cn(labelClass, labelClassName)} htmlFor={inputId}>
@@ -93,9 +96,9 @@ export type SegmentedControlProps = {
 }
 
 export function SegmentedControl({ label, options, value, defaultValue, onValueChange }: SegmentedControlProps) {
+  const groupName = `qa-segmented-${label.replace(/\W+/g, '-').toLowerCase()}`
   const firstEnabledValue = options.find((option) => !option.disabled)?.value
   const [internalValue, setInternalValue] = useState(defaultValue ?? value ?? firstEnabledValue ?? options[0]?.value)
-  const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   const rawSelectedValue = value ?? internalValue
   const selectedOption = options.find((option) => option.value === rawSelectedValue && !option.disabled)
   const selectedValue = selectedOption?.value ?? firstEnabledValue
@@ -104,76 +107,50 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
     if (value == null) setInternalValue(nextValue)
     onValueChange?.(nextValue)
   }
-  function selectOptionAt(index: number) {
-    const option = options[index]
-    if (!option || option.disabled) return
-    optionRefs.current[index]?.focus()
-    selectOption(option.value)
-  }
-  function enabledOptionIndex(fromIndex: number, direction: 1 | -1) {
-    if (options.length === 0) return -1
-    for (let offset = 1; offset <= options.length; offset += 1) {
-      const index = (fromIndex + (offset * direction) + options.length) % options.length
-      if (!options[index]?.disabled) return index
-    }
-    return -1
-  }
-  function boundaryOptionIndex(direction: 1 | -1) {
-    const indexes = direction === 1 ? options.keys() : [...options.keys()].reverse()
-    for (const index of indexes) {
-      if (!options[index]?.disabled) return index
-    }
-    return -1
-  }
   return (
-    <div aria-label={label} className="qar:inline-flex qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1" role="radiogroup">
-      {options.map((option, index) => {
+    <fieldset
+      aria-label={label}
+      className="qar:inline-flex qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1"
+    >
+      {options.map((option) => {
         const selected = option.value === selectedValue
         return (
-          <button
-            aria-checked={selected}
-            aria-label={`${label}: ${option.label}`}
+          <label
             className={cn(
-              'qar:min-h-11 qar:rounded-control qar:px-3 qar:text-sm qar:text-muted qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus',
+              'qar-react-segmented-option qar:flex qar:min-h-11 qar:items-center qar:rounded-control qar:px-3 qar:text-sm qar:text-muted',
               selected && 'qar:bg-accent qar:text-surface',
             )}
-            disabled={option.disabled}
             key={option.value}
-            onKeyDown={(event) => {
-              const currentIndex = options.findIndex((candidate) => candidate.value === selectedValue)
-              const fallbackIndex = currentIndex >= 0 ? currentIndex : index
-              let nextIndex = -1
-              if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = enabledOptionIndex(fallbackIndex, 1)
-              else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = enabledOptionIndex(fallbackIndex, -1)
-              else if (event.key === 'Home') nextIndex = boundaryOptionIndex(1)
-              else if (event.key === 'End') nextIndex = boundaryOptionIndex(-1)
-              else return
-              event.preventDefault()
-              selectOptionAt(nextIndex)
-            }}
-            onClick={() => selectOption(option.value)}
-            ref={(node) => {
-              optionRefs.current[index] = node
-            }}
-            role="radio"
-            tabIndex={selected ? 0 : -1}
-            type="button"
           >
+            <input
+              aria-label={`${label}: ${option.label}`}
+              checked={selected}
+              className="qar:sr-only"
+              disabled={option.disabled}
+              name={groupName}
+              onChange={() => selectOption(option.value)}
+              type="radio"
+              value={option.value}
+            />
             {option.shortLabel ?? option.label}
-          </button>
+          </label>
         )
       })}
-    </div>
+    </fieldset>
   )
 }
 
 export type CheckboxProps = CheckboxPrimitive.CheckboxProps & { label: string }
-export function Checkbox({ label, className, ...props }: CheckboxProps) {
+export function Checkbox({ label, className, id, ...props }: CheckboxProps) {
+  const checkboxId = id ?? `qa-checkbox-${label.replace(/\W+/g, '-').toLowerCase()}`
   return (
-    <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text">
+    <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text" htmlFor={checkboxId}>
       <CheckboxPrimitive.Root
-        aria-label={label}
-        className={cn('qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:text-surface qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus', className)}
+        className={cn(
+          'qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:text-surface qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus',
+          className,
+        )}
+        id={checkboxId}
         {...props}
       >
         <CheckboxPrimitive.Indicator>
@@ -186,8 +163,9 @@ export function Checkbox({ label, className, ...props }: CheckboxProps) {
 }
 
 export type SwitchProps = SwitchPrimitive.SwitchProps & { label: string }
-export function Switch({ label, className, checked, defaultChecked, onCheckedChange, ...props }: SwitchProps) {
+export function Switch({ label, className, checked, defaultChecked, id, onCheckedChange, ...props }: SwitchProps) {
   const [visualChecked, setVisualChecked] = useState(Boolean(checked ?? defaultChecked))
+  const switchId = id ?? `qa-switch-${label.replace(/\W+/g, '-').toLowerCase()}`
 
   function handleCheckedChange(nextChecked: boolean) {
     setVisualChecked(nextChecked)
@@ -197,10 +175,13 @@ export function Switch({ label, className, checked, defaultChecked, onCheckedCha
   const visualState = checked ?? visualChecked
 
   return (
-    <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text">
+    <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text" htmlFor={switchId}>
       <SwitchPrimitive.Root
-        aria-label={label}
-        className={cn('qar:relative qar:inline-flex qar:min-h-11 qar:min-w-11 qar:items-center qar:justify-center qar:rounded-control qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus', className)}
+        className={cn(
+          'qar:relative qar:inline-flex qar:min-h-11 qar:min-w-11 qar:items-center qar:justify-center qar:rounded-control qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus',
+          className,
+        )}
+        id={switchId}
         onCheckedChange={handleCheckedChange}
         {...rootStateProps}
         {...props}
@@ -220,14 +201,21 @@ export function Switch({ label, className, checked, defaultChecked, onCheckedCha
 export type SliderProps = SliderPrimitive.SliderProps & { hideLabel?: boolean; label: string }
 export function Slider({ hideLabel = false, label, className, ...props }: SliderProps) {
   return (
-    <label className={cn(labelClass, className)}>
+    <div className={cn(labelClass, className)}>
       <span className={hideLabel ? 'qar:sr-only' : undefined}>{label}</span>
-      <SliderPrimitive.Root aria-label={label} className="qar:relative qar:flex qar:h-6 qar:w-full qar:touch-none qar:items-center" {...props}>
+      <SliderPrimitive.Root
+        aria-label={label}
+        className="qar:relative qar:flex qar:h-6 qar:w-full qar:touch-none qar:items-center"
+        {...props}
+      >
         <SliderPrimitive.Track className="qar:relative qar:h-2 qar:grow qar:rounded-surface qar:bg-border">
           <SliderPrimitive.Range className="qar:absolute qar:h-full qar:rounded-surface qar:bg-accent" />
         </SliderPrimitive.Track>
-        <SliderPrimitive.Thumb aria-label={label} className="qar:block qar:size-5 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:shadow-sm qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus" />
+        <SliderPrimitive.Thumb
+          aria-label={label}
+          className="qar:block qar:size-5 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:shadow-sm qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus"
+        />
       </SliderPrimitive.Root>
-    </label>
+    </div>
   )
 }

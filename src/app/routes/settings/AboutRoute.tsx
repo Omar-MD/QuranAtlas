@@ -76,11 +76,12 @@ export function AboutRoute() {
   }
 
   const updateCheckPending = updateCheck.status === 'checking' || updateCheck.status === 'reloading'
-  const updateButtonLabel = updateCheck.status === 'checking'
-    ? 'Checking...'
-    : updateCheck.status === 'reloading'
-      ? 'Reloading...'
-      : 'Fetch latest app'
+  const updateButtonLabel =
+    updateCheck.status === 'checking'
+      ? 'Checking...'
+      : updateCheck.status === 'reloading'
+        ? 'Reloading...'
+        : 'Fetch latest app'
 
   return (
     <>
@@ -92,7 +93,14 @@ export function AboutRoute() {
         }}
       />
       {drawerState.open && (
-        <div className="qar-react-nav-drawer-overlay" onClick={() => dispatchDrawer({ reason: 'outside', type: 'close' })} role="presentation">
+        <div
+          className="qar-react-nav-drawer-overlay"
+          onPointerDown={(event) => {
+            if (event.target !== event.currentTarget) return
+            dispatchDrawer({ reason: 'outside', type: 'close' })
+          }}
+          role="presentation"
+        >
           <NavDrawer
             bookmarks={bookmarks}
             currentLabel="About"
@@ -109,82 +117,118 @@ export function AboutRoute() {
         <h1 className="qar:m-0 qar:font-ui qar:text-3xl qar:leading-tight">QuranAtlas</h1>
         <p className="qar:m-0 qar:text-base qar:font-medium">Read, reflect, remember.</p>
 
-      <section className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4" aria-label="Quran remembrance">
-        <p className="qar:m-0 qar:text-right qar:text-2xl qar:leading-relaxed" dir="rtl" lang="ar">
-          وَلَقَدۡ يَسَّرۡنَا ٱلۡقُرۡءَانَ لِلذِّكۡرِ فَهَلۡ مِن مُّدَّكِرٍ
-        </p>
-        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          "And We have certainly made the Qur'an easy for remembrance, so is there any who will remember?" - 54:17
-        </p>
-      </section>
-
-      <section className="qar:grid qar:gap-3" aria-labelledby="react-about-attribution">
-        <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-attribution">Attribution</h2>
-        <ul className="qar:m-0 qar:grid qar:gap-2 qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted">
-          {credits.map((credit) => <li key={credit}>{credit}</li>)}
-        </ul>
-      </section>
-
-      {installAvailable || installDone ? (
-        <section aria-label="Install QuranAtlas">
-          <Button aria-label="Install QuranAtlas to your home screen" disabled={installDone} onClick={() => { void handleInstall() }} variant="primary">
-            {installDone ? 'Installed!' : 'Install App'}
-          </Button>
-        </section>
-      ) : null}
-
-      <p className="qar:m-0 qar:text-sm qar:text-muted" data-testid="about-version">
-        v{pkg.version} · dev
-      </p>
-
-      <section className="qar:grid qar:gap-2 qar:border-t qar:border-border qar:pt-4" aria-labelledby="react-about-app-updates">
-        <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-app-updates">App updates</h2>
-        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted" id="react-about-app-updates-status" aria-live="polite">
-          {updateCheck.message}
-        </p>
-        <div>
-          <Button
-            aria-describedby="react-about-app-updates-status"
-            disabled={updateCheckPending}
-            onClick={() => { void handleFetchLatestChanges() }}
-            variant="secondary"
-          >
-            <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
-            {updateButtonLabel}
-          </Button>
-        </div>
-      </section>
-
-      <section className="qar:border-t qar:border-border qar:pt-4" aria-label="Clear local data">
-        <Dialog
-          onOpenChange={(open) => {
-            if (open) clearData.open()
-            else clearData.close()
-          }}
-          open={clearData.state.open}
-          title="Clear All Data?"
-          trigger={<Button variant="danger">Clear all data</Button>}
+        <section
+          className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4"
+          aria-label="Quran remembrance"
         >
-          <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-            This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any older local QuranAtlas data still stored on this device. This action cannot be undone.
+          <p className="qar:m-0 qar:text-right qar:text-2xl qar:leading-relaxed" dir="rtl" lang="ar">
+            وَلَقَدۡ يَسَّرۡنَا ٱلۡقُرۡءَانَ لِلذِّكۡرِ فَهَلۡ مِن مُّدَّكِرٍ
           </p>
-          <Input
-            autoComplete="off"
-            disabled={clearData.state.pending}
-            label="Type DELETE to confirm"
-            onChange={(event) => clearData.setInput(event.currentTarget.value)}
-            placeholder="DELETE"
-            value={clearData.state.input}
-          />
-          {clearData.state.error ? <p className="qar:m-0 qar:text-sm qar:text-danger">{clearData.state.error}</p> : null}
-          <div className="qar:flex qar:flex-wrap qar:justify-end qar:gap-2">
-            <Button disabled={clearData.state.pending} onClick={clearData.close} variant="ghost">Cancel</Button>
-            <Button disabled={!clearData.canConfirm} onClick={() => { void clearData.confirm() }} variant="danger">
-              {clearData.state.pending ? 'Clearing...' : 'Clear All Data'}
+          <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
+            "And We have certainly made the Qur'an easy for remembrance, so is there any who will remember?" - 54:17
+          </p>
+        </section>
+
+        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-attribution">
+          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-attribution">
+            Attribution
+          </h2>
+          <ul className="qar:m-0 qar:grid qar:gap-2 qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted">
+            {credits.map((credit) => (
+              <li key={credit}>{credit}</li>
+            ))}
+          </ul>
+        </section>
+
+        {installAvailable || installDone ? (
+          <section aria-label="Install QuranAtlas">
+            <Button
+              aria-label="Install QuranAtlas to your home screen"
+              disabled={installDone}
+              onClick={() => {
+                void handleInstall()
+              }}
+              variant="primary"
+            >
+              {installDone ? 'Installed!' : 'Install App'}
+            </Button>
+          </section>
+        ) : null}
+
+        <p className="qar:m-0 qar:text-sm qar:text-muted" data-testid="about-version">
+          v{pkg.version} · dev
+        </p>
+
+        <section
+          className="qar:grid qar:gap-2 qar:border-t qar:border-border qar:pt-4"
+          aria-labelledby="react-about-app-updates"
+        >
+          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-app-updates">
+            App updates
+          </h2>
+          <p
+            className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted"
+            id="react-about-app-updates-status"
+            aria-live="polite"
+          >
+            {updateCheck.message}
+          </p>
+          <div>
+            <Button
+              aria-describedby="react-about-app-updates-status"
+              disabled={updateCheckPending}
+              onClick={() => {
+                void handleFetchLatestChanges()
+              }}
+              variant="secondary"
+            >
+              <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
+              {updateButtonLabel}
             </Button>
           </div>
-        </Dialog>
-      </section>
+        </section>
+
+        <section className="qar:border-t qar:border-border qar:pt-4" aria-label="Clear local data">
+          <Dialog
+            onOpenChange={(open) => {
+              if (open) clearData.open()
+              else clearData.close()
+            }}
+            open={clearData.state.open}
+            title="Clear All Data?"
+            trigger={<Button variant="danger">Clear all data</Button>}
+          >
+            <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
+              This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any
+              older local QuranAtlas data still stored on this device. This action cannot be undone.
+            </p>
+            <Input
+              autoComplete="off"
+              disabled={clearData.state.pending}
+              label="Type DELETE to confirm"
+              onChange={(event) => clearData.setInput(event.currentTarget.value)}
+              placeholder="DELETE"
+              value={clearData.state.input}
+            />
+            {clearData.state.error ? (
+              <p className="qar:m-0 qar:text-sm qar:text-danger">{clearData.state.error}</p>
+            ) : null}
+            <div className="qar:flex qar:flex-wrap qar:justify-end qar:gap-2">
+              <Button disabled={clearData.state.pending} onClick={clearData.close} variant="ghost">
+                Cancel
+              </Button>
+              <Button
+                disabled={!clearData.canConfirm}
+                onClick={() => {
+                  void clearData.confirm()
+                }}
+                variant="danger"
+              >
+                {clearData.state.pending ? 'Clearing...' : 'Clear All Data'}
+              </Button>
+            </div>
+          </Dialog>
+        </section>
       </SettingsPageRecipe>
     </>
   )
