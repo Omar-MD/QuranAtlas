@@ -22,8 +22,10 @@ pnpm = "10.31.0"
 [settings]
 activate_aggressive = true
 
-[env]
-_.path = ["~/.local/share/mise/shims"]
+# No [env] _.path shim entry: mise applies it ahead of task-scoped tool
+# install dirs, and shims cannot resolve task-scoped tools (actionlint,
+# knip, zizmor fail with "No version is set for shim"). Activated shells
+# and jdx/mise-action already put shims on PATH themselves.
 
 [tasks.install]
 description = "Install pinned dependencies from pnpm-lock.yaml"
@@ -75,6 +77,11 @@ run = "node scripts/check-react-ui-forbidden-patterns.mjs"
 description = "Feature-state guardrail"
 run = "node scripts/check-no-feature-state.js"
 
+[tasks."check:actions"]
+description = "GitHub Actions workflow schema check"
+tools = { "aqua:rhysd/actionlint" = "1.7.12" }
+run = "actionlint"
+
 [tasks."check:mushaf-assets"]
 description = "Mushaf asset/index reference checks (data/release verification only)"
 run = ["node scripts/check-react-mushaf-assets.mjs", "node scripts/check-react-mushaf-indexes.mjs"]
@@ -90,6 +97,7 @@ depends = [
   "check:registry",
   "check:ui-patterns",
   "check:feature-state",
+  "check:actions",
 ]
 run = "echo 'static checks passed'"
 

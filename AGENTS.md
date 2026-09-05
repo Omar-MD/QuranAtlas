@@ -22,6 +22,8 @@ shell fast and the reader usable without a connection.
   `mise run offline`, `mise run data:check`, `mise run data:build`,
   `mise run build:release`, and `mise run validate` instead of creating ad hoc
   orchestration commands.
+- `mise run check` includes GitHub Actions workflow-schema validation via
+  task-scoped actionlint (installed on demand).
 - pnpm remains the dependency resolver and owns `pnpm-lock.yaml`.
 
 ## UI Boundaries
