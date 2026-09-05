@@ -121,6 +121,10 @@ description = "Assemble the release dist (vite build + dataset/search-pack copy 
 depends = ["data:build", "check:mushaf-assets"]
 run = ["pnpm run ci:build", "node scripts/check-chunks.js", "node scripts/check-react-mushaf-assets.mjs"]
 
+[tasks."storybook:build"]
+description = "Build the design-system Storybook"
+run = "pnpm exec storybook build --config-dir .storybook --output-dir storybook-static"
+
 [tasks.smoke]
 description = "Core smoke suite on desktop + mobile viewports (dev server)"
 depends = ["data:build"]

@@ -76,6 +76,16 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
+  storybook:
+    name: Storybook build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: mise run storybook:build
+
   smoke:
     name: Core smoke (desktop + mobile)
     needs: build
@@ -156,7 +166,7 @@ jobs:
 
   ci-ok:
     name: CI OK
-    needs: [static, data, build, smoke, offline]
+    needs: [static, data, build, smoke, offline, storybook]
     if: always()
     runs-on: ubuntu-latest
     steps:
