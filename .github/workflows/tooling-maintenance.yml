@@ -1,0 +1,27 @@
+name: Tooling maintenance
+
+on:
+  schedule:
+    - cron: '30 5 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tooling-maintenance
+  cancel-in-progress: false
+
+jobs:
+  audits:
+    name: Dependency + workflow audits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
+      - run: mise run tooling:deps
+      - run: mise run tooling:actions-security
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

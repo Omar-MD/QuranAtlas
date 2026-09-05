@@ -125,6 +125,16 @@ run = ["pnpm run ci:build", "node scripts/check-chunks.js", "node scripts/check-
 description = "Build the design-system Storybook"
 run = "pnpm exec storybook build --config-dir .storybook --output-dir storybook-static"
 
+[tasks."tooling:deps"]
+description = "Audit unused direct dependencies"
+tools = { "npm:knip" = "6.34.0" }
+run = "knip --dependencies"
+
+[tasks."tooling:actions-security"]
+description = "Audit GitHub Actions security"
+tools = { "aqua:zizmorcore/zizmor" = "1.30.0" }
+run = "zizmor --strict-collection ."
+
 [tasks.smoke]
 description = "Core smoke suite on desktop + mobile viewports (dev server)"
 depends = ["data:build"]

@@ -25,6 +25,8 @@ shell fast and the reader usable without a connection.
 - `mise run check` includes GitHub Actions workflow-schema validation via
   task-scoped actionlint (installed on demand).
 - pnpm remains the dependency resolver and owns `pnpm-lock.yaml`.
+- Maintenance audits (manual, not part of validation): `mise run tooling:deps`,
+  `mise run tooling:actions-security`.
 
 ## UI Boundaries
 

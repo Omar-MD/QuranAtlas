@@ -1,0 +1,18 @@
+{
+  // Entry points not auto-detected by Knip's Vite/Playwright/Storybook plugins:
+  // data tooling, CI build, and guardrail scripts invoked only from mise tasks.
+  "entry": ["scripts/**/*.{js,mjs}"],
+  // Binaries consumed outside source imports and outside Knip plugin detection:
+  // editor/OMP language servers (.omp/lsp.json references the Tailwind server)
+  // and Biome, invoked only via `pnpm exec biome` in mise tasks (Knip has no
+  // mise plugin to see those invocations).
+  "ignoreDependencies": [
+    "@biomejs/biome",
+    "@tailwindcss/language-server",
+    "vscode-langservers-extracted",
+    "yaml-language-server"
+  ],
+  // Poppler system utility spawned by scripts/data/mushaf-pages/import.mjs;
+  // installed on the machine, not from npm.
+  "ignoreBinaries": ["pdftocairo"]
+}
