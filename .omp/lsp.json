@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "eslint": {
+      "disabled": true
+    },
+    "tailwindcss": {
+      "rootMarkers": ["package.json"]
+    }
+  },
+  "idleTimeoutMs": 300000
+}

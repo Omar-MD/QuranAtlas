@@ -1,0 +1,36 @@
+# Project-scoped OMP defaults for QuranAtlas.
+# Keep user-specific models, credentials, appearance, and approval policy global.
+
+lsp:
+  enabled: true
+  lazy: true
+  shared: true
+  formatOnWrite: false
+  diagnosticsOnWrite: true
+  diagnosticsOnEdit: true
+  diagnosticsDeduplicate: true
+
+astGrep:
+  enabled: true
+
+checkpoint:
+  enabled: true
+
+github:
+  enabled: true
+
+security:
+  enabled: true
+
+secrets:
+  enabled: true
+
+memory:
+  backend: local
+
+autolearn:
+  enabled: true
+  autoContinue: false
+
+task:
+  enableLsp: true
