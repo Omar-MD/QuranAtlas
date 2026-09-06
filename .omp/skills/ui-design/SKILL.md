@@ -1,6 +1,6 @@
 ---
 name: ui-design
-description: QuranAtlas UI feedback-loop protocol — Kimi-K3 brief, GLM implementation, K2.7 WATCHDOG review, Qwen visual QA, Sol correctness, Kimi-K3 sign-off.
+description: QuranAtlas UI feedback-loop protocol — Kimi-K3 brief, GLM-5.3-Flash implementation, continuous GLM-5.3-Flash advisor review, GLM-5.3-Flash visual QA, Sol correctness, Kimi-K3 sign-off.
 ---
 
 # UI feedback loop
@@ -8,7 +8,7 @@ description: QuranAtlas UI feedback-loop protocol — Kimi-K3 brief, GLM impleme
 Follow this exact sequence for QuranAtlas UI work. Roles resolve through
 project `modelRoles` in `.omp/config.yml`; agents live in `.omp/agents/`.
 
-1. **Brief (Kimi-K3 — `plan` role or `ui-director` agent).** Read the current
+1. **Brief (Kimi-K3 — `ui-director` agent, `ui_director` role).** Read the current
    live UI, `src/design-system/tokens/{primitives,semantic,tailwind-theme}.css`,
    `src/design-system/registry/component-registry.json`, and every relevant
    `src/components/ui/**` primitive before choosing a design. The brief
@@ -20,10 +20,10 @@ project `modelRoles` in `.omp/config.yml`; agents live in `.omp/agents/`.
 3. **Implement (GLM — `ui-implementer`).** Applies the brief exactly. No
    independent color/spacing/type/animation decisions; a missing design choice
    is reported, not invented.
-4. **Continuous review (Kimi-K2.7-Code — WATCHDOG `DesignReview`).** Reviews
+4. **Continuous review (GLM-5.3-Flash — WATCHDOG `DesignReview`).** Reviews
    code/design-system conformance against `.omp/WATCHDOG.yml` priorities while
    work proceeds.
-5. **Visual QA (Qwen — `ui-visual-reviewer`).** After each coherent
+5. **Visual QA (GLM-5.3-Flash — `ui-visual-reviewer`).** After each coherent
    screen-level change, reviews rendered pixels at 1280x900 and 375x812 with
    transient screenshots.
 6. **Correctness review (Sol — `ui-correctness-reviewer`).** Runs only when
