@@ -1,5 +1,5 @@
 name: 'Setup mise toolchain + dependencies'
-description: 'Install mise-managed tools (Node, pnpm, playwright-cli) from mise.toml and project dependencies.'
+description: 'Install mise-managed tools (Node and pnpm) from mise.toml and project dependencies.'
 
 runs:
   using: composite

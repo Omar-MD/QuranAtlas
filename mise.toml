@@ -6,18 +6,6 @@
 [tools]
 node = "24.20.0"
 pnpm = "10.31.0"
-# 0.1.19 is published by Microsoft's official 1ES release account
-# (microsoft1es <npmjs@microsoft.com>) via Microsoft's internal package
-# publisher, not GitHub OIDC trusted publishing like 0.1.0 — a pipeline
-# change, not a maintainer change (registry metadata verified 2026-09-04).
-# mise/aube flags the missing provenance as a trust downgrade; exempt only
-# these exact versions (@playwright/cli and its exact-pinned playwright pair,
-# all published by the same Microsoft 1ES release train).
-"npm:@playwright/cli" = { version = "0.1.19", trust_policy_excludes = [
-  "@playwright/cli@0.1.19",
-  "playwright@1.63.0-alpha-2026-08-31",
-  "playwright-core@1.63.0-alpha-2026-08-31",
-] }
 
 [settings]
 activate_aggressive = true
@@ -164,7 +152,6 @@ run = [
   "rm -rf dist",
   "rm -rf storybook-static",
   "rm -rf test-output",
-  "rm -rf .playwright-cli",
   "rm -rf .playwright",
   "rm -f .data-build-complete",
 ]

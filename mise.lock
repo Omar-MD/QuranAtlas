@@ -32,13 +32,6 @@ url = "https://nodejs.org/dist/v24.20.0/node-v24.20.0-darwin-x64.tar.gz"
 checksum = "sha256:6cac9ffbca8f6a47091e4b5c772e0606049c3871cb67d900c0cedde630e545ba"
 url = "https://nodejs.org/dist/v24.20.0/node-v24.20.0-win-x64.zip"
 
-[[tools."npm:@playwright/cli"]]
-version = "0.1.19"
-backend = "npm:@playwright/cli"
-
-[tools."npm:@playwright/cli".options]
-trust_policy_excludes = '["@playwright/cli@0.1.19", "playwright-core@1.63.0-alpha-2026-08-31", "playwright@1.63.0-alpha-2026-08-31"]'
-
 [[tools.pnpm]]
 version = "10.31.0"
 backend = "aqua:pnpm/pnpm"
