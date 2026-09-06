@@ -15,8 +15,8 @@ shell fast and the reader usable without a connection.
 
 ## Command Front Door
 
-- Use mise for the project interface. Tool pins are Node `24.20.0`, pnpm
-  `10.31.0`, and `npm:@playwright/cli` `0.1.19`.
+- Use mise for the project interface. Tool pins are Node `24.20.0` and
+  pnpm `10.31.0`.
 - Run `mise install`, then `mise run install` for a reproducible checkout.
 - Use `mise run dev`, `mise run preview`, `mise run check`, `mise run smoke`,
   `mise run offline`, `mise run data:check`, `mise run data:build`,
@@ -64,3 +64,44 @@ shell fast and the reader usable without a connection.
 - Preserve unrelated user changes; never reset or overwrite them.
 - Put temporary notes and scratch files under `.scratch/` and keep secrets out
   of the repository.
+
+## UI Model-Role Protocol
+
+UI work follows a four-seat loop configured in `.omp/config.yml`
+(`modelRoles`). No OpenCode Go model runs in the recurring implementation
+loop; Go is reserved for Kimi-K3 milestone design work.
+
+- Kimi-K3 (`opencode-go/kimi-k3:max`) is the design director: design-brief
+  authorship and final visual sign-off at milestones only, never a constant
+  reviewer or bulk implementer.
+- GLM-5.3-Flash (`zai/glm-5.3-flash`, thinking on) is the heavy implementer
+  (default/task/ui_implementer), the continuous code and design-system
+  advisor (WATCHDOG `DesignReview`), and the rendered visual QA seat using
+  its verified native image input for transient in-session screenshots.
+  Mechanical roles (smol/commit/tiny) run `zai/glm-5.3-flash:off` (thinking
+  disabled, verified on the wire).
+- GPT-5.6-Sol (`openai-codex/gpt-5.6-sol:medium`) owns technical planning
+  and reviews correctness only when interaction logic, state, focus,
+  persistence, routing, or TypeScript contracts changed; it never chooses
+  styling.
+- GPT-5.6-Luna (`openai-codex/gpt-5.6-luna:max`) is rare deep escalation for
+  architecture or debugging; it never owns visual design.
+
+No other OpenAI selector is authorized. The mandatory flow is: Kimi-K3
+milestone brief → GLM-5.3-Flash implementation with continuous Flash advisor
+→ GLM-5.3-Flash visual QA after each coherent screen change → Flash repairs
+(advisor attached) → recheck affected states → Sol correctness review only
+for behavioral changes → Kimi-K3 final sign-off. Because advisor and
+implementer share a model family, bounded Sol correctness review is the
+cross-family check on behavioral changes. Follow `skill://ui-design` and
+`skill://ui-verify`; agents are `.omp/agents/ui-director.md`,
+`ui-implementer.md`, `ui-visual-reviewer.md`, and
+`ui-correctness-reviewer.md`; the advisor configuration is
+`.omp/WATCHDOG.yml` with review priorities in `.omp/WATCHDOG.md`.
+
+The OMP browser is the only manual browser driver. Transient in-session
+screenshots are allowed for visual review; persisted screenshot files and
+screenshot assertions remain forbidden. UI boundaries are unchanged: check
+the component registry first, compose `src/components/ui/**` primitives, keep
+Radix imports inside the primitive layer, use design tokens instead of
+literals, and verify desktop and mobile across all themes.

@@ -1,5 +1,25 @@
-# Project-scoped OMP defaults for QuranAtlas.
-# Keep user-specific models, credentials, appearance, and approval policy global.
+# .omp/ — project harness config. Model roles pin the UI feedback-loop
+# hierarchy here so sessions in this repo use the intended models without
+# PI_CONFIG_FILES; project roles override global roles.
+
+modelRoles:
+  plan: openai-codex/gpt-5.6-sol:medium
+  advisor: zai/glm-5.3-flash
+  vision: zai/glm-5.3-flash
+  default: zai/glm-5.3-flash
+  task: zai/glm-5.3-flash
+  smol: zai/glm-5.3-flash:off
+  commit: zai/glm-5.3-flash:off
+  slow: openai-codex/gpt-5.6-luna:max
+  tiny: zai/glm-5.3-flash:off
+  ui_director: opencode-go/kimi-k3:max
+  ui_implementer: zai/glm-5.3-flash
+  ui_visual: zai/glm-5.3-flash
+  ui_correctness: openai-codex/gpt-5.6-sol:medium
+
+advisor:
+  enabled: true        # continuous Flash advisor (WATCHDOG DesignReview) for main + opted-in agents
+  syncBacklog: "off"
 
 lsp:
   enabled: true
@@ -34,3 +54,6 @@ autolearn:
 
 task:
   enableLsp: true
+  agentAdvisor:
+    task: "on"         # advise generic task-agent children during implementation work
+    ui-implementer: "on"  # explicit: DesignReview advisor attaches to ui-implementer children
