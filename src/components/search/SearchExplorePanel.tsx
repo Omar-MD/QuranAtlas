@@ -28,7 +28,7 @@ export function SearchExplorePanel({
   }
   const graphModules = modules.filter(isGraphModule)
   return (
-    <div className="qar-search-explore-panel" data-focused-module={focusedModule ?? undefined}>
+    <div className="qar-react-search-explore-panel" data-focused-module={focusedModule ?? undefined}>
       <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
         Explore is query-level unless a selected-token action is opened from Details.
       </p>
@@ -68,7 +68,7 @@ function ExploreSummaryList({
   summaries: SearchExploreSummary[]
 }) {
   return (
-    <ul className="qar-search-explore-modules">
+    <ul className="qar-react-search-explore-modules">
       {summaries.map((summary) => (
         <li data-focused={summary.id === focusedModule ? 'true' : undefined} key={summary.id}>
           <h3>{summary.title}</h3>

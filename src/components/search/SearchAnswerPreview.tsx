@@ -44,22 +44,22 @@ export function SearchAnswerPreview({
   return (
     <section
       aria-labelledby="search-answer-preview-title"
-      className="qar-search-answer-preview"
+      className="qar-react-search-answer-preview"
       data-mobile-details={selectedMatch ? 'true' : 'false'}
     >
-      <div className="qar-search-answer-head">
+      <div className="qar-react-search-answer-head">
         <div>
-          <p className="qar-search-overview-eyebrow">Answer preview</p>
-          <h2 className="qar-search-overview-title" id="search-answer-preview-title" dir="auto">
+          <p className="qar-react-search-overview-eyebrow">Answer preview</p>
+          <h2 className="qar-react-search-overview-title" id="search-answer-preview-title" dir="auto">
             <bdi>{preview.query}</bdi>
           </h2>
-          <p className="qar-search-overview-mode">{answerModeLabel(preview)}</p>
+          <p className="qar-react-search-overview-mode">{answerModeLabel(preview)}</p>
         </div>
         <Badge>{sourceLabel(preview.searchPlan.primaryLens)}</Badge>
       </div>
 
       {hasClaims ? (
-        <ol className="qar-search-answer-claims">
+        <ol className="qar-react-search-answer-claims">
           {supportedClaims.map((claim) => (
             <li key={claim.id}>
               <p dir="auto">
@@ -77,9 +77,9 @@ export function SearchAnswerPreview({
         />
       )}
 
-      <section aria-labelledby="search-evidence-basis-title" className="qar-search-evidence-basis">
+      <section aria-labelledby="search-evidence-basis-title" className="qar-react-search-evidence-basis">
         <h3 id="search-evidence-basis-title">Evidence basis</h3>
-        <dl className="qar-search-evidence-basis-grid">
+        <dl className="qar-react-search-evidence-basis-grid">
           <EvidenceBasisItem label="Quran text" value={preview.evidenceBasis.quranText} />
           <EvidenceBasisItem label="Translation" value={preview.evidenceBasis.translation} />
           <EvidenceBasisItem label="Morphology" value={preview.evidenceBasis.morphology} />
@@ -89,10 +89,10 @@ export function SearchAnswerPreview({
         </p>
       </section>
 
-      <section aria-labelledby="search-best-evidence-title" className="qar-search-best-evidence">
+      <section aria-labelledby="search-best-evidence-title" className="qar-react-search-best-evidence">
         <h3 id="search-best-evidence-title">Best evidence</h3>
         {preview.evidenceCards.length > 0 ? (
-          <div className="qar-search-answer-card-list">
+          <div className="qar-react-search-answer-card-list">
             {preview.evidenceCards.map((card) => (
               <PreviewEvidenceCard card={card} key={card.id} onOpenInRead={onOpenInRead} />
             ))}
@@ -103,7 +103,7 @@ export function SearchAnswerPreview({
       </section>
 
       {!allMatchesOpen ? (
-        <div className="qar-search-answer-actions">
+        <div className="qar-react-search-answer-actions">
           <Button disabled={loadingAllMatches} onClick={onOpenAllMatches} size="sm" variant="secondary">
             {loadingAllMatches ? 'Loading matches' : 'Show all matches'}
           </Button>
@@ -111,13 +111,13 @@ export function SearchAnswerPreview({
       ) : null}
 
       {allMatchesOpen ? (
-        <section aria-labelledby="search-all-matches-title" className="qar-search-all-matches">
-          <div className="qar-search-all-matches-head">
+        <section aria-labelledby="search-all-matches-title" className="qar-react-search-all-matches">
+          <div className="qar-react-search-all-matches-head">
             <h3 id="search-all-matches-title">All matches</h3>
             {loadingAllMatches ? <span>Loading matches</span> : null}
           </div>
           {allMatches.length > 0 ? (
-            <div className="qar-search-answer-card-list">
+            <div className="qar-react-search-answer-card-list">
               {allMatches.map((card) => (
                 <PreviewEvidenceCard
                   card={card}
@@ -148,7 +148,7 @@ export function SearchAnswerPreview({
 function ClaimSupportChip({ claim, support }: { claim: AnswerClaim; support?: ClaimSupport }) {
   const count = support?.supportIds.length ?? 0
   return (
-    <Badge className="qar-search-citation-chip">
+    <Badge className="qar-react-search-citation-chip">
       {count} {count === 1 ? 'citation' : 'citations'}
       {' · '}
       {claimSourceLabel(claim)}
@@ -179,15 +179,15 @@ function PreviewEvidenceCard({
   const readerAction = card.readerAction
   const sourceText = card.sourceText ?? card.snippet
   return (
-    <article aria-label={`Evidence ${card.refLabel}`} className="qar-search-result-row">
-      <div className="qar-search-result-row-head">
-        <p className="qar-search-result-ref" dir="auto">
+    <article aria-label={`Evidence ${card.refLabel}`} className="qar-react-search-result-row">
+      <div className="qar-react-search-result-row-head">
+        <p className="qar-react-search-result-ref" dir="auto">
           <bdi>{card.refLabel}</bdi>
         </p>
         {readerAction.type !== 'unavailable' ? (
           <Tooltip content="Open in Reader">
             <IconButton
-              className="qar-search-result-jump"
+              className="qar-react-search-result-jump"
               label={`Open ${card.refLabel} in Reader`}
               onClick={() =>
                 onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)
@@ -198,12 +198,12 @@ function PreviewEvidenceCard({
           </Tooltip>
         ) : null}
       </div>
-      <div className="qar-search-result-passages">
-        <p className="qar-search-result-snippet qar-search-result-arabic" dir="rtl" lang="ar">
+      <div className="qar-react-search-result-passages">
+        <p className="qar-react-search-result-snippet qar-react-search-result-arabic" dir="rtl" lang="ar">
           <bdi>{sourceText}</bdi>
         </p>
         {card.translationText ? (
-          <p className="qar-search-result-context" dir="ltr">
+          <p className="qar-react-search-result-context" dir="ltr">
             <bdi>{card.translationText}</bdi>
           </p>
         ) : null}

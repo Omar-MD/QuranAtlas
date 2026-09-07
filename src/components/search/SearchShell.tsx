@@ -114,9 +114,9 @@ export function SearchShell() {
       searchPanel={searchPanel}
       statusMessage={statusMessage}
     >
-      <div className={cn('qar-search-page-shell', drawer.state.open && 'qar-search-page-shell--nav-open')}>
-        <main aria-label="Search" className="qar-search-content">
-          <div className="qar-search-content-inner">
+      <div className={cn('qar-react-search-page-shell', drawer.state.open && 'qar-react-search-page-shell--nav-open')}>
+        <main aria-label="Search" className="qar-react-search-content">
+          <div className="qar-react-search-content-inner">
             <h1 className="qar:mb-4 qar:text-2xl qar:font-semibold qar:text-text">Search</h1>
             <SearchHeader
               canSave={search.canSaveSearch}
@@ -134,7 +134,7 @@ export function SearchShell() {
               }}
               query={search.query}
             />
-            <div className="qar-search-status-row">
+            <div className="qar-react-search-status-row">
               <p>{search.packMessage}</p>
             </div>
             {search.error ? <Status description={search.error} title="Search unavailable" tone="error" /> : null}

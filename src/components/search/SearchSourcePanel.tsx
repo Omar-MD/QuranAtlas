@@ -6,7 +6,7 @@ export function SearchSourcePanel({ sources }: { packVersion?: string; sources: 
     return <Status description="Run a search to inspect query sources." title="Search sources" tone="info" />
   }
   return (
-    <div className="qar-search-source-panel">
+    <div className="qar-react-search-source-panel">
       <SourceRows rows={sources.sourceRows} title="Search index" />
       <SourceRows rows={sources.mappingSummary} title="Reader mapping summary" />
       <SourceRows rows={sources.sourceNotes} title="Result boundary notes" />

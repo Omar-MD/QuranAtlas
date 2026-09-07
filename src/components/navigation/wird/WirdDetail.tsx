@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import { Bell, CalendarDays, Check, CircleDot, MapPin } from 'lucide-react'
+import { useState } from 'react'
+import { Bell, CalendarDays, CircleDot, MapPin } from 'lucide-react'
 
 import type {
   BrowserNotificationState,
@@ -8,7 +8,7 @@ import type {
   WirdSummary,
   WirdUnit,
 } from '../../../continuity/wird/types'
-import { Button, Checkbox, Input } from '../../ui'
+import { Button, Checkbox, Input, SegmentedControl } from '../../ui'
 
 export type WirdSetupPayload = {
   targetDays: number | null
@@ -43,7 +43,7 @@ export function WirdDetail({
   summary,
 }: WirdDetailProps) {
   const [targetMode, setTargetMode] = useState<'preset' | 'custom'>('preset')
-  const [targetDays, setTargetDays] = useState<number | null>(null)
+  const [targetDays, setTargetDays] = useState<number | null>(7)
   const [targetEndOn, setTargetEndOn] = useState('')
   const [unit, setUnit] = useState<WirdUnit>('juz')
   const [startMode, setStartMode] = useState<'current' | 'beginning'>('current')
@@ -125,26 +125,24 @@ export function WirdDetail({
                 {targetMode === 'custom' ? 'Custom' : targetDays ? `${targetDays} days` : 'Choose'}
               </span>
             </div>
-            <div className="qar-react-wird-options" role="radiogroup" aria-label="Completion target">
-              {[7, 30, 90].map((days) => (
-                <WirdChoice
-                  aria-checked={targetMode === 'preset' && targetDays === days}
-                  key={days}
-                  onClick={() => selectPreset(days)}
-                >
-                  {days} days
-                </WirdChoice>
-              ))}
-              <WirdChoice
-                aria-checked={targetMode === 'custom'}
-                onClick={() => {
+            <SegmentedControl
+              label="Completion target"
+              onValueChange={(value) => {
+                if (value === 'custom') {
                   setTargetMode('custom')
                   setTargetDays(null)
-                }}
-              >
-                Custom date
-              </WirdChoice>
-            </div>
+                  return
+                }
+                selectPreset(Number(value))
+              }}
+              options={[
+                { label: '7 days', value: '7' },
+                { label: '30 days', value: '30' },
+                { label: '90 days', value: '90' },
+                { label: 'Custom date', value: 'custom' },
+              ]}
+              value={targetMode === 'custom' ? 'custom' : String(targetDays)}
+            />
             {targetMode === 'custom' && (
               <Input
                 className="qar-react-wird-input"
@@ -164,13 +162,12 @@ export function WirdDetail({
               </span>
               <span className="qar-react-wird-field-value">{unit}</span>
             </div>
-            <div className="qar-react-wird-options" role="radiogroup" aria-label="Display unit">
-              {UNITS.map((nextUnit) => (
-                <WirdChoice aria-checked={unit === nextUnit} key={nextUnit} onClick={() => setUnit(nextUnit)}>
-                  {nextUnit}
-                </WirdChoice>
-              ))}
-            </div>
+            <SegmentedControl
+              label="Display unit"
+              onValueChange={(value) => setUnit(value as WirdUnit)}
+              options={UNITS.map((nextUnit) => ({ label: nextUnit, value: nextUnit }))}
+              value={unit}
+            />
           </section>
 
           <section className="qar-react-wird-field" aria-label="Start point">
@@ -181,18 +178,15 @@ export function WirdDetail({
               </span>
               <span className="qar-react-wird-field-value">{startMode === 'current' ? currentRefLabel : '1:1'}</span>
             </div>
-            <div className="qar-react-wird-options" role="radiogroup" aria-label="Start point">
-              <WirdChoice
-                aria-checked={startMode === 'current'}
-                disabled={!currentPosition}
-                onClick={() => setStartMode('current')}
-              >
-                Current position {currentRefLabel}
-              </WirdChoice>
-              <WirdChoice aria-checked={startMode === 'beginning'} onClick={() => setStartMode('beginning')}>
-                Beginning 1:1
-              </WirdChoice>
-            </div>
+            <SegmentedControl
+              label="Start point"
+              onValueChange={(value) => setStartMode(value as 'current' | 'beginning')}
+              options={[
+                { disabled: !currentPosition, label: `Current position ${currentRefLabel}`, value: 'current' },
+                { label: 'Beginning 1:1', value: 'beginning' },
+              ]}
+              value={startMode}
+            />
           </section>
 
           <section className="qar-react-wird-field qar-react-wird-field--reminder" aria-label="Daily Wird reminders">
@@ -269,35 +263,5 @@ export function WirdDetail({
         </div>
       )}
     </section>
-  )
-}
-
-function WirdChoice({
-  children,
-  disabled,
-  onClick,
-  ...props
-}: {
-  'aria-checked': boolean
-  children: ReactNode
-  disabled?: boolean
-  onClick: () => void
-}) {
-  const pressed = props['aria-checked']
-  return (
-    <Button
-      aria-checked={pressed}
-      className="qar-react-wird-option"
-      role="radio"
-      disabled={disabled}
-      onClick={onClick}
-      size="sm"
-      variant="ghost"
-    >
-      <span className="qar-react-wird-option-check" aria-hidden="true">
-        {pressed ? <Check size={13} strokeWidth={2.2} /> : null}
-      </span>
-      <span>{children}</span>
-    </Button>
   )
 }

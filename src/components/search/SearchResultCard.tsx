@@ -21,17 +21,17 @@ export function SearchResultCard({
     <article
       aria-label={`Search result ${card.refLabel}`}
       aria-current={selected ? 'true' : undefined}
-      className="qar-search-result-row"
+      className="qar-react-search-result-row"
       data-selected={selected ? 'true' : undefined}
     >
-      <div className="qar-search-result-row-head">
-        <p className="qar-search-result-ref" dir="auto">
+      <div className="qar-react-search-result-row-head">
+        <p className="qar-react-search-result-ref" dir="auto">
           {card.refLabel}
         </p>
         {card.canOpenInRead ? (
           <Tooltip content="Open in Reader">
             <IconButton
-              className="qar-search-result-jump"
+              className="qar-react-search-result-jump"
               label={`Open ${card.refLabel} in Reader`}
               onClick={() => onOpenInRead(card.result)}
             >
@@ -40,17 +40,17 @@ export function SearchResultCard({
           </Tooltip>
         ) : null}
       </div>
-      <div className="qar-search-result-passages">
-        <p className="qar-search-result-snippet qar-search-result-arabic" dir="rtl" lang="ar">
+      <div className="qar-react-search-result-passages">
+        <p className="qar-react-search-result-snippet qar-react-search-result-arabic" dir="rtl" lang="ar">
           <bdi>{card.primaryText}</bdi>
         </p>
         {card.secondaryText ? (
-          <p className="qar-search-result-context" dir="ltr">
+          <p className="qar-react-search-result-context" dir="ltr">
             <bdi>{card.secondaryText}</bdi>
           </p>
         ) : null}
       </div>
-      <div className="qar-search-result-actions">
+      <div className="qar-react-search-result-actions">
         <Button
           onClick={(event) => {
             onDetailsTrigger?.(event.currentTarget)

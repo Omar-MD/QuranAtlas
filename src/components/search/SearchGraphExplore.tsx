@@ -37,9 +37,9 @@ export function SearchGraphExplore({
             : 'Load Explore sections'}
       </Button>
       {graph.loading ? (
-        <div aria-live="polite" className="qar-search-graph-loading" role="status">
+        <div aria-live="polite" className="qar-react-search-graph-loading" role="status">
           <p>Loading source-backed wording sections for this selected ayah.</p>
-          <div aria-hidden="true" className="qar-search-graph-loading-bars">
+          <div aria-hidden="true" className="qar-react-search-graph-loading-bars">
             <span />
             <span />
             <span />

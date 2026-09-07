@@ -16,7 +16,7 @@ export const SearchResultDetail = forwardRef<
 >(function SearchResultDetail({ details, onClose, onOpenExplore, previewMatch }, ref) {
   if (!details && !previewMatch) {
     return (
-      <section aria-label="Search result detail" className="qar-search-result-detail" ref={ref} tabIndex={-1}>
+      <section aria-label="Search result detail" className="qar-react-search-result-detail" ref={ref} tabIndex={-1}>
         <p className="qar:m-0 qar:text-sm qar:text-muted">Choose a verse and open Details to inspect why it matched.</p>
       </section>
     )
@@ -26,7 +26,7 @@ export const SearchResultDetail = forwardRef<
     return (
       <section
         aria-label={`Details for ${previewMatch.refLabel}`}
-        className="qar-search-result-detail"
+        className="qar-react-search-result-detail"
         ref={ref}
         tabIndex={-1}
       >
@@ -38,7 +38,7 @@ export const SearchResultDetail = forwardRef<
             </h3>
           </div>
           {onClose ? (
-            <IconButton className="qar-search-detail-back" label="Back to search results" onClick={onClose}>
+            <IconButton className="qar-react-search-detail-back" label="Back to search results" onClick={onClose}>
               <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.75} />
             </IconButton>
           ) : null}
@@ -63,7 +63,12 @@ export const SearchResultDetail = forwardRef<
   if (!details) return null
 
   return (
-    <section aria-label={`Details for ${details.title}`} className="qar-search-result-detail" ref={ref} tabIndex={-1}>
+    <section
+      aria-label={`Details for ${details.title}`}
+      className="qar-react-search-result-detail"
+      ref={ref}
+      tabIndex={-1}
+    >
       <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
         <div>
           <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted">Details</p>
@@ -73,10 +78,10 @@ export const SearchResultDetail = forwardRef<
         </div>
         {onClose ? (
           <>
-            <IconButton className="qar-search-detail-back" label="Back to search results" onClick={onClose}>
+            <IconButton className="qar-react-search-detail-back" label="Back to search results" onClick={onClose}>
               <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.75} />
             </IconButton>
-            <Button className="qar-search-detail-close" onClick={onClose} size="sm" variant="ghost">
+            <Button className="qar-react-search-detail-close" onClick={onClose} size="sm" variant="ghost">
               Close
             </Button>
           </>

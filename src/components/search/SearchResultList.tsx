@@ -31,7 +31,7 @@ export function SearchResultList({
     )
   }
   return (
-    <section aria-label="Verses" className="qar-search-result-list">
+    <section aria-label="Verses" className="qar-react-search-result-list">
       {cards.map((card) => (
         <SearchResultCard
           card={card}

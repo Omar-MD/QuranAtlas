@@ -84,7 +84,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
   }, [detailsRequestId, props.activeTab, props.selectedResult])
 
   return (
-    <section aria-label="Search result workspace" className="qar-search-workspace">
+    <section aria-label="Search result workspace" className="qar-react-search-workspace">
       <Tabs
         defaultValue={viewModel.defaultTab}
         items={[
@@ -139,9 +139,12 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                   tab="verses"
                 />
               ) : (
-                <div className="qar-search-verses-panel" data-mobile-details={props.selectedResult ? 'true' : 'false'}>
+                <div
+                  className="qar-react-search-verses-panel"
+                  data-mobile-details={props.selectedResult ? 'true' : 'false'}
+                >
                   {props.resultCountMessage ? (
-                    <p className="qar-search-result-count">{props.resultCountMessage}</p>
+                    <p className="qar-react-search-result-count">{props.resultCountMessage}</p>
                   ) : null}
                   <SearchResultList
                     canLoadMore={props.canLoadMore}
@@ -248,8 +251,8 @@ function PreviewOnlyTabPanel({
   }
 
   return (
-    <section aria-labelledby={titleId} className="qar-search-preview-tab-note">
-      <p className="qar-search-overview-eyebrow">Answer preview active</p>
+    <section aria-labelledby={titleId} className="qar-react-search-preview-tab-note">
+      <p className="qar-react-search-overview-eyebrow">Answer preview active</p>
       <h3 id={titleId}>{previewOnlyTitle(tab)}</h3>
       <p dir="auto">
         <bdi>{preview.query}</bdi> is loaded as an Ask preview. This tab has no separate result window for the preview
@@ -258,7 +261,7 @@ function PreviewOnlyTabPanel({
       <p>
         Open Overview for supported claims and best evidence. Use Show all matches to expand the source-backed matches.
       </p>
-      <div className="qar-search-preview-tab-actions">
+      <div className="qar-react-search-preview-tab-actions">
         <Button onClick={onOpenOverview} size="sm" variant="primary">
           View Overview
         </Button>
@@ -267,7 +270,7 @@ function PreviewOnlyTabPanel({
             {loadingAllMatches ? 'Loading matches' : 'Show all matches'}
           </Button>
         ) : (
-          <span className="qar-search-preview-tab-status">All matches are open on Overview.</span>
+          <span className="qar-react-search-preview-tab-status">All matches are open on Overview.</span>
         )}
       </div>
     </section>

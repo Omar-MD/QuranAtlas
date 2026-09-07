@@ -12,19 +12,19 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
   }
 
   return (
-    <section aria-labelledby="search-overview-title" className="qar-search-overview">
-      <div className="qar-search-overview-head">
+    <section aria-labelledby="search-overview-title" className="qar-react-search-overview">
+      <div className="qar-react-search-overview-head">
         <div>
-          <p className="qar-search-overview-eyebrow">Overview</p>
-          <h2 className="qar-search-overview-title" id="search-overview-title" dir="auto">
+          <p className="qar-react-search-overview-eyebrow">Overview</p>
+          <h2 className="qar-react-search-overview-title" id="search-overview-title" dir="auto">
             <bdi>{overview.queryLabel}</bdi>
           </h2>
-          <p className="qar-search-overview-mode">{overview.interpretedAs}</p>
+          <p className="qar-react-search-overview-mode">{overview.interpretedAs}</p>
         </div>
         <Badge>{overview.primaryMatchType}</Badge>
       </div>
 
-      <dl className="qar-search-overview-facts">
+      <dl className="qar-react-search-overview-facts">
         {overview.facts.map((fact) => (
           <div key={`${fact.label}:${fact.scope}`}>
             <dt>{fact.label}</dt>
@@ -41,7 +41,7 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
       ) : null}
 
       {overview.topSurahs.length > 0 ? (
-        <section aria-label="Top surah distribution" className="qar-search-overview-list">
+        <section aria-label="Top surah distribution" className="qar-react-search-overview-list">
           <h3>Top Surahs</h3>
           {overview.topSurahs.map((row) => (
             <p key={row.label}>
@@ -54,7 +54,7 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
       ) : null}
 
       {overview.topForms.length > 0 ? (
-        <section aria-label="Top forms" className="qar-search-overview-list">
+        <section aria-label="Top forms" className="qar-react-search-overview-list">
           <h3>Forms by count</h3>
           {overview.topForms.map((row) => (
             <p key={row.label}>
@@ -66,9 +66,9 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
         </section>
       ) : null}
 
-      {overview.caveat ? <p className="qar-search-overview-note">{overview.caveat}</p> : null}
+      {overview.caveat ? <p className="qar-react-search-overview-note">{overview.caveat}</p> : null}
 
-      <div className="qar-search-overview-actions">
+      <div className="qar-react-search-overview-actions">
         {overview.actions.map((action, index) => (
           <Button
             key={action.label}

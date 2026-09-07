@@ -25,19 +25,19 @@ export function SearchHeader({
 
   return (
     <form
-      className="qar-search-controls"
+      className="qar-react-search-controls"
       onSubmit={(event) => {
         event.preventDefault()
         submitForm(event.currentTarget)
       }}
       ref={formRef}
     >
-      <div className="qar-search-controls-primary">
-        <div className="qar-search-query-field">
+      <div className="qar-react-search-controls-primary">
+        <div className="qar-react-search-query-field">
           <SearchBox onQueryChange={onQueryChange} query={query} />
         </div>
         <Button
-          className="qar-search-submit"
+          className="qar-react-search-submit"
           onClick={(event) => {
             event.preventDefault()
             submitForm(formRef.current)
@@ -48,7 +48,7 @@ export function SearchHeader({
           Search
         </Button>
         <Button
-          className="qar-search-save"
+          className="qar-react-search-save"
           disabled={!canSave}
           onClick={onSaveSearch}
           type="button"
