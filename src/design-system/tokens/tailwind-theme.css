@@ -15,6 +15,8 @@
   --color-danger: var(--qa-react-danger);
   --radius-control: var(--qa-react-radius-control);
   --radius-surface: var(--qa-react-radius-surface);
+  --radius-pill: var(--qa-react-radius-pill);
+  --container-page: var(--qa-react-page-max-width);
   --font-ui: var(--qa-react-font-ui);
   --font-arabic: var(--qa-react-font-arabic);
   --font-translation: var(--qa-react-font-translation);

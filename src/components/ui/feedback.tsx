@@ -1,5 +1,5 @@
 import * as ProgressPrimitive from '@radix-ui/react-progress'
-import type { HTMLAttributes } from 'react'
+import type { HTMLAttributes, ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 
@@ -58,5 +58,114 @@ export function Spinner({ label, className, ...props }: SpinnerProps) {
       role="status"
       {...props}
     />
+  )
+}
+
+export type StatusProps = HTMLAttributes<HTMLDivElement> & {
+  tone: 'info' | 'success' | 'warning' | 'error'
+  title: string
+  description?: string
+  action?: ReactNode
+  icon?: ReactNode
+}
+
+export function Status({ tone, title, description, action, icon, className, ...props }: StatusProps) {
+  return (
+    <div
+      className={cn('qar-react-status qar:rounded-control qar:p-4', className)}
+      data-tone={tone}
+      role={tone === 'error' ? 'alert' : 'status'}
+      {...props}
+    >
+      <div className="qar:flex qar:items-start qar:gap-2">
+        {icon ? <span>{icon}</span> : null}
+        <div>
+          <div className="qar:text-sm qar:font-semibold qar:text-text">{title}</div>
+          {description ? <div className="qar:text-sm qar:text-muted">{description}</div> : null}
+        </div>
+      </div>
+      {action ? <div className="qar:flex qar:gap-2">{action}</div> : null}
+    </div>
+  )
+}
+
+export type ListRowProps = HTMLAttributes<HTMLDivElement> & {
+  selected?: boolean
+  current?: boolean
+  num?: ReactNode
+  title: ReactNode
+  meta?: ReactNode
+  arabic?: ReactNode
+  onSelect?: () => void
+  action?: ReactNode
+}
+
+export function ListRow({
+  action,
+  arabic,
+  className,
+  current,
+  meta,
+  num,
+  onSelect,
+  selected,
+  title,
+  ...props
+}: ListRowProps) {
+  const content = (
+    <>
+      {num != null ? <span className="qar-react-list-row-num qar:text-muted qar:tabular-nums">{num}</span> : null}
+      <span className="qar:block qar:min-w-0">
+        <span className="qar-react-list-row-title">{title}</span>
+        {meta ? <span className="qar-react-list-row-meta">{meta}</span> : null}
+      </span>
+      {arabic ? (
+        <span className="qar-react-list-row-arabic" dir="rtl">
+          {arabic}
+        </span>
+      ) : null}
+    </>
+  )
+  return (
+    <div
+      className={cn('qar-react-list-row qar:gap-3 qar:min-h-11 qar:px-3 qar:py-2', className)}
+      aria-current={current ? 'true' : undefined}
+      data-current={current || undefined}
+      data-selected={selected || undefined}
+      {...props}
+    >
+      {onSelect ? (
+        <button
+          className={cn('qar-react-list-row-select qar:gap-3', action ? 'qar:col-span-2' : 'qar:col-span-full')}
+          onClick={onSelect}
+          type="button"
+        >
+          {content}
+        </button>
+      ) : (
+        content
+      )}
+      {action ? <ListRowActions>{action}</ListRowActions> : null}
+    </div>
+  )
+}
+
+export type ListRowActionsProps = HTMLAttributes<HTMLDivElement>
+
+export function ListRowActions({ className, ...props }: ListRowActionsProps) {
+  return <div className={cn('qar:flex qar:shrink-0 qar:items-center qar:gap-1', className)} {...props} />
+}
+
+export type CardProps = HTMLAttributes<HTMLDivElement> & { title?: ReactNode }
+
+export function Card({ title, className, children, ...props }: CardProps) {
+  return (
+    <div
+      className={cn('qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4 qar:text-text', className)}
+      {...props}
+    >
+      {title ? <div className="qar:text-sm qar:font-semibold qar:text-text">{title}</div> : null}
+      {children}
+    </div>
   )
 }

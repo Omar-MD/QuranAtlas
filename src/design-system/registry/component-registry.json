@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "components": [
     {
       "id": "about-route",
@@ -23,8 +23,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-shell/about-route.test.tsx",
-          "behaviors": ["About copy contract", "clear data confirmation gating"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["shared configure chrome operates in the core settings journey"]
         }
       ],
       "accessibility": [
@@ -66,8 +66,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["expanded content"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["included-assets disclosure family operates in the core settings journey"]
         }
       ],
       "accessibility": ["button trigger", "keyboard toggle", "visible focus"],
@@ -104,8 +104,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["tone"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["status badge surfaces operate in the core reader journey"]
         }
       ],
       "accessibility": ["state is not color-only when composed with text"],
@@ -142,16 +142,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": [
-            "wave 3 coverage",
-            "grouped bookmark rows",
-            "Arabic verse preview",
-            "Mushaf page rows",
-            "full-row jump",
-            "delete callback",
-            "bookmark landing pulse"
-          ]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["navigation list rows operate in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -177,7 +169,7 @@
       "maturity": "primitive",
       "exportPath": "src/components/ui/button.tsx",
       "namedExport": "Button",
-      "allowedVariants": ["primary", "secondary", "ghost", "danger"],
+      "allowedVariants": ["primary", "secondary", "ghost", "danger", "pill"],
       "allowedSizes": ["sm", "md", "lg"],
       "slots": ["root"],
       "dependencies": {
@@ -188,13 +180,13 @@
       "stories": [
         {
           "path": "src/components/ui/ui.stories.tsx",
-          "states": ["default", "disabled", "focus-visible"]
+          "states": ["default", "disabled", "focus-visible", "pill"]
         }
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["click", "variant"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["reader and settings chrome buttons operate in the core journey"]
         }
       ],
       "accessibility": ["native button semantics", "visible focus", "disabled state"],
@@ -209,6 +201,49 @@
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not use raw <button> in feature code."],
       "replacement": "Button"
+    },
+    {
+      "id": "card",
+      "name": "Card",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/feedback.tsx",
+      "namedExport": "Card",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["root", "header"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": ["titled", "untitled"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": [
+            "coverage reserved: Card has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the onboarding, reader/Mushaf, and Settings/Assets/About/Unsupported route-cutover milestones"
+          ]
+        }
+      ],
+      "accessibility": [
+        "optional header renders as flow content owned by the page heading hierarchy",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/ui/ui.stories.tsx"]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": ["Do not nest cards inside list rows.", "Do not hand-roll bordered containers for cards."]
     },
     {
       "id": "checkbox",
@@ -232,8 +267,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["toggle"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["settings checkboxes operate in the core settings journey"]
         }
       ],
       "accessibility": ["labelled checkbox", "keyboard toggle", "visible focus"],
@@ -247,6 +282,49 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not import Radix checkbox from feature code."]
+    },
+    {
+      "id": "chrome-frame",
+      "name": "ChromeFrame",
+      "maturity": "product",
+      "exportPath": "src/components/navigation/ChromeFrame.tsx",
+      "namedExport": "ChromeFrame",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["chromeBar", "drawer", "status", "content"],
+      "dependencies": {
+        "radix": [],
+        "components": ["button", "icon-button", "nav-drawer"],
+        "icons": ["lucide-react"]
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/navigation/navigation.stories.tsx",
+          "states": ["default", "drawer-open"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["search journey renders through the shared chrome frame and drawer host"]
+        }
+      ],
+      "accessibility": [
+        "chrome bar wordmark, destination hamburger, and settings gear are labelled controls",
+        "one polite status region per page; no duplicate live announcements",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/navigation/navigation.stories.tsx"]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src/components/navigation"
+      },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": ["Do not mount a second drawer host or app header outside the shared chrome composition."]
     },
     {
       "id": "command",
@@ -270,8 +348,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["listbox"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["command menu surfaces operate in the core search journey"]
         }
       ],
       "accessibility": ["labelled listbox", "button options"],
@@ -308,8 +386,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-wird/wird-wave3.test.tsx",
-          "behaviors": ["wave 3 coverage"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["wird status surfaces operate in the core reader journey"]
         }
       ],
       "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
@@ -346,8 +424,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["open dialog"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["confirmation dialog family operates in the core settings journey"]
         }
       ],
       "accessibility": ["labelled dialog", "focus trap", "escape closes"],
@@ -384,8 +462,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["expanded content"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["disclosure panels operate in the core settings journey"]
         }
       ],
       "accessibility": ["native disclosure semantics"],
@@ -422,8 +500,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["menu item"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["drawer menu actions operate in the core reader journey"]
         }
       ],
       "accessibility": ["menu semantics", "keyboard navigation"],
@@ -460,8 +538,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": ["navigation list coverage", "row route start references"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["navigation list rows operate in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -502,8 +580,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["accessible name"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["reader chrome icon buttons operate in the core journey"]
         }
       ],
       "accessibility": ["required accessible name", "visible focus"],
@@ -540,8 +618,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["label association"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["search query field renders in the core search journey"]
         }
       ],
       "accessibility": ["visible label", "native input semantics"],
@@ -578,8 +656,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": ["real 30-row boundary data", "route start references"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["navigation list rows operate in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -597,6 +675,95 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
+    },
+    {
+      "id": "list-row",
+      "name": "ListRow",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/feedback.tsx",
+      "namedExport": "ListRow",
+      "allowedVariants": ["default", "selected", "current"],
+      "allowedSizes": [],
+      "slots": ["root", "num", "title", "meta", "arabic", "action"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": ["default", "selected", "current", "with-action", "long-labels", "numbered"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": [
+            "coverage reserved: ListRow has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the navigation/Surahs/Bookmarks and Search route-cutover milestones"
+          ]
+        }
+      ],
+      "accessibility": [
+        "rows with onSelect render a native-button select surface spanning the full row when no action slot is present",
+        "current-location rows expose aria-current=true; selected state deliberately exposes no aria-selected or aria-pressed because brief section 8 reserves aria-pressed for true toggles and listbox/option semantics belong to composing consumers",
+        "selected and current-location rows stay visible state without relying on color alone",
+        "touch target at --qar-size-touch-target with visible focus",
+        "list semantics such as listbox and option remain owned by composing consumers"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/ui/ui.stories.tsx"]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": ["Do not nest cards inside list rows.", "Do not style route-specific row variants in CSS."]
+    },
+    {
+      "id": "list-row-actions",
+      "name": "ListRowActions",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/feedback.tsx",
+      "namedExport": "ListRowActions",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["root"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": ["with-action"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": [
+            "coverage reserved: ListRowActions has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the navigation/Surahs/Bookmarks route-cutover milestone"
+          ]
+        }
+      ],
+      "accessibility": [
+        "actions remain labelled controls reachable by keyboard inside the row",
+        "container stays a passive group so row activation is not intercepted"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/ui/ui.stories.tsx"]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": ["Do not place primary navigation content in the action area."]
     },
     {
       "id": "metadata-lane",
@@ -620,8 +787,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-metadata/metadata-wave3.test.tsx",
-          "behaviors": ["wave 3 coverage"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["verse metadata surfaces operate in the core reader journey"]
         }
       ],
       "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
@@ -677,8 +844,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-read/reader-wave3.test.tsx",
-          "behaviors": ["wave 3 coverage", "page bookmark toggle"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["reader mode chrome that bridges to Mushaf operates in the core journey"]
         }
       ],
       "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
@@ -701,9 +868,10 @@
       "namedExport": "NavDrawer",
       "allowedVariants": ["read", "search"],
       "allowedSizes": [],
-      "slots": ["root", "modeTabs", "readPanel", "searchPanel"],
+      "slots": ["root", "header", "destinationRail", "wirdSlot", "readPanel", "searchPanel"],
       "dependencies": {
         "radix": [],
+        "components": ["button", "icon-button", "input", "segmented-control", "sheet"],
         "icons": ["lucide-react"]
       },
       "tokenNamespaces": ["--qa-react-*"],
@@ -715,11 +883,16 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": ["wave 3 coverage"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["drawer navigation operates in the core reader journey"]
         }
       ],
-      "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
+      "accessibility": [
+        "Sheet navigation-drawer dialog: focus trap on mobile, Escape/backdrop close, focus restore to invoker",
+        "desktop 360px rail is non-modal with keyboard containment",
+        "Read/Search destination radiogroup carries an accessible name; active destination conveyed by aria-checked",
+        "visible focus through owned primitives"
+      ],
       "visualProof": {
         "status": "covered",
         "references": ["src/components/navigation/navigation.stories.tsx", "tests/e2e/search/react-search.spec.ts"]
@@ -732,6 +905,48 @@
       "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
     },
     {
+      "id": "navigation-page-recipe",
+      "name": "NavigationPageRecipe",
+      "maturity": "recipe",
+      "exportPath": "src/design-system/recipes/navigation-page.tsx",
+      "namedExport": "NavigationPageRecipe",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["root"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/design-system/recipes/page-recipes.stories.tsx",
+          "states": ["NavigationPage"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["navigation page surfaces bridge from the core reader journey"]
+        }
+      ],
+      "accessibility": [
+        "main landmark labelled by the page title",
+        "single-h1 page heading with optional muted kicker",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/navigation/navigation.stories.tsx"]
+      },
+      "owner": {
+        "surface": "navigate",
+        "package": "src/design-system/recipes"
+      },
+      "allowedConsumers": ["src/app/routes/navigation/**"],
+      "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
+    },
+    {
       "id": "onboarding-page-recipe",
       "name": "OnboardingPageRecipe",
       "maturity": "recipe",
@@ -739,7 +954,7 @@
       "namedExport": "OnboardingPageRecipe",
       "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["root"],
+      "slots": ["root", "heading", "column"],
       "dependencies": {
         "radix": [],
         "icons": ["lucide-react"]
@@ -747,21 +962,21 @@
       "tokenNamespaces": ["--qa-react-*"],
       "stories": [
         {
-          "path": "src/components/settings/settings.stories.tsx",
-          "states": ["riwayah", "translation", "loading", "disabled-source", "selected-source"]
+          "path": "src/design-system/recipes/page-recipes.stories.tsx",
+          "states": ["OnboardingPage"]
         }
       ],
       "tests": [
         {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": ["wave 3 coverage"]
-        },
-        {
-          "path": "tests/unit/react-navigate/onboarding-flow.test.ts",
-          "behaviors": ["two-step flow", "disabled source protection"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["onboarding-completed storage seeds the core reader boot"]
         }
       ],
-      "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
+      "accessibility": [
+        "single-h1 page heading with optional muted kicker",
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
       "visualProof": {
         "status": "covered",
         "references": ["src/components/settings/settings.stories.tsx", "tests/e2e/configure/react-golden.spec.ts"]
@@ -795,8 +1010,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["open content"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["triggered popover surfaces operate in the core reader journey"]
         }
       ],
       "accessibility": ["triggered content", "keyboard dismiss"],
@@ -833,8 +1048,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["aria value"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["asset progress feedback operates in the core settings journey"]
         }
       ],
       "accessibility": ["labelled progressbar", "numeric value"],
@@ -857,7 +1072,7 @@
       "namedExport": "ReaderPageRecipe",
       "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["root"],
+      "slots": ["root", "chrome", "content"],
       "dependencies": {
         "radix": [],
         "icons": ["lucide-react"]
@@ -865,17 +1080,28 @@
       "tokenNamespaces": ["--qa-react-*"],
       "stories": [
         {
-          "path": "src/components/reader/reader.stories.tsx",
-          "states": ["default"]
+          "path": "src/design-system/recipes/page-recipes.stories.tsx",
+          "states": ["ReaderPage", "ReaderPageWithChrome"]
         }
       ],
       "tests": [
         {
-          "path": "tests/unit/react-read/reader-wave3.test.tsx",
-          "behaviors": ["wave 3 coverage"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["verse reader main landmark renders in the core journey"]
+        },
+        {
+          "path": "tests/e2e/offline-lifecycle.spec.ts",
+          "behaviors": [
+            "verse reader main landmark survives offline reload",
+            "reader resynchronizes a missing surah after connectivity returns"
+          ]
         }
       ],
-      "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
+      "accessibility": [
+        "single-h1 page heading hierarchy through the chrome slot consumer",
+        "semantic landmarks",
+        "visible focus through owned primitives"
+      ],
       "visualProof": {
         "status": "covered",
         "references": ["src/components/reader/reader.stories.tsx"]
@@ -922,20 +1148,15 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-read/reader-wave3.test.tsx",
-          "behaviors": [
-            "dataset-backed Al-Fatihah",
-            "basmala",
-            "footnotes",
-            "bookmark indicator",
-            "stable bookmark indicator slot",
-            "selection",
-            "Tafsir exclusion"
-          ]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["verse reader renders Al-Fatihah translation text in the core journey"]
         },
         {
-          "path": "tests/e2e/read/react-golden.spec.ts",
-          "behaviors": ["production reader corpus coverage", "responsive reader proof"]
+          "path": "tests/e2e/offline-lifecycle.spec.ts",
+          "behaviors": [
+            "cached verse text renders on offline reload",
+            "unfetched surah text resynchronizes when connectivity returns"
+          ]
         }
       ],
       "accessibility": [
@@ -976,15 +1197,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-read/reader-wave3.test.tsx",
-          "behaviors": [
-            "reader chrome status opens Daily Wird detail",
-            "full Daily Wird card stays out of reader content"
-          ]
-        },
-        {
-          "path": "tests/unit/react-shell/settings-route.test.tsx",
-          "behaviors": ["settings toggle persists reader status visibility"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["reader chrome status controls operate in the core journey"]
         }
       ],
       "accessibility": [
@@ -1018,7 +1232,7 @@
       "dependencies": {
         "radix": [],
         "icons": [],
-        "components": ["Tooltip", "IconButton"]
+        "components": ["icon-button", "tooltip"]
       },
       "tokenNamespaces": ["--qa-react-*"],
       "stories": [
@@ -1029,16 +1243,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-read/reader-wave3.test.tsx",
-          "behaviors": [
-            "destination-labelled Verse and Mushaf actions",
-            "ReaderChrome-only consumer",
-            "reader route bridging"
-          ]
-        },
-        {
-          "path": "tests/e2e/navigate/react-golden.spec.ts",
-          "behaviors": ["visible mobile destination action", "route-preserving mode bridge"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["reading-mode chrome operates in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -1116,25 +1322,12 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-search/search-wave3.test.ts",
-          "behaviors": ["prototype guard against mutable Search dataset URLs"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["search main landmark and query field render in the core search journey"]
         },
         {
-          "path": "tests/unit/react-search/search-route.test.tsx",
-          "behaviors": [
-            "route shell copy",
-            "result details",
-            "memory graph Explore sections",
-            "required graph source notes",
-            "validated Open in Read action",
-            "AnswerPreview renders supported claims only",
-            "All Matches loads after explicit user action",
-            "saved-search load recompute"
-          ]
-        },
-        {
-          "path": "tests/unit/react-search/saved-searches.test.tsx",
-          "behaviors": ["saved query definition persistence", "rename and delete", "result snapshots not stored"]
+          "path": "tests/e2e/offline-lifecycle.spec.ts",
+          "behaviors": ["offline search shows the designed unfetched-data fallback status"]
         }
       ],
       "accessibility": [
@@ -1177,11 +1370,11 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["selected radio option"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["settings mode controls operate in the core settings journey"]
         }
       ],
-      "accessibility": ["labelled radiogroup", "selected state"],
+      "accessibility": ["labelled radiogroup", "explicit role=radiogroup on the group container", "selected state"],
       "visualProof": {
         "status": "covered",
         "references": ["src/components/ui/ui.stories.tsx"]
@@ -1215,8 +1408,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["combobox label"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["settings choice selects operate in the core settings journey"]
         }
       ],
       "accessibility": ["labelled combobox", "keyboard listbox", "portal content layers above active settings shells"],
@@ -1253,12 +1446,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-shell/settings-route.test.tsx",
-          "behaviors": [
-            "labelled heading and content slots",
-            "active-mode group ownership",
-            "settings route group order"
-          ]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["Verse settings heading and Included reading assets region render in the core settings journey"]
         }
       ],
       "accessibility": ["region labelled by its visible heading", "optional description remains adjacent to heading"],
@@ -1275,6 +1464,48 @@
       },
       "allowedConsumers": ["src/components/settings/**", "src/app/routes/settings/**"],
       "forbiddenUses": ["Do not use unlabelled visual group cards."]
+    },
+    {
+      "id": "settings-page-recipe",
+      "name": "SettingsPageRecipe",
+      "maturity": "recipe",
+      "exportPath": "src/design-system/recipes/settings-page.tsx",
+      "namedExport": "SettingsPageRecipe",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["root"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": ["About"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["configure surface operates in the core settings journey"]
+        }
+      ],
+      "accessibility": [
+        "main landmark labelled by the page title",
+        "single-h1 page heading with optional muted kicker",
+        "visible focus through owned primitives"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/settings/settings.stories.tsx"]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src/design-system/recipes"
+      },
+      "allowedConsumers": ["src/app/routes/settings/**"],
+      "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
     },
     {
       "id": "settings-shell",
@@ -1298,31 +1529,10 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-shell/settings-route.test.tsx",
+          "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "mode-aware route shell",
-            "in-place settings overlay preserves reader route",
-            "controlled return focus"
-          ]
-        },
-        {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": [
-            "mode-aware controls",
-            "verse typography controls",
-            "Mushaf-only view controls",
-            "grouped active-mode settings"
-          ]
-        },
-        {
-          "path": "tests/e2e/configure/react-golden.spec.ts",
-          "behaviors": [
-            "full-screen compact and short-landscape shell",
-            "tablet and desktop right rail",
-            "scroll reach and sticky header",
-            "focus trap and dismissal",
-            "44px targets",
-            "axe and rendered contrast"
+            "settings overlay opens over the reader preserving its route",
+            "closing settings returns to the reader surface"
           ]
         }
       ],
@@ -1353,7 +1563,7 @@
       "maturity": "behavior",
       "exportPath": "src/components/ui/overlays.tsx",
       "namedExport": "Sheet",
-      "allowedVariants": ["default", "adaptive-settings"],
+      "allowedVariants": ["default", "adaptive-settings", "navigation-drawer"],
       "allowedSizes": [],
       "slots": ["trigger", "title", "content", "body", "close"],
       "dependencies": {
@@ -1364,13 +1574,20 @@
       "stories": [
         {
           "path": "src/components/ui/ui.stories.tsx",
-          "states": ["closed", "open", "adaptive-settings open"]
+          "states": [
+            "closed",
+            "open",
+            "adaptive-settings open",
+            "navigation-drawer mobile open",
+            "navigation-drawer desktop open",
+            "navigation-drawer trigger closed"
+          ]
         }
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["open sheet", "adaptive settings body", "explicit and fallback return focus"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["settings sheet opens and closes in the core settings journey"]
         }
       ],
       "accessibility": [
@@ -1378,7 +1595,9 @@
         "focus trap",
         "escape closes",
         "outside dismissal",
-        "controlled return focus"
+        "controlled return focus",
+        "navigation-drawer traps focus through a manual loop while the background stays interactive",
+        "aria-modal applies only in the mobile modal case"
       ],
       "visualProof": {
         "status": "covered",
@@ -1390,6 +1609,44 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not create unlabelled drawer overlays."]
+    },
+    {
+      "id": "sheet-body",
+      "name": "SheetBody",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/overlays.tsx",
+      "namedExport": "SheetBody",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["root"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": ["adaptive-settings open"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["settings sheet body hosts group content in the core settings journey"]
+        }
+      ],
+      "accessibility": ["inherits the labelled dialog semantics of the owned Sheet primitive"],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/ui/ui.stories.tsx"]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": ["src/components/ui/**", "src/components/settings/**"],
+      "forbiddenUses": ["Do not compose sheet bodies outside the owned Sheet primitive."]
     },
     {
       "id": "slider",
@@ -1413,8 +1670,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["aria value"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["verse typography sliders operate in the core settings journey"]
         }
       ],
       "accessibility": ["labelled slider", "numeric value"],
@@ -1451,8 +1708,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["status label"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["boot loading feedback operates in the core journey"]
         }
       ],
       "accessibility": ["labelled status"],
@@ -1466,6 +1723,50 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not use unlabeled loading indicators."]
+    },
+    {
+      "id": "status",
+      "name": "Status",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/feedback.tsx",
+      "namedExport": "Status",
+      "allowedVariants": ["info", "success", "warning", "error"],
+      "allowedSizes": [],
+      "slots": ["root", "title", "description", "icon", "action"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": ["info", "success", "warning", "error", "with-action", "with-icon"]
+        }
+      ],
+      "tests": [
+        {
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": [
+            "coverage reserved: Status has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the onboarding, reader/Mushaf, navigation/Surahs/Bookmarks, Search, and Settings/Assets/About/Unsupported route-cutover milestones"
+          ]
+        }
+      ],
+      "accessibility": [
+        "role=status with polite live region semantics for non-error tones",
+        "role=alert only for the error tone",
+        "state is not color-only when composed with text"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/ui/ui.stories.tsx"]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": ["Do not hand-roll empty, error, offline, or gate surfaces outside Status."]
     },
     {
       "id": "surah-list",
@@ -1489,8 +1790,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-navigate/navigation-wave3.test.tsx",
-          "behaviors": ["real 114-row metadata", "riwayah-specific verse counts"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["navigation list rows operate in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -1531,8 +1832,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["switch role"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["settings switches operate in the core settings journey"]
         }
       ],
       "accessibility": ["labelled switch", "keyboard toggle"],
@@ -1569,8 +1870,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["tabpanel content"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["search workspace tabs operate in the core search journey"]
         }
       ],
       "accessibility": ["labelled tablist", "tabpanel content"],
@@ -1607,8 +1908,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["label association"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["settings form controls operate in the core settings journey"]
         }
       ],
       "accessibility": ["visible label", "native textarea semantics"],
@@ -1645,8 +1946,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["title description"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["transient confirmation feedback operates in the core reader journey"]
         }
       ],
       "accessibility": ["status announcement", "visible message"],
@@ -1683,8 +1984,8 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-components/ui-components.test.tsx",
-          "behaviors": ["trigger wrapper"]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["reader chrome tooltips operate in the core reader journey"]
         }
       ],
       "accessibility": ["triggered description", "keyboard hover coverage"],
@@ -1732,14 +2033,12 @@
       ],
       "tests": [
         {
-          "path": "tests/unit/react-read/reader-wave3.test.tsx",
-          "behaviors": [
-            "wave 3 coverage",
-            "bookmark toggle state",
-            "footnote disclosure",
-            "verse selection",
-            "Tafsir exclusion"
-          ]
+          "path": "tests/e2e/core-smoke.spec.ts",
+          "behaviors": ["verse translation text renders in the core reader journey"]
+        },
+        {
+          "path": "tests/e2e/offline-lifecycle.spec.ts",
+          "behaviors": ["cached verse content renders offline"]
         }
       ],
       "accessibility": ["semantic landmarks", "visible focus through owned primitives"],

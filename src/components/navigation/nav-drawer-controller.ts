@@ -1,6 +1,4 @@
-import { useEffect, useReducer } from 'react'
-
-export type NavDrawerCloseReason = 'escape' | 'outside' | 'button'
+import { useReducer } from 'react'
 
 export type NavDrawerState = {
   open: boolean
@@ -10,7 +8,7 @@ export type NavDrawerState = {
 
 export type NavDrawerAction =
   | { returnFocusId?: string | null; type: 'open' }
-  | { reason: NavDrawerCloseReason; type: 'close' }
+  | { type: 'close' }
   | { type: 'route-transition' }
 
 export const INITIAL_NAV_DRAWER_STATE: NavDrawerState = {
@@ -32,18 +30,5 @@ export function navDrawerReducer(state: NavDrawerState, action: NavDrawerAction)
 
 export function useNavDrawerController() {
   const [state, dispatch] = useReducer(navDrawerReducer, INITIAL_NAV_DRAWER_STATE)
-
-  useEffect(() => {
-    if (!state.open) return undefined
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = previousOverflow
-      if (!state.routeTransitioning && state.returnFocusId) {
-        document.getElementById(state.returnFocusId)?.focus()
-      }
-    }
-  }, [state.open, state.returnFocusId, state.routeTransitioning])
-
   return { dispatch, state }
 }

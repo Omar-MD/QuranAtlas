@@ -6,7 +6,7 @@
   "required": ["schemaVersion", "components"],
   "additionalProperties": false,
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "const": 2 },
     "components": {
       "type": "array",
       "minItems": 1,
@@ -39,7 +39,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
         "name": { "type": "string", "minLength": 1 },
-        "maturity": { "enum": ["primitive", "behavior", "product", "page-recipe"] },
+        "maturity": { "enum": ["primitive", "behavior", "product", "recipe"] },
         "exportPath": { "type": "string", "pattern": "^src/" },
         "namedExport": { "type": "string", "minLength": 1 },
         "allowedVariants": { "type": "array", "items": { "type": "string" } },
@@ -51,7 +51,8 @@
           "additionalProperties": false,
           "properties": {
             "radix": { "type": "array", "items": { "type": "string" } },
-            "icons": { "type": "array", "items": { "type": "string" } }
+            "icons": { "type": "array", "items": { "type": "string" } },
+            "components": { "type": "array", "items": { "type": "string" } }
           }
         },
         "tokenNamespaces": { "type": "array", "minItems": 1, "items": { "type": "string" } },

@@ -1,10 +1,9 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ReaderChrome, type ReaderMode } from './ReaderChrome'
-import { NavDrawer } from '../navigation/NavDrawer'
+import { ChromeDrawer } from '../navigation/ChromeFrame'
 import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
 import { requestReactSettingsOverlay } from '../../app/settings-overlay-events'
-import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
 import type { WirdSummary } from '../../continuity/wird/types'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 import { ReaderInteractionProvider } from './ReaderInteractionContext'
@@ -36,7 +35,6 @@ export function ReaderPageShell({
   wirdSummary?: WirdSummary
 }) {
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
-  const { bookmarks, deleteBookmark } = useBookmarks()
   const [internalChromeVisible, setInternalChromeVisible] = useState(true)
   const [drawerWirdInitialView, setDrawerWirdInitialView] = useState<'card' | 'detail'>('card')
   const visible = chromeVisible ?? internalChromeVisible
@@ -57,12 +55,8 @@ export function ReaderPageShell({
   useEffect(() => {
     if (!drawerState.open) return undefined
     setChromeVisible(true)
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') dispatchDrawer({ reason: 'escape', type: 'close' })
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [dispatchDrawer, drawerState.open, setChromeVisible])
+    return undefined
+  }, [drawerState.open, setChromeVisible])
 
   useEffect(() => {
     onChromePinChange?.('drawer', drawerState.open)
@@ -101,11 +95,6 @@ export function ReaderPageShell({
       document.removeEventListener('scroll', onScroll, { capture: true })
     }
   }, [mode, setChromeVisible])
-
-  function navigate(hash: string) {
-    window.location.hash = hash
-    dispatchDrawer({ type: 'route-transition' })
-  }
 
   return (
     <ReaderInteractionProvider suspended={interactionSuspended || drawerState.open}>
@@ -149,28 +138,14 @@ export function ReaderPageShell({
             ) : null
           }
         />
-        {drawerState.open && (
-          <div
-            className="qar-react-nav-drawer-overlay"
-            onPointerDown={(event) => {
-              if (event.target !== event.currentTarget) return
-              dispatchDrawer({ reason: 'outside', type: 'close' })
-            }}
-            role="presentation"
-          >
-            <NavDrawer
-              bookmarks={bookmarks}
-              currentLabel={label}
-              initialWirdView={dailyWirdVisible ? drawerWirdInitialView : 'card'}
-              mode={mode}
-              onClose={() => dispatchDrawer({ reason: 'button', type: 'close' })}
-              onDeleteBookmark={deleteBookmark}
-              onNavigate={navigate}
-              open
-              showWird={dailyWirdVisible}
-            />
-          </div>
-        )}
+        <ChromeDrawer
+          activeMode="read"
+          controller={{ dispatch: dispatchDrawer, state: drawerState }}
+          currentLabel={label}
+          initialWirdView={dailyWirdVisible ? drawerWirdInitialView : 'card'}
+          mode={mode}
+          showWird={dailyWirdVisible}
+        />
         {children}
       </main>
     </ReaderInteractionProvider>

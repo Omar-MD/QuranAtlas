@@ -52,7 +52,7 @@ export function Tabs({ label, items, defaultValue, onValueChange, value }: TabsP
       >
         {items.map((item) => (
           <TabsPrimitive.Trigger
-            className="qar:min-h-9 qar:rounded-control qar:px-3 qar:text-sm qar:data-[state=active]:bg-accent qar:data-[state=active]:text-surface qar:data-[disabled]:opacity-50"
+            className="qar:min-h-11 qar:rounded-control qar:px-3 qar:text-sm qar:data-[state=active]:bg-accent qar:data-[state=active]:text-surface qar:data-[disabled]:opacity-50"
             disabled={item.disabled}
             key={item.value}
             value={item.value}

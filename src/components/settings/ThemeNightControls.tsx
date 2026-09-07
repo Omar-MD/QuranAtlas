@@ -15,13 +15,13 @@ type AppearanceOption<T extends string> = {
   icon?: ComponentType<AppearanceIconProps>
   iconId: string
   label: string
-  swatch?: 'sepia'
+  swatch?: 'light' | 'sepia' | 'dark'
 }
 
 const THEMES: Array<AppearanceOption<ReactThemePreference>> = [
-  { id: 'light', icon: Sun, iconId: 'theme-light', label: 'Light' },
+  { id: 'light', icon: Sun, iconId: 'theme-light', label: 'Light', swatch: 'light' },
   { id: 'sepia', iconId: 'theme-sepia', label: 'Sepia', swatch: 'sepia' },
-  { id: 'dark', icon: MoonStar, iconId: 'theme-dark', label: 'Dark' },
+  { id: 'dark', icon: MoonStar, iconId: 'theme-dark', label: 'Dark', swatch: 'dark' },
   { id: 'auto', icon: CircleSlash, iconId: 'theme-auto', label: 'Auto' },
 ]
 

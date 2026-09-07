@@ -58,8 +58,6 @@ export function App() {
       ? matchReactRoute(transientSettingsHash)
       : activeRoute
   const containsMushafViewport = route.type === 'mushaf'
-  const showHeader =
-    launchRestore.status === 'loading' || !['about', 'onboarding', 'reader', 'mushaf', 'search'].includes(route.type)
 
   useEffect(() => {
     if (!window.location.hash) {
@@ -173,11 +171,6 @@ export function App() {
       data-react-route={activeHash}
     >
       <div aria-hidden="true" className="qar-react-night-shift" data-testid="react-night-shift" />
-      {showHeader && (
-        <header className="qar:border-b qar:border-border qar:bg-surface qar:px-5 qar:py-3">
-          <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">QuranAtlas</h1>
-        </header>
-      )}
       {launchRestore.status === 'loading' && <LaunchSplash />}
       {launchRestore.status === 'setup' && (
         <Suspense fallback={<LaunchSplash />}>
@@ -207,11 +200,13 @@ export function App() {
               page={route.page}
             />
           )}
-          {route.type === 'surahs' && <SurahsRoute />}
-          {route.type === 'bookmarks' && <BookmarksRoute />}
-          {route.type === 'search' && <SearchRoute />}
-          {route.type === 'about' && <AboutRoute />}
-          {route.type === 'unsupported' && <UnsupportedRoute />}
+          {(route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'unsupported') && (
+            <ChromeFrameRoute currentLabel={route.type === 'surahs' ? 'Surahs' : route.type === 'bookmarks' ? 'Bookmarks' : 'Unavailable'}>
+              {route.type === 'surahs' && <SurahsRoute />}
+              {route.type === 'bookmarks' && <BookmarksRoute />}
+              {route.type === 'unsupported' && <UnsupportedRoute />}
+            </ChromeFrameRoute>
+          )}
           {settingsOverlay && (
             <Suspense fallback={null}>
               <SettingsRoute
@@ -262,7 +257,7 @@ function UnsupportedRoute() {
       aria-label="Unsupported route"
     >
       <p className="qar:m-0 qar:text-xs qar:font-medium qar:uppercase qar:tracking-wide qar:text-muted">Unavailable</p>
-      <h2 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Route unavailable</h2>
+      <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Route unavailable</h1>
       <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
         This route is not part of the current QuranAtlas MVP.
       </p>

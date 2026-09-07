@@ -51,9 +51,15 @@ export function ReaderChrome({
         </IconButton>
       </div>
       {title ? (
-        <div className="qar-reader-chrome-title" dir="rtl" lang="ar">
-          {title}
-        </div>
+        mode === 'mushaf' ? (
+          <h1 className="qar:m-0 qar-reader-chrome-title" dir="rtl" lang="ar">
+            {title}
+          </h1>
+        ) : (
+          <span className="qar:text-sm qar:font-semibold qar-reader-chrome-title" dir="rtl" lang="ar">
+            {title}
+          </span>
+        )
       ) : null}
       <div className="qar-reader-chrome-right">
         {wirdStatus}

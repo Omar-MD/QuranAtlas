@@ -2,16 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { isValidQuranAyahRef } from '../../../shared/search'
 import { REACT_ROUTES } from '../../app/router/routes'
-import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
+import { ChromeFrame } from '../navigation/ChromeFrame'
+import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 import { loadVerseAliases, type VerseAliases } from '../../data/verse-aliases'
 import { cn } from '../../design-system/utils/cn'
 import { mapSearchRefToReader, type SearchReaderRiwayah } from '../../search/result-mapping'
 import type { SearchResultDto } from '../../search/schema'
 import { openReactDb } from '../../storage/db'
 import type { SavedSearchRecord } from '../../storage/types'
-import { NavDrawer } from '../navigation/NavDrawer'
-import { useNavDrawerController } from '../navigation/nav-drawer-controller'
-import { ReaderChrome } from '../reader/ReaderChrome'
 import { SavedSearchesNavPanel } from './SavedSearchesNavPanel'
 import { SearchHeader } from './SearchHeader'
 import { SearchIndexGate } from './SearchIndexGate'
@@ -23,8 +21,7 @@ export function SearchShell() {
   const search = useSearchRouteState()
   const saved = useSavedSearches()
   const [savedStatusMessage, setSavedStatusMessage] = useState('')
-  const { bookmarks, deleteBookmark } = useBookmarks()
-  const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
+  const drawer = useNavDrawerController()
   const aliasesPromiseRef = useRef<Promise<VerseAliases> | null>(null)
   const compatibilityKey = useMemo(
     () =>
@@ -78,22 +75,8 @@ export function SearchShell() {
     search.setQuery(opened.intent.queryText)
     search.setMode('all')
     search.submitSearch({ mode: 'all', query: opened.intent.queryText })
-    dispatchDrawer({ type: 'route-transition' })
+    drawer.dispatch({ type: 'route-transition' })
   }
-
-  function navigate(hash: string) {
-    window.location.hash = hash
-    dispatchDrawer({ type: 'route-transition' })
-  }
-
-  useEffect(() => {
-    if (!drawerState.open) return undefined
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') dispatchDrawer({ reason: 'escape', type: 'close' })
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [dispatchDrawer, drawerState.open])
 
   useEffect(() => {
     if (saved.status && !search.error) setSavedStatusMessage(saved.status)
@@ -116,106 +99,80 @@ export function SearchShell() {
     />
   )
 
+  const statusMessage = [search.searchStatus, savedStatusMessage && !search.error ? savedStatusMessage : '']
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <div className={cn('qar-search-page-shell', drawerState.open && 'qar-search-page-shell--nav-open')}>
-      <div className="qar-search-reader-chrome">
-        <ReaderChrome
-          mode="verse"
-          onOpenNavigation={() => dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })}
-          onOpenSettings={() => {
-            window.location.hash = REACT_ROUTES.settings
-          }}
-        />
-      </div>
-      {drawerState.open && (
-        <div
-          className="qar-react-nav-drawer-overlay qar-search-nav-drawer-overlay"
-          onPointerDown={(event) => {
-            if (event.target !== event.currentTarget) return
-            dispatchDrawer({ reason: 'outside', type: 'close' })
-          }}
-          role="presentation"
-        >
-          <NavDrawer
-            activeMode="search"
-            bookmarks={bookmarks}
-            currentLabel="Search"
-            mode="verse"
-            onClose={() => dispatchDrawer({ reason: 'button', type: 'close' })}
-            onDeleteBookmark={deleteBookmark}
-            onNavigate={navigate}
-            open
-            searchPanel={searchPanel}
-            showWird={false}
-          />
-        </div>
-      )}
-      <main aria-label="Search" className="qar-search-content">
-        <div className="qar-search-content-inner">
-          <h1 className="qar:sr-only">Search</h1>
-          <SearchHeader
-            canSave={search.canSaveSearch}
-            onQueryChange={search.setQuery}
-            onSaveSearch={() =>
-              void saved.saveSearch({
-                mode: 'all',
-                packCompatibilityKey: compatibilityKey,
-                query: search.query,
-              })
-            }
-            onSubmit={(submittedQuery) => {
-              search.setQuery(submittedQuery)
-              search.submitSearch({ query: submittedQuery })
-            }}
-            query={search.query}
-          />
-          <div aria-live="polite" className="qar:sr-only" role="status">
-            {search.searchStatus}
-          </div>
-          {savedStatusMessage && !search.error ? (
-            <div aria-live="polite" className="qar:sr-only" role="status">
-              {savedStatusMessage}
-            </div>
-          ) : null}
-          <div className="qar-search-status-row">
-            <p>{search.packMessage}</p>
-          </div>
-          {search.error ? <p className="qar-search-error">{search.error}</p> : null}
-          <SearchIndexGate message={search.packMessage} ready={search.packState === 'active'}>
-            <SearchWorkspace
-              activeTab={search.activeWorkspaceTab}
-              allMatches={search.allMatches}
-              allMatchesOpen={search.allMatchesOpen}
-              answerPreview={search.answerPreview}
-              brief={search.brief}
-              canLoadAllMatches={search.canLoadAllMatches}
-              canLoadMore={search.canLoadMoreResults}
-              defaultTab={search.defaultWorkspaceTab}
-              emptyMessage={search.emptyResultMessage}
-              exploreGraph={search.exploreGraph}
-              exploreSeedResult={search.exploreSeedResult}
-              focusedExploreModule={search.focusedExploreModule}
-              hasMore={search.hasMoreResults}
-              onActiveTabChange={search.setActiveWorkspaceTab}
-              onFocusExploreModule={search.setFocusedExploreModule}
-              onLoadMoreAllMatches={search.loadMoreAllMatches}
-              onLoadExploreGraph={search.loadExploreGraph}
-              onLoadMore={search.loadMoreResults}
-              onOpenAllMatches={search.openAllMatches}
-              onOpenInRead={openInRead}
-              onOpenPreviewInRead={openPreviewRefInRead}
-              onOpenResultExplore={search.openResultExplore}
-              onSelectResult={search.setSelectedResult}
-              loadingAllMatches={search.loadingAllMatches}
-              packVersion={search.packVersion}
-              resultCountMessage={search.resultCountMessage}
-              results={search.results}
-              selectedResult={search.selectedResult}
+    <ChromeFrame
+      activeMode="search"
+      controller={drawer}
+      onOpenSettings={() => {
+        window.location.hash = REACT_ROUTES.settings
+      }}
+      searchPanel={searchPanel}
+      statusMessage={statusMessage}
+    >
+      <div className={cn('qar-search-page-shell', drawer.state.open && 'qar-search-page-shell--nav-open')}>
+        <main aria-label="Search" className="qar-search-content">
+          <div className="qar-search-content-inner">
+            <h1 className="qar:sr-only">Search</h1>
+            <SearchHeader
+              canSave={search.canSaveSearch}
+              onQueryChange={search.setQuery}
+              onSaveSearch={() =>
+                void saved.saveSearch({
+                  mode: 'all',
+                  packCompatibilityKey: compatibilityKey,
+                  query: search.query,
+                })
+              }
+              onSubmit={(submittedQuery) => {
+                search.setQuery(submittedQuery)
+                search.submitSearch({ query: submittedQuery })
+              }}
+              query={search.query}
             />
-          </SearchIndexGate>
-        </div>
-      </main>
-    </div>
+            <div className="qar-search-status-row">
+              <p>{search.packMessage}</p>
+            </div>
+            {search.error ? <p className="qar-search-error">{search.error}</p> : null}
+            <SearchIndexGate message={search.packMessage} ready={search.packState === 'active'}>
+              <SearchWorkspace
+                activeTab={search.activeWorkspaceTab}
+                allMatches={search.allMatches}
+                allMatchesOpen={search.allMatchesOpen}
+                answerPreview={search.answerPreview}
+                brief={search.brief}
+                canLoadAllMatches={search.canLoadAllMatches}
+                canLoadMore={search.canLoadMoreResults}
+                defaultTab={search.defaultWorkspaceTab}
+                emptyMessage={search.emptyResultMessage}
+                exploreGraph={search.exploreGraph}
+                exploreSeedResult={search.exploreSeedResult}
+                focusedExploreModule={search.focusedExploreModule}
+                hasMore={search.hasMoreResults}
+                onActiveTabChange={search.setActiveWorkspaceTab}
+                onFocusExploreModule={search.setFocusedExploreModule}
+                onLoadMoreAllMatches={search.loadMoreAllMatches}
+                onLoadExploreGraph={search.loadExploreGraph}
+                onLoadMore={search.loadMoreResults}
+                onOpenAllMatches={search.openAllMatches}
+                onOpenInRead={openInRead}
+                onOpenPreviewInRead={openPreviewRefInRead}
+                onOpenResultExplore={search.openResultExplore}
+                onSelectResult={search.setSelectedResult}
+                loadingAllMatches={search.loadingAllMatches}
+                packVersion={search.packVersion}
+                resultCountMessage={search.resultCountMessage}
+                results={search.results}
+                selectedResult={search.selectedResult}
+              />
+            </SearchIndexGate>
+          </div>
+        </main>
+      </div>
+    </ChromeFrame>
   )
 }
 

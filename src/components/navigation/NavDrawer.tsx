@@ -1,14 +1,13 @@
 import { useEffect, useState, type ChangeEvent, type KeyboardEvent, type ReactNode } from 'react'
-import { BookOpen, Info, Search as SearchIcon, X } from 'lucide-react'
+import { Search as SearchIcon, Info, X } from 'lucide-react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
-import { cn } from '../../design-system/utils/cn'
 import type { JuzIndexEntry } from '../../data/juz-index'
 import { loadReaderSurahIndex } from '../../data/surah-index'
 import { openReactDb } from '../../storage/db'
 import { readRecentSurahs, type RecentSurahPosition } from '../../continuity/recent-surahs'
 import { resolveDrawerHrefForReaderMode } from '../reader/reader-mode-routing'
-import { Button, IconButton, Input } from '../ui'
+import { Button, IconButton, Input, SegmentedControl, Sheet } from '../ui'
 import { BookmarksList, type BookmarkListItem } from './BookmarksList'
 import { HizbList } from './HizbList'
 import { JuzList } from './JuzList'
@@ -41,23 +40,25 @@ export function NavDrawer({
   onDeleteBookmark,
   onNavigate,
   open,
-  readHref,
+  returnFocusId,
   searchPanel,
   showWird = true,
+  suppressFocusRestore = false,
 }: {
   activeMode?: 'read' | 'search'
   bookmarks?: BookmarkListItem[]
-  currentLabel: string
   initialWirdView?: 'card' | 'detail'
   juzRows?: JuzIndexEntry[]
   mode: 'verse' | 'mushaf'
   onClose: () => void
-  onDeleteBookmark?: (bookmark: Pick<BookmarkListItem, 'riwayah' | 'verseKey'>) => void
   onNavigate: (hash: string) => void
+  onDeleteBookmark?: (bookmark: Pick<BookmarkListItem, 'riwayah' | 'verseKey'>) => void
   open: boolean
   readHref?: string
+  returnFocusId?: string
   searchPanel?: ReactNode
   showWird?: boolean
+  suppressFocusRestore?: boolean
 }) {
   const [readSource, setReadSource] = useState<'surah' | 'juz' | 'hizb' | 'bookmarks'>('surah')
   const [surahFilter, setSurahFilter] = useState<SurahFilter>('all')
@@ -234,7 +235,6 @@ export function NavDrawer({
     return getBrowserNotificationState(permission)
   }
 
-  if (!open) return null
   const readModeActive = activeMode === 'read'
   const searchModeActive = activeMode === 'search'
   const drawerShowsWird = readModeActive && showWird
@@ -244,13 +244,22 @@ export function NavDrawer({
     ? REACT_ROUTES.surah(currentPosition.surah, currentPosition.verse)
     : REACT_ROUTES.home
   return (
-    <div aria-label="Navigation" aria-modal="true" className="qar-react-nav-drawer" role="dialog" tabIndex={-1}>
+    <Sheet
+      closeLabel="Close navigation"
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose()
+      }}
+      open={open}
+      returnFocusId={returnFocusId}
+      suppressCloseAutoFocus={suppressFocusRestore}
+      title="Navigation"
+      variant="navigation-drawer"
+    >
       <div className="qar-react-nav-drawer-header">
         <div className="qar-react-nav-drawer-product-row">
           <Button
-            aria-label="About QuranAtlas"
             className="qar-react-nav-drawer-wordmark"
-            onClick={() => onNavigate('#/about')}
+            onClick={() => onNavigate(fallbackReadHref)}
             variant="ghost"
           >
             <span className="qar-react-nav-drawer-logo" aria-hidden="true">
@@ -282,29 +291,19 @@ export function NavDrawer({
             <X aria-hidden="true" size={24} strokeWidth={1.7} />
           </IconButton>
         </div>
-        <div className="qar-react-nav-drawer-mode-rail">
-          <div className="qar-react-nav-drawer-tabs" role="tablist" aria-label="Drawer mode">
-            <Button
-              aria-selected={readModeActive}
-              className={cn('qar-react-nav-drawer-tab', readModeActive && 'qar-react-nav-drawer-tab--on')}
-              onClick={readModeActive ? undefined : () => onNavigate(readHref ?? fallbackReadHref)}
-              role="tab"
-              variant="ghost"
-            >
-              <BookOpen aria-hidden="true" size={17} strokeWidth={1.65} />
-              <span>Read</span>
-            </Button>
-            <Button
-              aria-selected={searchModeActive}
-              className={cn('qar-react-nav-drawer-tab', searchModeActive && 'qar-react-nav-drawer-tab--on')}
-              onClick={searchModeActive ? undefined : () => onNavigate(REACT_ROUTES.search)}
-              role="tab"
-              variant="ghost"
-            >
-              <SearchIcon aria-hidden="true" size={17} strokeWidth={1.65} />
-              <span>Search</span>
-            </Button>
-          </div>
+        <div className="qar-react-nav-drawer-mode-rail qar:p-2">
+          <SegmentedControl
+            label="Destination"
+            onValueChange={(next) => {
+              if (next === activeMode) return
+              onNavigate(next === 'search' ? REACT_ROUTES.search : (readHref ?? fallbackReadHref))
+            }}
+            options={[
+              { label: 'Read', value: 'read' },
+              { label: 'Search', value: 'search' },
+            ]}
+            value={activeMode}
+          />
         </div>
       </div>
       {drawerShowsWird && wirdView === 'card' ? (
@@ -453,7 +452,7 @@ export function NavDrawer({
           )}
         </div>
       )}
-    </div>
+    </Sheet>
   )
 }
 

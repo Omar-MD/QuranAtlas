@@ -2,7 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import * as ToastPrimitive from '@radix-ui/react-toast'
 import { X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 import { Button } from './button'
@@ -47,14 +47,66 @@ export function Dialog({ title, trigger, children, onOpenChange, open }: DialogP
   )
 }
 
+export function SheetBody({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn('qar-react-sheet-body', className)}>{children}</div>
+}
 export type SheetProps = OverlayBaseProps & {
   closeLabel?: string
   returnFocusId?: string
-  variant?: 'default' | 'adaptive-settings'
+  suppressCloseAutoFocus?: boolean
+  variant?: 'default' | 'adaptive-settings' | 'navigation-drawer'
+}
+const DRAWER_FOCUSABLE_SELECTOR =
+  "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
+
+function useDrawerDesktopViewport(open?: boolean): {
+  isDesktop: boolean
+  refreshOnOpenChange: (nextOpen: boolean) => void
+} {
+  const [isDesktop, setIsDesktop] = useState(
+    () =>
+      Boolean(open) &&
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia(DRAWER_DESKTOP_QUERY).matches,
+  )
+  // Sample the viewport exactly once per controlled open; no live listener, so
+  // crossing the breakpoint while open never flips the modal shell (which
+  // would remount Radix Dialog content and reset inner state such as editors).
+  useEffect(() => {
+    if (!open) return
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      setIsDesktop(window.matchMedia(DRAWER_DESKTOP_QUERY).matches)
+    }
+  }, [open])
+  function refreshOnOpenChange(nextOpen: boolean): void {
+    if (nextOpen && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      setIsDesktop(window.matchMedia(DRAWER_DESKTOP_QUERY).matches)
+    }
+  }
+  return { isDesktop, refreshOnOpenChange }
 }
 
-export function SheetBody({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('qar-react-sheet-body', className)}>{children}</div>
+function containDrawerFocus(event: KeyboardEvent<HTMLDivElement>): void {
+  if (event.key !== 'Tab') return
+  const focusable = event.currentTarget.querySelectorAll<HTMLElement>(DRAWER_FOCUSABLE_SELECTOR)
+  if (focusable.length === 0) {
+    event.preventDefault()
+    return
+  }
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  const active = document.activeElement
+  const contained = event.currentTarget.contains(active)
+  if (!contained || (event.shiftKey && active === first)) {
+    event.preventDefault()
+    last.focus()
+    return
+  }
+  if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 export function Sheet({
@@ -63,21 +115,53 @@ export function Sheet({
   onOpenChange,
   open,
   returnFocusId,
+  suppressCloseAutoFocus = false,
   title,
   trigger,
   variant = 'default',
 }: SheetProps) {
+  const isNavigationDrawer = variant === 'navigation-drawer'
+  const { isDesktop: isDesktopViewport, refreshOnOpenChange: refreshDrawerViewport } = useDrawerDesktopViewport(
+    open ?? false,
+  )
+  const modal = isNavigationDrawer ? !isDesktopViewport : true
   return (
-    <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
+    <DialogPrimitive.Root
+      modal={modal}
+      onOpenChange={(nextOpen) => {
+        if (isNavigationDrawer) {
+          refreshDrawerViewport(nextOpen)
+        }
+        onOpenChange?.(nextOpen)
+      }}
+      open={open}
+    >
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30" />
+        {modal ? (
+          <DialogPrimitive.Overlay
+            className={
+              isNavigationDrawer
+                ? 'qar:fixed qar:inset-0 qar:z-40 qar-react-sheet-scrim'
+                : 'qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30'
+            }
+          />
+        ) : null}
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          aria-modal="true"
-          className="qar:fixed qar:bottom-0 qar:left-0 qar:right-0 qar:z-50 qar:grid qar:max-h-screen qar:gap-4 qar:rounded-t-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg md:qar:left-auto md:qar:top-0 md:qar:w-96 md:qar:rounded-l-surface md:qar:rounded-t-none"
+          aria-modal={modal ? 'true' : undefined}
+          className={
+            isNavigationDrawer
+              ? 'qar-react-sheet-drawer qar:gap-4'
+              : 'qar:fixed qar:bottom-0 qar:left-0 qar:right-0 qar:z-50 qar:grid qar:max-h-screen qar:gap-4 qar:rounded-t-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg md:qar:left-auto md:qar:top-0 md:qar:w-96 md:qar:rounded-l-surface md:qar:rounded-t-none'
+          }
           data-sheet-variant={variant}
           onCloseAutoFocus={(event) => {
+            // Route-transition closes hand focus to the destination route.
+            if (suppressCloseAutoFocus) {
+              event.preventDefault()
+              return
+            }
             if (variant !== 'adaptive-settings' && !returnFocusId) return
             const targetIds = [returnFocusId, 'reader-settings-trigger', 'reader-main']
             const target = targetIds
@@ -88,11 +172,16 @@ export function Sheet({
             event.preventDefault()
             target.focus({ preventScroll: true })
           }}
+          onKeyDown={isNavigationDrawer && isDesktopViewport ? containDrawerFocus : undefined}
         >
-          <div className="qar:flex qar:items-center qar:justify-between qar:gap-3">
-            <DialogPrimitive.Title className="qar:m-0 qar:text-base qar:font-semibold">{title}</DialogPrimitive.Title>
-            <CloseButton label={closeLabel} />
-          </div>
+          {isNavigationDrawer ? (
+            <DialogPrimitive.Title className="qar:sr-only">{title}</DialogPrimitive.Title>
+          ) : (
+            <div className="qar:flex qar:items-center qar:justify-between qar:gap-3">
+              <DialogPrimitive.Title className="qar:m-0 qar:text-base qar:font-semibold">{title}</DialogPrimitive.Title>
+              <CloseButton label={closeLabel} />
+            </div>
+          )}
           {children}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

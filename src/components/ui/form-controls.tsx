@@ -111,14 +111,16 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
     <fieldset
       aria-label={label}
       className="qar:inline-flex qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1"
+      // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: the design brief requires an explicit radiogroup role even though the fieldset with radio inputs already implies it
+      role="radiogroup"
     >
       {options.map((option) => {
         const selected = option.value === selectedValue
         return (
           <label
             className={cn(
-              'qar-react-segmented-option qar:flex qar:min-h-11 qar:items-center qar:rounded-control qar:px-3 qar:text-sm qar:text-muted',
-              selected && 'qar:bg-accent qar:text-surface',
+              'qar-react-segmented-option qar:flex qar:min-h-11 qar:items-center qar:rounded-control qar:px-3 qar:text-sm',
+              selected ? 'qar-react-segmented-option--selected' : 'qar:text-muted',
             )}
             key={option.value}
           >
