@@ -48,7 +48,7 @@ export function ThemeNightControls({
         <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-theme">
           Theme
         </h4>
-        <fieldset className="qar-react-settings-theme-strip" aria-label="Theme">
+        <div className="qar-react-settings-theme-strip" aria-label="Theme" role="radiogroup">
           {THEMES.map((option) => (
             <AppearanceChoice
               active={theme === option.id}
@@ -61,13 +61,13 @@ export function ThemeNightControls({
               swatch={option.swatch}
             />
           ))}
-        </fieldset>
+        </div>
       </section>
       <section className="qar-react-settings-appearance-panel" aria-labelledby="qar-react-settings-night">
         <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-night">
           Night mode
         </h4>
-        <fieldset className="qar-react-settings-night-strip" aria-label="Night mode">
+        <div className="qar-react-settings-night-strip" aria-label="Night mode" role="radiogroup">
           {NIGHT_MODES.map((option) => {
             const Icon = option.icon
             return (
@@ -82,7 +82,7 @@ export function ThemeNightControls({
               />
             )
           })}
-        </fieldset>
+        </div>
       </section>
     </div>
   )
@@ -107,15 +107,15 @@ function AppearanceChoice({
 }) {
   return (
     <Button
+      aria-checked={active}
       aria-label={`${prefix}: ${label}`}
-      aria-pressed={active}
       className="qar-react-settings-appearance-choice"
       onClick={onClick}
+      role="radio"
       size="sm"
       variant="ghost"
     >
       <span
-        className="qar-react-settings-appearance-icon"
         data-appearance-icon={iconId}
         data-swatch={swatch}
         data-testid={swatch ? 'settings-theme-swatch' : undefined}

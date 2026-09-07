@@ -1,5 +1,5 @@
 import { MushafModeControl, type MushafNavigationMode, type MushafViewMode } from '../reader/MushafModeControl'
-import { Button, Slider, Switch } from '../ui'
+import { Button, SegmentedControl, Slider, Switch } from '../ui'
 import { interpolateMushafPageFrame, type NormalizedRect } from '../reader/mushaf-page-framing'
 import { SettingsGroup } from './SettingsGroup'
 import type { MushafFramingWriteStatus } from './useSettingsForm'
@@ -59,26 +59,15 @@ export function MushafSettings({
               <span className="qar-react-settings-row-control">{frameWidth}% reviewed frame width</span>
             </span>
             <div className="qar-react-mushaf-framing-controls">
-              <div className="qar-react-mushaf-framing-presets">
-                <Button
-                  aria-pressed={framing === 0}
-                  onClick={() => onFramingChange?.(0)}
-                  size="sm"
-                  type="button"
-                  variant="secondary"
-                >
-                  Full page
-                </Button>
-                <Button
-                  aria-pressed={framing === 1}
-                  onClick={() => onFramingChange?.(1)}
-                  size="sm"
-                  type="button"
-                  variant="secondary"
-                >
-                  Text focus
-                </Button>
-              </div>
+              <SegmentedControl
+                label="Mushaf text framing"
+                onValueChange={(value) => onFramingChange?.(Number(value))}
+                options={[
+                  { label: 'Full page', value: '0' },
+                  { label: 'Text focus', value: '1' },
+                ]}
+                value={String(framing)}
+              />
               <Slider
                 label="Qur'an text size"
                 max={100}

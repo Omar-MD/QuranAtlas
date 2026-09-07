@@ -3,7 +3,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 
 import { ChromeFrame } from './ChromeFrame'
-import { NavDrawer } from './NavDrawer'
 import { useNavDrawerController } from './nav-drawer-controller'
 import { BookmarksList } from './BookmarksList'
 import { HizbList } from './HizbList'
@@ -18,8 +17,7 @@ const meta = {
 export default meta
 type Story = StoryObj
 
-export const DrawerVerse: Story = {
-}
+export const DrawerVerse: Story = {}
 
 function ChromeFramePage({ openDrawer = false }: { openDrawer?: boolean }) {
   const drawer = useNavDrawerController()

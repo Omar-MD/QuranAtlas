@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { Button } from '../ui'
+import { Button, Spinner, Status } from '../ui'
 
 export type ReaderAssetState = 'ready' | 'missing' | 'stale' | 'installing' | 'error'
 
@@ -26,24 +26,28 @@ export function ReaderAssetGate({
         : state === 'installing'
           ? `${label} page pack is installing.`
           : `${label} page pack could not be loaded.`
+  const tone = state === 'error' ? 'error' : state === 'missing' || state === 'stale' ? 'warning' : 'info'
   return (
-    <section
-      className="qar:m-5 qar:grid qar:gap-3 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4"
-      aria-live="polite"
-    >
-      <p className="qar:m-0 qar:text-sm qar:text-muted">{message}</p>
-      <div className="qar:flex qar:flex-wrap qar:gap-2">
-        {onManageAssets ? (
-          <Button onClick={onManageAssets} size="sm">
-            Manage assets
-          </Button>
-        ) : null}
-        {onRetry ? (
-          <Button onClick={onRetry} size="sm" variant="secondary">
-            Retry
-          </Button>
-        ) : null}
-      </div>
-    </section>
+    <Status
+      action={
+        <>
+          {onManageAssets ? (
+            <Button onClick={onManageAssets} size="sm">
+              Manage assets
+            </Button>
+          ) : null}
+          {onRetry ? (
+            <Button onClick={onRetry} size="sm" variant="secondary">
+              Retry
+            </Button>
+          ) : null}
+        </>
+      }
+      aria-live={state === 'error' ? 'assertive' : 'polite'}
+      description={message}
+      icon={state === 'installing' ? <Spinner label={`${label} page pack loading`} /> : undefined}
+      title={state === 'installing' ? `Installing ${label} page pack` : `${label} page pack`}
+      tone={tone}
+    />
   )
 }

@@ -54,7 +54,6 @@ export function NavDrawer({
   onNavigate: (hash: string) => void
   onDeleteBookmark?: (bookmark: Pick<BookmarkListItem, 'riwayah' | 'verseKey'>) => void
   open: boolean
-  readHref?: string
   returnFocusId?: string
   searchPanel?: ReactNode
   showWird?: boolean
@@ -296,7 +295,7 @@ export function NavDrawer({
             label="Destination"
             onValueChange={(next) => {
               if (next === activeMode) return
-              onNavigate(next === 'search' ? REACT_ROUTES.search : (readHref ?? fallbackReadHref))
+              onNavigate(next === 'search' ? REACT_ROUTES.search : fallbackReadHref)
             }}
             options={[
               { label: 'Read', value: 'read' },

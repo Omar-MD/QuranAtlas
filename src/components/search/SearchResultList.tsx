@@ -1,4 +1,5 @@
 import type { SearchResultDto } from '../../search/schema'
+import { Status } from '../ui'
 import { Button } from '../ui'
 import { SearchResultCard } from './SearchResultCard'
 import type { SearchVerseCardViewModel } from './search-presentation-model'
@@ -25,7 +26,9 @@ export function SearchResultList({
   selectedResultId?: string
 }) {
   if (cards.length === 0) {
-    return <p className="qar-search-results-empty">{emptyMessage ?? 'Enter a word, phrase, or ayah reference.'}</p>
+    return (
+      <Status description={emptyMessage ?? 'Enter a word, phrase, or ayah reference.'} title="No results" tone="info" />
+    )
   }
   return (
     <section aria-label="Verses" className="qar-search-result-list">

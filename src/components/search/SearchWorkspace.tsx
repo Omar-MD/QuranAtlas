@@ -51,6 +51,9 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
   const detailsTriggerRef = useRef<HTMLButtonElement | null>(null)
   const detailPanelRef = useRef<HTMLElement | null>(null)
   const [detailsRequestId, setDetailsRequestId] = useState(0)
+  const [selectedPreviewMatch, setSelectedPreviewMatch] = useState<MatchCardLite | null>(null)
+  const previewDetailsTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const mobileResultsScrollTopRef = useRef<number | null>(null)
   const viewModel = useMemo(
     () =>
       deriveSearchOutputViewModel({
@@ -98,6 +101,21 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                   onLoadMoreAllMatches={props.onLoadMoreAllMatches}
                   onOpenAllMatches={props.onOpenAllMatches}
                   onOpenInRead={props.onOpenPreviewInRead}
+                  onSelectMatch={(match, trigger) => {
+                    if (window.matchMedia('(max-width: 767px)').matches)
+                      mobileResultsScrollTopRef.current = window.scrollY
+                    previewDetailsTriggerRef.current = trigger
+                    setSelectedPreviewMatch(match)
+                  }}
+                  onCloseMatch={() => {
+                    setSelectedPreviewMatch(null)
+                    const scrollTop = mobileResultsScrollTopRef.current
+                    mobileResultsScrollTopRef.current = null
+                    if (scrollTop !== null) window.scrollTo({ behavior: 'auto', top: scrollTop })
+                    previewDetailsTriggerRef.current?.focus()
+                    previewDetailsTriggerRef.current = null
+                  }}
+                  selectedMatch={selectedPreviewMatch}
                   preview={props.answerPreview}
                 />
               ) : (
@@ -121,7 +139,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                   tab="verses"
                 />
               ) : (
-                <div className="qar-search-verses-panel">
+                <div className="qar-search-verses-panel" data-mobile-details={props.selectedResult ? 'true' : 'false'}>
                   {props.resultCountMessage ? (
                     <p className="qar-search-result-count">{props.resultCountMessage}</p>
                   ) : null}
@@ -132,6 +150,9 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                     hasMore={props.hasMore}
                     onDetailsTrigger={(node) => {
                       detailsTriggerRef.current = node
+                      if (node && window.matchMedia('(max-width: 767px)').matches) {
+                        mobileResultsScrollTopRef.current = window.scrollY
+                      }
                       if (node) setDetailsRequestId((current) => current + 1)
                     }}
                     onLoadMore={props.onLoadMore}
@@ -143,6 +164,11 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                     details={viewModel.details}
                     onClose={() => {
                       props.onSelectResult(null)
+                      const scrollTop = mobileResultsScrollTopRef.current
+                      mobileResultsScrollTopRef.current = null
+                      if (scrollTop !== null && window.matchMedia('(max-width: 767px)').matches) {
+                        window.scrollTo({ behavior: 'auto', top: scrollTop })
+                      }
                       detailsTriggerRef.current?.focus()
                     }}
                     onOpenExplore={props.onOpenResultExplore}
@@ -200,7 +226,6 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
     </section>
   )
 }
-
 function PreviewOnlyTabPanel({
   allMatchesOpen,
   loadingAllMatches,

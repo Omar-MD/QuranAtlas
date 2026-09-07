@@ -1,8 +1,9 @@
 import type { SearchSourcesViewModel } from './search-presentation-model'
+import { Status } from '../ui'
 
 export function SearchSourcePanel({ sources }: { packVersion?: string; sources: SearchSourcesViewModel | null }) {
   if (!sources) {
-    return <p className="qar-search-results-empty">Run a search to inspect query sources.</p>
+    return <Status description="Run a search to inspect query sources." title="Search sources" tone="info" />
   }
   return (
     <div className="qar-search-source-panel">

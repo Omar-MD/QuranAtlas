@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent, type TouchEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { isMushafPageBookmark, pageNumberForBookmark } from '../../continuity/bookmarks/page-bookmark'
 import type { Riwayah } from '../../storage/types'
 import { pulseBookmarkLandingWhenRouteReady } from '../../continuity/bookmarks/pulse'
 import { cn } from '../../design-system/utils/cn'
-import { Button } from '../ui'
+import { Button, Status } from '../ui'
+import { useSwipeToDelete } from './use-swipe-to-delete'
 
 export type BookmarkListItem = {
   arabicSnippet?: string
@@ -22,17 +23,8 @@ type BookmarkMeta = {
   surahNames: Map<number, string>
 }
 
-type TouchStart = { key: string; t: number; x: number; y: number }
-type SwipePoint = { x: number; y: number }
-
 const EMPTY_BOOKMARKS: BookmarkListItem[] = []
-const REVEAL_PX = 76
-const SNAP_THRESHOLD_PX = 38
-const VELOCITY_SNAP = 0.45
-const AXIS_LOCK_PX = 8
-const SUPPRESS_CLICK_MS = 600
 const SNIPPET_CHARS = 50
-
 export function BookmarksList({
   bookmarks = EMPTY_BOOKMARKS,
   onDeleteBookmark,
@@ -43,12 +35,7 @@ export function BookmarksList({
   onNavigate?: (hash: string) => void
 }) {
   const [meta, setMeta] = useState<BookmarkMeta>(() => bookmarkMetaFromRows(bookmarks))
-  const [openSwipeKey, setOpenSwipeKey] = useState<string | null>(null)
-  const [activeSwipe, setActiveSwipe] = useState<{ dx: number; key: string } | null>(null)
-  const touchStartRef = useRef<TouchStart | null>(null)
-  const activeSwipeDxRef = useRef(0)
-  const scrollAxisRef = useRef<'horizontal' | 'vertical' | null>(null)
-  const suppressClickRef = useRef<{ at: number; key: string } | null>(null)
+  const swipe = useSwipeToDelete()
   const groupedBookmarks = useMemo(() => groupBookmarks(bookmarks), [bookmarks])
 
   useEffect(() => {
@@ -74,148 +61,17 @@ export function BookmarksList({
   }
 
   function handleRowClick(bookmark: BookmarkListItem) {
-    const suppressed = suppressClickRef.current
-    if (suppressed?.key === bookmark.verseKey && Date.now() - suppressed.at < SUPPRESS_CLICK_MS) {
-      suppressClickRef.current = null
-      return
-    }
-    if (openSwipeKey === bookmark.verseKey) {
-      setOpenSwipeKey(null)
-      return
-    }
-    jumpToBookmark(bookmark)
-  }
-
-  function rowBaseDx(key: string): number {
-    return openSwipeKey === key ? -REVEAL_PX : 0
-  }
-
-  function beginSwipe(point: SwipePoint, key: string): void {
-    if (openSwipeKey && openSwipeKey !== key) setOpenSwipeKey(null)
-    const restingDx = rowBaseDx(key)
-    touchStartRef.current = { key, t: performance.now(), x: point.x, y: point.y }
-    activeSwipeDxRef.current = restingDx
-    scrollAxisRef.current = null
-    setActiveSwipe({ dx: restingDx, key })
-  }
-
-  function moveSwipe(point: SwipePoint, key: string): 'horizontal' | 'vertical' | null {
-    const touchStart = touchStartRef.current
-    if (!touchStart || touchStart.key !== key) return null
-    const dx = point.x - touchStart.x
-    const dy = point.y - touchStart.y
-    const nextAxis =
-      scrollAxisRef.current ??
-      (Math.abs(dx) > AXIS_LOCK_PX || Math.abs(dy) > AXIS_LOCK_PX
-        ? Math.abs(dx) > Math.abs(dy)
-          ? 'horizontal'
-          : 'vertical'
-        : null)
-
-    if (nextAxis !== scrollAxisRef.current) {
-      scrollAxisRef.current = nextAxis
-    }
-    if (nextAxis !== 'horizontal') return nextAxis
-
-    const nextDx = rowBaseDx(key) + dx
-    const clampedDx = Math.max(-REVEAL_PX * 1.18, Math.min(0, nextDx))
-    activeSwipeDxRef.current = clampedDx
-    setActiveSwipe({ dx: clampedDx, key })
-    return nextAxis
-  }
-
-  function endSwipe(point: SwipePoint | null, key: string): 'horizontal' | 'vertical' | null {
-    const touchStart = touchStartRef.current
-    if (!touchStart || touchStart.key !== key) {
-      touchStartRef.current = null
-      setActiveSwipe(null)
-      scrollAxisRef.current = null
-      activeSwipeDxRef.current = 0
-      return null
-    }
-
-    const wasHorizontal = scrollAxisRef.current === 'horizontal'
-    if (wasHorizontal) {
-      suppressClickRef.current = { at: Date.now(), key }
-    }
-    if (point && wasHorizontal) {
-      const dx = point.x - touchStart.x
-      const dt = Math.max(1, performance.now() - touchStart.t)
-      const velocity = -dx / dt
-      const activeDx = activeSwipeDxRef.current
-      if (activeDx <= -SNAP_THRESHOLD_PX || velocity > VELOCITY_SNAP) {
-        setOpenSwipeKey(key)
-      } else {
-        setOpenSwipeKey(null)
-      }
-    }
-    touchStartRef.current = null
-    setActiveSwipe(null)
-    scrollAxisRef.current = null
-    activeSwipeDxRef.current = 0
-    return wasHorizontal ? 'horizontal' : scrollAxisRef.current
-  }
-
-  function onTouchStart(event: TouchEvent<HTMLButtonElement>, key: string): void {
-    const touch = event.touches[0]
-    if (!touch) return
-    beginSwipe({ x: touch.clientX, y: touch.clientY }, key)
-  }
-
-  function onTouchMove(event: TouchEvent<HTMLButtonElement>, key: string): void {
-    const touch = event.touches[0]
-    if (!touch) return
-    if (moveSwipe({ x: touch.clientX, y: touch.clientY }, key) === 'horizontal') {
-      event.stopPropagation()
-    }
-  }
-
-  function onTouchEnd(event: TouchEvent<HTMLButtonElement>, key: string): void {
-    const touch = event.changedTouches[0]
-    if (endSwipe(touch ? { x: touch.clientX, y: touch.clientY } : null, key) === 'horizontal') {
-      event.stopPropagation()
-    }
-  }
-
-  function onPointerDown(event: PointerEvent<HTMLButtonElement>, key: string): void {
-    if (event.pointerType === 'touch') return
-    if (event.button !== 0) return
-    beginSwipe({ x: event.clientX, y: event.clientY }, key)
-    event.currentTarget.setPointerCapture?.(event.pointerId)
-  }
-
-  function onPointerMove(event: PointerEvent<HTMLButtonElement>, key: string): void {
-    if (event.pointerType === 'touch') return
-    if (moveSwipe({ x: event.clientX, y: event.clientY }, key) === 'horizontal') {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-  }
-
-  function onPointerUp(event: PointerEvent<HTMLButtonElement>, key: string): void {
-    if (event.pointerType === 'touch') return
-    if (endSwipe({ x: event.clientX, y: event.clientY }, key) === 'horizontal') {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-    event.currentTarget.releasePointerCapture?.(event.pointerId)
-  }
-
-  function rowStyle(key: string): CSSProperties | undefined {
-    if (activeSwipe?.key !== key) return undefined
-    return { transform: `translateX(${activeSwipe.dx}px)`, transition: 'none' }
-  }
-
-  function deleteStyle(key: string): CSSProperties | undefined {
-    if (activeSwipe?.key !== key) return undefined
-    return { opacity: Math.min(1, Math.abs(activeSwipe.dx) / REVEAL_PX), transition: 'none' }
+    swipe.handleClick(bookmark.verseKey, () => jumpToBookmark(bookmark))
   }
 
   if (bookmarks.length === 0) {
     return (
-      <div className="qar-react-bookmarks-empty" data-bookmarks-empty="">
-        Tap a verse number in the reader to bookmark it.
-      </div>
+      <Status
+        data-bookmarks-empty=""
+        description="Tap a verse number in the reader to bookmark it."
+        title="No bookmarks"
+        tone="info"
+      />
     )
   }
   return (
@@ -238,7 +94,7 @@ export function BookmarksList({
                 <li
                   className={cn(
                     'qar-react-bookmarks-row',
-                    openSwipeKey === bookmark.verseKey && 'qar-react-bookmarks-row--swiped',
+                    swipe.isOpen(bookmark.verseKey) && 'qar-react-bookmarks-row--swiped',
                   )}
                   data-bookmark-kind={pageBookmark ? 'page' : 'verse'}
                   data-verse-key={bookmark.verseKey}
@@ -248,13 +104,13 @@ export function BookmarksList({
                     aria-label={bookmarkJumpLabel(bookmark)}
                     className="qar-react-bookmarks-row-btn"
                     onClick={() => handleRowClick(bookmark)}
-                    onPointerDown={(event) => onPointerDown(event, bookmark.verseKey)}
-                    onPointerMove={(event) => onPointerMove(event, bookmark.verseKey)}
-                    onPointerUp={(event) => onPointerUp(event, bookmark.verseKey)}
-                    onTouchEnd={(event) => onTouchEnd(event, bookmark.verseKey)}
-                    onTouchMove={(event) => onTouchMove(event, bookmark.verseKey)}
-                    onTouchStart={(event) => onTouchStart(event, bookmark.verseKey)}
-                    style={rowStyle(bookmark.verseKey)}
+                    onPointerDown={(event) => swipe.pointerDown(event, bookmark.verseKey)}
+                    onPointerMove={(event) => swipe.pointerMove(event, bookmark.verseKey)}
+                    onPointerUp={(event) => swipe.pointerUp(event, bookmark.verseKey)}
+                    onTouchEnd={(event) => swipe.touchEnd(event, bookmark.verseKey)}
+                    onTouchMove={(event) => swipe.touchMove(event, bookmark.verseKey)}
+                    onTouchStart={(event) => swipe.touchStart(event, bookmark.verseKey)}
+                    style={swipe.rowStyle(bookmark.verseKey)}
                     type="button"
                     unstyled
                   >
@@ -278,10 +134,10 @@ export function BookmarksList({
                     aria-label={bookmarkDeleteLabel(bookmark)}
                     className="qar-react-bookmarks-row-del"
                     onClick={() => {
-                      setOpenSwipeKey(null)
+                      swipe.closeSwipe()
                       onDeleteBookmark?.({ riwayah: bookmark.riwayah, verseKey: bookmark.verseKey })
                     }}
-                    style={deleteStyle(bookmark.verseKey)}
+                    style={swipe.deleteStyle(bookmark.verseKey)}
                     type="button"
                     unstyled
                   >

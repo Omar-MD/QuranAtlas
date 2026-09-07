@@ -1,13 +1,13 @@
 import { Spinner } from '../ui'
+import { OnboardingPageRecipe } from '../../design-system/recipes/onboarding-page'
 
 export function LaunchSplash() {
   return (
-    <main className="qar:grid qar:min-h-screen qar:place-items-center qar:px-5 qar:py-8" aria-label="Launch restore">
-      <section className="qar:grid qar:w-full qar:max-w-sm qar:gap-3 qar:text-center">
+    <OnboardingPageRecipe title="QuranAtlas">
+      <section className="qar:grid qar:justify-items-center qar:gap-3 qar:text-center" aria-label="Launch restore">
         <Spinner label="Opening Al-Fatihah" />
-        <h2 className="qar:m-0 qar:text-xl qar:leading-tight">Opening Al-Fatihah</h2>
-        <p className="qar:m-0 qar:text-sm qar:text-muted">Preparing the default Qaloon reader.</p>
+        <p className="qar:m-0 qar:text-sm qar:text-muted">Opening Al-Fatihah · Preparing the default Qaloon reader.</p>
       </section>
-    </main>
+    </OnboardingPageRecipe>
   )
 }

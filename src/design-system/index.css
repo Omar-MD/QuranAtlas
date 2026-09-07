@@ -297,17 +297,6 @@
     grid-area: count;
   }
 
-  .qar-search-error {
-    margin: 0;
-    padding: 10px 12px;
-    border: 1px solid var(--qa-react-danger);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-surface);
-    color: var(--qa-react-danger);
-    font-size: 0.88rem;
-    line-height: 1.4;
-  }
-
   .qar-search-overview {
     display: grid;
     gap: 10px;
@@ -328,11 +317,7 @@
 
   .qar-search-overview-eyebrow,
   .qar-search-overview-title,
-  .qar-search-overview-mode,
-  .qar-search-overview-note,
-  .qar-search-overview-recovery,
-  .qar-search-overview-list h3,
-  .qar-search-overview-list p {
+  .qar-search-overview-mode {
     margin: 0;
   }
 
@@ -429,16 +414,6 @@
   .qar-search-overview-note {
     color: var(--qa-react-text-muted);
     font-size: 0.82rem;
-    line-height: 1.45;
-  }
-
-  .qar-search-overview-recovery {
-    padding: 9px 10px;
-    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 35%, var(--qa-react-border));
-    border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-accent) 8%, var(--qa-react-canvas));
-    color: var(--qa-react-text);
-    font-size: 0.84rem;
     line-height: 1.45;
   }
 
@@ -544,16 +519,6 @@
     background: var(--qa-react-canvas);
   }
 
-  .qar-search-answer-claims p,
-  .qar-search-answer-limits,
-  .qar-search-evidence-basis h3,
-  .qar-search-evidence-basis p,
-  .qar-search-best-evidence h3,
-  .qar-search-all-matches h3,
-  .qar-search-mapping-warning {
-    margin: 0;
-  }
-
   .qar-search-answer-claims p {
     flex: 1 1 16rem;
     min-width: 0;
@@ -566,16 +531,6 @@
     flex: 0 0 auto;
     max-width: 100%;
     white-space: normal;
-  }
-
-  .qar-search-answer-limits {
-    padding: 9px 10px;
-    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 35%, var(--qa-react-border));
-    border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-accent) 8%, var(--qa-react-canvas));
-    color: var(--qa-react-text);
-    font-size: 0.84rem;
-    line-height: 1.45;
   }
 
   .qar-search-evidence-basis,
@@ -658,20 +613,6 @@
     justify-content: space-between;
   }
 
-  .qar-search-all-matches-head span,
-  .qar-search-mapping-warning {
-    color: var(--qa-react-text-muted);
-    font-size: 0.78rem;
-    line-height: 1.4;
-  }
-
-  .qar-search-mapping-warning {
-    padding: 7px 8px;
-    border: 1px dashed var(--qa-react-border);
-    border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-canvas);
-  }
-
   .qar-search-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -731,25 +672,10 @@
     background: var(--qa-react-canvas);
   }
 
-  .qar-search-explore-modules h3,
-  .qar-search-explore-modules p,
-  .qar-search-explore-modules dl,
-  .qar-search-explore-result-note p,
-  .qar-search-explore-result-note ul {
-    margin: 0;
-  }
-
   .qar-search-explore-modules h3 {
     color: var(--qa-react-text);
     font-size: 0.9rem;
     line-height: 1.25;
-  }
-
-  .qar-search-explore-modules p,
-  .qar-search-explore-result-note {
-    color: var(--qa-react-text-muted);
-    font-size: 0.82rem;
-    line-height: 1.45;
   }
 
   .qar-search-explore-modules dl {
@@ -781,23 +707,6 @@
     display: block;
     color: var(--qa-react-text-muted);
     font-size: 0.7rem;
-  }
-
-  .qar-search-explore-result-note {
-    display: grid;
-    gap: 8px;
-    padding: 10px;
-    border: 1px dashed var(--qa-react-border);
-    border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-canvas);
-  }
-
-  .qar-search-explore-result-note ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 0;
-    list-style: none;
   }
 
   .qar-search-graph-loading {
@@ -867,17 +776,6 @@
     gap: 0;
   }
 
-  .qar-search-results-empty {
-    margin: 0;
-    padding: 14px;
-    border: 1px solid var(--qa-react-nav-row-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-nav-row-surface);
-    color: var(--qa-react-text-muted);
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
-
   .qar-search-result-row {
     position: relative;
     display: grid;
@@ -895,7 +793,7 @@
   .qar-search-result-row[data-selected="true"] {
     background: var(--qa-react-nav-current-bg);
     box-shadow:
-      inset 3px 0 var(--qa-react-nav-current-spine),
+      inset 3px 0 var(--qa-react-accent),
       var(--qa-react-nav-shadow-row);
   }
 
@@ -967,7 +865,7 @@
   }
 
   .qar-search-result-arabic {
-    font-family: "KFGQPC Uthmanic Hafs", "Noto Naskh Arabic", serif;
+    font-family: var(--qa-react-font-arabic);
     font-size: calc(1.875rem * var(--qa-react-font-size-base, 1));
     line-height: 2.12;
     text-align: right;
@@ -1001,7 +899,7 @@
   .qar-search-answer-card-list .qar-search-result-context {
     color: var(--qa-react-text-muted);
     direction: ltr;
-    font-family: Newsreader, georgia, serif;
+    font-family: var(--qa-react-font-translation);
     font-size: calc(1rem * var(--qa-react-font-size-base, 1));
     line-height: 1.625;
     text-align: left;
@@ -1052,6 +950,32 @@
   .qar-search-result-detail:focus-visible {
     outline: 2px solid var(--qa-react-focus);
     outline-offset: 3px;
+  }
+  .qar-search-detail-back {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .qar-search-answer-preview[data-mobile-details="true"] > :not(.qar-search-result-detail) {
+      display: none;
+    }
+
+    .qar-search-verses-panel[data-mobile-details="false"] .qar-search-result-detail {
+      display: none;
+    }
+
+    .qar-search-verses-panel[data-mobile-details="true"] .qar-search-result-list,
+    .qar-search-verses-panel[data-mobile-details="true"] > .qar-search-result-count {
+      display: none;
+    }
+
+    .qar-search-detail-back {
+      display: inline-flex;
+    }
+
+    .qar-search-detail-close {
+      display: none;
+    }
   }
 
   .qar-react-nav-drawer-search-mode {
@@ -1882,7 +1806,7 @@
     transition: var(--qa-react-transition-fast) !important;
   }
 
-  .qar-react-settings-shell .qar-react-settings-appearance-choice[aria-pressed="true"] {
+  .qar-react-settings-shell .qar-react-settings-appearance-choice[aria-checked="true"] {
     border-color: var(--qa-react-accent-strong) !important;
     background: var(--qa-react-settings-selected) !important;
     color: var(--qa-react-settings-selected-text) !important;
@@ -2066,7 +1990,7 @@
     padding: 0 !important;
     border-color: var(--qa-react-nav-control-border) !important;
     border-radius: var(--qa-react-radius-circle) !important;
-    background: color-mix(in srgb, var(--qa-react-surface) 88%, transparent) !important;
+    background: var(--qa-react-chrome-surface) !important;
     color: var(--qa-react-accent);
     box-shadow: var(--qa-react-nav-shadow-control);
     -webkit-touch-callout: none;
@@ -2098,7 +2022,7 @@
     padding: 0 !important;
     border-color: var(--qa-react-nav-control-border) !important;
     border-radius: var(--qa-react-radius-circle) !important;
-    background: color-mix(in srgb, var(--qa-react-surface) 88%, transparent) !important;
+    background: var(--qa-react-chrome-surface) !important;
     color: var(--qa-react-accent);
     box-shadow: var(--qa-react-nav-shadow-control);
     -webkit-touch-callout: none;
@@ -2310,7 +2234,7 @@
   .qar-react-nav-drawer-filter-option {
     position: relative;
     min-width: 0;
-    min-height: 34px;
+    min-height: var(--qa-react-control-touch-target);
     border: 1px solid transparent !important;
     border-radius: var(--qa-react-radius-control) !important;
     background: transparent !important;
@@ -2358,20 +2282,14 @@
     outline-offset: -2px;
   }
 
-  .qar-react-nav-drawer-filter-option[aria-selected="true"] {
-    border-color: var(--qa-react-accent) !important;
-    background: var(--qa-react-accent) !important;
-    color: var(--qa-react-text-on-accent) !important;
-  }
-
   html[data-theme="dark"] .qar-react-nav-drawer-source-tab[aria-selected="true"] {
     background: var(--qa-react-nav-control-selected-bg) !important;
     color: var(--qa-react-accent) !important;
   }
 
   html[data-theme="dark"] .qar-react-nav-drawer-filter-option[aria-selected="true"] {
-    background: var(--qa-react-accent) !important;
-    color: var(--qa-react-text-on-accent) !important;
+    background: var(--qa-react-nav-control-selected-bg) !important;
+    color: var(--qa-react-nav-control-selected-text) !important;
   }
 
   .qar-react-nav-drawer-source-tools {
@@ -2453,10 +2371,11 @@
   .qar-react-nav-drawer-surah-row,
   .qar-react-juz-row,
   .qar-react-hizb-row {
+    position: relative;
     flex: 0 0 auto;
     overflow: hidden;
-    border: 1px solid var(--qa-react-nav-row-border);
-    border-radius: var(--qa-react-radius-control);
+    border: 0;
+    border-radius: 0;
     background: var(--qa-react-nav-row-surface);
     box-shadow: inset 0 -1px var(--qa-react-nav-row-separator);
   }
@@ -2464,11 +2383,10 @@
   .qar-react-nav-drawer-surah-row--current,
   .qar-react-juz-row--current,
   .qar-react-hizb-row--current {
-    border-color: var(--qa-react-nav-row-border);
     background: var(--qa-react-nav-current-bg);
     box-shadow:
-      inset 3px 0 var(--qa-react-nav-current-spine),
-      var(--qa-react-nav-shadow-row);
+      inset 3px 0 var(--qa-react-accent),
+      inset 0 -1px var(--qa-react-nav-row-separator);
   }
 
   .qar-react-nav-drawer-surah-btn,
@@ -2481,8 +2399,7 @@
     border-radius: 0 !important;
     background: transparent !important;
     color: var(--qa-react-text);
-    font-family:
-      system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, helvetica, arial, sans-serif !important;
+    font-family: var(--qa-react-font-ui) !important;
     font-size: 1rem !important;
     font-weight: 400 !important;
     text-align: start;
@@ -3520,40 +3437,6 @@
     text-align: center;
   }
 
-  .qar-react-mushaf-request-failure {
-    position: fixed;
-    right: max(0.75rem, env(safe-area-inset-right));
-    bottom: max(5.25rem, calc(env(safe-area-inset-bottom) + 5.25rem));
-    left: max(0.75rem, env(safe-area-inset-left));
-    z-index: 8;
-    display: grid;
-    gap: var(--qa-space-3);
-    width: auto;
-    max-width: 32rem;
-    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 9rem);
-    margin-inline: auto;
-    padding: var(--qa-space-4);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: color-mix(in srgb, var(--qa-react-surface) 94%, transparent);
-    box-shadow: var(--qa-react-nav-shadow-control);
-    backdrop-filter: blur(14px);
-  }
-
-  .qar-react-mushaf-request-failure > p {
-    margin: 0;
-    color: var(--qa-react-text-muted);
-    font-size: 0.875rem;
-  }
-
-  .qar-react-mushaf-request-failure-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--qa-space-2);
-  }
-
   .qar-react-mushaf-page-actions {
     position: absolute;
     bottom: var(--qa-react-mushaf-safe-bottom);
@@ -3796,13 +3679,10 @@
   @keyframes qar-reader-verse-pulse {
     0%,
     18% {
-      background-color: var(
-        --qa-react-bookmark-pulse-bg,
-        color-mix(in srgb, var(--qa-react-bookmark-accent, var(--qa-react-accent)) 22%, transparent)
-      );
+      background-color: var(--qa-react-reader-selection);
       box-shadow:
-        inset 2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent)),
-        inset -2px 0 0 var(--qa-react-bookmark-pulse-edge, var(--qa-react-bookmark-accent));
+        inset 2px 0 0 var(--qa-react-bookmark-accent),
+        inset -2px 0 0 var(--qa-react-bookmark-accent);
     }
 
     100% {
@@ -3867,13 +3747,6 @@
   .qar-reader-verse[data-bookmark-pulse="true"] {
     border-radius: var(--qa-react-radius-surface);
     animation: qar-reader-verse-pulse 1000ms ease-out 1;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .qar-reader-verse--pulse,
-    .qar-reader-verse[data-bookmark-pulse="true"] {
-      animation: none;
-    }
   }
 
   .qar-reader-verse-head {

@@ -2,7 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import * as ToastPrimitive from '@radix-ui/react-toast'
 import { X } from 'lucide-react'
-import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 import { Button } from './button'
@@ -15,6 +15,10 @@ type OverlayBaseProps = {
   trigger?: ReactNode
 }
 
+export type DialogProps = OverlayBaseProps & {
+  initialFocusRef?: RefObject<HTMLElement | null>
+}
+
 function CloseButton({ label = 'Close' }: { label?: string }) {
   return (
     <DialogPrimitive.Close asChild>
@@ -25,8 +29,7 @@ function CloseButton({ label = 'Close' }: { label?: string }) {
   )
 }
 
-export type DialogProps = OverlayBaseProps
-export function Dialog({ title, trigger, children, onOpenChange, open }: DialogProps) {
+export function Dialog({ initialFocusRef, title, trigger, children, onOpenChange, open }: DialogProps) {
   return (
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
@@ -35,6 +38,11 @@ export function Dialog({ title, trigger, children, onOpenChange, open }: DialogP
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="qar:fixed qar:left-1/2 qar:top-1/2 qar:z-50 qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg"
+          onOpenAutoFocus={(event) => {
+            if (!initialFocusRef?.current) return
+            event.preventDefault()
+            initialFocusRef.current.focus({ preventScroll: true })
+          }}
         >
           <div className="qar:flex qar:items-center qar:justify-between qar:gap-3">
             <DialogPrimitive.Title className="qar:m-0 qar:text-base qar:font-semibold">{title}</DialogPrimitive.Title>
@@ -56,6 +64,7 @@ export type SheetProps = OverlayBaseProps & {
   suppressCloseAutoFocus?: boolean
   variant?: 'default' | 'adaptive-settings' | 'navigation-drawer'
 }
+const DRAWER_DESKTOP_QUERY = '(min-width: 768px)'
 const DRAWER_FOCUSABLE_SELECTOR =
   "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
 

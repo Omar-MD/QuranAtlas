@@ -1,8 +1,9 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
+import { ReaderPageRecipe } from '../../design-system/recipes/reader-page'
 import { ReaderChrome, type ReaderMode } from './ReaderChrome'
-import { ChromeDrawer } from '../navigation/ChromeFrame'
 import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
+import { ChromeDrawer } from '../navigation/ChromeFrame'
 import { requestReactSettingsOverlay } from '../../app/settings-overlay-events'
 import type { WirdSummary } from '../../continuity/wird/types'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
@@ -13,7 +14,6 @@ export function ReaderPageShell({
   children,
   chromeVisible,
   interactionSuspended = false,
-  label,
   mode,
   onChromePinChange,
   onModeChange,
@@ -25,7 +25,6 @@ export function ReaderPageShell({
   children: ReactNode
   chromeVisible?: boolean
   interactionSuspended?: boolean
-  label: string
   mode: ReaderMode
   onChromePinChange?: (source: MushafChromePin, pinned: boolean) => void
   onModeChange?: (mode: ReaderMode) => void
@@ -105,48 +104,55 @@ export function ReaderPageShell({
         id="reader-main"
         tabIndex={-1}
       >
-        <ReaderChrome
-          mode={mode}
-          onBlurCapture={(event) => {
-            if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
-              onChromePinChange?.('focus', false)
-            }
-          }}
-          onFocusCapture={() => onChromePinChange?.('focus', true)}
-          onModeChange={onModeChange}
-          onOpenNavigation={() => {
-            setChromeVisible(true)
-            setDrawerWirdInitialView('card')
-            dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })
-          }}
-          onOpenSettings={() => {
-            setChromeVisible(true)
-            requestReactSettingsOverlay(mode, 'reader-settings-trigger')
-          }}
-          title={surahLabel}
-          visible={visible}
-          wirdStatus={
-            dailyWirdVisible && wirdSummary ? (
-              <ReaderWirdStatusIndicator
-                onOpen={() => {
-                  setChromeVisible(true)
-                  setDrawerWirdInitialView('detail')
-                  dispatchDrawer({ returnFocusId: 'reader-wird-status-trigger', type: 'open' })
+        <ReaderPageRecipe
+          chrome={
+            <>
+              <ReaderChrome
+                mode={mode}
+                onBlurCapture={(event) => {
+                  if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
+                    onChromePinChange?.('focus', false)
+                  }
                 }}
-                summary={wirdSummary}
+                onFocusCapture={() => onChromePinChange?.('focus', true)}
+                onModeChange={onModeChange}
+                onOpenNavigation={() => {
+                  setChromeVisible(true)
+                  setDrawerWirdInitialView('card')
+                  dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })
+                }}
+                onOpenSettings={() => {
+                  setChromeVisible(true)
+                  requestReactSettingsOverlay(mode, 'reader-settings-trigger')
+                }}
+                title={surahLabel}
+                visible={visible}
+                wirdStatus={
+                  dailyWirdVisible && wirdSummary ? (
+                    <ReaderWirdStatusIndicator
+                      onOpen={() => {
+                        setChromeVisible(true)
+                        setDrawerWirdInitialView('detail')
+                        dispatchDrawer({ returnFocusId: 'reader-wird-status-trigger', type: 'open' })
+                      }}
+                      summary={wirdSummary}
+                    />
+                  ) : null
+                }
               />
-            ) : null
+              <ChromeDrawer
+                activeMode="read"
+                controller={{ dispatch: dispatchDrawer, state: drawerState }}
+                initialWirdView={dailyWirdVisible ? drawerWirdInitialView : 'card'}
+                mode={mode}
+                showWird={dailyWirdVisible}
+              />
+            </>
           }
-        />
-        <ChromeDrawer
-          activeMode="read"
-          controller={{ dispatch: dispatchDrawer, state: drawerState }}
-          currentLabel={label}
-          initialWirdView={dailyWirdVisible ? drawerWirdInitialView : 'card'}
-          mode={mode}
-          showWird={dailyWirdVisible}
-        />
-        {children}
+          contentClassName={mode === 'mushaf' ? 'qar:max-w-none qar:p-0' : undefined}
+        >
+          {children}
+        </ReaderPageRecipe>
       </main>
     </ReaderInteractionProvider>
   )

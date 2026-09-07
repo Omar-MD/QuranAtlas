@@ -1,7 +1,8 @@
 import { ArrowUpRight } from 'lucide-react'
 
 import type { AnswerClaim, AnswerPreview, ClaimSupport, EvidenceCardLite, MatchCardLite } from '../../../shared/search'
-import { Badge, Button, IconButton, Tooltip } from '../ui'
+import { Badge, Button, IconButton, Status, Tooltip } from '../ui'
+import { SearchResultDetail } from './SearchResultDetail'
 
 type SearchAnswerPreviewProps = {
   preview: AnswerPreview | null
@@ -12,6 +13,9 @@ type SearchAnswerPreviewProps = {
   onOpenAllMatches: () => void
   onLoadMoreAllMatches: () => void
   onOpenInRead: (ref: string) => void
+  onSelectMatch?: (match: MatchCardLite, trigger: HTMLButtonElement) => void
+  onCloseMatch?: () => void
+  selectedMatch?: MatchCardLite | null
 }
 
 type PreviewCard = EvidenceCardLite | MatchCardLite
@@ -25,9 +29,12 @@ export function SearchAnswerPreview({
   onLoadMoreAllMatches,
   onOpenAllMatches,
   onOpenInRead,
+  onSelectMatch,
+  onCloseMatch,
+  selectedMatch,
 }: SearchAnswerPreviewProps) {
   if (!preview) {
-    return <p className="qar-search-results-empty">Enter a word, phrase, or ayah reference.</p>
+    return <Status description="Enter a word, phrase, or ayah reference." title="Search the Quran" tone="info" />
   }
 
   const supportById = new Map(preview.claimSupports.map((support) => [support.id, support]))
@@ -35,7 +42,11 @@ export function SearchAnswerPreview({
   const hasClaims = supportedClaims.length > 0
 
   return (
-    <section aria-labelledby="search-answer-preview-title" className="qar-search-answer-preview">
+    <section
+      aria-labelledby="search-answer-preview-title"
+      className="qar-search-answer-preview"
+      data-mobile-details={selectedMatch ? 'true' : 'false'}
+    >
       <div className="qar-search-answer-head">
         <div>
           <p className="qar-search-overview-eyebrow">Answer preview</p>
@@ -59,9 +70,11 @@ export function SearchAnswerPreview({
           ))}
         </ol>
       ) : (
-        <p className="qar-search-answer-limits" dir="auto">
-          <bdi>{preview.recovery?.message ?? 'The available evidence is shown without answer prose.'}</bdi>
-        </p>
+        <Status
+          description={preview.recovery?.message ?? 'The available evidence is shown without answer prose.'}
+          title="Answer limits"
+          tone="info"
+        />
       )}
 
       <section aria-labelledby="search-evidence-basis-title" className="qar-search-evidence-basis">
@@ -85,7 +98,7 @@ export function SearchAnswerPreview({
             ))}
           </div>
         ) : (
-          <p className="qar-search-results-empty">No best evidence is available for this preview.</p>
+          <Status description="No best evidence is available for this preview." title="No best evidence" tone="info" />
         )}
       </section>
 
@@ -106,11 +119,17 @@ export function SearchAnswerPreview({
           {allMatches.length > 0 ? (
             <div className="qar-search-answer-card-list">
               {allMatches.map((card) => (
-                <PreviewEvidenceCard card={card} key={card.id} onOpenInRead={onOpenInRead} />
+                <PreviewEvidenceCard
+                  card={card}
+                  key={card.id}
+                  onOpenInRead={onOpenInRead}
+                  onSelectMatch={onSelectMatch}
+                  previewMatch={card}
+                />
               ))}
             </div>
           ) : (
-            <p className="qar-search-results-empty">No matches are loaded yet.</p>
+            <Status description="No matches are loaded yet." title="No matches" tone="info" />
           )}
           {canLoadAllMatches ? (
             <Button disabled={loadingAllMatches} onClick={onLoadMoreAllMatches} size="sm" variant="secondary">
@@ -118,6 +137,9 @@ export function SearchAnswerPreview({
             </Button>
           ) : null}
         </section>
+      ) : null}
+      {selectedMatch ? (
+        <SearchResultDetail details={null} onClose={onCloseMatch} previewMatch={selectedMatch} ref={undefined} />
       ) : null}
     </section>
   )
@@ -143,7 +165,17 @@ function EvidenceBasisItem({ label, value }: { label: string; value: AnswerPrevi
   )
 }
 
-function PreviewEvidenceCard({ card, onOpenInRead }: { card: PreviewCard; onOpenInRead: (ref: string) => void }) {
+function PreviewEvidenceCard({
+  card,
+  onOpenInRead,
+  onSelectMatch,
+  previewMatch,
+}: {
+  card: PreviewCard
+  onOpenInRead: (ref: string) => void
+  onSelectMatch?: (match: MatchCardLite, trigger: HTMLButtonElement) => void
+  previewMatch?: MatchCardLite
+}) {
   const readerAction = card.readerAction
   const sourceText = card.sourceText ?? card.snippet
   return (
@@ -176,6 +208,11 @@ function PreviewEvidenceCard({ card, onOpenInRead }: { card: PreviewCard; onOpen
           </p>
         ) : null}
       </div>
+      {previewMatch && onSelectMatch ? (
+        <Button onClick={(event) => onSelectMatch(previewMatch, event.currentTarget)} size="sm" variant="secondary">
+          Details
+        </Button>
+      ) : null}
     </article>
   )
 }

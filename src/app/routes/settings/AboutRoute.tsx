@@ -1,5 +1,5 @@
 import { RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import pkg from '../../../../package.json'
 import { REACT_ROUTES } from '../../router/routes'
@@ -26,12 +26,13 @@ type UpdateCheckState =
 
 export function AboutRoute() {
   const clearData = useClearDataDialog()
+  const cancelClearDataRef = useRef<HTMLButtonElement>(null)
   const drawer = useNavDrawerController()
   const [installAvailable, setInstallAvailable] = useState(false)
   const [installDone, setInstallDone] = useState(false)
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>({
-    status: 'idle',
     message: 'Check for the latest app files.',
+    status: 'idle',
   })
 
   useEffect(() => {
@@ -149,6 +150,7 @@ export function AboutRoute() {
 
         <section className="qar:border-t qar:border-border qar:pt-4" aria-label="Clear local data">
           <Dialog
+            initialFocusRef={cancelClearDataRef}
             onOpenChange={(open) => {
               if (open) clearData.open()
               else clearData.close()
@@ -170,10 +172,17 @@ export function AboutRoute() {
               value={clearData.state.input}
             />
             {clearData.state.error ? (
-              <p className="qar:m-0 qar:text-sm qar:text-danger">{clearData.state.error}</p>
+              <p className="qar:m-0 qar:text-sm qar:text-danger" role="alert">
+                {clearData.state.error}
+              </p>
             ) : null}
             <div className="qar:flex qar:flex-wrap qar:justify-end qar:gap-2">
-              <Button disabled={clearData.state.pending} onClick={clearData.close} variant="ghost">
+              <Button
+                ref={cancelClearDataRef}
+                disabled={clearData.state.pending}
+                onClick={clearData.close}
+                variant="ghost"
+              >
                 Cancel
               </Button>
               <Button

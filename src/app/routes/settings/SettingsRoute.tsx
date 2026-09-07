@@ -8,11 +8,11 @@ import { SettingsGroup } from '../../../components/settings/SettingsGroup'
 import { ThemeNightControls } from '../../../components/settings/ThemeNightControls'
 import { VerseSettings } from '../../../components/settings/VerseSettings'
 import { useSettingsForm } from '../../../components/settings/useSettingsForm'
-import { Switch } from '../../../components/ui'
+import { Button, Switch } from '../../../components/ui'
 import { subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { readNativeSettings } from '../../../storage/native-reader-store'
-import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
 import type { NormalizedRect } from '../../../components/reader/mushaf-page-framing'
+import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
 
 export type SettingsRouteMode = 'verse' | 'mushaf'
 
@@ -39,6 +39,9 @@ export function SettingsRoute({
   const {
     mushafFramingWriteStatus,
     retryMushafPageFraming,
+    retrySettingsWrite,
+    settingsWriteError,
+    settingsWriteStatus,
     setFontSize,
     setMushafFitWidth,
     setMushafPageFraming,
@@ -51,7 +54,6 @@ export function SettingsRoute({
     state,
   } = useSettingsForm()
   const preferences = state.preferences
-
   useEffect(() => {
     let active = true
     void readNativeSettings(['riwayah', 'mushafEditionId'])
@@ -90,6 +92,22 @@ export function SettingsRoute({
       subtitle=""
       title={mode === 'verse' ? 'Verse settings' : 'Mushaf settings'}
     >
+      {settingsWriteError ? (
+        <div
+          className="qar:flex qar:items-center qar:justify-between qar:gap-3 qar:border qar:border-danger qar:bg-surface qar:p-3"
+          role="alert"
+        >
+          <span>{settingsWriteError}</span>
+          <Button
+            disabled={settingsWriteStatus === 'saving'}
+            onClick={retrySettingsWrite}
+            size="sm"
+            variant="secondary"
+          >
+            {settingsWriteStatus === 'saving' ? 'Saving...' : 'Retry'}
+          </Button>
+        </div>
+      ) : null}
       {mode === 'verse' ? (
         <VerseSettings
           fontSize={preferences.fontSize}

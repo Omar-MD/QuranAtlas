@@ -250,7 +250,6 @@ export function ReaderRoute({
 
   return (
     <ReaderPageShell
-      label={corpus.status === 'ready' ? corpus.surah.nameArabic : `Surah ${surah}`}
       mode="verse"
       onModeChange={(nextMode) => {
         if (nextMode === 'mushaf') {
@@ -265,6 +264,7 @@ export function ReaderRoute({
         }
       }}
       showWirdStatus={wirdReaderStatusVisible}
+      surahLabel={surahIndex.find((row) => row.n === surah)?.name ?? `Surah ${surah}`}
       wirdSummary={wirdSummary}
     >
       <ReaderVerseSurface

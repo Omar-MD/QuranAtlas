@@ -5,8 +5,6 @@ import { IconButton, Tooltip } from '../../ui'
 import type { WirdSummary } from '../../../continuity/wird/types'
 
 export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => void; summary: WirdSummary }) {
-  if (!summary.plan || summary.state === 'no-plan') return null
-
   const complete = summary.state === 'today-complete' || summary.state === 'plan-complete'
   const label = statusLabel(summary)
 
@@ -33,6 +31,7 @@ export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => v
 }
 
 function statusLabel(summary: WirdSummary): string {
+  if (!summary.plan || summary.state === 'no-plan') return 'Open Daily Wird'
   if (summary.state === 'plan-complete') return 'Daily Wird: plan complete'
   if (summary.state === 'today-complete') return 'Daily Wird: today complete'
   return `Daily Wird: ${summary.todayPercent}% today, ${summary.todayRemainingLabel ?? 'today assignment in progress'}`

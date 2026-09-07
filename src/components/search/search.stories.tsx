@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
+import { SearchHeader } from './SearchHeader'
 import { SearchIndexGate } from './SearchIndexGate'
 import { SearchResultDetail } from './SearchResultDetail'
+import { Status } from '../ui'
 import { SavedSearchesNavPanel } from './SavedSearchesNavPanel'
 import { SearchWorkspace } from './SearchWorkspace'
 import type { AnswerPreview, MatchCardLite } from '../../../shared/search'
@@ -31,6 +33,56 @@ export const Loading: Story = {
     <main className="qar:p-5" aria-label="Search">
       <SearchIndexGate message="Loading search index" ready={false} />
     </main>
+  ),
+}
+export const QueryEntry: Story = {
+  render: () => (
+    <main className="qar:grid qar:gap-4 qar:p-5" aria-label="Search">
+      <SearchHeader
+        canSave={false}
+        onQueryChange={() => undefined}
+        onSaveSearch={() => undefined}
+        onSubmit={() => undefined}
+        query=""
+      />
+    </main>
+  ),
+}
+
+export const PopulatedResults: Story = {
+  render: () => (
+    <WorkspaceStory activeTab="verses" brief={fixtureBrief} results={[fixtureResult, fixtureArabicResult]} />
+  ),
+}
+
+export const NoResults: Story = {
+  render: () => <WorkspaceStory activeTab="verses" brief={fixtureBrief} results={[]} />,
+}
+
+export const MissingPack: Story = {
+  render: () => (
+    <main className="qar:p-5" aria-label="Search">
+      <SearchIndexGate message="Search data is not available on this device." ready={false} />
+    </main>
+  ),
+}
+
+export const WorkerError: Story = {
+  render: () => (
+    <main className="qar:p-5" aria-label="Search">
+      <Status
+        description="Try the search again to restart the worker."
+        title="Search worker stopped unexpectedly"
+        tone="error"
+      />
+    </main>
+  ),
+}
+
+export const Desktop: Story = {
+  parameters: { viewport: { defaultViewport: 'desktop' } },
+  render: () => (
+    <WorkspaceStory activeTab="verses" brief={fixtureBrief} results={[fixtureResult]} selectedResult={fixtureResult} />
   ),
 }
 
@@ -155,20 +207,13 @@ export const DetailsNoMapping: Story = {
       mappingState: 'hafs-source-only' as const,
       readerRefs: [],
     }
-    return (
-      <WorkspaceStory
-        activeTab="verses"
-        brief={fixtureBrief}
-        results={[noMappingResult]}
-        selectedResult={noMappingResult}
-      />
-    )
+    return <WorkspaceStory activeTab="verses" brief={fixtureBrief} results={[noMappingResult]} />
   },
 }
 
 export const MobileDetails: Story = {
   parameters: {
-    viewport: { defaultViewport: 'mobile1' },
+    viewport: { defaultViewport: 'mobile' },
   },
   render: () => (
     <main className="qar:max-w-sm qar:p-4" aria-label="Search">

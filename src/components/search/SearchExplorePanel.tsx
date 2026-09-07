@@ -1,4 +1,5 @@
 import type { SearchResultDto } from '../../search/schema'
+import { ListRow, Status } from '../ui'
 import { SearchGraphExplore } from './SearchGraphExplore'
 import { SearchMorphologyPanel } from './SearchMorphologyPanel'
 import type { SearchExploreModuleId, SearchExploreSummary } from './search-presentation-model'
@@ -21,7 +22,9 @@ export function SearchExplorePanel({
 }) {
   const graphState = graph ?? { error: null, loading: false, resultId: null, sections: [] }
   if (modules.length === 0) {
-    return <p className="qar-search-results-empty">No Explore modules are available for this query.</p>
+    return (
+      <Status description="No Explore modules are available for this query." title="Explore unavailable" tone="info" />
+    )
   }
   const graphModules = modules.filter(isGraphModule)
   return (
@@ -31,13 +34,17 @@ export function SearchExplorePanel({
       </p>
       {summaries.length > 0 ? <ExploreSummaryList focusedModule={focusedModule} summaries={summaries} /> : null}
       {!seedResult && graphModules.length > 0 ? (
-        <div className="qar-search-explore-result-note">
-          <p>Result-level graph sections are available after opening Details on a verse.</p>
-          <ul>
+        <div className="qar:grid qar:gap-2">
+          <Status
+            description="Result-level graph sections are available after opening Details on a verse."
+            title="Explore result details"
+            tone="info"
+          />
+          <div className="qar:grid qar:gap-1">
             {graphModules.map((module) => (
-              <li key={module}>{exploreModuleLabel(module)}</li>
+              <ListRow key={module} title={exploreModuleLabel(module)} />
             ))}
-          </ul>
+          </div>
         </div>
       ) : null}
       {seedResult ? (

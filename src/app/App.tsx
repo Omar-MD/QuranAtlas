@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 
 import type { SettingsRouteMode } from './routes/settings/SettingsRoute'
+import { Button, Status } from '../components/ui'
 import { LaunchSplash } from '../components/launch/LaunchSplash'
 import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/routes'
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
@@ -13,6 +14,9 @@ import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-s
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
 
 const AboutRoute = lazy(() => import('./routes/settings/AboutRoute').then((module) => ({ default: module.AboutRoute })))
+const NavigationRouteHost = lazy(() =>
+  import('./routes/navigation/NavigationRouteHost').then((module) => ({ default: module.NavigationRouteHost })),
+)
 const BookmarksRoute = lazy(() =>
   import('./routes/navigation/BookmarksRoute').then((module) => ({ default: module.BookmarksRoute })),
 )
@@ -201,12 +205,18 @@ export function App() {
             />
           )}
           {(route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'unsupported') && (
-            <ChromeFrameRoute currentLabel={route.type === 'surahs' ? 'Surahs' : route.type === 'bookmarks' ? 'Bookmarks' : 'Unavailable'}>
+            <NavigationRouteHost
+              statusMessage={
+                route.type === 'surahs' ? 'Surahs' : route.type === 'bookmarks' ? 'Bookmarks' : 'Unavailable'
+              }
+            >
               {route.type === 'surahs' && <SurahsRoute />}
               {route.type === 'bookmarks' && <BookmarksRoute />}
-              {route.type === 'unsupported' && <UnsupportedRoute />}
-            </ChromeFrameRoute>
+              {route.type === 'unsupported' && <UnsupportedRoute hash={activeHash} />}
+            </NavigationRouteHost>
           )}
+          {route.type === 'search' && <SearchRoute />}
+          {route.type === 'about' && <AboutRoute />}
           {settingsOverlay && (
             <Suspense fallback={null}>
               <SettingsRoute
@@ -250,17 +260,22 @@ function isReaderHash(hash: string): boolean {
   return route.type === 'reader' || route.type === 'mushaf'
 }
 
-function UnsupportedRoute() {
+function UnsupportedRoute({ hash }: { hash: string }) {
   return (
     <main
-      className="qar:grid qar:mx-auto qar:w-full qar:max-w-2xl qar:gap-3 qar:px-5 qar:py-8"
+      className="qar:grid qar:mx-auto qar:w-full qar:max-w-2xl qar:gap-4 qar:px-5 qar:py-8"
       aria-label="Unsupported route"
     >
-      <p className="qar:m-0 qar:text-xs qar:font-medium qar:uppercase qar:tracking-wide qar:text-muted">Unavailable</p>
-      <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Route unavailable</h1>
-      <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-        This route is not part of the current QuranAtlas MVP.
-      </p>
+      <Status
+        action={
+          <Button onClick={() => (window.location.hash = REACT_ROUTES.surahs)} variant="secondary">
+            Go to Surah list
+          </Button>
+        }
+        description={`The address ${hash || '#/'} is not recognized by QuranAtlas. Choose a supported destination to continue.`}
+        title="This link is not supported"
+        tone="warning"
+      />
     </main>
   )
 }

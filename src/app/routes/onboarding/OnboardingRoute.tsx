@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 
-import { Button, Select } from '../../../components/ui'
+import { Button, Progress, SegmentedControl, Status } from '../../../components/ui'
 import { LaunchSplash } from '../../../components/launch/LaunchSplash'
+import { OnboardingPageRecipe } from '../../../design-system/recipes/onboarding-page'
 import { writeMushafEditionSelection, type MushafEditionSetupState } from '../../../launch/mushaf-edition-setup'
 import {
   canContinueMushafEditionSetup,
@@ -54,6 +55,7 @@ function MushafEditionSetupRoute({
     createInitialMushafEditionSetupState,
   )
   const autoSelected = useRef<string | null>(null)
+  const retryRef = useRef<HTMLButtonElement>(null)
 
   const complete = useCallback(
     async (editionId: string) => {
@@ -79,71 +81,72 @@ function MushafEditionSetupRoute({
     void complete(editionId)
   }, [complete, setup])
 
+  useEffect(() => {
+    if (state.persistenceStatus === 'error') retryRef.current?.focus()
+  }, [state.persistenceStatus])
+
   if (setup.status === 'availability-error') {
     return (
-      <main
-        aria-label="Mushaf edition availability"
-        className="qar:grid qar:mx-auto qar:min-h-screen qar:w-full qar:max-w-xl qar:content-center qar:gap-4 qar:px-5 qar:py-8"
-      >
-        <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">
-          Mushaf edition availability is temporarily unavailable.
-        </h1>
-        <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">
-          Could not check Mushaf edition availability. Try again without clearing your saved edition.
-        </p>
-        <div>
-          <Button
-            onClick={() => {
-              if (onRetryAvailability) onRetryAvailability()
-              else window.location.reload()
-            }}
-            variant="primary"
-          >
-            Retry edition availability
-          </Button>
-        </div>
-      </main>
+      <OnboardingPageRecipe kicker="QuranAtlas" title="Mushaf setup">
+        <Status
+          action={
+            <Button
+              ref={retryRef}
+              onClick={() => {
+                if (onRetryAvailability) onRetryAvailability()
+                else window.location.reload()
+              }}
+              variant="secondary"
+            >
+              Retry edition availability
+            </Button>
+          }
+          description="Could not check Mushaf edition availability. Try again without clearing your saved edition."
+          title="Edition availability is temporarily unavailable"
+          tone="error"
+        />
+      </OnboardingPageRecipe>
     )
   }
 
   if (setup.status === 'missing') {
     return (
-      <main
-        aria-label="Mushaf edition unavailable"
-        className="qar:grid qar:mx-auto qar:min-h-screen qar:w-full qar:max-w-xl qar:content-center qar:gap-4 qar:px-5 qar:py-8"
-      >
-        <p className="qar:m-0 qar:text-sm qar:font-medium qar:text-muted">Mushaf edition unavailable</p>
-        <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">
-          Your selected Mushaf edition is no longer available.
-        </h1>
-        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          Open About to use Clear All Data and choose an available edition.
-        </p>
-        <div>
-          <Button
-            onClick={() => {
-              window.location.hash = '#/about'
-            }}
-            variant="primary"
-          >
-            Go to About
-          </Button>
-        </div>
-      </main>
+      <OnboardingPageRecipe kicker="QuranAtlas" title="Mushaf setup">
+        <Status
+          action={
+            <Button onClick={() => (window.location.hash = '#/about')} variant="secondary">
+              Go to About
+            </Button>
+          }
+          description="Open About to clear saved data and choose an available edition."
+          title="Your selected Mushaf edition is no longer available"
+          tone="error"
+        />
+      </OnboardingPageRecipe>
     )
   }
 
   if (setup.editions.length === 0) {
     return (
-      <main
-        aria-label="Mushaf edition setup"
-        className="qar:grid qar:mx-auto qar:min-h-screen qar:w-full qar:max-w-xl qar:content-center qar:gap-4 qar:px-5 qar:py-8"
-      >
-        <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Mushaf editions are unavailable.</h1>
-        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          Connect to the internet and reopen QuranAtlas to load available editions.
-        </p>
-      </main>
+      <OnboardingPageRecipe kicker="QuranAtlas" title="Mushaf setup">
+        <Status
+          action={
+            <Button
+              ref={retryRef}
+              onClick={() => {
+                if (onRetryAvailability) onRetryAvailability()
+                else window.location.reload()
+              }}
+              variant="secondary"
+            >
+              Retry availability
+            </Button>
+          }
+          description="Connect to the internet and retry to load available editions."
+          title="No Mushaf editions are available"
+          tone="warning"
+        />
+      </OnboardingPageRecipe>
     )
   }
 
@@ -151,39 +154,45 @@ function MushafEditionSetupRoute({
   const writing = state.persistenceStatus === 'saving'
   const persistenceFailed = state.persistenceStatus === 'error'
   return (
-    <main
-      aria-label="Mushaf edition setup"
-      className="qar:grid qar:mx-auto qar:min-h-screen qar:w-full qar:max-w-xl qar:content-center qar:gap-5 qar:px-5 qar:py-8"
-    >
-      <div className="qar:grid qar:gap-2">
-        <p className="qar:m-0 qar:text-sm qar:font-medium qar:text-muted">Reader setup</p>
-        <h1 className="qar:m-0 qar:font-ui qar:text-2xl qar:leading-tight">Choose your Mushaf edition</h1>
-      </div>
-      {setup.editions.length > 1 && (
-        <Select
-          label="Mushaf edition"
-          onValueChange={(value) => dispatch({ type: 'selectMushafEdition', value })}
-          options={setup.editions.map((edition) => ({ label: edition.label, value: edition.id }))}
-          placeholder="Choose an edition"
-          value={state.selectedEditionId ?? undefined}
+    <OnboardingPageRecipe kicker="QuranAtlas" title="Choose your Mushaf edition">
+      <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
+        Select the edition you want to use for your reader.
+      </p>
+      <SegmentedControl
+        label="Mushaf edition"
+        onValueChange={(value) => dispatch({ type: 'selectMushafEdition', value })}
+        options={setup.editions.map((edition) => ({ label: edition.label, value: edition.id }))}
+        value={state.selectedEditionId ?? undefined}
+      />
+      {writing && <Progress label="Saving Mushaf setup" value={60} />}
+      {persistenceFailed && (
+        <Status
+          action={
+            <Button
+              ref={retryRef}
+              disabled={!canContinue}
+              onClick={() => {
+                if (state.selectedEditionId) void complete(state.selectedEditionId)
+              }}
+              variant="secondary"
+            >
+              Retry save
+            </Button>
+          }
+          description="Your selected edition is preserved. Retry saving to finish setup."
+          title="Could not save Mushaf setup"
+          tone="error"
         />
       )}
-      {persistenceFailed && (
-        <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">
-          Could not save Mushaf setup. Your selected edition is preserved.
-        </p>
-      )}
-      <div>
-        <Button
-          disabled={!canContinue || writing}
-          onClick={() => {
-            if (state.selectedEditionId) void complete(state.selectedEditionId)
-          }}
-          variant="primary"
-        >
-          {writing ? 'Saving...' : persistenceFailed ? 'Retry Mushaf setup' : 'Continue'}
-        </Button>
-      </div>
-    </main>
+      <Button
+        disabled={!canContinue || writing || persistenceFailed}
+        onClick={() => {
+          if (state.selectedEditionId) void complete(state.selectedEditionId)
+        }}
+        variant="primary"
+      >
+        Continue
+      </Button>
+    </OnboardingPageRecipe>
   )
 }

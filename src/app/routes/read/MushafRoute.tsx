@@ -6,8 +6,8 @@ import type { ReaderAssetState } from '../../../components/reader/ReaderAssetGat
 import { ReaderAssetGate } from '../../../components/reader/ReaderAssetGate'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import { useMushafChromeVisibility, type MushafChromePin } from '../../../components/reader/useMushafChromeVisibility'
-import { Button } from '../../../components/ui'
 import type { MushafViewMode } from '../../../components/reader/MushafModeControl'
+import { Button, Spinner, Status } from '../../../components/ui'
 import { resolveVerseHrefForMushafPage } from '../../../components/reader/reader-mode-routing'
 import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-bookmark'
 import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
@@ -380,9 +380,8 @@ export function MushafRoute({
 
   return (
     <ReaderPageShell
-      chromeVisible={chrome.visible}
+      chromeVisible={chrome.visible || assetState !== 'ready' || profileSession.status === 'error'}
       interactionSuspended={interactionSuspended}
-      label={`Page ${visiblePage?.resolved.page ?? page}`}
       mode="mushaf"
       onChromePinChange={handleChromePin}
       onChromeVisibleChange={(visible) => (visible ? chrome.reveal() : chrome.hide())}
@@ -402,7 +401,7 @@ export function MushafRoute({
       showWirdStatus={
         activeSettings?.wirdReaderStatusVisible ?? DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible
       }
-      surahLabel={currentSurahLabel}
+      surahLabel={currentSurahLabel ?? `Page ${page}`}
       wirdSummary={wirdSummary}
     >
       {assetState !== 'ready' ? (
@@ -451,21 +450,32 @@ export function MushafRoute({
             viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
           />
           {requestedPageFailure ? (
-            <section aria-live="polite" className="qar-react-mushaf-request-failure" role="status">
-              <p>{requestedPageFailure.message}</p>
-              <div className="qar-react-mushaf-request-failure-actions">
-                <Button onClick={requestedPageFailure.retry} size="sm">
-                  Retry page {requestedPageFailure.requestedPage}
-                </Button>
-                <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">
-                  Stay on page {requestedPageFailure.visiblePage}
-                </Button>
-              </div>
-            </section>
+            <Status
+              action={
+                <>
+                  <Button onClick={requestedPageFailure.retry} size="sm">
+                    Retry page {requestedPageFailure.requestedPage}
+                  </Button>
+                  <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">
+                    Stay on page {requestedPageFailure.visiblePage}
+                  </Button>
+                </>
+              }
+              aria-live="polite"
+              description={requestedPageFailure.message}
+              title={`Unable to load page ${requestedPageFailure.requestedPage}`}
+              tone="error"
+            />
           ) : pendingPage !== null && (pendingEntry?.status === 'loading' || pendingEntry?.status === 'retrying') ? (
-            <div aria-live="polite" className="qar-react-mushaf-request-loading" role="status">
-              {pendingEntry.status === 'retrying' ? `Retrying page ${pendingPage}` : `Loading page ${pendingPage}`}
-            </div>
+            <Status
+              aria-live="polite"
+              description={
+                pendingEntry.status === 'retrying' ? `Retrying page ${pendingPage}` : `Loading page ${pendingPage}`
+              }
+              icon={<Spinner label={`Loading page ${pendingPage}`} />}
+              title="Loading Mushaf page"
+              tone="info"
+            />
           ) : null}
         </>
       ) : profileSession.status === 'error' ? (

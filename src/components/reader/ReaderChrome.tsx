@@ -52,7 +52,7 @@ export function ReaderChrome({
       </div>
       {title ? (
         mode === 'mushaf' ? (
-          <h1 className="qar:m-0 qar-reader-chrome-title" dir="rtl" lang="ar">
+          <h1 className="qar:m-0 qar:text-sm qar:font-semibold qar-reader-chrome-title" dir="ltr" lang="en">
             {title}
           </h1>
         ) : (

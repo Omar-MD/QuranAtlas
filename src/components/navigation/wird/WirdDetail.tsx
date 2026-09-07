@@ -125,10 +125,10 @@ export function WirdDetail({
                 {targetMode === 'custom' ? 'Custom' : targetDays ? `${targetDays} days` : 'Choose'}
               </span>
             </div>
-            <fieldset className="qar-react-wird-options" aria-label="Completion target">
+            <div className="qar-react-wird-options" role="radiogroup" aria-label="Completion target">
               {[7, 30, 90].map((days) => (
                 <WirdChoice
-                  aria-pressed={targetMode === 'preset' && targetDays === days}
+                  aria-checked={targetMode === 'preset' && targetDays === days}
                   key={days}
                   onClick={() => selectPreset(days)}
                 >
@@ -136,7 +136,7 @@ export function WirdDetail({
                 </WirdChoice>
               ))}
               <WirdChoice
-                aria-pressed={targetMode === 'custom'}
+                aria-checked={targetMode === 'custom'}
                 onClick={() => {
                   setTargetMode('custom')
                   setTargetDays(null)
@@ -144,7 +144,7 @@ export function WirdDetail({
               >
                 Custom date
               </WirdChoice>
-            </fieldset>
+            </div>
             {targetMode === 'custom' && (
               <Input
                 className="qar-react-wird-input"
@@ -164,13 +164,13 @@ export function WirdDetail({
               </span>
               <span className="qar-react-wird-field-value">{unit}</span>
             </div>
-            <fieldset className="qar-react-wird-options" aria-label="Display unit">
+            <div className="qar-react-wird-options" role="radiogroup" aria-label="Display unit">
               {UNITS.map((nextUnit) => (
-                <WirdChoice aria-pressed={unit === nextUnit} key={nextUnit} onClick={() => setUnit(nextUnit)}>
+                <WirdChoice aria-checked={unit === nextUnit} key={nextUnit} onClick={() => setUnit(nextUnit)}>
                   {nextUnit}
                 </WirdChoice>
               ))}
-            </fieldset>
+            </div>
           </section>
 
           <section className="qar-react-wird-field" aria-label="Start point">
@@ -181,18 +181,18 @@ export function WirdDetail({
               </span>
               <span className="qar-react-wird-field-value">{startMode === 'current' ? currentRefLabel : '1:1'}</span>
             </div>
-            <fieldset className="qar-react-wird-options" aria-label="Start point">
+            <div className="qar-react-wird-options" role="radiogroup" aria-label="Start point">
               <WirdChoice
-                aria-pressed={startMode === 'current'}
+                aria-checked={startMode === 'current'}
                 disabled={!currentPosition}
                 onClick={() => setStartMode('current')}
               >
                 Current position {currentRefLabel}
               </WirdChoice>
-              <WirdChoice aria-pressed={startMode === 'beginning'} onClick={() => setStartMode('beginning')}>
+              <WirdChoice aria-checked={startMode === 'beginning'} onClick={() => setStartMode('beginning')}>
                 Beginning 1:1
               </WirdChoice>
-            </fieldset>
+            </div>
           </section>
 
           <section className="qar-react-wird-field qar-react-wird-field--reminder" aria-label="Daily Wird reminders">
@@ -278,16 +278,17 @@ function WirdChoice({
   onClick,
   ...props
 }: {
-  'aria-pressed': boolean
+  'aria-checked': boolean
   children: ReactNode
   disabled?: boolean
   onClick: () => void
 }) {
-  const pressed = props['aria-pressed']
+  const pressed = props['aria-checked']
   return (
     <Button
-      aria-pressed={pressed}
+      aria-checked={pressed}
       className="qar-react-wird-option"
+      role="radio"
       disabled={disabled}
       onClick={onClick}
       size="sm"

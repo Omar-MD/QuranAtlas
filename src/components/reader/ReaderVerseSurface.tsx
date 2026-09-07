@@ -1,6 +1,7 @@
 import type { ReaderCorpusState } from '../../data/reader-corpus'
 import { findAdjacentSurah, type ReaderSurahIndexEntry } from '../../data/surah-index'
 import type { VerseMetadata } from '../../metadata/metadata-state'
+import { Spinner, Status } from '../ui'
 import { SurahContinuityButton } from './SurahContinuityButton'
 import { VirtualVerseList } from './VirtualVerseList'
 
@@ -35,35 +36,39 @@ export function ReaderVerseSurface({
 }: ReaderVerseSurfaceProps) {
   if (corpus.status === 'loading' || corpus.status === 'idle') {
     return (
-      <section className="qar:px-5 qar:py-8 qar:text-muted" aria-live="polite">
-        Loading reader text...
-      </section>
+      <Status
+        aria-live="polite"
+        description="Loading reader text..."
+        icon={<Spinner label="Loading reader text" />}
+        title="Loading reader"
+        tone="info"
+      />
     )
   }
 
   if (corpus.status === 'aborted') {
     return (
-      <section className="qar:px-5 qar:py-8 qar:text-muted" aria-live="polite">
-        Reader request was cancelled.
-      </section>
+      <Status
+        aria-live="polite"
+        description="Reader request was cancelled."
+        title="Reader unavailable"
+        tone="warning"
+      />
     )
   }
 
   if (corpus.status === 'unavailable') {
-    return (
-      <section className="qar:grid qar:gap-2 qar:px-5 qar:py-8" aria-live="polite">
-        <h1 className="qar:m-0 qar:text-lg">Reader text unavailable</h1>
-        <p className="qar:m-0 qar:text-sm qar:text-muted">{corpus.reason}</p>
-      </section>
-    )
+    return <Status aria-live="polite" description={corpus.reason} title="Reader text unavailable" tone="warning" />
   }
 
   if (corpus.status === 'error') {
     return (
-      <section className="qar:grid qar:gap-2 qar:px-5 qar:py-8" aria-live="assertive">
-        <h1 className="qar:m-0 qar:text-lg">Failed to load reader text</h1>
-        <p className="qar:m-0 qar:text-sm qar:text-muted">{corpus.error.message}</p>
-      </section>
+      <Status
+        aria-live="assertive"
+        description={corpus.error.message}
+        title="Failed to load reader text"
+        tone="error"
+      />
     )
   }
 

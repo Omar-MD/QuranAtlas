@@ -14,6 +14,7 @@ import { SavedSearchesNavPanel } from './SavedSearchesNavPanel'
 import { SearchHeader } from './SearchHeader'
 import { SearchIndexGate } from './SearchIndexGate'
 import { SearchWorkspace } from './SearchWorkspace'
+import { Status } from '../ui'
 import { useSavedSearches } from './useSavedSearches'
 import { useSearchRouteState } from './useSearchRouteState'
 
@@ -116,7 +117,7 @@ export function SearchShell() {
       <div className={cn('qar-search-page-shell', drawer.state.open && 'qar-search-page-shell--nav-open')}>
         <main aria-label="Search" className="qar-search-content">
           <div className="qar-search-content-inner">
-            <h1 className="qar:sr-only">Search</h1>
+            <h1 className="qar:mb-4 qar:text-2xl qar:font-semibold qar:text-text">Search</h1>
             <SearchHeader
               canSave={search.canSaveSearch}
               onQueryChange={search.setQuery}
@@ -136,7 +137,7 @@ export function SearchShell() {
             <div className="qar-search-status-row">
               <p>{search.packMessage}</p>
             </div>
-            {search.error ? <p className="qar-search-error">{search.error}</p> : null}
+            {search.error ? <Status description={search.error} title="Search unavailable" tone="error" /> : null}
             <SearchIndexGate message={search.packMessage} ready={search.packState === 'active'}>
               <SearchWorkspace
                 activeTab={search.activeWorkspaceTab}

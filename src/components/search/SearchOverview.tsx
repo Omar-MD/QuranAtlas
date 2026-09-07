@@ -1,4 +1,4 @@
-import { Badge, Button } from '../ui'
+import { Badge, Button, Status } from '../ui'
 import type { SearchOverviewAction, SearchOverviewViewModel } from './search-presentation-model'
 
 type SearchOverviewProps = {
@@ -8,7 +8,7 @@ type SearchOverviewProps = {
 
 export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
   if (!overview) {
-    return <p className="qar-search-results-empty">Enter a word, phrase, or ayah reference.</p>
+    return <Status description="Enter a word, phrase, or ayah reference." title="Search the Quran" tone="info" />
   }
 
   return (
@@ -36,7 +36,9 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
         ))}
       </dl>
 
-      {overview.recoveryMessage ? <p className="qar-search-overview-recovery">{overview.recoveryMessage}</p> : null}
+      {overview.recoveryMessage ? (
+        <Status description={overview.recoveryMessage} title="Search overview recovered" tone="info" />
+      ) : null}
 
       {overview.topSurahs.length > 0 ? (
         <section aria-label="Top surah distribution" className="qar-search-overview-list">

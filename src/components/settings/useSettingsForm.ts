@@ -26,11 +26,14 @@ export type SettingsFormState =
   | { status: 'ready'; preferences: ReactReaderPreferences }
   | { status: 'error'; preferences: ReactReaderPreferences }
 
+export type SettingsWriteStatus = 'idle' | 'saving' | 'error'
 export type MushafFramingWriteStatus = 'idle' | 'saving' | 'error'
-
 export function useSettingsForm(): {
   mushafFramingWriteStatus: MushafFramingWriteStatus
   retryMushafPageFraming: () => void
+  retrySettingsWrite: () => void
+  settingsWriteError: string | null
+  settingsWriteStatus: SettingsWriteStatus
   setMushafViewMode: (value: NormalizedReactMushafViewMode) => void
   setMushafFitWidth: (value: boolean) => void
   setMushafPageFraming: (value: number) => void
@@ -51,8 +54,11 @@ export function useSettingsForm(): {
   const persistedMushafPageFramingRef = useRef(DEFAULT_REACT_READER_PREFERENCES.mushafPageFraming)
   const preferencesRef = useRef<ReactReaderPreferences>(DEFAULT_REACT_READER_PREFERENCES)
   const retryMushafPageFramingRef = useRef<number | null>(null)
+  const retrySettingsWriteRef = useRef<(() => void) | null>(null)
   const writeQueueRef = useRef<Promise<void>>(Promise.resolve())
   const [mushafFramingWriteStatus, setMushafFramingWriteStatus] = useState<MushafFramingWriteStatus>('idle')
+  const [settingsWriteError, setSettingsWriteError] = useState<string | null>(null)
+  const [settingsWriteStatus, setSettingsWriteStatus] = useState<SettingsWriteStatus>('idle')
 
   useEffect(() => {
     let active = true
@@ -82,8 +88,10 @@ export function useSettingsForm(): {
     hasUserChangesRef.current = true
     const next = updater(preferencesRef.current)
     updateVisiblePreferences(next)
-    writeQueueRef.current = writeQueueRef.current
-      .then(async () => {
+    setSettingsWriteStatus('saving')
+    setSettingsWriteError(null)
+    const persist = () => {
+      const write = writeQueueRef.current.then(async () => {
         const db = await openReactDb()
         await writeReactReaderPreferences(db, {
           ...next,
@@ -91,7 +99,20 @@ export function useSettingsForm(): {
         })
         await afterWrite?.(next)
       })
-      .catch(() => undefined)
+      writeQueueRef.current = write.catch(() => undefined)
+      void write
+        .then(() => {
+          retrySettingsWriteRef.current = null
+          setSettingsWriteStatus('idle')
+        })
+        .catch(() => {
+          retrySettingsWriteRef.current = persist
+          setSettingsWriteStatus('error')
+          setSettingsWriteError('Could not save this setting. Please retry.')
+        })
+    }
+    retrySettingsWriteRef.current = persist
+    persist()
   }
 
   function updateVisiblePreferences(next: ReactReaderPreferences): void {
@@ -141,6 +162,9 @@ export function useSettingsForm(): {
         persistMushafPageFraming(retryMushafPageFramingRef.current)
       }
     },
+    retrySettingsWrite: () => retrySettingsWriteRef.current?.(),
+    settingsWriteError,
+    settingsWriteStatus,
     setFontSize: (fontSize) => updatePreferences((current) => ({ ...current, fontSize })),
     setMushafViewMode: (mushafViewMode) => updatePreferences((current) => ({ ...current, mushafViewMode })),
     setMushafFitWidth: (mushafFitWidth) => {

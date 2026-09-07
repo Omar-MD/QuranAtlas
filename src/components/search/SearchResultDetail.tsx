@@ -1,23 +1,66 @@
+import { ArrowLeft } from 'lucide-react'
 import { forwardRef, type ReactNode } from 'react'
 
-import { Button } from '../ui'
+import { Button, IconButton } from '../ui'
+import type { MatchCardLite } from '../../../shared/search'
 import type { SearchDetailsViewModel, SearchExploreModuleId } from './search-presentation-model'
 
 export const SearchResultDetail = forwardRef<
   HTMLElement,
   {
     details: SearchDetailsViewModel | null
+    previewMatch?: MatchCardLite | null
     onClose?: () => void
     onOpenExplore?: (result: SearchDetailsViewModel['result'], module?: SearchExploreModuleId) => void
   }
->(function SearchResultDetail({ details, onClose, onOpenExplore }, ref) {
-  if (!details) {
+>(function SearchResultDetail({ details, onClose, onOpenExplore, previewMatch }, ref) {
+  if (!details && !previewMatch) {
     return (
       <section aria-label="Search result detail" className="qar-search-result-detail" ref={ref} tabIndex={-1}>
         <p className="qar:m-0 qar:text-sm qar:text-muted">Choose a verse and open Details to inspect why it matched.</p>
       </section>
     )
   }
+
+  if (previewMatch) {
+    return (
+      <section
+        aria-label={`Details for ${previewMatch.refLabel}`}
+        className="qar-search-result-detail"
+        ref={ref}
+        tabIndex={-1}
+      >
+        <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
+          <div>
+            <p className="qar:m-0 qar:text-xs qar:font-semibold qar:uppercase qar:text-muted">Details</p>
+            <h3 className="qar:m-0 qar:text-lg qar:leading-tight" dir="auto">
+              <bdi>{previewMatch.title}</bdi>
+            </h3>
+          </div>
+          {onClose ? (
+            <IconButton className="qar-search-detail-back" label="Back to search results" onClick={onClose}>
+              <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.75} />
+            </IconButton>
+          ) : null}
+        </div>
+        <DetailSection title="Why this matched">
+          <p className="qar:m-0" dir="auto">
+            <bdi>{previewMatch.matchReason}</bdi>
+          </p>
+        </DetailSection>
+        <DetailRows
+          rows={[
+            { label: 'Reference', value: previewMatch.refLabel },
+            { label: 'Source', value: previewMatch.sourceText ?? previewMatch.snippet },
+            ...(previewMatch.translationText ? [{ label: 'Translation', value: previewMatch.translationText }] : []),
+          ]}
+          title="Evidence"
+        />
+      </section>
+    )
+  }
+
+  if (!details) return null
 
   return (
     <section aria-label={`Details for ${details.title}`} className="qar-search-result-detail" ref={ref} tabIndex={-1}>
@@ -29,9 +72,14 @@ export const SearchResultDetail = forwardRef<
           </h3>
         </div>
         {onClose ? (
-          <Button onClick={onClose} size="sm" variant="ghost">
-            Close
-          </Button>
+          <>
+            <IconButton className="qar-search-detail-back" label="Back to search results" onClick={onClose}>
+              <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.75} />
+            </IconButton>
+            <Button className="qar-search-detail-close" onClick={onClose} size="sm" variant="ghost">
+              Close
+            </Button>
+          </>
         ) : null}
       </div>
       <DetailSection title="Why this matched">
