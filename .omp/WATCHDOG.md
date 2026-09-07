@@ -13,21 +13,20 @@ Especially watch for:
 - Design-token bypass: hardcoded color, spacing, radius, or font literals outside `src/design-system/tokens/**`.
 - Component-registry drift: components or consumers missing from `src/design-system/registry/component-registry.json`, or direct Radix imports outside `src/components/ui/**`.
 - Theme failures: light/sepia/dark contrast problems and missing or broken reduced-motion behavior.
-- Drift from the active Kimi-K3 design brief, when one exists for the change under review.
+- Drift from the active Kimi K3 design brief, when one exists for the change under review.
 
 ## Model hierarchy
 
-GLM-5.3-Flash (`zai/glm-5.3-flash`, thinking on) is the constant WATCHDOG
-reviewer for UI work. The full loop: Kimi-K3 (`opencode-go/kimi-k3:max`)
-owns design briefs and final visual sign-off at milestones only; GLM-5.3-Flash
-(`zai/glm-5.3-flash`) implements and runs rendered visual QA from transient
-in-session screenshots (native image input, verified); GPT-5.6-Sol
-(`openai-codex/gpt-5.6-sol:medium`) reviews non-visual correctness and owns
-technical planning; GPT-5.6-Luna (`openai-codex/gpt-5.6-luna:max`) is rare
-deep escalation. Mechanical roles (smol/commit/tiny) run
-`zai/glm-5.3-flash:off` (thinking disabled, verified on the wire). No
-OpenCode Go model runs in the recurring implementation loop. Kimi-K3 must
-never run as the per-turn reviewer.
+The main session is Luna Medium (`openai-codex/gpt-5.6-luna:medium`) and
+coordinates workers without implementing. Full GLM-5.3
+(`zai/glm-5.3:max`) owns explicit general planning; GLM-5.3-Flash
+(`zai/glm-5.3-flash`) owns implementation and repair, including UI work.
+Kimi K3 (`opencode-go/kimi-k3`) owns detailed UI direction;
+Kimi K2.6 (`opencode-go/kimi-k2.6`) owns rendered visual
+review and milestone sign-off. Luna High reviews non-visual correctness;
+Luna Max is exceptional architecture/debug escalation. Advisors are disabled
+by default and may run only as a bounded independent review. OpenCode Go
+serves only the Kimi design/visual seats; OpenCode Zen stays disabled.
 
 ## Screenshots
 

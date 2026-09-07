@@ -1,25 +1,34 @@
-# .omp/ — project harness config. Model roles pin the UI feedback-loop
-# hierarchy here so sessions in this repo use the intended models without
-# PI_CONFIG_FILES; project roles override global roles.
+# .omp/ — project harness config. The main session is a bounded Luna
+# orchestrator; worker roles own planning, implementation, and review.
+
+modelRoleStorage: project
+defaultThinkingLevel: medium
+disabledProviders:
+  - opencode-zen
 
 modelRoles:
-  plan: openai-codex/gpt-5.6-sol:medium
-  advisor: zai/glm-5.3-flash
-  vision: zai/glm-5.3-flash
-  default: zai/glm-5.3-flash
-  task: zai/glm-5.3-flash
-  smol: zai/glm-5.3-flash:off
-  commit: zai/glm-5.3-flash:off
-  slow: openai-codex/gpt-5.6-luna:max
-  tiny: zai/glm-5.3-flash:off
-  ui_director: opencode-go/kimi-k3:max
-  ui_implementer: zai/glm-5.3-flash
-  ui_visual: zai/glm-5.3-flash
-  ui_correctness: openai-codex/gpt-5.6-sol:medium
+  default: openai-codex/gpt-5.6-luna:medium
+  task: openai-codex/gpt-5.6-luna:medium
+  plan: zai/glm-5.3:max
+  advisor: openai-codex/gpt-5.6-luna:high
+  slow: openai-codex/gpt-5.6-luna:high
+  vision: zai/glm-5.3-flash:low
+  smol: zai/glm-5.3-flash:low
+  commit: zai/glm-5.3-flash:low
+  tiny: zai/glm-5.3-flash:low
+  ui_director: opencode-go/kimi-k3:high
+  ui_visual: opencode-go/kimi-k2.6
+  ui_correctness: openai-codex/gpt-5.6-luna:high
+
+plan:
+  defaultOnStartup: false
 
 advisor:
-  enabled: true        # continuous Flash advisor (WATCHDOG DesignReview) for main + opted-in agents
+  enabled: false
   syncBacklog: "off"
+
+prewalk:
+  enabled: false
 
 lsp:
   enabled: true
@@ -46,14 +55,48 @@ secrets:
   enabled: true
 
 memory:
-  backend: local
+  backend: off
 
 autolearn:
-  enabled: true
+  enabled: false
   autoContinue: false
 
 task:
   enableLsp: true
+  enableEffort: false
+  maxConcurrency: 4
+  maxRecursionDepth: 1
+  prewalk: false
+  showResolvedModelBadge: true
+  agentModelOverrides:
+    task: "@task"
+    scout: "@task"
+    reviewer: "@ui_correctness"
+    security-reviewer: "@ui_correctness"
+    sonic: "@smol"
   agentAdvisor:
-    task: "on"         # advise generic task-agent children during implementation work
-    ui-implementer: "on"  # explicit: DesignReview advisor attaches to ui-implementer children
+    task: "off"
+    scout: "off"
+    reviewer: "off"
+    security-reviewer: "off"
+    sonic: "off"
+    general-planner: "off"
+    ui-director: "off"
+    ui-implementer: "off"
+    ui-visual-reviewer: "off"
+    ui-correctness-reviewer: "off"
+
+retry:
+  maxRetries: 3
+  modelFallback: true
+  # Kimi seats run on OpenCode Go for now (OpenRouter key not configured).
+  # These chains restore OpenRouter as primary the moment it is
+  # authenticated: flip ui_director/ui_visual back and the failing-model
+  # fallback below engages on any OpenRouter outage.
+  fallbackChains:
+    openrouter/moonshotai/kimi-k3: opencode-go/kimi-k3
+    openrouter/moonshotai/kimi-k2.6: opencode-go/kimi-k2.6
+
+providers:
+  openai-codex:
+    codeMode: off

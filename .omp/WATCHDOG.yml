@@ -1,17 +1,15 @@
 instructions: |
-  Review QuranAtlas UI implementation against the Kimi-K3 design brief.
-  You are GLM-5.3-Flash: the frequent code/design-system reviewer, not the
-  design director. Be terse and silent when there is no concrete issue.
+  Review QuranAtlas UI and engineering changes only when the orchestrator
+  explicitly enables a bounded independent review. Do not run a continuous
+  duplicate stream. Kimi K3 owns visual direction; Kimi K2.6 owns rendered
+  visual review and sign-off; Luna owns non-visual correctness.
 
 advisors:
-  - name: DesignReview
-    enabled: true
+  - name: CorrectnessReview
+    enabled: false
     model: "@advisor"
-    tools: [read, grep, glob]
+    tools: [read, grep, glob, ast_grep, lsp]
     instructions: |
-      Flag component-registry violations, direct Radix consumer imports,
-      hardcoded color/spacing/radius/font literals outside the token layer,
-      incorrect light/sepia/dark or reduced-motion behavior, desktop/mobile
-      divergence, accessibility regressions, and drift from the Kimi-K3 brief.
-      Block only broken/off-system UI; use concern for material drift and nit
-      for cleanup. Never edit files or invent a replacement design.
+      Flag interaction, state, persistence, routing, focus, accessibility,
+      TypeScript, and regression risks. Do not choose colors, layout,
+      typography, motion, or any other visual design. Never edit files.

@@ -65,43 +65,71 @@ shell fast and the reader usable without a connection.
 - Put temporary notes and scratch files under `.scratch/` and keep secrets out
   of the repository.
 
+## Main-Session Orchestration
+The main OMP session is a bounded orchestrator, not a production implementer.
+Follow OMP's built-in orchestration surfaces; no bespoke orchestrator code
+runs in this repository.
+
+- **Vibe mode** (`/vibe`) is OMP's director pattern for orchestrator-only
+  main sessions: the director's active tools reduce to `read`, parent-owned
+  `todo`, and the `vibe_spawn`/`vibe_send`/`vibe_wait`/`vibe_kill`/
+  `vibe_list` controls, while persistent keep-alive workers do the
+  searching, editing, running, and building. `fast` workers resolve to
+  bundled `sonic` (`@smol`), `good` workers to bundled `task` (`@task`).
+  Enter `/vibe` whenever a session should stay orchestrator-only; there is
+  no persistent default-on setting, and it is mutually exclusive with
+  plan/goal modes.
+- **The `orchestrate` magic keyword** (enabled) injects OMP's per-turn
+  multi-agent contract: scope the whole task, delegate substantial
+  independent work in parallel, verify each phase, and continue until the
+  request is complete. Use it for one-off orchestration without entering
+  vibe mode.
+- **`task` + `hub`** are the ordinary delegation surfaces: batch fan-out
+  with the required shared `context`, follow-ups via `hub` messaging
+  instead of fresh spawns, outputs via `agent://<id>` and transcripts via
+  `history://<id>`.
+- Luna Medium (`openai-codex/gpt-5.6-luna:medium`, the `default` role) owns
+  the main session: intent, decomposition, dispatch, scheduling, evidence
+  review, and the final response.
+- Full GLM-5.3 is the explicit general-planning worker (`general-planner`);
+  Flash is the broad implementation and repair worker, not a UI-only seat.
+  Generic workers use Luna at the configured `@task` role.
+- Delegation stays shallow (`task.maxRecursionDepth: 1`); workers do not
+  become replacement orchestrators.
+- Advisors are disabled by default. Enable one only for a bounded,
+  independently useful review; never create a duplicate reasoning stream.
+
 ## UI Model-Role Protocol
 
-UI work follows a four-seat loop configured in `.omp/config.yml`
-(`modelRoles`). No OpenCode Go model runs in the recurring implementation
-loop; Go is reserved for Kimi-K3 milestone design work.
+UI work follows the four-seat loop configured in `.omp/config.yml`
+(`modelRoles`). The Kimi seats run on the OpenCode Go route for now, with
+OpenRouter fallback chains configured for when that provider is
+authenticated. OpenCode Zen stays disabled. The main session remains the
+orchestrator and never switches into a UI specialist role.
 
-- Kimi-K3 (`opencode-go/kimi-k3:max`) is the design director: design-brief
-  authorship and final visual sign-off at milestones only, never a constant
-  reviewer or bulk implementer.
-- GLM-5.3-Flash (`zai/glm-5.3-flash`, thinking on) is the heavy implementer
-  (default/task/ui_implementer), the continuous code and design-system
-  advisor (WATCHDOG `DesignReview`), and the rendered visual QA seat using
-  its verified native image input for transient in-session screenshots.
-  Mechanical roles (smol/commit/tiny) run `zai/glm-5.3-flash:off` (thinking
-  disabled, verified on the wire).
-- GPT-5.6-Sol (`openai-codex/gpt-5.6-sol:medium`) owns technical planning
-  and reviews correctness only when interaction logic, state, focus,
-  persistence, routing, or TypeScript contracts changed; it never chooses
-  styling.
-- GPT-5.6-Luna (`openai-codex/gpt-5.6-luna:max`) is rare deep escalation for
-  architecture or debugging; it never owns visual design.
+- Kimi K3 (`opencode-go/kimi-k3`, `ui_director`) is the design
+  director: detailed briefs and visual design decisions at milestones only.
+  It never implements production UI.
+- GLM-5.3-Flash (`zai/glm-5.3-flash`, `ui_implementer`) is the heavy
+  implementation and repair seat. It follows the K3 brief exactly, performs
+  no independent aesthetic invention, and may handle non-UI implementation
+  when explicitly assigned.
+- Kimi K2.6 (`opencode-go/kimi-k2.6`, `ui_visual`) owns rendered
+  visual review and final visual sign-off. It never edits production files.
+- GPT-5.6-Luna High (`ui_correctness`) reviews interaction logic, state,
+  focus, persistence, routing, accessibility, and TypeScript contracts only.
+  It never chooses styling.
+- Full GLM-5.3 (`plan`) handles substantial general technical planning.
+- Luna High handles difficult engineering/correctness review; Luna Max is
+  exceptional architecture/debug escalation only.
 
-No other OpenAI selector is authorized. The mandatory flow is: Kimi-K3
-milestone brief → GLM-5.3-Flash implementation with continuous Flash advisor
-→ GLM-5.3-Flash visual QA after each coherent screen change → Flash repairs
-(advisor attached) → recheck affected states → Sol correctness review only
-for behavioral changes → Kimi-K3 final sign-off. Because advisor and
-implementer share a model family, bounded Sol correctness review is the
-cross-family check on behavioral changes. Follow `skill://ui-design` and
-`skill://ui-verify`; agents are `.omp/agents/ui-director.md`,
-`ui-implementer.md`, `ui-visual-reviewer.md`, and
-`ui-correctness-reviewer.md`; the advisor configuration is
-`.omp/WATCHDOG.yml` with review priorities in `.omp/WATCHDOG.md`.
-
-The OMP browser is the only manual browser driver. Transient in-session
-screenshots are allowed for visual review; persisted screenshot files and
-screenshot assertions remain forbidden. UI boundaries are unchanged: check
-the component registry first, compose `src/components/ui/**` primitives, keep
-Radix imports inside the primitive layer, use design tokens instead of
-literals, and verify desktop and mobile across all themes.
+The UI flow is: K3 brief → Flash implementation/repair → targeted Flash
+runtime checks → optional independent correctness review when behavior
+changed → Kimi K2.6 rendered visual review and milestone sign-off. Advisor
+review is off by default and is enabled only for a bounded, non-duplicative
+review. Follow `skill://ui-design` and `skill://ui-verify`; agents are
+`.omp/agents/{general-planner,ui-director,ui-implementer,ui-visual-reviewer,ui-correctness-reviewer}.md`.
+UI boundaries remain unchanged: check the component registry, compose
+`src/components/ui/**` primitives, keep Radix imports inside that layer, use
+design tokens instead of literals, and verify desktop/mobile across all
+themes.
