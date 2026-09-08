@@ -1,24 +1,29 @@
-# .omp/ — project harness config. The main session is a bounded Luna
-# orchestrator; worker roles own planning, implementation, and review.
+# .omp/ — project harness config. The main session is a bounded
+# orchestrator (`default` role); worker roles own planning, implementation,
+# and review.
 
 modelRoleStorage: project
-defaultThinkingLevel: medium
+defaultThinkingLevel: max
 disabledProviders:
   - opencode-zen
 
+# modelRoles is the single source of truth for the model roster. Every
+# other document (AGENTS.md, WATCHDOG, skills, agents) refers to roles
+# only — never restate model IDs elsewhere.
 modelRoles:
-  default: openai-codex/gpt-5.6-luna:medium
-  task: openai-codex/gpt-5.6-luna:medium
-  plan: zai/glm-5.3:max
-  advisor: openai-codex/gpt-5.6-luna:high
-  slow: openai-codex/gpt-5.6-luna:high
-  vision: zai/glm-5.3-flash:low
-  smol: zai/glm-5.3-flash:low
-  commit: zai/glm-5.3-flash:low
-  tiny: zai/glm-5.3-flash:low
-  ui_director: opencode-go/kimi-k3:high
-  ui_visual: opencode-go/kimi-k2.6
-  ui_correctness: openai-codex/gpt-5.6-luna:high
+  default: zai/glm-5.3:max                         # main-session orchestrator
+  task: zai/glm-5.3:max                            # generic workers
+  plan: zai/glm-5.3:max                          # general planning (general-planner)
+  advisor: openai-codex/gpt-5.6-luna:max         # bounded independent review
+  slow: openai-codex/gpt-5.6-luna:max            # difficult engineering review / escalation
+  vision: zai/glm-5.3-flash:max                  # image/screenshot inspection
+  smol: zai/glm-5.3-flash:low                    # fast mechanical work (sonic)
+  commit: zai/glm-5.3-flash:low                  # commit messages
+  tiny: zai/glm-5.3-flash:low                    # titles and misc
+  ui_director: openrouter/moonshotai/kimi-k3:max       # design briefs (ui-director)
+  ui_implementer: zai/glm-5.3-flash:max          # implementation/repair (ui-implementer)
+  ui_visual: openrouter/moonshotai/kimi-k2.6:xhigh   # visual review (ui-visual-reviewer)
+  ui_correctness: openai-codex/gpt-5.6-luna:max       # correctness (ui-correctness-reviewer)
 
 plan:
   defaultOnStartup: false
@@ -89,19 +94,27 @@ task:
 retry:
   maxRetries: 3
   modelFallback: true
-  # Kimi seats run on OpenCode Go for now (OpenRouter key not configured).
-  # These chains restore OpenRouter as primary the moment it is
-  # authenticated: flip ui_director/ui_visual back and the failing-model
-  # fallback below engages on any OpenRouter outage. Both OpenRouter slugs
-  # are pinned to native-or-lossless endpoints via ~/.omp/agent/models.yml
-  # (K3: mxfp4-native/bf16; K2.6: int4-native/bf16 — both models ship
-  # natively 4-bit, so the guarantee is "never re-quantized below the
-  # official checkpoint"): re-encoded fp4/nvfp4/int4/fp8 endpoints and
-  # unverifiable ones are never used; when no eligible endpoint is up,
-  # requests fail over to the chains below instead of silently degrading.
+  # The design/visual seats run on OpenRouter; on any OpenRouter outage the
+  # chains below fail over to OpenCode Go instead of silently degrading.
+  # Both OpenRouter slugs are pinned to native-or-lossless endpoints via
+  # ~/.omp/agent/models.yml (K3: mxfp4-native/bf16; K2.6: int4-native/bf16
+  # — both models ship natively 4-bit, so the guarantee is "never
+  # re-quantized below the official checkpoint"): re-encoded
+  # fp4/nvfp4/int4/fp8 endpoints and unverifiable ones are never used; when
+  # no eligible endpoint is up, requests fail over to the chains below.
+  # The models.yml pinning is machine-local and untracked: if that file is
+  # lost, re-create its native-or-lossless filters before relying on the
+  # OpenRouter seats.
+  #
+  # Both key spellings for each Kimi slug are deliberate: effort-suffix
+  # matching is undocumented, so the bare and suffixed keys share one value
+  # to cover exact and normalized lookups alike (keeping each failover at
+  # the seat's max effort: k3 → :max, k2.6 → :xhigh).
   fallbackChains:
-    openrouter/moonshotai/kimi-k3: opencode-go/kimi-k3
-    openrouter/moonshotai/kimi-k2.6: opencode-go/kimi-k2.6
+    openrouter/moonshotai/kimi-k3: opencode-go/kimi-k3:max
+    openrouter/moonshotai/kimi-k3:max: opencode-go/kimi-k3:max
+    openrouter/moonshotai/kimi-k2.6: opencode-go/kimi-k2.6:xhigh
+    openrouter/moonshotai/kimi-k2.6:xhigh: opencode-go/kimi-k2.6:xhigh
 
 providers:
   openai-codex:

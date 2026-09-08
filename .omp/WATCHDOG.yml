@@ -1,8 +1,9 @@
 instructions: |
   Review QuranAtlas UI and engineering changes only when the orchestrator
   explicitly enables a bounded independent review. Do not run a continuous
-  duplicate stream. Kimi K3 owns visual direction; Kimi K2.6 owns rendered
-  visual review and sign-off; Luna owns non-visual correctness.
+  duplicate stream. The `ui_director` role owns visual direction; the
+  `ui_visual` role owns rendered visual review and sign-off; the
+  `ui_correctness` role owns non-visual correctness.
 
 advisors:
   - name: CorrectnessReview

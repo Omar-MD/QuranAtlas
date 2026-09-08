@@ -13,20 +13,21 @@ Especially watch for:
 - Design-token bypass: hardcoded color, spacing, radius, or font literals outside `src/design-system/tokens/**`.
 - Component-registry drift: components or consumers missing from `src/design-system/registry/component-registry.json`, or direct Radix imports outside `src/components/ui/**`.
 - Theme failures: light/sepia/dark contrast problems and missing or broken reduced-motion behavior.
-- Drift from the active Kimi K3 design brief, when one exists for the change under review.
+- Drift from the active `ui_director` design brief, when one exists for the change under review.
 
-## Model hierarchy
+## Role hierarchy
 
-The main session is Luna Medium (`openai-codex/gpt-5.6-luna:medium`) and
-coordinates workers without implementing. Full GLM-5.3
-(`zai/glm-5.3:max`) owns explicit general planning; GLM-5.3-Flash
-(`zai/glm-5.3-flash`) owns implementation and repair, including UI work.
-Kimi K3 (`opencode-go/kimi-k3`) owns detailed UI direction;
-Kimi K2.6 (`opencode-go/kimi-k2.6`) owns rendered visual
-review and milestone sign-off. Luna High reviews non-visual correctness;
-Luna Max is exceptional architecture/debug escalation. Advisors are disabled
-by default and may run only as a bounded independent review. OpenCode Go
-serves only the Kimi design/visual seats; OpenCode Zen stays disabled.
+Model bindings live only in `.omp/config.yml` (`modelRoles`); this file
+refers to roles, never model IDs. The `default` role coordinates workers
+without implementing. The `plan` role owns explicit general planning; the
+`ui_implementer` role owns implementation and repair, including UI work.
+The `ui_director` role owns detailed UI direction; the `ui_visual` role
+owns rendered visual review and milestone sign-off. The `ui_correctness`
+role (and `advisor`, when explicitly enabled) reviews non-visual
+correctness. Advisors are disabled by default and may run only as a
+bounded independent review. OpenCode Go serves only as the failover route
+for the OpenRouter-backed design/visual seats; OpenCode Zen stays
+disabled.
 
 ## Screenshots
 

@@ -4,7 +4,7 @@
 
 Refactor the complete QuranAtlas interface as a refined evolution of its current calm reading identity, while permitting deliberate workflow improvements in onboarding, navigation, search, reader controls, and settings. The end state is one token-driven, accessible, responsive UI system used by every route and overlay: launch/onboarding, verse reader, Mushaf, Surahs, Bookmarks, Search, Settings/Assets, About, Unsupported, the navigation drawer, and all loading/empty/error/offline/disabled/selected/focus states. Preserve Quran data behavior, route grammar, persistence contracts, and offline architecture; change interaction structure only where this plan explicitly does so.
 
-The authorized visual-design seat is Kimi-K3 through `ui-director`. The account was restored during this run and produced the binding brief at `.scratch/director-brief-v1.md`; that brief is the visual source of truth for the completed milestones and remaining implementation.
+The authorized visual-design seat is `ui-director`. Its access was restored during this run and produced the binding brief at `.scratch/director-brief-v1.md`; that brief is the visual source of truth for the completed milestones and remaining implementation.
 
 ## Progress checkpoint
 
@@ -12,7 +12,7 @@ This plan is **in progress**. The checkpoint commit saves all current tracked an
 
 ### Completed
 
-- **Step 1 — binding brief:** Kimi-K3 access was restored; the exact milestone brief was produced and used as the authority for implementation. The brief remains in ignored `.scratch/` by repository convention.
+- **Step 1 — binding brief:** director access was restored; the exact milestone brief was produced and used as the authority for implementation. The brief remains in ignored `.scratch/` by repository convention.
 - **Step 2 — registry enforcement:** registry schema versioning, recursive schema validation, dependency/path checks, reverse public-export coverage, stale-path repairs, recipe ownership, and primitive ownership entries are implemented.
 - **Step 3 — tokens and primitives:** semantic theme tokens, unified `data-swatch` rules, reduced-motion bindings, `Status`, `ListRow`, `ListRowActions`, `Card`, pill buttons, radiogroup `SegmentedControl`, and the `Sheet` navigation-drawer variant are implemented with stories. The `ListRow` optional `num` contract is implemented.
 - **Milestone 1 review:** visual QA and correctness review completed with repairs for token bindings, theme-chip layout, drawer geometry, touch targets, nested row interaction, current-route semantics, Sheet SSR/control behavior, and registry honesty.
@@ -29,7 +29,7 @@ This plan is **in progress**. The checkpoint commit saves all current tracked an
 - **Step 10 — CSS ownership cleanup:** remove migrated duplicate/dead selectors and route-local raw visual styling screen by screen.
 - **Step 11 — Storybook matrix:** finish route-family and observable-state stories for every remaining migration.
 - **Step 12 — E2E coverage:** add only the retained user-level onboarding, drawer/focus, navigation, bookmark, Search, Settings, About, Unsupported, reader, Mushaf, and offline contracts.
-- **Step 13 — final loop:** complete milestone reviews, final static/build/smoke/offline/release verification, and Kimi-K3 final visual sign-off.
+- **Step 13 — final loop:** complete milestone reviews, final static/build/smoke/offline/release verification, and final director review with visual sign-off.
 
 ### Checkpoint verification
 
@@ -48,7 +48,7 @@ This plan is **in progress**. The checkpoint commit saves all current tracked an
 
 ### 1. Produce the binding milestone brief before editing UI code
 
-1. Restore the configured `opencode-go/kimi-k3:max` account so `.omp/agents/ui-director.md` can run successfully. If the first execution attempt still returns an account or balance error, stop UI implementation as blocked; do not ask GLM, Sol, or Luna to choose visual direction.
+1. Ensure the `ui-director` seat can run (bindings live in `modelRoles` in `.omp/config.yml`). If execution still returns an account or balance error, stop UI implementation as blocked; do not ask any non-design seat to choose visual direction.
 2. Start `mise run dev` through a hub-managed `qa-dev` process and have `ui-director` inspect the live application at `1280x900` and `375x812`, in light, sepia, and dark themes. The director must inspect every route and overlay listed in this plan, plus the token files, registry, recipes, and owned primitives required by `skill://ui-design`.
 3. Require one binding brief that defines, without implementer discretion:
    - the retained QuranAtlas visual qualities and the refined hierarchy for application chrome, page headings, content surfaces, cards, lists, controls, feedback, and Arabic/Latin typography;
@@ -57,7 +57,7 @@ This plan is **in progress**. The checkpoint commit saves all current tracked an
    - exact hover, pressed, selected, disabled, focus-visible, loading, empty, error, offline, and destructive-confirmation treatments;
    - motion durations/easings and which transitions become immediate under `prefers-reduced-motion`;
    - a component/state matrix mapping every visible pattern to an existing `src/components/ui/**` primitive or to one explicitly specified primitive extension.
-4. Treat the resulting brief as the visual source of truth for all later steps. GLM implementation must apply it exactly with the continuous `DesignReview` advisor enabled. A missing choice returns to `ui-director`; the implementer must not invent styling.
+4. Treat the resulting brief as the visual source of truth for all later steps. The implementer must apply it exactly; advisors are off by default, so enable a bounded independent review only when it adds evidence beyond the implementer's own checks. A missing choice returns to `ui-director`; the implementer must not invent styling.
 
 ### 2. Make the registry enforce the system being migrated
 
@@ -152,10 +152,10 @@ This plan is **in progress**. The checkpoint commit saves all current tracked an
 ### 13. Run the mandated feedback loop at every coherent milestone
 
 1. Execute coherent milestones in this sequence: system/registry/primitives; shared shell; onboarding; reader/Mushaf; navigation/Surahs/Bookmarks; Search; Settings/Assets/About/Unsupported; final integration.
-2. For each screen milestone: keep the GLM `DesignReview` advisor active during implementation; launch named OMP browser tabs at `1280x900` and `375x812`; exercise light, sepia, dark, reduced-motion, and the milestone’s transient states; then send transient screenshots to `ui-visual-reviewer`.
-3. Resolve every visible delta against the binding Kimi brief, re-render the affected states, and repeat visual QA until the reviewer reports no remaining visible mismatch.
-4. Because navigation, focus, selection semantics, persistence feedback, and responsive flows change, run `ui-correctness-reviewer` after each affected milestone. Resolve TypeScript, state, event, focus, routing, and accessibility findings without asking Sol to choose styling.
-5. After all checks and repairs, run one final `ui-director` review over every route at both viewports and all three themes. Final sign-off is required; turn the advisor off only after it is received.
+2. For each screen milestone: implement through the `ui-implementer` seat, enabling a bounded independent review only when it adds evidence; launch named OMP browser tabs at `1280x900` and `375x812`; exercise light, sepia, dark, reduced-motion, and the milestone’s transient states; then send transient screenshots to `ui-visual-reviewer`.
+3. Resolve every visible delta against the binding director brief, re-render the affected states, and repeat visual QA until the reviewer reports no remaining visible mismatch.
+4. Because navigation, focus, selection semantics, persistence feedback, and responsive flows change, run `ui-correctness-reviewer` after each affected milestone. Resolve TypeScript, state, event, focus, routing, and accessibility findings without asking the correctness reviewer to choose styling.
+5. After all checks and repairs, run one final `ui-director` review over every route at both viewports and all three themes. Final sign-off is required before the refactor closes.
 
 ## Critical files & anchors
 
@@ -181,6 +181,6 @@ Run from `/Users/omarduadu/dev/QuranAtlas` with the repository-pinned mise tools
 
 - Visual direction is a refined evolution, not a brand replacement: retain QuranAtlas’s calm reading-first identity while making hierarchy and component behavior visibly more coherent.
 - Key flows may be reworked only as specified above. Route grammar/clamping, data/search engines, pack lifecycle, reader/Mushaf persistence, Mushaf page-window recovery, wird calculations, and settings-anchor implementation remain behaviorally unchanged.
-- If Kimi-K3 access cannot be restored, implementation remains blocked after all non-visual inventory work; there is no authorized fallback design model.
+- If the `ui-director` seat cannot run, implementation remains blocked after all non-visual inventory work; there is no authorized fallback design seat.
 - If LSP and text search disagree about a dead-code candidate, treat it as live, identify the dynamic/exported consumer, and migrate that consumer before deletion. Never delete on filename inference alone.
 - If a proposed shared primitive requires route-specific props, keep the route composition in its product directory and add only the smallest route-agnostic primitive state needed by the binding brief.

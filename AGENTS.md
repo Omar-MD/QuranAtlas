@@ -68,7 +68,9 @@ shell fast and the reader usable without a connection.
 ## Main-Session Orchestration
 The main OMP session is a bounded orchestrator, not a production implementer.
 Follow OMP's built-in orchestration surfaces; no bespoke orchestrator code
-runs in this repository.
+runs in this repository. Model bindings live only in `.omp/config.yml`
+(`modelRoles`); every document in this repository refers to roles, never to
+model IDs.
 
 - **Vibe mode** (`/vibe`) is OMP's director pattern for orchestrator-only
   main sessions: the director's active tools reduce to `read`, parent-owned
@@ -88,12 +90,13 @@ runs in this repository.
   with the required shared `context`, follow-ups via `hub` messaging
   instead of fresh spawns, outputs via `agent://<id>` and transcripts via
   `history://<id>`.
-- Luna Medium (`openai-codex/gpt-5.6-luna:medium`, the `default` role) owns
-  the main session: intent, decomposition, dispatch, scheduling, evidence
-  review, and the final response.
-- Full GLM-5.3 is the explicit general-planning worker (`general-planner`);
-  Flash is the broad implementation and repair worker, not a UI-only seat.
-  Generic workers use Luna at the configured `@task` role.
+- The `default` role owns the main session, pinned at max effort: intent,
+  decomposition, dispatch, scheduling, evidence review, and the final
+  response.
+- The `plan` role backs the general-planner worker for substantial general
+  technical planning (max effort); the `ui_implementer` role backs the
+  broad implementation and repair worker, not a UI-only seat (max effort).
+  Generic workers run at the `@task` role (max effort).
 - Delegation stays shallow (`task.maxRecursionDepth: 1`); workers do not
   become replacement orchestrators.
 - Advisors are disabled by default. Enable one only for a bounded,
@@ -102,30 +105,35 @@ runs in this repository.
 ## UI Model-Role Protocol
 
 UI work follows the four-seat loop configured in `.omp/config.yml`
-(`modelRoles`). The Kimi seats run on the OpenCode Go route for now, with
-OpenRouter fallback chains configured for when that provider is
-authenticated. OpenCode Zen stays disabled. The main session remains the
-orchestrator and never switches into a UI specialist role.
+(`modelRoles`) — the single source of model bindings. The `ui_director`
+and `ui_visual` seats run on OpenRouter with automatic failover to the
+OpenCode Go route (`retry.fallbackChains`); OpenCode Zen stays disabled.
+The main session remains the orchestrator and never switches into a UI
+specialist role.
 
-- Kimi K3 (`opencode-go/kimi-k3`, `ui_director`) is the design
-  director: detailed briefs and visual design decisions at milestones only.
-  It never implements production UI.
-- GLM-5.3-Flash (`zai/glm-5.3-flash`, `ui_implementer`) is the heavy
-  implementation and repair seat. It follows the K3 brief exactly, performs
+- The `ui_director` role is the design director, pinned at max effort:
+  detailed briefs and visual design decisions at milestones only. It never
+  implements production UI.
+- The `ui_implementer` role is the heavy implementation and repair seat,
+  pinned at max effort. It follows the director brief exactly, performs
   no independent aesthetic invention, and may handle non-UI implementation
   when explicitly assigned.
-- Kimi K2.6 (`opencode-go/kimi-k2.6`, `ui_visual`) owns rendered
-  visual review and final visual sign-off. It never edits production files.
-- GPT-5.6-Luna High (`ui_correctness`) reviews interaction logic, state,
-  focus, persistence, routing, accessibility, and TypeScript contracts only.
-  It never chooses styling.
-- Full GLM-5.3 (`plan`) handles substantial general technical planning.
-- Luna High handles difficult engineering/correctness review; Luna Max is
-  exceptional architecture/debug escalation only.
+- The `ui_visual` role owns rendered visual review and final visual
+  sign-off, pinned at max effort. It never edits production files.
+- The `ui_correctness` role reviews interaction logic, state, focus,
+  persistence, routing, accessibility, and TypeScript contracts only,
+  pinned at max effort. It never chooses styling.
+- The `vision` role backs in-session image and screenshot inspection for
+  visual review, pinned at max effort so visual evidence is never
+  pre-interpreted below the effort of the seat that owns sign-off.
+- The `plan` role handles substantial general technical planning, pinned
+  at max effort.
+- The `slow` role handles difficult engineering/correctness review and
+  exceptional architecture/debug escalation, pinned at max effort.
 
-The UI flow is: K3 brief → Flash implementation/repair → targeted Flash
-runtime checks → optional independent correctness review when behavior
-changed → Kimi K2.6 rendered visual review and milestone sign-off. Advisor
+The UI flow is: director brief → implementer implementation/repair →
+targeted implementer runtime checks → optional independent correctness
+review when behavior changed → visual review and milestone sign-off. Advisor
 review is off by default and is enabled only for a bounded, non-duplicative
 review. Follow `skill://ui-design` and `skill://ui-verify`; agents are
 `.omp/agents/{general-planner,ui-director,ui-implementer,ui-visual-reviewer,ui-correctness-reviewer}.md`.
