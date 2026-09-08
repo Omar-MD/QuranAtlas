@@ -226,7 +226,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "coverage reserved: Card has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the onboarding, reader/Mushaf, and Settings/Assets/About/Unsupported route-cutover milestones"
+            "runtime consumers: DailyWirdCard in the navigation drawer; SearchOverview, SearchAnswerPreview, SearchExplorePanel, and SearchResultDetail on #/search. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
           ]
         }
       ],
@@ -700,7 +700,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "coverage reserved: ListRow has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the navigation/Surahs/Bookmarks and Search route-cutover milestones"
+            "runtime consumers: SurahsRoute surah list; NavDrawer read-tab surah list; BookmarksList rows; HizbList and JuzList rows; SavedSearchesNavPanel saved-search rows in the nav-drawer search tab; SearchResultCard and SearchAnswerPreview evidence rows and SearchExplorePanel module rows on #/search. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
           ]
         }
       ],
@@ -746,7 +746,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "coverage reserved: ListRowActions has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the navigation/Surahs/Bookmarks route-cutover milestone"
+            "runtime consumers: SearchResultCard and SearchAnswerPreview action clusters (Open in Reader IconButton with Tooltip) and the ListRow action slot itself. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
           ]
         }
       ],
@@ -1748,7 +1748,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "coverage reserved: Status has no runtime consumer yet (ui.stories.tsx only); e2e behavior coverage lands with the onboarding, reader/Mushaf, navigation/Surahs/Bookmarks, Search, and Settings/Assets/About/Unsupported route-cutover milestones"
+            "runtime consumers app-wide: reader/Mushaf asset gates and corpus states, bookmarks route error, search index gate, onboarding edition-unavailable, unsupported-hash fallback. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
           ]
         }
       ],
