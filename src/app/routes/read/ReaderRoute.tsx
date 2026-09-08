@@ -23,7 +23,7 @@ import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-bound
 import { deriveWirdSummary } from '../../../continuity/wird/progress'
 import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
 import type { SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
-import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
+import { useSharedBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { isMushafPageBookmark } from '../../../continuity/bookmarks/page-bookmark'
 
 type ReaderSettings = {
@@ -125,7 +125,7 @@ export function ReaderRoute({
     suspendAutoSync: preservePosition,
     wirdCounts: wirdProgressCounts,
   })
-  const { bookmarkedVerseKeys, bookmarks, status: bookmarkStatus, toggleBookmark } = useBookmarks()
+  const { bookmarkedVerseKeys, bookmarks, status: bookmarkStatus, toggleBookmark } = useSharedBookmarks()
   const showVerseBookmarkHint =
     bookmarkStatus === 'ready' && !bookmarks.some((bookmark) => !isMushafPageBookmark(bookmark))
 

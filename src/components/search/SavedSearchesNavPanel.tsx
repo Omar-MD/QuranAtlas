@@ -1,7 +1,8 @@
-import { cn } from '../../design-system/utils/cn'
+import { X } from 'lucide-react'
+import { useEffect, useRef, type MouseEvent } from 'react'
+
 import type { SavedSearchRecord } from '../../storage/types'
-import { Button } from '../ui'
-import { useSwipeToDelete } from '../navigation/use-swipe-to-delete'
+import { Button, IconButton, ListRow } from '../ui'
 
 export function SavedSearchesNavPanel({
   lastDeleted,
@@ -16,14 +17,30 @@ export function SavedSearchesNavPanel({
   onUndoDelete?: () => void
   records: SavedSearchRecord[]
 }) {
-  const swipe = useSwipeToDelete()
+  const listRef = useRef<HTMLElement>(null)
+  const pendingFocusIndexRef = useRef<number | null>(null)
 
-  function loadSearch(record: SavedSearchRecord) {
-    swipe.handleClick(record.id, () => onLoad(record))
+  // After a delete re-render lands, restore focus to the next remaining row's
+  // delete control, else the previous one, else the persistent list container.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: records is the re-render trigger that consumes the pending focus index
+  useEffect(() => {
+    const index = pendingFocusIndexRef.current
+    if (index == null) return
+    pendingFocusIndexRef.current = null
+    const deletes = Array.from(listRef.current?.querySelectorAll<HTMLButtonElement>('.qar-react-nav-row-delete') ?? [])
+    const target = deletes[Math.min(index, deletes.length - 1)]
+    if (target) target.focus()
+    else listRef.current?.focus()
+  }, [records])
+
+  function handleDelete(id: string, event: MouseEvent<HTMLButtonElement>) {
+    const buttons = Array.from(listRef.current?.querySelectorAll('.qar-react-nav-row-delete') ?? [])
+    pendingFocusIndexRef.current = buttons.indexOf(event.currentTarget)
+    onDelete(id)
   }
 
   return (
-    <aside aria-label="Saved searches" className="qar-react-nav-drawer-saved-searches">
+    <aside aria-label="Saved searches" className="qar-react-nav-drawer-saved-searches" ref={listRef} tabIndex={-1}>
       <div className="qar-react-nav-drawer-saved-searches-head">
         <p className="qar-react-nav-drawer-saved-searches-kicker">Search</p>
         <h2 className="qar-react-nav-drawer-saved-searches-title">Saved searches</h2>
@@ -45,52 +62,26 @@ export function SavedSearchesNavPanel({
       ) : (
         <ul className="qar-react-nav-drawer-saved-searches-list">
           {records.map((record) => (
-            <li
-              className={cn(
-                'qar-react-nav-drawer-saved-searches-row',
-                swipe.isOpen(record.id) && 'qar-react-nav-drawer-saved-searches-row--swiped',
-              )}
-              key={record.id}
-            >
-              <Button
-                aria-label={`Load saved search ${record.intent.name}`}
-                className="qar-react-nav-drawer-saved-searches-row-btn"
-                onClick={() => loadSearch(record)}
-                onPointerDown={(event) => swipe.pointerDown(event, record.id)}
-                onPointerMove={(event) => swipe.pointerMove(event, record.id)}
-                onPointerUp={(event) => swipe.pointerUp(event, record.id)}
-                onTouchEnd={(event) => swipe.touchEnd(event, record.id)}
-                onTouchMove={(event) => swipe.touchMove(event, record.id)}
-                onTouchStart={(event) => swipe.touchStart(event, record.id)}
-                style={swipe.rowStyle(record.id)}
-                type="button"
-                unstyled
-              >
-                <span className="qar-react-nav-drawer-saved-searches-copy" dir="auto">
-                  <span className="qar-react-nav-drawer-saved-searches-name">
-                    <bdi>{record.intent.name}</bdi>
-                  </span>
-                  <span className="qar-react-nav-drawer-saved-searches-query">
-                    <bdi>{record.intent.queryText}</bdi>
-                  </span>
-                </span>
-                <span className="qar-react-nav-drawer-saved-searches-chev" aria-hidden="true">
-                  ›
-                </span>
-              </Button>
-              <Button
-                aria-label={`Delete saved search ${record.intent.name}`}
-                className="qar-react-nav-drawer-saved-searches-row-del"
-                onClick={() => {
-                  swipe.closeSwipe()
-                  onDelete(record.id)
-                }}
-                style={swipe.deleteStyle(record.id)}
-                type="button"
-                unstyled
-              >
-                Delete
-              </Button>
+            <li key={record.id}>
+              <ListRow
+                action={
+                  <>
+                    <span aria-hidden="true" className="qar-react-list-row-chevron">
+                      ›
+                    </span>
+                    <IconButton
+                      className="qar-react-nav-row-delete"
+                      label={`Delete saved search ${record.intent.name}`}
+                      onClick={(event) => handleDelete(record.id, event)}
+                    >
+                      <X aria-hidden="true" size={16} />
+                    </IconButton>
+                  </>
+                }
+                meta={<bdi>{record.intent.queryText}</bdi>}
+                onSelect={() => onLoad(record)}
+                title={<bdi>{record.intent.name}</bdi>}
+              />
             </li>
           ))}
         </ul>

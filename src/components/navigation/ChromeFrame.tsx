@@ -2,7 +2,7 @@ import { Menu, Settings } from 'lucide-react'
 import type { Dispatch, ReactNode } from 'react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
-import { useBookmarks } from '../../continuity/bookmarks/use-bookmarks'
+import { useSharedBookmarks } from '../../continuity/bookmarks/use-bookmarks'
 import { Button, IconButton } from '../ui'
 import { NavDrawer } from './NavDrawer'
 import type { NavDrawerAction, NavDrawerState } from './nav-drawer-controller'
@@ -69,7 +69,7 @@ export function ChromeDrawer({
   searchPanel?: ReactNode
   showWird?: boolean
 }) {
-  const { bookmarks, deleteBookmark } = useBookmarks()
+  const { bookmarks, deleteBookmark } = useSharedBookmarks()
   const { dispatch, state } = controller
 
   function navigate(hash: string) {

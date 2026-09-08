@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { loadHizbIndex, type HizbIndexEntry, type QuranRef } from '../../data/hizb-index'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/surah-index'
-import { Button } from '../ui'
+import { Badge, Button, ListRow, Spinner, Status } from '../ui'
 
 type HizbListProps = {
   currentRef?: QuranRef | null
@@ -26,8 +26,10 @@ export function HizbList({
   const [rows, setRows] = useState<HizbIndexEntry[]>(initialRows ?? [])
   const [surahRows, setSurahRows] = useState<ReaderSurahIndexEntry[]>(initialSurahRows ?? [])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(initialRows ? 'ready' : 'loading')
+  const [attempt, setAttempt] = useState(0)
   const groups = useMemo(() => groupHizbs(rows, surahRows), [rows, surahRows])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load effect for Retry
   useEffect(() => {
     if (initialRows) {
       setRows(initialRows)
@@ -48,7 +50,7 @@ export function HizbList({
         if (!controller.signal.aborted) setStatus('error')
       })
     return () => controller.abort()
-  }, [initialRows])
+  }, [attempt, initialRows])
 
   useEffect(() => {
     if (initialSurahRows) {
@@ -69,21 +71,24 @@ export function HizbList({
 
   if (status === 'loading') {
     return (
-      <p className="qar-react-nav-drawer-list-state" role="status">
-        Loading Hizb
-      </p>
+      <div className="qar:flex qar:items-center qar:justify-center qar:gap-2 qar:p-4">
+        <Spinner label="Loading Hizb" />
+        <span className="qar:text-sm qar:text-muted">Loading Hizb</span>
+      </div>
     )
   }
   if (status === 'error') {
     return (
-      <p className="qar-react-nav-drawer-list-state" role="status">
-        Hizb list unavailable.
-      </p>
+      <Status
+        action={<Button onClick={() => setAttempt((n) => n + 1)}>Retry</Button>}
+        title="Hizb list unavailable."
+        tone="error"
+      />
     )
   }
 
   return (
-    <section className="qar-react-hizb-list" aria-label="Hizb list" data-hizb-list="">
+    <section aria-label="Hizb list" className="qar-react-hizb-list" data-hizb-list="">
       {groups.map((group) => (
         <section className="qar-react-hizb-group" data-surah={group.surahNumber} key={group.surahNumber}>
           <div className="qar-react-hizb-group-head">
@@ -91,59 +96,33 @@ export function HizbList({
             <span className="qar-react-hizb-group-ar" dir="rtl" lang="ar">
               {group.surah?.name_ar ?? ''}
             </span>
-            <span className="qar-react-hizb-group-count">
+            <Badge tone="neutral">
               <span className="qar:sr-only">{`${group.rows.length} hizb starts in this surah`}</span>
               <span aria-hidden="true">{group.rows.length}</span>
-            </span>
+            </Badge>
           </div>
           <ul className="qar-react-hizb-group-rows">
             {group.rows.map((hizb) => (
-              <HizbRow
-                current={currentRef ? refInRange(currentRef, hizb) : false}
-                hizb={hizb}
-                key={hizb.n}
-                onNavigate={onNavigate}
-              />
+              <li key={hizb.n}>
+                <ListRow
+                  action={
+                    <span aria-hidden="true" className="qar-react-list-row-chevron">
+                      ›
+                    </span>
+                  }
+                  current={currentRef ? refInRange(currentRef, hizb) : false}
+                  data-hizb={hizb.n}
+                  meta={compactRangeLabel(hizb)}
+                  num={`Hizb ${hizb.n}`}
+                  onSelect={() => onNavigate?.(`#/s/${hizb.start.surah}/${hizb.start.verse}`)}
+                  title={compactRangeLabel(hizb)}
+                />
+              </li>
             ))}
           </ul>
         </section>
       ))}
     </section>
-  )
-}
-
-function HizbRow({
-  current,
-  hizb,
-  onNavigate,
-}: {
-  current: boolean
-  hizb: HizbIndexEntry
-  onNavigate?: (hash: string) => void
-}) {
-  return (
-    <li
-      className={['qar-react-hizb-row', current ? 'qar-react-hizb-row--current' : ''].filter(Boolean).join(' ')}
-      data-hizb={hizb.n}
-    >
-      <Button
-        aria-label={`Hizb ${hizb.n}, ${fullRangeLabel(hizb)}`}
-        className="qar-react-hizb-row-btn"
-        onClick={() => onNavigate?.(`#/s/${hizb.start.surah}/${hizb.start.verse}`)}
-        variant="ghost"
-      >
-        <span className="qar-react-hizb-num">Hizb {hizb.n}</span>
-        <span className="qar-react-hizb-ref">{compactRangeLabel(hizb)}</span>
-        {current ? (
-          <span className="qar-react-hizb-marker">Current</span>
-        ) : (
-          <span className="qar-react-hizb-marker-spacer" aria-hidden="true" />
-        )}
-        <span className="qar-react-hizb-chev" aria-hidden="true">
-          ›
-        </span>
-      </Button>
-    </li>
   )
 }
 
@@ -176,10 +155,6 @@ function compareRefs(a: QuranRef, b: QuranRef): number {
 function compactRangeLabel(hizb: HizbIndexEntry): string {
   if (hizb.start.surah === hizb.end.surah) return `${hizb.start.verse}-${hizb.end.verse}`
   return `${formatRef(hizb.start)}-${formatRef(hizb.end)}`
-}
-
-function fullRangeLabel(hizb: HizbIndexEntry): string {
-  return `${formatRef(hizb.start)} to ${formatRef(hizb.end)}`
 }
 
 function formatRef(ref: QuranRef): string {

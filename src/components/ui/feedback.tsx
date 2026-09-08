@@ -89,7 +89,7 @@ export function Status({ tone, title, description, action, icon, className, ...p
   )
 }
 
-export type ListRowProps = HTMLAttributes<HTMLDivElement> & {
+export type ListRowProps = Omit<HTMLAttributes<HTMLDivElement>, 'title'> & {
   selected?: boolean
   current?: boolean
   num?: ReactNode

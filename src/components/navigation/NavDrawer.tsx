@@ -339,47 +339,18 @@ export function NavDrawer({
           }
         >
           <div className="qar-react-nav-drawer-source-panel">
-            <div className="qar-react-nav-drawer-source-tabs" role="tablist" aria-label="Read source">
-              <Button
-                aria-selected={readSource === 'surah'}
-                className="qar-react-nav-drawer-source-tab"
-                onClick={() => setReadSource('surah')}
-                role="tab"
-                size="sm"
-                variant="ghost"
-              >
-                Surah
-              </Button>
-              <Button
-                aria-selected={readSource === 'juz'}
-                className="qar-react-nav-drawer-source-tab"
-                onClick={() => setReadSource('juz')}
-                role="tab"
-                size="sm"
-                variant="ghost"
-              >
-                Juz
-              </Button>
-              <Button
-                aria-selected={readSource === 'hizb'}
-                className="qar-react-nav-drawer-source-tab"
-                onClick={() => setReadSource('hizb')}
-                role="tab"
-                size="sm"
-                variant="ghost"
-              >
-                Hizb
-              </Button>
-              <Button
-                aria-selected={readSource === 'bookmarks'}
-                className="qar-react-nav-drawer-source-tab"
-                onClick={() => setReadSource('bookmarks')}
-                role="tab"
-                size="sm"
-                variant="ghost"
-              >
-                Bookmarks
-              </Button>
+            <div className="qar-react-nav-drawer-source-tabs">
+              <SegmentedControl
+                label="Read source"
+                onValueChange={(next) => setReadSource(next as 'surah' | 'juz' | 'hizb' | 'bookmarks')}
+                options={[
+                  { label: 'Surah', value: 'surah' },
+                  { label: 'Juz', value: 'juz' },
+                  { label: 'Hizb', value: 'hizb' },
+                  { label: 'Bookmarks', value: 'bookmarks' },
+                ]}
+                value={readSource}
+              />
             </div>
             {readSource === 'surah' && (
               <div className="qar-react-nav-drawer-source-tools">
@@ -388,7 +359,7 @@ export function NavDrawer({
                   className="qar-react-nav-drawer-search-input"
                   hideLabel
                   label="Search surah by name, number, or verse reference"
-                  labelClassName="qar-react-nav-drawer-source-search qar-react-nav-drawer-search"
+                  labelClassName="qar-react-nav-drawer-source-search"
                   maxLength={20}
                   onChange={handleSurahSearchChange}
                   onKeyDown={handleSurahSearchKeyDown}
@@ -404,27 +375,16 @@ export function NavDrawer({
                   type="search"
                   value={surahQuery}
                 />
-                <div className="qar-react-nav-drawer-source-filter" role="tablist" aria-label="Surah filter">
-                  <Button
-                    aria-selected={surahFilter === 'all'}
-                    className="qar-react-nav-drawer-filter-option"
-                    onClick={() => setSurahFilter('all')}
-                    role="tab"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    All
-                  </Button>
-                  <Button
-                    aria-selected={surahFilter === 'recent'}
-                    className="qar-react-nav-drawer-filter-option"
-                    onClick={() => setSurahFilter('recent')}
-                    role="tab"
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Recent
-                  </Button>
+                <div className="qar-react-nav-drawer-source-filter">
+                  <SegmentedControl
+                    label="Surah filter"
+                    onValueChange={(next) => setSurahFilter(next as SurahFilter)}
+                    options={[
+                      { label: 'All', value: 'all' },
+                      { label: 'Recent', value: 'recent' },
+                    ]}
+                    value={surahFilter}
+                  />
                 </div>
               </div>
             )}

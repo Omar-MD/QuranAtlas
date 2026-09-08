@@ -10,7 +10,7 @@ import type { MushafViewMode } from '../../../components/reader/MushafModeContro
 import { Button, Spinner, Status } from '../../../components/ui'
 import { resolveVerseHrefForMushafPage } from '../../../components/reader/reader-mode-routing'
 import { createMushafPageBookmarkKey } from '../../../continuity/bookmarks/page-bookmark'
-import { useBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
+import { useSharedBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
 import {
@@ -95,7 +95,7 @@ export function MushafRoute({
   const visiblePageRef = useRef<MushafReadyPageAssetState | null>(null)
   const initialVisibleWirdAdvancedRef = useRef(false)
   const lastWirdAdvancedKeyRef = useRef<string | null>(null)
-  const { bookmarkedVerseKeys, toggleBookmark } = useBookmarks()
+  const { bookmarkedVerseKeys, toggleBookmark } = useSharedBookmarks()
   const chrome = useMushafChromeVisibility(visiblePage !== null)
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex), [surahIndex])
   const wirdBoundaries = useMemo(

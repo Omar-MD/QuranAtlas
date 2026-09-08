@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { loadJuzIndex, type JuzIndexEntry } from '../../data/juz-index'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/surah-index'
-import { Button } from '../ui'
+import { Button, ListRow, Spinner, Status } from '../ui'
 
 type JuzListProps = {
   currentRef?: QuranRef | null
@@ -22,7 +22,9 @@ export function JuzList({
   const [rows, setRows] = useState<JuzIndexEntry[]>(initialRows ?? [])
   const [surahRows, setSurahRows] = useState<ReaderSurahIndexEntry[]>(initialSurahRows ?? [])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(initialRows ? 'ready' : 'loading')
+  const [attempt, setAttempt] = useState(0)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load effect for Retry
   useEffect(() => {
     if (initialRows) {
       setRows(initialRows)
@@ -43,7 +45,7 @@ export function JuzList({
         if (!controller.signal.aborted) setStatus('error')
       })
     return () => controller.abort()
-  }, [initialRows])
+  }, [attempt, initialRows])
 
   useEffect(() => {
     if (initialSurahRows) {
@@ -62,74 +64,51 @@ export function JuzList({
     return () => controller.abort()
   }, [initialSurahRows])
 
-  if (status === 'loading')
+  if (status === 'loading') {
     return (
-      <p className="qar:m-0 qar:text-sm qar:text-muted" role="status">
-        Loading Juz
-      </p>
+      <div className="qar:flex qar:items-center qar:justify-center qar:gap-2 qar:p-4">
+        <Spinner label="Loading Juz" />
+        <span className="qar:text-sm qar:text-muted">Loading Juz</span>
+      </div>
     )
-  if (status === 'error')
+  }
+  if (status === 'error') {
     return (
-      <p className="qar:m-0 qar:text-sm qar:text-danger" role="status">
-        Juz list unavailable.
-      </p>
+      <Status
+        action={<Button onClick={() => setAttempt((n) => n + 1)}>Retry</Button>}
+        title="Juz list unavailable."
+        tone="error"
+      />
     )
+  }
+
+  const surahByNumber = new Map(surahRows.map((row) => [row.n, row]))
+  const currentJuz = currentRef ? findCurrentJuz(rows, currentRef) : null
 
   return (
-    <ul className="qar-react-juz-list" aria-label="Juz list">
-      {rows.map((juz) => (
-        <JuzRow
-          current={currentRef ? juz.n === findCurrentJuz(rows, currentRef) : false}
-          juz={juz}
-          key={juz.n}
-          onNavigate={onNavigate}
-          surah={surahRows.find((row) => row.n === juz.start.surah)}
-        />
-      ))}
+    <ul aria-label="Juz list" className="qar-react-juz-list">
+      {rows.map((juz) => {
+        const surah = surahByNumber.get(juz.start.surah)
+        return (
+          <li key={juz.n}>
+            <ListRow
+              action={
+                <span aria-hidden="true" className="qar-react-list-row-chevron">
+                  ›
+                </span>
+              }
+              arabic={surah?.name_ar ? <span lang="ar">{surah.name_ar}</span> : undefined}
+              current={currentJuz != null && juz.n === currentJuz}
+              data-juz={juz.n}
+              meta={`${juz.start.surah}:${juz.start.verse}`}
+              num={`Juz ${juz.n}`}
+              onSelect={() => onNavigate?.(`#/s/${juz.start.surah}/${juz.start.verse}`)}
+              title={surah?.name ?? `Surah ${juz.start.surah}`}
+            />
+          </li>
+        )
+      })}
     </ul>
-  )
-}
-
-function JuzRow({
-  juz,
-  current,
-  onNavigate,
-  surah,
-}: {
-  current: boolean
-  juz: JuzIndexEntry
-  onNavigate?: (hash: string) => void
-  surah?: ReaderSurahIndexEntry
-}) {
-  return (
-    <li
-      className={['qar-react-juz-row', current ? 'qar-react-juz-row--current' : ''].filter(Boolean).join(' ')}
-      data-juz={juz.n}
-    >
-      <Button
-        aria-label={`Juz ${juz.n}, starts at ${juz.start.surah}:${juz.start.verse}`}
-        className="qar-react-juz-row-btn"
-        onClick={() => onNavigate?.(`#/s/${juz.start.surah}/${juz.start.verse}`)}
-        variant="ghost"
-      >
-        <span className="qar-react-juz-num">Juz {juz.n}</span>
-        <span className="qar-react-juz-ref">
-          {juz.start.surah}:{juz.start.verse}
-        </span>
-        <span className="qar-react-juz-name">{surah?.name ?? `Surah ${juz.start.surah}`}</span>
-        <span className="qar-react-juz-ar" dir="rtl" lang="ar">
-          {surah?.name_ar ?? ''}
-        </span>
-        {current ? (
-          <span className="qar-react-juz-marker">Current</span>
-        ) : (
-          <span className="qar-react-juz-marker-spacer" aria-hidden="true" />
-        )}
-        <span className="qar-react-juz-chev" aria-hidden="true">
-          ›
-        </span>
-      </Button>
-    </li>
   )
 }
 

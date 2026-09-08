@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { X } from 'lucide-react'
 
 import { isMushafPageBookmark, pageNumberForBookmark } from '../../continuity/bookmarks/page-bookmark'
 import type { Riwayah } from '../../storage/types'
 import { pulseBookmarkLandingWhenRouteReady } from '../../continuity/bookmarks/pulse'
-import { cn } from '../../design-system/utils/cn'
-import { Button, Status } from '../ui'
-import { useSwipeToDelete } from './use-swipe-to-delete'
+import { Badge, IconButton, ListRow, Status } from '../ui'
 
 export type BookmarkListItem = {
   arabicSnippet?: string
@@ -24,7 +23,7 @@ type BookmarkMeta = {
 }
 
 const EMPTY_BOOKMARKS: BookmarkListItem[] = []
-const SNIPPET_CHARS = 50
+
 export function BookmarksList({
   bookmarks = EMPTY_BOOKMARKS,
   onDeleteBookmark,
@@ -35,9 +34,9 @@ export function BookmarksList({
   onNavigate?: (hash: string) => void
 }) {
   const [meta, setMeta] = useState<BookmarkMeta>(() => bookmarkMetaFromRows(bookmarks))
-  const swipe = useSwipeToDelete()
   const groupedBookmarks = useMemo(() => groupBookmarks(bookmarks), [bookmarks])
-
+  const listRef = useRef<HTMLElement>(null)
+  const pendingFocusIndexRef = useRef<number | null>(null)
   useEffect(() => {
     let active = true
     void loadBookmarkMeta(bookmarks).then((nextMeta) => {
@@ -47,6 +46,28 @@ export function BookmarksList({
       active = false
     }
   }, [bookmarks])
+
+  // After a delete re-render lands, restore focus to the next remaining row's
+  // delete control, else the previous one, else the persistent list container.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: bookmarks is the re-render trigger that consumes the pending focus index
+  useEffect(() => {
+    const index = pendingFocusIndexRef.current
+    if (index == null) return
+    pendingFocusIndexRef.current = null
+    const deletes = Array.from(listRef.current?.querySelectorAll<HTMLButtonElement>('.qar-react-nav-row-delete') ?? [])
+    const target = deletes[Math.min(index, deletes.length - 1)]
+    if (target) target.focus()
+    else listRef.current?.focus()
+  }, [bookmarks])
+
+  function handleDelete(
+    bookmark: Pick<BookmarkListItem, 'riwayah' | 'verseKey'>,
+    event: MouseEvent<HTMLButtonElement>,
+  ) {
+    const buttons = Array.from(listRef.current?.querySelectorAll('.qar-react-nav-row-delete') ?? [])
+    pendingFocusIndexRef.current = buttons.indexOf(event.currentTarget)
+    onDeleteBookmark?.(bookmark)
+  }
 
   function jumpToBookmark(bookmark: BookmarkListItem) {
     const page = pageNumberForBookmark(bookmark)
@@ -60,95 +81,79 @@ export function BookmarksList({
     pulseBookmarkLandingWhenRouteReady(bookmark.verseKey, targetHash)
   }
 
-  function handleRowClick(bookmark: BookmarkListItem) {
-    swipe.handleClick(bookmark.verseKey, () => jumpToBookmark(bookmark))
-  }
-
-  if (bookmarks.length === 0) {
-    return (
-      <Status
-        data-bookmarks-empty=""
-        description="Tap a verse number in the reader to bookmark it."
-        title="No bookmarks"
-        tone="info"
-      />
-    )
-  }
   return (
-    <section className="qar-react-bookmarks-list" aria-label="Bookmarks" data-bookmarks-list="">
-      {groupedBookmarks.map(([surah, list]) => (
-        <div className="qar-react-bookmarks-section" data-surah={surah} key={surah}>
-          <div className="qar-react-bookmarks-section-hdr">
-            <span className="qar-react-bookmarks-section-name">{sectionName(surah, list, meta)}</span>
-            <span className="qar-react-bookmarks-section-count">
-              <span className="qar:sr-only">{`${list.length} bookmarks`}</span>
-              <span aria-hidden="true">{list.length}</span>
-            </span>
+    <section
+      className="qar-react-bookmarks-list"
+      aria-label="Bookmarks"
+      data-bookmarks-list=""
+      ref={listRef}
+      tabIndex={-1}
+    >
+      {bookmarks.length === 0 ? (
+        <Status
+          className="qar:mx-3.5 qar:my-3.5"
+          data-bookmarks-empty=""
+          description="Tap a verse number in the reader to bookmark it."
+          title="No bookmarks"
+          tone="info"
+        />
+      ) : (
+        groupedBookmarks.map(([surah, list]) => (
+          <div className="qar-react-bookmarks-section" data-surah={surah} key={surah}>
+            <div className="qar-react-bookmarks-section-hdr">
+              <span className="qar-react-bookmarks-section-name">{sectionName(surah, list, meta)}</span>
+              <Badge tone="neutral">
+                <span className="qar:sr-only">{`${list.length} bookmarks`}</span>
+                <span aria-hidden="true">{list.length}</span>
+              </Badge>
+            </div>
+            <ul className="qar-react-bookmarks-rows">
+              {list.map((bookmark) => {
+                const pageBookmark = isMushafPageBookmark(bookmark)
+                const snippet = meta.snippets.get(bookmark.verseKey) ?? ''
+                return (
+                  <li key={`${bookmark.riwayah}:${bookmark.verseKey}`}>
+                    <ListRow
+                      action={
+                        <>
+                          <span aria-hidden="true" className="qar-react-list-row-chevron">
+                            ›
+                          </span>
+                          <IconButton
+                            className="qar-react-nav-row-delete"
+                            label={bookmarkDeleteLabel(bookmark)}
+                            onClick={(event) =>
+                              handleDelete({ riwayah: bookmark.riwayah, verseKey: bookmark.verseKey }, event)
+                            }
+                          >
+                            <X aria-hidden="true" size={16} />
+                          </IconButton>
+                        </>
+                      }
+                      arabic={pageBookmark ? undefined : <span lang="ar">{snippet}</span>}
+                      data-bookmark-kind={pageBookmark ? 'page' : 'verse'}
+                      data-verse-key={bookmark.verseKey}
+                      meta={pageBookmark ? 'Mushaf page bookmark' : undefined}
+                      num={bookmarkDisplayRef(bookmark)}
+                      onSelect={() => jumpToBookmark(bookmark)}
+                      title={
+                        <>
+                          {bookmarkRowTitle(bookmark.surah, meta)}
+                          {pageBookmark ? (
+                            <Badge className="qar:ml-2" tone="neutral">
+                              Page
+                            </Badge>
+                          ) : null}
+                        </>
+                      }
+                    />
+                  </li>
+                )
+              })}
+            </ul>
           </div>
-          <ul className="qar-react-bookmarks-rows">
-            {list.map((bookmark) => {
-              const pageBookmark = isMushafPageBookmark(bookmark)
-              const displayRef = bookmarkDisplayRef(bookmark)
-              const preview = pageBookmark ? 'Mushaf page bookmark' : (meta.snippets.get(bookmark.verseKey) ?? '')
-              return (
-                <li
-                  className={cn(
-                    'qar-react-bookmarks-row',
-                    swipe.isOpen(bookmark.verseKey) && 'qar-react-bookmarks-row--swiped',
-                  )}
-                  data-bookmark-kind={pageBookmark ? 'page' : 'verse'}
-                  data-verse-key={bookmark.verseKey}
-                  key={`${bookmark.riwayah}:${bookmark.verseKey}`}
-                >
-                  <Button
-                    aria-label={bookmarkJumpLabel(bookmark)}
-                    className="qar-react-bookmarks-row-btn"
-                    onClick={() => handleRowClick(bookmark)}
-                    onPointerDown={(event) => swipe.pointerDown(event, bookmark.verseKey)}
-                    onPointerMove={(event) => swipe.pointerMove(event, bookmark.verseKey)}
-                    onPointerUp={(event) => swipe.pointerUp(event, bookmark.verseKey)}
-                    onTouchEnd={(event) => swipe.touchEnd(event, bookmark.verseKey)}
-                    onTouchMove={(event) => swipe.touchMove(event, bookmark.verseKey)}
-                    onTouchStart={(event) => swipe.touchStart(event, bookmark.verseKey)}
-                    style={swipe.rowStyle(bookmark.verseKey)}
-                    type="button"
-                    unstyled
-                  >
-                    <span className="qar-react-bookmarks-row-ref">
-                      <span>{displayRef}</span>
-                      {pageBookmark ? <span className="qar-react-bookmarks-row-kind">Page</span> : null}
-                    </span>
-                    <span
-                      className={cn('qar-react-bookmarks-row-ar', pageBookmark && 'qar-react-bookmarks-row-ar--page')}
-                      data-riwayah={bookmark.riwayah}
-                      dir={pageBookmark ? 'ltr' : 'rtl'}
-                      lang={pageBookmark ? undefined : 'ar'}
-                    >
-                      {preview}
-                    </span>
-                    <span className="qar-react-bookmarks-row-chev" aria-hidden="true">
-                      ›
-                    </span>
-                  </Button>
-                  <Button
-                    aria-label={bookmarkDeleteLabel(bookmark)}
-                    className="qar-react-bookmarks-row-del"
-                    onClick={() => {
-                      swipe.closeSwipe()
-                      onDeleteBookmark?.({ riwayah: bookmark.riwayah, verseKey: bookmark.verseKey })
-                    }}
-                    style={swipe.deleteStyle(bookmark.verseKey)}
-                    type="button"
-                    unstyled
-                  >
-                    Delete
-                  </Button>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+        ))
+      )}
     </section>
   )
 }
@@ -223,18 +228,13 @@ async function loadSnippets(meta: BookmarkMeta, bookmarks: BookmarkListItem[]): 
         for (const row of rows) {
           const verse = verseNumber(row.verseKey)
           const ayah = payload.ayat?.find((candidate) => candidate.aya_no === verse)
-          if (typeof ayah?.aya_text === 'string') meta.snippets.set(row.verseKey, truncateArabic(ayah.aya_text))
+          if (typeof ayah?.aya_text === 'string') meta.snippets.set(row.verseKey, ayah.aya_text)
         }
       } catch {
         // Missing snippets do not block jump/delete behavior.
       }
     }),
   )
-}
-
-function truncateArabic(text: string): string {
-  if (text.length <= SNIPPET_CHARS) return text
-  return `${text.slice(0, SNIPPET_CHARS).trimEnd()}…`
 }
 
 function verseNumber(verseKey: string): number {
@@ -244,6 +244,10 @@ function verseNumber(verseKey: string): number {
 
 function sectionName(surah: number, rows: BookmarkListItem[], meta: BookmarkMeta): string {
   if (rows.every(isMushafPageBookmark)) return 'Mushaf pages'
+  return meta.surahNames.get(surah) ?? `Surah ${surah}`
+}
+
+function bookmarkRowTitle(surah: number, meta: BookmarkMeta): string {
   return meta.surahNames.get(surah) ?? `Surah ${surah}`
 }
 
@@ -264,11 +268,6 @@ function compareBookmarkRows(a: BookmarkListItem, b: BookmarkListItem): number {
 function bookmarkDisplayRef(bookmark: BookmarkListItem): string {
   const page = pageNumberForBookmark(bookmark)
   return isMushafPageBookmark(bookmark) && page ? `Page ${page}` : bookmark.verseKey
-}
-
-function bookmarkJumpLabel(bookmark: BookmarkListItem): string {
-  const page = pageNumberForBookmark(bookmark)
-  return isMushafPageBookmark(bookmark) && page ? `Jump to Mushaf page ${page}` : `Jump to verse ${bookmark.verseKey}`
 }
 
 function bookmarkDeleteLabel(bookmark: BookmarkListItem): string {

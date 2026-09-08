@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/surah-index'
 import type { RecentSurahPosition } from '../../continuity/recent-surahs'
 import type { Riwayah } from '../../storage/types'
-import { Button } from '../ui'
+import { Button, ListRow, Spinner, Status } from '../ui'
 
 type SurahListProps = {
   currentSurah?: number | null
@@ -33,6 +33,7 @@ export function SurahList({
 }: SurahListProps) {
   const [rows, setRows] = useState<ReaderSurahIndexEntry[]>(initialRows ?? [])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(initialRows ? 'ready' : 'loading')
+  const [attempt, setAttempt] = useState(0)
   const parsedQuery = useMemo(() => parseSurahQuery(query), [query])
   const visibleRows = useMemo(
     () => filterSurahs(rows, parsedQuery, filter, recentSurahs, riwayah),
@@ -41,6 +42,7 @@ export function SurahList({
   const recentBySurah = useMemo(() => new Map(recentSurahs.map((row) => [row.surah, row])), [recentSurahs])
   const searchHint = useMemo(() => getSearchHint(rows, parsedQuery, riwayah), [parsedQuery, riwayah, rows])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load effect for Retry
   useEffect(() => {
     if (initialRows) {
       setRows(initialRows)
@@ -61,30 +63,29 @@ export function SurahList({
         if (!controller.signal.aborted) setStatus('error')
       })
     return () => controller.abort()
-  }, [initialRows])
+  }, [attempt, initialRows])
 
   if (status === 'loading') {
     return (
-      <p className="qar-react-nav-drawer-list-state" role="status">
-        Loading...
-      </p>
+      <div className="qar:flex qar:items-center qar:justify-center qar:gap-2 qar:p-4">
+        <Spinner label="Loading surahs" />
+        <span className="qar:text-sm qar:text-muted">Loading surahs…</span>
+      </div>
     )
   }
 
   if (status === 'error') {
     return (
-      <p className="qar-react-nav-drawer-list-state" role="status">
-        Surah list unavailable.
-      </p>
+      <Status
+        action={<Button onClick={() => setAttempt((n) => n + 1)}>Retry</Button>}
+        title="Surah list unavailable."
+        tone="error"
+      />
     )
   }
 
   if (visibleRows.length === 0) {
-    return (
-      <p className="qar-react-nav-drawer-list-state" role="status">
-        No surahs match your search.
-      </p>
-    )
+    return <Status title="No surahs match your search." tone="info" />
   }
 
   return (
@@ -94,44 +95,30 @@ export function SurahList({
           {searchHint}
         </p>
       )}
-      <ul className="qar-react-nav-drawer-surah-list" aria-label="Surah list">
+      <ul aria-label="Surah list" className="qar-react-nav-drawer-surah-list">
         {visibleRows.map((surah) => {
           const recent = filter === 'recent' ? recentBySurah.get(surah.n) : undefined
           const recentVerse = recent ? Math.min(recent.verse, surah.counts[riwayah]) : null
           const targetVerse =
             parsedQuery.kind === 'ref' && parsedQuery.surah === surah.n ? parsedQuery.verse : recentVerse
-          const label = targetVerse ? `Open ${surah.name} verse ${targetVerse}` : `Open ${surah.name}`
           const hash = targetVerse ? `#/s/${surah.n}/${targetVerse}` : `#/s/${surah.n}`
           const meta = recentVerse ? `Last reached ${surah.n}:${recentVerse}` : `${surah.counts[riwayah]} verses`
           return (
-            <li
-              className={[
-                'qar-react-nav-drawer-surah-row',
-                currentSurah === surah.n ? 'qar-react-nav-drawer-surah-row--current' : '',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              data-surah={surah.n}
-              key={surah.n}
-            >
-              <Button
-                aria-label={label}
-                className="qar-react-nav-drawer-surah-btn"
-                onClick={() => onNavigate?.(hash)}
-                variant="ghost"
-              >
-                <span className="qar-react-nav-drawer-surah-num">{surah.n}</span>
-                <span className="qar-react-nav-drawer-surah-copy">
-                  <span className="qar-react-nav-drawer-surah-name">{surah.name}</span>
-                  <span className="qar-react-nav-drawer-surah-meta">{meta}</span>
-                </span>
-                <span className="qar-react-nav-drawer-surah-ar" dir="rtl" lang="ar">
-                  {surah.name_ar}
-                </span>
-                <span className="qar-react-nav-drawer-surah-chev" aria-hidden="true">
-                  ›
-                </span>
-              </Button>
+            <li key={surah.n}>
+              <ListRow
+                action={
+                  <span aria-hidden="true" className="qar-react-list-row-chevron">
+                    ›
+                  </span>
+                }
+                arabic={<span lang="ar">{surah.name_ar}</span>}
+                current={currentSurah === surah.n}
+                data-surah={surah.n}
+                meta={meta}
+                num={surah.n}
+                onSelect={() => onNavigate?.(hash)}
+                title={surah.name}
+              />
             </li>
           )
         })}

@@ -11,6 +11,7 @@ import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } fr
 import { readNativeReactReaderPreferences } from '../storage/settings-writer'
 import { useFirstLaunchNotificationPermission } from '../continuity/wird/use-first-launch-notification-permission'
 import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
+import { BookmarksProvider } from '../continuity/bookmarks/use-bookmarks'
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
 
 const AboutRoute = lazy(() => import('./routes/settings/AboutRoute').then((module) => ({ default: module.AboutRoute })))
@@ -195,14 +196,18 @@ export function App() {
       {launchRestore.status === 'ready' && (
         <Suspense fallback={<LaunchSplash />}>
           {route.type === 'reader' && (
-            <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />
+            <BookmarksProvider>
+              <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />
+            </BookmarksProvider>
           )}
           {route.type === 'mushaf' && (
-            <MushafRoute
-              interactionSuspended={Boolean(settingsOverlay)}
-              onReplaceHash={replaceActiveHash}
-              page={route.page}
-            />
+            <BookmarksProvider>
+              <MushafRoute
+                interactionSuspended={Boolean(settingsOverlay)}
+                onReplaceHash={replaceActiveHash}
+                page={route.page}
+              />
+            </BookmarksProvider>
           )}
           {(route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'unsupported') && (
             <NavigationRouteHost

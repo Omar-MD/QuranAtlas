@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { BookOpen } from 'lucide-react'
 
-import { Button } from '../../ui'
+import { Button, Card } from '../../ui'
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { deriveWirdSummary } from '../../../continuity/wird/progress'
 import type { SurahCount, WirdBoundaries, WirdPlan } from '../../../continuity/wird/types'
@@ -43,8 +43,7 @@ export function DailyWirdCard({
       : null
 
   return (
-    <Button
-      aria-label={title}
+    <Card
       className={[
         'qar-react-wird-card',
         summary.state === 'no-plan' ? 'qar-react-wird-card--setup' : '',
@@ -52,9 +51,10 @@ export function DailyWirdCard({
       ]
         .filter(Boolean)
         .join(' ')}
-      onClick={onOpen}
-      variant="ghost"
     >
+      <Button className="qar-react-wird-card-hit" onClick={onOpen} variant="ghost">
+        <span className="qar:sr-only">{title}</span>
+      </Button>
       <span className="qar-react-wird-card-main">
         <span className="qar-react-wird-card-status-badge" aria-hidden="true">
           <BookOpen size={19} strokeWidth={1.65} />
@@ -95,6 +95,6 @@ export function DailyWirdCard({
           <span className="qar-react-wird-card-reminder">{summary.reminderLabel}</span>
         </span>
       )}
-    </Button>
+    </Card>
   )
 }
