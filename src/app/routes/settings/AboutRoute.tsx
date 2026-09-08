@@ -1,5 +1,5 @@
 import { RefreshCw } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import pkg from '../../../../package.json'
 import { REACT_ROUTES } from '../../router/routes'
@@ -11,11 +11,26 @@ import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInsta
 import { fetchLatestAppChanges, type AppUpdateCheckResult } from './pwa-updates'
 import { useClearDataDialog } from './useClearDataDialog'
 
-const credits = [
-  "Qur'an text (Hafs, Warsh, Qalun riwayat): King Fahd Glorious Qur'an Printing Complex (مجمع الملك فهد لطباعة المصحف الشريف), Madinah",
-  'English translation: Bridges (Quran DB upstream translation source)',
-  'Arabic typography: KFGQPC Uthmanic Hafs / Warsh / Qalun (King Fahd Complex). Latin: Newsreader; UI: system. Mono: Geist Mono (SIL OFL).',
-  'Built with React, Vite, and Workbox',
+const credits: Array<{ content: ReactNode; id: string }> = [
+  {
+    content: (
+      <>
+        Qur’an text (Hafs, Warsh, Qalun riwayat): King Fahd Glorious Qur’an Printing Complex (
+        <span dir="rtl" lang="ar" className="qar:whitespace-nowrap">
+          مجمع الملك فهد لطباعة المصحف الشريف
+        </span>
+        ), Madinah
+      </>
+    ),
+    id: 'quran-text',
+  },
+  { content: 'English translation: Bridges (Quran DB upstream translation source)', id: 'translation' },
+  {
+    content:
+      'Arabic typography: KFGQPC Uthmanic Hafs / Warsh / Qalun (King Fahd Complex). Latin: Newsreader; UI: system. Mono: Geist Mono (SIL OFL).',
+    id: 'typography',
+  },
+  { content: 'Built with React, Vite, and Workbox', id: 'stack' },
 ]
 
 type UpdateCheckState =
@@ -85,7 +100,8 @@ export function AboutRoute() {
             وَلَقَدۡ يَسَّرۡنَا ٱلۡقُرۡءَانَ لِلذِّكۡرِ فَهَلۡ مِن مُّدَّكِرٍ
           </p>
           <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-            "And We have certainly made the Qur'an easy for remembrance, so is there any who will remember?" - 54:17
+            “And We have certainly made the Qur’an easy for remembrance, so is there any who will remember?” — Qur’an
+            54:17
           </p>
         </section>
 
@@ -93,9 +109,9 @@ export function AboutRoute() {
           <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-attribution">
             Attribution
           </h2>
-          <ul className="qar:m-0 qar:grid qar:gap-2 qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted">
+          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
             {credits.map((credit) => (
-              <li key={credit}>{credit}</li>
+              <li key={credit.id}>{credit.content}</li>
             ))}
           </ul>
         </section>

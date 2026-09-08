@@ -1,6 +1,7 @@
+import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 
-import { Button, Progress, SegmentedControl, Status } from '../../../components/ui'
+import { Button, SegmentedControl, Spinner, Status } from '../../../components/ui'
 import { LaunchSplash } from '../../../components/launch/LaunchSplash'
 import { OnboardingPageRecipe } from '../../../design-system/recipes/onboarding-page'
 import { writeMushafEditionSelection, type MushafEditionSetupState } from '../../../launch/mushaf-edition-setup'
@@ -104,6 +105,7 @@ function MushafEditionSetupRoute({
           description="Could not check Mushaf edition availability. Try again without clearing your saved edition."
           title="Edition availability is temporarily unavailable"
           tone="error"
+          icon={<AlertTriangle aria-hidden="true" size={18} />}
         />
       </OnboardingPageRecipe>
     )
@@ -121,6 +123,7 @@ function MushafEditionSetupRoute({
           description="Open About to clear saved data and choose an available edition."
           title="Your selected Mushaf edition is no longer available"
           tone="error"
+          icon={<AlertTriangle aria-hidden="true" size={18} />}
         />
       </OnboardingPageRecipe>
     )
@@ -145,6 +148,7 @@ function MushafEditionSetupRoute({
           description="Connect to the internet and retry to load available editions."
           title="No Mushaf editions are available"
           tone="warning"
+          icon={<AlertTriangle aria-hidden="true" size={18} />}
         />
       </OnboardingPageRecipe>
     )
@@ -161,10 +165,14 @@ function MushafEditionSetupRoute({
       <SegmentedControl
         label="Mushaf edition"
         onValueChange={(value) => dispatch({ type: 'selectMushafEdition', value })}
-        options={setup.editions.map((edition) => ({ label: edition.label, value: edition.id }))}
+        options={setup.editions.map((edition) => ({
+          label: edition.label,
+          shortLabel: edition.shortLabel,
+          value: edition.id,
+        }))}
         value={state.selectedEditionId ?? undefined}
       />
-      {writing && <Progress label="Saving Mushaf setup" value={60} />}
+      {writing && <Spinner label="Saving Mushaf setup" />}
       {persistenceFailed && (
         <Status
           action={
@@ -182,6 +190,7 @@ function MushafEditionSetupRoute({
           description="Your selected edition is preserved. Retry saving to finish setup."
           title="Could not save Mushaf setup"
           tone="error"
+          icon={<AlertTriangle aria-hidden="true" size={18} />}
         />
       )}
       <Button

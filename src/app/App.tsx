@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
 
 import type { SettingsRouteMode } from './routes/settings/SettingsRoute'
 import { Button, Status } from '../components/ui'
+import { NavigationPageRecipe } from '../design-system/recipes/navigation-page'
 import { LaunchSplash } from '../components/launch/LaunchSplash'
 import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/routes'
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
@@ -273,10 +274,7 @@ function isBaseHash(hash: string): boolean {
 
 function UnsupportedRoute({ hash }: { hash: string }) {
   return (
-    <main
-      className="qar:grid qar:mx-auto qar:w-full qar:max-w-2xl qar:gap-4 qar:px-5 qar:py-8"
-      aria-label="Unsupported route"
-    >
+    <NavigationPageRecipe title="This link is not supported">
       <Status
         action={
           <Button onClick={() => (window.location.hash = REACT_ROUTES.surahs)} variant="secondary">
@@ -284,9 +282,9 @@ function UnsupportedRoute({ hash }: { hash: string }) {
           </Button>
         }
         description={`The address ${hash || '#/'} is not recognized by QuranAtlas. Choose a supported destination to continue.`}
-        title="This link is not supported"
+        title="Address not recognized"
         tone="warning"
       />
-    </main>
+    </NavigationPageRecipe>
   )
 }

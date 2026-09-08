@@ -110,22 +110,25 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
   return (
     <fieldset
       aria-label={label}
-      className="qar:inline-flex qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1"
+      className="qar:inline-flex qar:min-w-0 qar:max-w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1"
       // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: the design brief requires an explicit radiogroup role even though the fieldset with radio inputs already implies it
       role="radiogroup"
     >
       {options.map((option) => {
         const selected = option.value === selectedValue
+        const accname = option.shortLabel
+          ? `${label}: ${option.shortLabel} — ${option.label}`
+          : `${label}: ${option.label}`
         return (
           <label
             className={cn(
-              'qar-react-segmented-option qar:flex qar:min-h-11 qar:items-center qar:rounded-control qar:px-3 qar:text-sm',
+              'qar-react-segmented-option qar:flex qar:min-h-11 qar:min-w-0 qar:items-center qar:rounded-control qar:px-3 qar:text-sm',
               selected ? 'qar-react-segmented-option--selected' : 'qar:text-muted',
             )}
             key={option.value}
           >
             <input
-              aria-label={`${label}: ${option.label}`}
+              aria-label={accname}
               checked={selected}
               className="qar:sr-only"
               disabled={option.disabled}
@@ -134,7 +137,7 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
               type="radio"
               value={option.value}
             />
-            {option.shortLabel ?? option.label}
+            <span className="qar:truncate">{option.shortLabel ?? option.label}</span>
           </label>
         )
       })}

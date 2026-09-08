@@ -9,6 +9,7 @@ const MUSHAF_ASSET_INDEX_URL = '/dataset/indexes/mushaf-assets.json'
 export type MushafEditionOption = {
   id: string
   label: string
+  shortLabel?: string
 }
 
 export type MushafEditionSetupState =
@@ -36,7 +37,15 @@ export async function loadMushafEditionOptions(fetcher: typeof fetch = fetch): P
   return index.assets.flatMap((asset): MushafEditionOption[] => {
     if (!isMushafAssetDescriptor(asset)) throw new Error('Mushaf edition availability entry is invalid')
     if (!isAvailableQaloonMushaf(asset)) return []
-    return [{ id: asset.mushafEditionId, label: asset.label }]
+    return [
+      {
+        id: asset.mushafEditionId,
+        label: asset.label,
+        ...(typeof asset.shortLabel === 'string' && asset.shortLabel.trim() !== ''
+          ? { shortLabel: asset.shortLabel }
+          : {}),
+      },
+    ]
   })
 }
 
