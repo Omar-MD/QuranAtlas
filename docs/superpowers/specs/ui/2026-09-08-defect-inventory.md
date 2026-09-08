@@ -117,3 +117,27 @@ Launch `#/` resumes last surface (continuity restore, replaceState). Completed-u
 ## 8. Verified-clean (no findings)
 
 Reader content typography/hierarchy all themes; Bismala/verse layout balance; drawer structure/IA; drawer focus open/return from both tiers; mobile drawer modal + desktop rail per commonality §2.4; bookmarks card layout; search empty-state card; about content hierarchy; unsupported card copy; reduced-motion honoring on all audited surfaces except Spinner (L-D2); theme persistence round-trip; console/network cleanliness app-wide.
+
+
+---
+
+## 9. Execution status (2026-09-08, session close)
+
+Iterations landed on `dev`, each green through the full loop (gates + K2.6 visual + correctness review + fix rounds):
+
+| Iteration | Commit | Outcome |
+|---|---|---|
+| 0 — audit + briefs + inventory | `8160787` (+ plans `766a775`) | 11 vetted briefs, merged inventory |
+| 1 — commonality layer | `f59df2d` | scrim token (+dark 38%), sheet variant + cascade layer fix, 44px IconButton base, token retirement R1/R2, Spinner reduce kill, danger ink token; 9-finding fix round (dark success token restore, safe-area rule restore, layer-flip sizing inversions) |
+| 2 — Reader family | `f74018a` | BLOCKING M-D1 closed (gate chrome clearance, keyboard-verified), M-D2/3/4/5, R-D1/3/4/6, R-P2 retry, pill consolidation, gate inert/focus suspension |
+| 3 — Navigation family | `f5a376f` | ListRow/SegmentedControl/Badge cutovers (−759 net lines), always-visible delete + focus contract, shared BookmarksProvider, ul/li semantics, retry race guards |
+| 4 — Search family (+R1 folded) | `85ba1ca` | BLOCKING S-B1 closed, lane contract + copy, Tabs selected variant, `.qar-react-search-*` migration (~30 selector families deleted), hash rehydration incl. race guard |
+| 5 — Settings family | `935a1a8` | S-D2 base preservation (+e2e URL pin update), write-error Status, scroll cue, dock-rule relocation; fix round closed search-wipe regression + retry banner lifecycle + cue scope |
+
+**Remaining (not started, per user stop directive):** Iteration 6 — Framing family wave (plan `docs/superpowers/plans/2026-09-08-ui-iter-6-framing.md`: U-P1 fallback h1, L-P3 splash copy, O-P1..O-P3 onboarding honesty, A-P2..A-P5 about typography/markers/fold). R4 — final acceptance journey (both blockings + all majors now closed; run after Iteration 6). R2/R3 remainder is nil: R1 folded into Iteration 4; R3's `!important` was already absent from the tree; R2's retirements landed in Iteration 1 (only `--qa-react-settings-backdrop` zero-consumer retirement still gated on a future cleanup pass).
+
+**Recorded edges (non-blocking):**
+- Pre-existing (verified on a reverted build, NOT caused by Iter 5): leaving `#/search` live rewrites the URL back to `#/search` via a stale async write — breaks reload/back-forward after search. Needs its own defect/ticket.
+- IconButton `focus-visible` ring color resolves to `currentColor` rather than `--qa-react-focus` — pre-existing registry-wide behavior; candidate registry follow-up.
+- Registry JSON `list-row` entry text ("no runtime consumer yet") is stale after the Iteration-3 cutover.
+- Search ready-before-restore hash race: closed in `85ba1ca` (parking condition includes `!restoredHashStateRef.current`).
