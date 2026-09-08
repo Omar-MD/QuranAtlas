@@ -121,7 +121,7 @@ Reader content typography/hierarchy all themes; Bismala/verse layout balance; dr
 
 ---
 
-## 9. Execution status (2026-09-08, session close)
+## 9. Execution status (2026-09-08, refactor closed — Iterations 0–6 + R4 done)
 
 Iterations landed on `dev`, each green through the full loop (gates + K2.6 visual + correctness review + fix rounds):
 
@@ -133,11 +133,16 @@ Iterations landed on `dev`, each green through the full loop (gates + K2.6 visua
 | 3 — Navigation family | `f5a376f` | ListRow/SegmentedControl/Badge cutovers (−759 net lines), always-visible delete + focus contract, shared BookmarksProvider, ul/li semantics, retry race guards |
 | 4 — Search family (+R1 folded) | `85ba1ca` | BLOCKING S-B1 closed, lane contract + copy, Tabs selected variant, `.qar-react-search-*` migration (~30 selector families deleted), hash rehydration incl. race guard |
 | 5 — Settings family | `935a1a8` | S-D2 base preservation (+e2e URL pin update), write-error Status, scroll cue, dock-rule relocation; fix round closed search-wipe regression + retry banner lifecycle + cue scope |
+| 6 — Framing family | `096c550` | U-P1 unsupported fallback through NavigationPageRecipe (single h1, rhythm parity with `#/surahs`), L-P3 honest splash copy, O-P1 save Spinner (fake `Progress value={60}` removed), O-P2 `AlertTriangle` icons on all four gate/error Status surfaces, O-P3 `shortLabel` data pass-through + SegmentedControl single-line truncation (fieldset `min-w-0`/`max-w-full`), A-P2 atomic `span[dir=rtl][lang=ar]`, A-P3 typographic citation/credits, A-P4 disc markers in muted ink, A-P5 fold recovered (fetch bottom 810 ≤ 812 at 375×812, no copy tightening needed); fix round: segmented radio accname now contains the rendered text (`group: shortLabel — label`, Label-in-Name) + loader rejects empty/whitespace `shortLabel` |
 
-**Remaining (not started, per user stop directive):** Iteration 6 — Framing family wave (plan `docs/superpowers/plans/2026-09-08-ui-iter-6-framing.md`: U-P1 fallback h1, L-P3 splash copy, O-P1..O-P3 onboarding honesty, A-P2..A-P5 about typography/markers/fold). R4 — final acceptance journey (both blockings + all majors now closed; run after Iteration 6). R2/R3 remainder is nil: R1 folded into Iteration 4; R3's `!important` was already absent from the tree; R2's retirements landed in Iteration 1 (only `--qa-react-settings-backdrop` zero-consumer retirement still gated on a future cleanup pass).
+**R4 — final acceptance: DONE (2026-09-08).** Journey green at 1280×900 + 375×812 × light/sepia/dark, plus night mode and reduced-motion: launch splash capture (spinner label "Opening QuranAtlas", copy exact, `animationName: none` under reduce), onboarding interactive walk (surgical flip + 3-edition intercepted catalog → non-default edition selected → arrival at reader → `mushafEditionSetupVersion=1` + selected edition persisted; IDB snapshot/restore record-level match on all 7 stores), reader settings overlay open/close with base-hash preservation, bookmark round-trip incl. delete persistence, surahs via drawer row, search query → detail → back, bookmarks delete flow, about, unsupported `#/nope`, and offline reload on the production PWA (SW-controlled reader render with network proven unreachable). Reports: `.scratch/iter-6-report.md`, `.scratch/r4-report.md` (session-local). Visual sign-off: **approve**, no regressions (two minor notes recorded below). An onboarding settings-oscillation seen during orchestrator probing was adjudicated a probe-environment artifact — concurrent audit tabs on the shared profile raced `resetNativeReaderStores`/`resolveMushafEditionSetup` writes; a clean single-tab reproduction (344 monitored samples, exactly two write epochs) shows no cycling. No product defect.
+
+**R1–R3 dispositions confirmed at close:** R1 folded into Iteration 4 (`85ba1ca`). R2 landed in Iteration 1 (`f59df2d`); only the `--qa-react-settings-backdrop` zero-consumer retirement remains gated on a future cleanup grep. R3's `!important` was already absent from the tree — no action taken, none needed.
 
 **Recorded edges (non-blocking):**
 - Pre-existing (verified on a reverted build, NOT caused by Iter 5): leaving `#/search` live rewrites the URL back to `#/search` via a stale async write — breaks reload/back-forward after search. Needs its own defect/ticket.
 - IconButton `focus-visible` ring color resolves to `currentColor` rather than `--qa-react-focus` — pre-existing registry-wide behavior; candidate registry follow-up.
 - Registry JSON `list-row` entry text ("no runtime consumer yet") is stale after the Iteration-3 cutover.
 - Search ready-before-restore hash race: closed in `85ba1ca` (parking condition includes `!restoredHashStateRef.current`).
+- Bookmarks section count badge is a hand-rolled inline-flex pill rather than the Badge primitive — visually correct; composition preference only (R4 visual note).
+- About "Fetch latest app" sits at the 375×812 fold (top 766, bottom 810 ≤ 812) — acceptable per brief after A-P2/A-P4 tightening; destructive Clear-all stays below fold (R4 visual note).
