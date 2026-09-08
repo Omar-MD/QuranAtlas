@@ -14,7 +14,8 @@ import type {
   SearchSort,
 } from '../../search/schema'
 import type { SearchGraphSection } from '../../search/graph'
-import type { SearchExploreModuleId, SearchWorkspaceTab } from './search-presentation-model'
+import { previewSurfaceForPreview } from './search-presentation-model'
+import type { SearchExploreModuleId, SearchPreviewSurface, SearchWorkspaceTab } from './search-presentation-model'
 
 export type SearchExploreGraphState = {
   error: string | null
@@ -36,6 +37,8 @@ export type SearchRouteState = {
   canSaveSearch: boolean
   activeWorkspaceTab: SearchWorkspaceTab
   answerPreview: AnswerPreview | null
+  selectedPreviewMatch: MatchCardLite | null
+  previewSurface: SearchPreviewSurface | null
   allMatches: MatchCardLite[]
   allMatchesOpen: boolean
   brief: SearchBriefDto | null
@@ -55,6 +58,7 @@ export type SearchRouteState = {
   loadMoreAllMatches: () => void
   loadMoreResults: () => void
   openAllMatches: () => void
+  setSelectedPreviewMatch: (match: MatchCardLite | null) => void
   openResultExplore: (result: SearchResultDto, module?: SearchExploreModuleId) => void
   setActiveWorkspaceTab: (tab: SearchWorkspaceTab) => void
   setExploreSeedResult: (result: SearchResultDto | null) => void
@@ -96,6 +100,7 @@ export function useSearchRouteState(
   const [resultCountMessage, setResultCountMessage] = useState('')
   const [searchStatus, setSearchStatus] = useState('Loading search index')
   const [selectedResult, setSelectedResult] = useState<SearchResultDto | null>(null)
+  const [selectedPreviewMatch, setSelectedPreviewMatch] = useState<MatchCardLite | null>(null)
   const [resultCursor, setResultCursor] = useState<SearchResultCursor | null>(null)
   const [loadingMoreResults, setLoadingMoreResults] = useState(false)
   const [emptyResultMessage, setEmptyResultMessage] = useState(defaultEmptyResultMessage)
@@ -113,7 +118,6 @@ export function useSearchRouteState(
   const requestSequence = useRef(0)
   const readyRef = useRef(false)
   const restoredHashStateRef = useRef(false)
-  const pendingSelectedResultIdRef = useRef<string | null>(initialHashState.selectedResultId ?? null)
   const loadingMoreRef = useRef(false)
   const loadingAllMatchesRef = useRef(false)
   const selectedResultRef = useRef<SearchResultDto | null>(null)
@@ -133,6 +137,7 @@ export function useSearchRouteState(
     loadingAllMatchesRef.current = false
     selectedResultRef.current = null
     setSelectedResult(null)
+    setSelectedPreviewMatch(null)
     setResultCursor(null)
     setResultCountMessage('')
     setLoadingMoreResults(false)
@@ -216,7 +221,6 @@ export function useSearchRouteState(
       }
       const nextDefaultTab = 'overview'
       const nextActiveTab = next?.tab ?? nextDefaultTab
-      pendingSelectedResultIdRef.current = next?.selectedResultId ?? null
       setDefaultWorkspaceTab(nextDefaultTab)
       setActiveWorkspaceTab(nextActiveTab)
       setExploreSeedResult(null)
@@ -234,6 +238,7 @@ export function useSearchRouteState(
       loadingAllMatchesRef.current = false
       selectedResultRef.current = null
       setSelectedResult(null)
+      setSelectedPreviewMatch(null)
       setResultCursor(null)
       setResultCountMessage('')
       setLoadingMoreResults(false)
@@ -255,6 +260,7 @@ export function useSearchRouteState(
           setResults([])
           selectedResultRef.current = null
           setSelectedResult(null)
+          setSelectedPreviewMatch(null)
           setResultCursor(null)
           setAllMatches([])
           setAllMatchesCursor(null)
@@ -262,10 +268,12 @@ export function useSearchRouteState(
           setLoadingAllMatches(false)
           loadingAllMatchesRef.current = false
           setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
-          const countMessage = statusForAnswerPreview(preview)
-          setEmptyResultMessage(preview.recovery?.message ?? emptyResultMessageForMode(effectiveMode))
-          setResultCountMessage(countMessage)
-          setSearchStatus(countMessage)
+          const surface = previewSurfaceForPreview(preview)
+          const laneMessage =
+            surface === 'no-results' ? emptyResultMessageForMode(effectiveMode) : statusForAnswerPreview(preview)
+          setEmptyResultMessage(emptyResultMessageForMode(effectiveMode))
+          setResultCountMessage(laneMessage)
+          setSearchStatus(laneMessage)
           writeSearchHashState({
             mode: effectiveMode,
             query: trimmed,
@@ -284,18 +292,83 @@ export function useSearchRouteState(
   )
 
   const lastPackStateRef = useRef(packState)
+  // Latest out-of-band hash state seen before the pack was ready; applied once
+  // ready so pre-ready navigation is never dropped.
+  const pendingHashStateRef = useRef<SearchHashState | null>(null)
+
+  const applyHashState = useCallback(
+    (next: SearchHashState) => {
+      const nextQuery = next.query?.trim() ?? ''
+      if (!nextQuery) {
+        // Bare #/search: reset to the empty state unconditionally — even with
+        // no active query, the route state (e.g. the restored input text) must
+        // match the URL. submitSearch bumps the request sequence first, so an
+        // in-flight askPreview for a previous query cannot resolve into the
+        // cleared screen.
+        submitSearch({ query: '' })
+        return
+      }
+      const current = activeQueryRef.current
+      if (current && current.query === nextQuery) {
+        const nextTab = next.tab ?? defaultWorkspaceTab
+        if (nextTab !== activeWorkspaceTab) setActiveWorkspaceTab(nextTab)
+        return
+      }
+      submitSearch({
+        mode: 'all',
+        query: nextQuery,
+        selectedResultId: next.selectedResultId ?? null,
+        tab: next.tab ?? null,
+      })
+    },
+    [activeWorkspaceTab, defaultWorkspaceTab, submitSearch],
+  )
+
   useEffect(() => {
     if (lastPackStateRef.current === packState) return
     lastPackStateRef.current = packState
-    if (restoredHashStateRef.current || !readyRef.current || !initialHashState.query?.trim()) return
+    if (restoredHashStateRef.current || !readyRef.current) return
     restoredHashStateRef.current = true
+    const pending = pendingHashStateRef.current
+    pendingHashStateRef.current = null
+    if (pending) {
+      applyHashState(pending)
+      return
+    }
+    if (!initialHashState.query?.trim()) return
     submitSearch({
       mode: 'all',
       query: initialHashState.query,
       selectedResultId: initialHashState.selectedResultId ?? null,
       tab: initialHashState.tab ?? null,
     })
-  }, [initialHashState.query, initialHashState.selectedResultId, initialHashState.tab, packState, submitSearch])
+  }, [
+    applyHashState,
+    initialHashState.query,
+    initialHashState.selectedResultId,
+    initialHashState.tab,
+    packState,
+    submitSearch,
+  ])
+
+  // Rehydrate when the search hash changes out-of-band (back/forward, external
+  // links, manual edits). Our own writes use replaceState, which fires no
+  // hashchange, so this cannot loop.
+  useEffect(() => {
+    function onHashChange() {
+      const next = readSearchHashState()
+      // Park until the pack is ready AND the initial restore has committed, so
+      // a change landing in that window cannot be overwritten by a stale
+      // initialHashState submit.
+      if (!readyRef.current || !restoredHashStateRef.current) {
+        pendingHashStateRef.current = next
+        return
+      }
+      applyHashState(next)
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [applyHashState])
 
   const loadMoreResults = useCallback(() => {
     const cursor = resultCursor
@@ -562,6 +635,7 @@ export function useSearchRouteState(
     canSaveSearch,
     activeWorkspaceTab,
     answerPreview,
+    previewSurface: previewSurfaceForPreview(answerPreview),
     allMatches,
     allMatchesOpen,
     brief,
@@ -574,6 +648,7 @@ export function useSearchRouteState(
     results,
     searchStatus,
     selectedResult,
+    selectedPreviewMatch,
     hasMoreResults: Boolean(resultCursor),
     canLoadMoreResults: Boolean(resultCursor) && !loadingMoreResults,
     exploreGraph,
@@ -588,6 +663,7 @@ export function useSearchRouteState(
     setMode: setSearchMode,
     setQuery: setSearchQuery,
     setSelectedResult: setSearchSelectedResult,
+    setSelectedPreviewMatch,
     submitSearch,
   }
 }
@@ -641,8 +717,8 @@ function statusForAnswerPreview(preview: AnswerPreview): string {
   const evidenceCardLabel = pluralizeEvidenceCards(preview.evidenceCards.length)
   if (preview.mode === 'answer') return `${preview.evidenceCards.length} best ${evidenceCardLabel}`
   if (preview.mode === 'partial-answer') return `${preview.evidenceCards.length} ${evidenceCardLabel} with limits`
-  if (preview.mode === 'evidence-only') return preview.recovery?.message ?? 'Evidence-only response'
-  return preview.recovery?.message ?? 'No answer available'
+  if (preview.mode === 'no-answer') return 'No answer available'
+  return 'Evidence-only response'
 }
 
 function pluralizeEvidenceCards(count: number): string {

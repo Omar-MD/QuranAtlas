@@ -98,7 +98,8 @@ function modeForLens(lens: SearchLensLite) {
 function intentForQuery(query: string, lens: SearchLensLite): QueryUnderstandingLite['intent'] {
   if (lens === 'morphology') return 'trace-language'
   if (lens === 'quran-text' || lens === 'phrase') return 'find-occurrences'
-  if (query.includes('?') || /what|where|which|who|how/i.test(query)) return 'answer-question'
+  if (query.includes('?') || /\b(what|where|which|who|how|why|does|do|mean|meaning)\b/i.test(query))
+    return 'answer-question'
   return 'find-occurrences'
 }
 

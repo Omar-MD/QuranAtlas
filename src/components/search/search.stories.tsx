@@ -31,7 +31,7 @@ export const Default: Story = {
 export const Loading: Story = {
   render: () => (
     <main className="qar:p-5" aria-label="Search">
-      <SearchIndexGate message="Loading search index" ready={false} />
+      <SearchIndexGate loading message="Loading search index" ready={false} />
     </main>
   ),
 }
@@ -315,6 +315,8 @@ function WorkspaceStory({
         onOpenPreviewInRead={() => undefined}
         onOpenResultExplore={() => undefined}
         onSelectResult={() => undefined}
+        onSelectPreviewMatch={() => undefined}
+        selectedPreviewMatch={null}
         loadingAllMatches={false}
         packVersion={brief.sourceFrame.packVersion}
         resultCountMessage={`${brief.counts.shownWindowCount} shown results`}

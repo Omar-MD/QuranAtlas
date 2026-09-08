@@ -1,38 +1,43 @@
 import { ArrowUpRight } from 'lucide-react'
+import { forwardRef } from 'react'
 
 import type { AnswerClaim, AnswerPreview, ClaimSupport, EvidenceCardLite, MatchCardLite } from '../../../shared/search'
-import { Badge, Button, IconButton, Status, Tooltip } from '../ui'
+import { Badge, Button, Card, IconButton, ListRow, ListRowActions, Status, Tooltip } from '../ui'
+import { previewIsAskIntent } from './search-presentation-model'
 import { SearchResultDetail } from './SearchResultDetail'
 
 type SearchAnswerPreviewProps = {
-  preview: AnswerPreview | null
   allMatches: MatchCardLite[]
   allMatchesOpen: boolean
   canLoadAllMatches: boolean
   loadingAllMatches: boolean
-  onOpenAllMatches: () => void
   onLoadMoreAllMatches: () => void
+  onOpenAllMatches: () => void
   onOpenInRead: (ref: string) => void
+  onCloseMatch: () => void
   onSelectMatch?: (match: MatchCardLite, trigger: HTMLButtonElement) => void
-  onCloseMatch?: () => void
+  preview: AnswerPreview | null
   selectedMatch?: MatchCardLite | null
 }
 
 type PreviewCard = EvidenceCardLite | MatchCardLite
 
-export function SearchAnswerPreview({
-  preview,
-  allMatches,
-  allMatchesOpen,
-  canLoadAllMatches,
-  loadingAllMatches,
-  onLoadMoreAllMatches,
-  onOpenAllMatches,
-  onOpenInRead,
-  onSelectMatch,
-  onCloseMatch,
-  selectedMatch,
-}: SearchAnswerPreviewProps) {
+export const SearchAnswerPreview = forwardRef<HTMLDivElement, SearchAnswerPreviewProps>(function SearchAnswerPreview(
+  {
+    preview,
+    allMatches,
+    allMatchesOpen,
+    canLoadAllMatches,
+    loadingAllMatches,
+    onLoadMoreAllMatches,
+    onOpenAllMatches,
+    onOpenInRead,
+    onSelectMatch,
+    onCloseMatch,
+    selectedMatch,
+  },
+  ref,
+) {
   if (!preview) {
     return <Status description="Enter a word, phrase, or ayah reference." title="Search the Quran" tone="info" />
   }
@@ -40,9 +45,12 @@ export function SearchAnswerPreview({
   const supportById = new Map(preview.claimSupports.map((support) => [support.id, support]))
   const supportedClaims = preview.claims.filter((claim) => supportById.get(claim.supportId)?.verdict === 'supported')
   const hasClaims = supportedClaims.length > 0
+  // Lane contract (brief §5): the apology copy below is ask-lane-only; a
+  // lookup's match list is its evidence.
+  const askLane = previewIsAskIntent(preview)
 
   return (
-    <section
+    <Card
       aria-labelledby="search-answer-preview-title"
       className="qar-react-search-answer-preview"
       data-mobile-details={selectedMatch ? 'true' : 'false'}
@@ -69,15 +77,15 @@ export function SearchAnswerPreview({
             </li>
           ))}
         </ol>
-      ) : (
+      ) : askLane ? (
         <Status
-          description={preview.recovery?.message ?? 'The available evidence is shown without answer prose.'}
-          title="Answer limits"
+          description="The sources on this device do not contain enough evidence to answer this as a question. The matching verses are shown below."
+          title="No supported answer"
           tone="info"
         />
-      )}
+      ) : null}
 
-      <section aria-labelledby="search-evidence-basis-title" className="qar-react-search-evidence-basis">
+      <Card aria-labelledby="search-evidence-basis-title" className="qar-react-search-evidence-basis">
         <h3 id="search-evidence-basis-title">Evidence basis</h3>
         <dl className="qar-react-search-evidence-basis-grid">
           <EvidenceBasisItem label="Quran text" value={preview.evidenceBasis.quranText} />
@@ -87,20 +95,23 @@ export function SearchAnswerPreview({
         <p dir="auto">
           <bdi>{preview.evidenceBasis.note}</bdi>
         </p>
-      </section>
+      </Card>
 
-      <section aria-labelledby="search-best-evidence-title" className="qar-react-search-best-evidence">
-        <h3 id="search-best-evidence-title">Best evidence</h3>
-        {preview.evidenceCards.length > 0 ? (
+      {preview.evidenceCards.length > 0 ? (
+        <section aria-labelledby="search-best-evidence-title" className="qar-react-search-best-evidence">
+          <h3 id="search-best-evidence-title">Best evidence</h3>
           <div className="qar-react-search-answer-card-list">
             {preview.evidenceCards.map((card) => (
               <PreviewEvidenceCard card={card} key={card.id} onOpenInRead={onOpenInRead} />
             ))}
           </div>
-        ) : (
+        </section>
+      ) : askLane ? (
+        <section aria-labelledby="search-best-evidence-title" className="qar-react-search-best-evidence">
+          <h3 id="search-best-evidence-title">Best evidence</h3>
           <Status description="No best evidence is available for this preview." title="No best evidence" tone="info" />
-        )}
-      </section>
+        </section>
+      ) : null}
 
       {!allMatchesOpen ? (
         <div className="qar-react-search-answer-actions">
@@ -121,6 +132,7 @@ export function SearchAnswerPreview({
               {allMatches.map((card) => (
                 <PreviewEvidenceCard
                   card={card}
+                  current={selectedMatch?.id === card.id}
                   key={card.id}
                   onOpenInRead={onOpenInRead}
                   onSelectMatch={onSelectMatch}
@@ -139,11 +151,11 @@ export function SearchAnswerPreview({
         </section>
       ) : null}
       {selectedMatch ? (
-        <SearchResultDetail details={null} onClose={onCloseMatch} previewMatch={selectedMatch} ref={undefined} />
+        <SearchResultDetail details={null} onClose={onCloseMatch} previewMatch={selectedMatch} ref={ref} />
       ) : null}
-    </section>
+    </Card>
   )
-}
+})
 
 function ClaimSupportChip({ claim, support }: { claim: AnswerClaim; support?: ClaimSupport }) {
   const count = support?.supportIds.length ?? 0
@@ -167,61 +179,59 @@ function EvidenceBasisItem({ label, value }: { label: string; value: AnswerPrevi
 
 function PreviewEvidenceCard({
   card,
+  current,
   onOpenInRead,
   onSelectMatch,
   previewMatch,
 }: {
   card: PreviewCard
+  current?: boolean
   onOpenInRead: (ref: string) => void
   onSelectMatch?: (match: MatchCardLite, trigger: HTMLButtonElement) => void
   previewMatch?: MatchCardLite
 }) {
   const readerAction = card.readerAction
-  const sourceText = card.sourceText ?? card.snippet
+  const primary = card.sourceText ?? card.snippet
+  const secondary = card.translationText && card.translationText !== primary ? card.translationText : undefined
   return (
-    <article aria-label={`Evidence ${card.refLabel}`} className="qar-react-search-result-row">
-      <div className="qar-react-search-result-row-head">
-        <p className="qar-react-search-result-ref" dir="auto">
-          <bdi>{card.refLabel}</bdi>
-        </p>
-        {readerAction.type !== 'unavailable' ? (
-          <Tooltip content="Open in Reader">
-            <IconButton
-              className="qar-react-search-result-jump"
-              label={`Open ${card.refLabel} in Reader`}
-              onClick={() =>
-                onOpenInRead(readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref)
-              }
-            >
-              <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.75} />
-            </IconButton>
-          </Tooltip>
-        ) : null}
-      </div>
-      <div className="qar-react-search-result-passages">
-        <p className="qar-react-search-result-snippet qar-react-search-result-arabic" dir="rtl" lang="ar">
-          <bdi>{sourceText}</bdi>
-        </p>
-        {card.translationText ? (
-          <p className="qar-react-search-result-context" dir="ltr">
-            <bdi>{card.translationText}</bdi>
-          </p>
-        ) : null}
-      </div>
-      {previewMatch && onSelectMatch ? (
-        <Button onClick={(event) => onSelectMatch(previewMatch, event.currentTarget)} size="sm" variant="secondary">
-          Details
-        </Button>
-      ) : null}
-    </article>
+    <ListRow
+      action={
+        <ListRowActions>
+          {readerAction.type !== 'unavailable' ? (
+            <Tooltip content="Open in Reader">
+              <IconButton
+                label={`Open ${card.refLabel} in Reader`}
+                onClick={() =>
+                  onOpenInRead(
+                    readerAction.type === 'open-source-in-reader' ? readerAction.sourceRef : readerAction.ref,
+                  )
+                }
+              >
+                <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.75} />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+          {previewMatch && onSelectMatch ? (
+            <Button onClick={(event) => onSelectMatch(previewMatch, event.currentTarget)} size="sm" variant="secondary">
+              Details
+            </Button>
+          ) : null}
+        </ListRowActions>
+      }
+      aria-label={`Evidence ${card.refLabel}`}
+      current={current}
+      meta={secondary ? <bdi>{secondary}</bdi> : undefined}
+      num={card.refLabel}
+      title={<bdi>{primary}</bdi>}
+    />
   )
 }
 
 function answerModeLabel(preview: AnswerPreview): string {
-  if (preview.mode === 'answer') return 'Supported answer preview'
-  if (preview.mode === 'partial-answer') return 'Partial answer with evidence limits'
-  if (preview.mode === 'evidence-only') return 'Evidence shown without answer claims'
-  return 'No answer claims available'
+  if (preview.mode === 'answer') return 'Answer preview'
+  if (preview.mode === 'partial-answer') return 'Partial answer'
+  if (preview.mode === 'evidence-only') return 'Evidence only'
+  return 'No answer available'
 }
 
 function evidenceBasisLabel(value: AnswerPreview['evidenceBasis']['quranText']): string {

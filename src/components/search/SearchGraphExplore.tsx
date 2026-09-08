@@ -1,4 +1,4 @@
-import { Accordion, Button } from '../ui'
+import { Accordion, Button, Spinner, Status } from '../ui'
 import type { SearchExploreGraphState } from './useSearchRouteState'
 import {
   SEARCH_FOLLOWING_WORDING_NOTE,
@@ -37,16 +37,14 @@ export function SearchGraphExplore({
             : 'Load Explore sections'}
       </Button>
       {graph.loading ? (
-        <div aria-live="polite" className="qar-react-search-graph-loading" role="status">
-          <p>Loading source-backed wording sections for this selected ayah.</p>
-          <div aria-hidden="true" className="qar-react-search-graph-loading-bars">
-            <span />
-            <span />
-            <span />
-          </div>
+        <div aria-live="polite" className="qar:grid qar:justify-items-start qar:gap-2" role="status">
+          <Spinner label="Loading Explore sections" />
+          <p className="qar:m-0 qar:text-sm qar:text-muted">
+            Loading source-backed wording sections for this selected ayah.
+          </p>
         </div>
       ) : null}
-      {graph.error ? <p className="qar:m-0 qar:text-danger">{graph.error}</p> : null}
+      {graph.error ? <Status description={graph.error} title="Explore sections unavailable" tone="error" /> : null}
       {loadedForResult ? <Accordion items={graph.sections.map(sectionToAccordionItem)} /> : null}
     </div>
   )

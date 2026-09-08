@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AnswerPreview, MatchCardLite } from '../../../shared/search'
 import type { SearchBriefDto, SearchResultDto } from '../../search/schema'
-import { Button, Tabs } from '../ui'
+import { Button, Status, Tabs } from '../ui'
 import { SearchAnswerPreview } from './SearchAnswerPreview'
 import { SearchExplorePanel } from './SearchExplorePanel'
 import { SearchOverview } from './SearchOverview'
@@ -40,32 +40,35 @@ type SearchWorkspaceProps = {
   onOpenPreviewInRead: (ref: string) => void
   onOpenResultExplore: (result: SearchResultDto, module?: SearchExploreModuleId) => void
   onSelectResult: (result: SearchResultDto | null) => void
+  onSelectPreviewMatch: (match: MatchCardLite | null) => void
   packVersion?: string
   resultCountMessage: string
   results: SearchResultDto[]
   selectedResult: SearchResultDto | null
+  selectedPreviewMatch: MatchCardLite | null
   loadingAllMatches: boolean
 }
 
 export function SearchWorkspace(props: SearchWorkspaceProps) {
   const detailsTriggerRef = useRef<HTMLButtonElement | null>(null)
-  const detailPanelRef = useRef<HTMLElement | null>(null)
+  const detailPanelRef = useRef<HTMLDivElement | null>(null)
+  const previewDetailPanelRef = useRef<HTMLDivElement | null>(null)
   const [detailsRequestId, setDetailsRequestId] = useState(0)
-  const [selectedPreviewMatch, setSelectedPreviewMatch] = useState<MatchCardLite | null>(null)
   const previewDetailsTriggerRef = useRef<HTMLButtonElement | null>(null)
   const mobileResultsScrollTopRef = useRef<number | null>(null)
   const viewModel = useMemo(
     () =>
       deriveSearchOutputViewModel({
+        answerPreview: props.answerPreview,
         brief: props.brief,
         defaultTab: props.defaultTab,
         hasMoreResults: props.hasMore,
         results: props.results,
         selectedResult: props.selectedResult,
       }),
-    [props.brief, props.defaultTab, props.hasMore, props.results, props.selectedResult],
+    [props.answerPreview, props.brief, props.defaultTab, props.hasMore, props.results, props.selectedResult],
   )
-  const hasPreviewOnlyData = Boolean(props.answerPreview && !props.brief && props.results.length === 0)
+  const previewLane = props.answerPreview !== null && viewModel.previewSurface === 'preview'
 
   function openTab(tab: SearchWorkspaceTab, focusModule?: SearchExploreModuleId) {
     props.onActiveTabChange(tab)
@@ -83,6 +86,19 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
     }, 0)
   }, [detailsRequestId, props.activeTab, props.selectedResult])
 
+  // Mobile focus/scroll parity for the preview detail (F4): opening Details
+  // replaces the preview content, so focus must land in the panel.
+  useEffect(() => {
+    if (!props.selectedPreviewMatch || props.activeTab !== 'overview') return
+    const panel = previewDetailPanelRef.current
+    if (!panel || !window.matchMedia('(max-width: 767px)').matches) return
+    window.setTimeout(() => {
+      const top = panel.getBoundingClientRect().top + window.scrollY - 88
+      window.scrollTo({ top: Math.max(0, top), behavior: 'auto' })
+      panel.focus({ preventScroll: true })
+    }, 0)
+  }, [props.activeTab, props.selectedPreviewMatch])
+
   return (
     <section aria-label="Search result workspace" className="qar-react-search-workspace">
       <Tabs
@@ -92,8 +108,11 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
             label: 'Overview',
             value: 'overview',
             content:
-              props.answerPreview || !viewModel.overview ? (
+              props.answerPreview && viewModel.previewSurface === 'no-results' ? (
+                <Status description={props.emptyMessage} title="No results" tone="info" />
+              ) : props.answerPreview || !viewModel.overview ? (
                 <SearchAnswerPreview
+                  ref={previewDetailPanelRef}
                   allMatches={props.allMatches}
                   allMatchesOpen={props.allMatchesOpen}
                   canLoadAllMatches={props.canLoadAllMatches}
@@ -105,17 +124,20 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                     if (window.matchMedia('(max-width: 767px)').matches)
                       mobileResultsScrollTopRef.current = window.scrollY
                     previewDetailsTriggerRef.current = trigger
-                    setSelectedPreviewMatch(match)
+                    props.onSelectPreviewMatch(match)
                   }}
                   onCloseMatch={() => {
-                    setSelectedPreviewMatch(null)
+                    props.onSelectPreviewMatch(null)
                     const scrollTop = mobileResultsScrollTopRef.current
                     mobileResultsScrollTopRef.current = null
                     if (scrollTop !== null) window.scrollTo({ behavior: 'auto', top: scrollTop })
-                    previewDetailsTriggerRef.current?.focus()
+                    const pendingTrigger = previewDetailsTriggerRef.current
                     previewDetailsTriggerRef.current = null
+                    // The list is still hidden while React re-renders; focus
+                    // lands on the trigger once it is visible again.
+                    window.setTimeout(() => pendingTrigger?.focus(), 0)
                   }}
-                  selectedMatch={selectedPreviewMatch}
+                  selectedMatch={props.selectedPreviewMatch}
                   preview={props.answerPreview}
                 />
               ) : (
@@ -129,7 +151,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
             label: 'Verses',
             value: 'verses',
             content:
-              hasPreviewOnlyData && props.answerPreview ? (
+              previewLane && props.answerPreview ? (
                 <PreviewOnlyTabPanel
                   allMatchesOpen={props.allMatchesOpen}
                   loadingAllMatches={props.loadingAllMatches}
@@ -172,7 +194,8 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
                       if (scrollTop !== null && window.matchMedia('(max-width: 767px)').matches) {
                         window.scrollTo({ behavior: 'auto', top: scrollTop })
                       }
-                      detailsTriggerRef.current?.focus()
+                      const trigger = detailsTriggerRef.current
+                      window.setTimeout(() => trigger?.focus(), 0)
                     }}
                     onOpenExplore={props.onOpenResultExplore}
                     ref={detailPanelRef}
@@ -184,7 +207,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
             label: 'Explore',
             value: 'explore',
             content:
-              hasPreviewOnlyData && props.answerPreview ? (
+              previewLane && props.answerPreview ? (
                 <PreviewOnlyTabPanel
                   allMatchesOpen={props.allMatchesOpen}
                   loadingAllMatches={props.loadingAllMatches}
@@ -208,7 +231,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
             label: 'Sources',
             value: 'sources',
             content:
-              hasPreviewOnlyData && props.answerPreview ? (
+              previewLane && props.answerPreview ? (
                 <PreviewOnlyTabPanel
                   allMatchesOpen={props.allMatchesOpen}
                   loadingAllMatches={props.loadingAllMatches}
@@ -229,6 +252,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
     </section>
   )
 }
+
 function PreviewOnlyTabPanel({
   allMatchesOpen,
   loadingAllMatches,
@@ -244,36 +268,31 @@ function PreviewOnlyTabPanel({
   preview: AnswerPreview
   tab: 'verses' | 'explore' | 'sources'
 }) {
-  const titleId = `search-preview-only-${tab}-title`
   function showAllMatches() {
     onOpenOverview()
     onOpenAllMatches()
   }
 
   return (
-    <section aria-labelledby={titleId} className="qar-react-search-preview-tab-note">
-      <p className="qar-react-search-overview-eyebrow">Answer preview active</p>
-      <h3 id={titleId}>{previewOnlyTitle(tab)}</h3>
-      <p dir="auto">
-        <bdi>{preview.query}</bdi> is loaded as an Ask preview. This tab has no separate result window for the preview
-        state.
-      </p>
-      <p>
-        Open Overview for supported claims and best evidence. Use Show all matches to expand the source-backed matches.
-      </p>
-      <div className="qar-react-search-preview-tab-actions">
-        <Button onClick={onOpenOverview} size="sm" variant="primary">
-          View Overview
-        </Button>
-        {!allMatchesOpen ? (
-          <Button disabled={loadingAllMatches} onClick={showAllMatches} size="sm" variant="secondary">
-            {loadingAllMatches ? 'Loading matches' : 'Show all matches'}
+    <Status
+      action={
+        <>
+          <Button onClick={onOpenOverview} size="sm" variant="primary">
+            View Overview
           </Button>
-        ) : (
-          <span className="qar-react-search-preview-tab-status">All matches are open on Overview.</span>
-        )}
-      </div>
-    </section>
+          {!allMatchesOpen ? (
+            <Button disabled={loadingAllMatches} onClick={showAllMatches} size="sm" variant="secondary">
+              {loadingAllMatches ? 'Loading matches' : 'Show all matches'}
+            </Button>
+          ) : (
+            <span className="qar:text-xs qar:text-muted">All matches are open on Overview.</span>
+          )}
+        </>
+      }
+      description={`${preview.query} is loaded as an answer preview. This tab has no separate result window for the preview state. Open Overview for supported answers and best evidence. Use Show all matches to expand the source-backed matches.`}
+      title={previewOnlyTitle(tab)}
+      tone="info"
+    />
   )
 }
 

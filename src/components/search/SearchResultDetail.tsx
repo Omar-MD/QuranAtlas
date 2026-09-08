@@ -1,12 +1,13 @@
 import { ArrowLeft } from 'lucide-react'
 import { forwardRef, type ReactNode } from 'react'
 
-import { Button, IconButton } from '../ui'
+import { Button, Card, IconButton } from '../ui'
 import type { MatchCardLite } from '../../../shared/search'
 import type { SearchDetailsViewModel, SearchExploreModuleId } from './search-presentation-model'
+import { useMediaQuery } from './useMediaQuery'
 
 export const SearchResultDetail = forwardRef<
-  HTMLElement,
+  HTMLDivElement,
   {
     details: SearchDetailsViewModel | null
     previewMatch?: MatchCardLite | null
@@ -14,20 +15,43 @@ export const SearchResultDetail = forwardRef<
     onOpenExplore?: (result: SearchDetailsViewModel['result'], module?: SearchExploreModuleId) => void
   }
 >(function SearchResultDetail({ details, onClose, onOpenExplore, previewMatch }, ref) {
+  // D-M4: the mobile/desktop close split is conditional render, not a CSS
+  // display rule a utility layer could override.
+  const isMobileViewport = useMediaQuery('(max-width: 767px)')
+
   if (!details && !previewMatch) {
     return (
-      <section aria-label="Search result detail" className="qar-react-search-result-detail" ref={ref} tabIndex={-1}>
+      <Card
+        aria-label="Search result detail"
+        className="qar-react-search-result-detail"
+        ref={ref}
+        role="region"
+        tabIndex={-1}
+      >
         <p className="qar:m-0 qar:text-sm qar:text-muted">Choose a verse and open Details to inspect why it matched.</p>
-      </section>
+      </Card>
     )
   }
 
+  const closeControl = onClose ? (
+    isMobileViewport ? (
+      <IconButton label="Back to search results" onClick={onClose}>
+        <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.75} />
+      </IconButton>
+    ) : (
+      <Button onClick={onClose} size="sm" variant="ghost">
+        Close
+      </Button>
+    )
+  ) : null
+
   if (previewMatch) {
     return (
-      <section
+      <Card
         aria-label={`Details for ${previewMatch.refLabel}`}
         className="qar-react-search-result-detail"
         ref={ref}
+        role="region"
         tabIndex={-1}
       >
         <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
@@ -37,11 +61,7 @@ export const SearchResultDetail = forwardRef<
               <bdi>{previewMatch.title}</bdi>
             </h3>
           </div>
-          {onClose ? (
-            <IconButton className="qar-react-search-detail-back" label="Back to search results" onClick={onClose}>
-              <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.75} />
-            </IconButton>
-          ) : null}
+          {closeControl}
         </div>
         <DetailSection title="Why this matched">
           <p className="qar:m-0" dir="auto">
@@ -56,17 +76,18 @@ export const SearchResultDetail = forwardRef<
           ]}
           title="Evidence"
         />
-      </section>
+      </Card>
     )
   }
 
   if (!details) return null
 
   return (
-    <section
+    <Card
       aria-label={`Details for ${details.title}`}
       className="qar-react-search-result-detail"
       ref={ref}
+      role="region"
       tabIndex={-1}
     >
       <div className="qar:flex qar:items-start qar:justify-between qar:gap-3">
@@ -76,16 +97,7 @@ export const SearchResultDetail = forwardRef<
             <bdi>{details.title}</bdi>
           </h3>
         </div>
-        {onClose ? (
-          <>
-            <IconButton className="qar-react-search-detail-back" label="Back to search results" onClick={onClose}>
-              <ArrowLeft aria-hidden="true" size={18} strokeWidth={1.75} />
-            </IconButton>
-            <Button className="qar-react-search-detail-close" onClick={onClose} size="sm" variant="ghost">
-              Close
-            </Button>
-          </>
-        ) : null}
+        {closeControl}
       </div>
       <DetailSection title="Why this matched">
         <p className="qar:m-0" dir="auto">
@@ -106,7 +118,7 @@ export const SearchResultDetail = forwardRef<
       <DetailRows rows={details.readerMappingRows} title="Reader mapping" />
       <DetailRows rows={details.evidenceRows} title="Evidence" />
       <DetailRows rows={details.sourceRows} title="Sources" />
-    </section>
+    </Card>
   )
 })
 

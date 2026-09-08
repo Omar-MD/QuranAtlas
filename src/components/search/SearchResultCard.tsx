@@ -1,7 +1,7 @@
 import { ArrowUpRight } from 'lucide-react'
 
 import type { SearchResultDto } from '../../search/schema'
-import { Button, IconButton, Tooltip } from '../ui'
+import { Button, IconButton, ListRow, ListRowActions, Tooltip } from '../ui'
 import type { SearchVerseCardViewModel } from './search-presentation-model'
 
 export function SearchResultCard({
@@ -18,50 +18,33 @@ export function SearchResultCard({
   selected?: boolean
 }) {
   return (
-    <article
+    <ListRow
+      action={
+        <ListRowActions>
+          {card.canOpenInRead ? (
+            <Tooltip content="Open in Reader">
+              <IconButton label={`Open ${card.refLabel} in Reader`} onClick={() => onOpenInRead(card.result)}>
+                <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.75} />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+          <Button
+            onClick={(event) => {
+              onDetailsTrigger?.(event.currentTarget)
+              onSelect(card.result)
+            }}
+            size="sm"
+            variant="secondary"
+          >
+            Details
+          </Button>
+        </ListRowActions>
+      }
       aria-label={`Search result ${card.refLabel}`}
-      aria-current={selected ? 'true' : undefined}
-      className="qar-react-search-result-row"
-      data-selected={selected ? 'true' : undefined}
-    >
-      <div className="qar-react-search-result-row-head">
-        <p className="qar-react-search-result-ref" dir="auto">
-          {card.refLabel}
-        </p>
-        {card.canOpenInRead ? (
-          <Tooltip content="Open in Reader">
-            <IconButton
-              className="qar-react-search-result-jump"
-              label={`Open ${card.refLabel} in Reader`}
-              onClick={() => onOpenInRead(card.result)}
-            >
-              <ArrowUpRight aria-hidden="true" size={17} strokeWidth={1.75} />
-            </IconButton>
-          </Tooltip>
-        ) : null}
-      </div>
-      <div className="qar-react-search-result-passages">
-        <p className="qar-react-search-result-snippet qar-react-search-result-arabic" dir="rtl" lang="ar">
-          <bdi>{card.primaryText}</bdi>
-        </p>
-        {card.secondaryText ? (
-          <p className="qar-react-search-result-context" dir="ltr">
-            <bdi>{card.secondaryText}</bdi>
-          </p>
-        ) : null}
-      </div>
-      <div className="qar-react-search-result-actions">
-        <Button
-          onClick={(event) => {
-            onDetailsTrigger?.(event.currentTarget)
-            onSelect(card.result)
-          }}
-          size="sm"
-          variant="secondary"
-        >
-          Details
-        </Button>
-      </div>
-    </article>
+      current={selected}
+      meta={card.secondaryText ? <bdi>{card.secondaryText}</bdi> : undefined}
+      num={card.refLabel}
+      title={<bdi>{card.primaryText}</bdi>}
+    />
   )
 }

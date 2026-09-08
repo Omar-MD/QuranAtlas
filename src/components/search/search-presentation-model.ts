@@ -1,3 +1,4 @@
+import type { AnswerPreview } from '../../../shared/search'
 import type { ParsedSearchQuery, SearchBriefDto, SearchQueryMode, SearchResultDto } from '../../search/schema'
 import { formatSearchReference, laneLabel, mappingLabel, modeLabel } from './search-labels'
 import { getResultMatchEvidence } from './search-result-evidence'
@@ -89,9 +90,32 @@ export type SearchOutputViewModel = {
   exploreModules: SearchExploreModuleId[]
   exploreSummaries: SearchExploreSummary[]
   overview: SearchOverviewViewModel | null
+  previewSurface: SearchPreviewSurface | null
   sources: SearchSourcesViewModel | null
   tabs: Array<{ label: string; value: SearchWorkspaceTab }>
   verseCards: SearchVerseCardViewModel[]
+}
+
+export type SearchPreviewSurface = 'preview' | 'no-results'
+
+/**
+ * Lane contract (brief §5): the answer-preview surface is reserved for queries
+ * that produced claims or evidence; a zero-match lookup owns the "No results"
+ * status instead (D-M1). The ask lane ("No supported answer" status) applies
+ * only to question-shaped queries.
+ */
+export function previewSurfaceForPreview(preview: AnswerPreview | null): SearchPreviewSurface | null {
+  if (!preview) return null
+  if (preview.claims.length > 0 || preview.evidenceAtoms.length > 0) return 'preview'
+  return 'no-results'
+}
+
+/**
+ * Ask-lane predicate: only question-shaped queries surface the "No supported
+ * answer" status (brief §5.3).
+ */
+export function previewIsAskIntent(preview: AnswerPreview): boolean {
+  return preview.queryUnderstanding.intent === 'answer-question'
 }
 
 export function defaultTabForParsedSearch(parsed: ParsedSearchQuery, mode: SearchQueryMode): SearchWorkspaceTab {
@@ -254,6 +278,7 @@ export function toSourcesViewModel(brief: SearchBriefDto | null): SearchSourcesV
 }
 
 export function deriveSearchOutputViewModel(input: {
+  answerPreview?: AnswerPreview | null
   brief: SearchBriefDto | null
   defaultTab: SearchWorkspaceTab
   hasMoreResults: boolean
@@ -266,6 +291,7 @@ export function deriveSearchOutputViewModel(input: {
     exploreModules: exploreModulesForBrief(input.brief),
     exploreSummaries: exploreSummariesForBrief(input.brief, input.results),
     overview: toOverviewViewModel(input.brief, input.hasMoreResults, input.results),
+    previewSurface: previewSurfaceForPreview(input.answerPreview ?? null),
     sources: toSourcesViewModel(input.brief),
     tabs: [
       { label: 'Overview', value: 'overview' },

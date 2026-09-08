@@ -1,5 +1,5 @@
 import type { SearchResultDto } from '../../search/schema'
-import { ListRow, Status } from '../ui'
+import { Card, ListRow, Status } from '../ui'
 import { SearchGraphExplore } from './SearchGraphExplore'
 import { SearchMorphologyPanel } from './SearchMorphologyPanel'
 import type { SearchExploreModuleId, SearchExploreSummary } from './search-presentation-model'
@@ -70,20 +70,22 @@ function ExploreSummaryList({
   return (
     <ul className="qar-react-search-explore-modules">
       {summaries.map((summary) => (
-        <li data-focused={summary.id === focusedModule ? 'true' : undefined} key={summary.id}>
-          <h3>{summary.title}</h3>
-          <p>{summary.description}</p>
-          <dl>
-            {summary.rows.map((row) => (
-              <div key={`${summary.id}:${row.label}`}>
-                <dt>{row.label}</dt>
-                <dd>
-                  <bdi>{row.value}</bdi>
-                  <small>{row.scope}</small>
-                </dd>
-              </div>
-            ))}
-          </dl>
+        <li key={summary.id}>
+          <Card data-focused={summary.id === focusedModule ? 'true' : undefined}>
+            <h3>{summary.title}</h3>
+            <p>{summary.description}</p>
+            <dl>
+              {summary.rows.map((row) => (
+                <div key={`${summary.id}:${row.label}`}>
+                  <dt>{row.label}</dt>
+                  <dd>
+                    <bdi>{row.value}</bdi>
+                    <small>{row.scope}</small>
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
         </li>
       ))}
     </ul>

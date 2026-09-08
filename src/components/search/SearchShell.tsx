@@ -100,6 +100,13 @@ export function SearchShell() {
     />
   )
 
+  const packGateLoading =
+    search.packState === 'loading' ||
+    search.packState === 'installing' ||
+    search.packState === 'staged' ||
+    search.packState === 'verifying' ||
+    search.packState === 'update available'
+
   const statusMessage = [search.searchStatus, savedStatusMessage && !search.error ? savedStatusMessage : '']
     .filter(Boolean)
     .join(' ')
@@ -134,11 +141,12 @@ export function SearchShell() {
               }}
               query={search.query}
             />
-            <div className="qar-react-search-status-row">
-              <p>{search.packMessage}</p>
-            </div>
             {search.error ? <Status description={search.error} title="Search unavailable" tone="error" /> : null}
-            <SearchIndexGate message={search.packMessage} ready={search.packState === 'active'}>
+            <SearchIndexGate
+              loading={packGateLoading}
+              message={search.packMessage}
+              ready={search.packState === 'active'}
+            >
               <SearchWorkspace
                 activeTab={search.activeWorkspaceTab}
                 allMatches={search.allMatches}
@@ -163,6 +171,8 @@ export function SearchShell() {
                 onOpenPreviewInRead={openPreviewRefInRead}
                 onOpenResultExplore={search.openResultExplore}
                 onSelectResult={search.setSelectedResult}
+                onSelectPreviewMatch={search.setSelectedPreviewMatch}
+                selectedPreviewMatch={search.selectedPreviewMatch}
                 loadingAllMatches={search.loadingAllMatches}
                 packVersion={search.packVersion}
                 resultCountMessage={search.resultCountMessage}

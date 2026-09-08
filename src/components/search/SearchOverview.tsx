@@ -1,4 +1,4 @@
-import { Badge, Button, Status } from '../ui'
+import { Badge, Button, Card, Status } from '../ui'
 import type { SearchOverviewAction, SearchOverviewViewModel } from './search-presentation-model'
 
 type SearchOverviewProps = {
@@ -12,7 +12,7 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
   }
 
   return (
-    <section aria-labelledby="search-overview-title" className="qar-react-search-overview">
+    <Card aria-labelledby="search-overview-title" className="qar-react-search-overview">
       <div className="qar-react-search-overview-head">
         <div>
           <p className="qar-react-search-overview-eyebrow">Overview</p>
@@ -80,6 +80,6 @@ export function SearchOverview({ onAction, overview }: SearchOverviewProps) {
           </Button>
         ))}
       </div>
-    </section>
+    </Card>
   )
 }

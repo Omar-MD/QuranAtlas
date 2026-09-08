@@ -1,5 +1,5 @@
 import * as ProgressPrimitive from '@radix-ui/react-progress'
-import type { HTMLAttributes, ReactNode } from 'react'
+import type { ComponentProps, HTMLAttributes, ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 
@@ -156,7 +156,7 @@ export function ListRowActions({ className, ...props }: ListRowActionsProps) {
   return <div className={cn('qar:flex qar:shrink-0 qar:items-center qar:gap-1', className)} {...props} />
 }
 
-export type CardProps = HTMLAttributes<HTMLDivElement> & { title?: ReactNode }
+export type CardProps = ComponentProps<'div'> & { title?: ReactNode }
 
 export function Card({ title, className, children, ...props }: CardProps) {
   return (
