@@ -92,7 +92,13 @@ retry:
   # Kimi seats run on OpenCode Go for now (OpenRouter key not configured).
   # These chains restore OpenRouter as primary the moment it is
   # authenticated: flip ui_director/ui_visual back and the failing-model
-  # fallback below engages on any OpenRouter outage.
+  # fallback below engages on any OpenRouter outage. Both OpenRouter slugs
+  # are pinned to native-or-lossless endpoints via ~/.omp/agent/models.yml
+  # (K3: mxfp4-native/bf16; K2.6: int4-native/bf16 — both models ship
+  # natively 4-bit, so the guarantee is "never re-quantized below the
+  # official checkpoint"): re-encoded fp4/nvfp4/int4/fp8 endpoints and
+  # unverifiable ones are never used; when no eligible endpoint is up,
+  # requests fail over to the chains below instead of silently degrading.
   fallbackChains:
     openrouter/moonshotai/kimi-k3: opencode-go/kimi-k3
     openrouter/moonshotai/kimi-k2.6: opencode-go/kimi-k2.6
