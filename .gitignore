@@ -28,6 +28,7 @@ tests/e2e/.auth/
 
 # Agent state
 .claude/
+.agents/
 
 # Environment
 .env
