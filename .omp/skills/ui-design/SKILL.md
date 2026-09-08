@@ -10,11 +10,16 @@ Follow this sequence for QuranAtlas UI work. Roles resolve through
 never restate model IDs in skills, agents, or docs. Agents live in
 `.omp/agents/`.
 
-1. **Brief (`ui-director`, `@ui_director`).** Inspect the live UI,
-   `src/design-system/tokens/{primitives,semantic,tailwind-theme}.css`,
-   `src/design-system/registry/component-registry.json`, and every relevant
-   `src/components/ui/**` primitive. Specify exact tokens, components, states,
-   themes, viewports, and motion; leave no aesthetic choice to implementation.
+1. **Brief (`ui-director`, `@ui_director`; one-shot).** The director runs a
+   single self-contained pass per coherent design scope and writes durable
+   briefs under `docs/design/**` — canonical system brief
+   `docs/design/Design.md`, scoped companion briefs in
+   `docs/design/briefs/`. Briefs cover design aesthetics, color palette,
+   design-token definitions, spacing and margins, responsive behavior,
+   page and screen designs, and per-component implementation instructions:
+   exact tokens, components, states, themes, viewports, and motion, with no
+   aesthetic choice left to implementation. Iteration reads the written
+   brief; the director is never re-engaged for the same scope.
 2. **Implement/repair (`ui-implementer`, `@ui_implementer`).** Apply the
    director brief exactly. The implementer is the broad implementation seat,
    not a UI-only seat. Use `skill://ui-verify` and exercise the affected
@@ -24,8 +29,9 @@ never restate model IDs in skills, agents, or docs. Agents live in
    implementer; use a bounded correctness review for behavior changes.
 4. **Visual review/sign-off (`ui-visual-reviewer`, `@ui_visual`).** Review
    rendered pixels at 1280x900 and 375x812 with transient screenshots after
-   coherent screen changes. At milestones return `approve` or concrete
-   visual deltas.
+   coherent screen changes, judging the implementer's work against the
+   director's written brief — it is the foundation for every visual
+   judgment. At milestones return `approve` or concrete visual deltas.
 5. **Correctness review (`ui-correctness-reviewer`, `@ui_correctness`).**
    Run only when behavior, state, persistence, routing, focus,
    accessibility, or TypeScript contracts changed. Never choose styling.

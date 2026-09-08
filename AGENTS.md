@@ -111,18 +111,24 @@ OpenCode Go route (`retry.fallbackChains`); OpenCode Zen stays disabled.
 The main session remains the orchestrator and never switches into a UI
 specialist role.
 
-- The `ui_director` role is the design director, pinned at max effort:
-  detailed briefs and visual design decisions at milestones only. It never
-  implements production UI.
+- The `ui_director` role is the design director, pinned at max effort and
+  retained for one-shot use only: a single self-contained pass per coherent
+  design scope writes the complete durable brief under `docs/design/**`
+  (canonical system brief: `docs/design/Design.md`; scoped companion briefs
+  in `docs/design/briefs/`). It never iterates, answers follow-ups, or
+  implements production UI; later turns read the written brief instead of
+  re-engaging the director.
 - The `ui_implementer` role is the heavy implementation and repair seat,
-  pinned at max effort. It follows the director brief exactly, performs
-  no independent aesthetic invention, and may handle non-UI implementation
-  when explicitly assigned.
+  pinned at max effort. It follows the written director brief exactly,
+  performs no independent aesthetic invention, and may handle non-UI
+  implementation when explicitly assigned.
 - The `ui_visual` role owns rendered visual review and final visual
-  sign-off, pinned at max effort. It never edits production files.
+  sign-off, pinned at max effort. It judges the `ui_implementer`'s work
+  against the director's written brief, which is the foundation for every
+  visual judgment. It never edits production files.
 - The `ui_correctness` role reviews interaction logic, state, focus,
   persistence, routing, accessibility, and TypeScript contracts only,
-  pinned at max effort. It never chooses styling.
+  pinned at high effort. It never chooses styling.
 - The `vision` role backs in-session image and screenshot inspection for
   visual review, pinned at max effort so visual evidence is never
   pre-interpreted below the effort of the seat that owns sign-off.
@@ -131,9 +137,16 @@ specialist role.
 - The `slow` role handles difficult engineering/correctness review and
   exceptional architecture/debug escalation, pinned at max effort.
 
-The UI flow is: director brief → implementer implementation/repair →
-targeted implementer runtime checks → optional independent correctness
-review when behavior changed → visual review and milestone sign-off. Advisor
+The `plan` seat decomposes tasks so that any needed director engagement is
+a single self-contained one-shot dispatch carrying the full companion
+context (task breakdown, token and registry state, relevant primitives,
+affected screens, constraints).
+
+The UI flow is: one-shot director brief written to `docs/design/**` →
+implementer implementation/repair from the written brief → targeted
+implementer runtime checks → optional independent correctness review when
+behavior changed → visual review and milestone sign-off against the written
+brief. Advisor
 review is off by default and is enabled only for a bounded, non-duplicative
 review. Follow `skill://ui-design` and `skill://ui-verify`; agents are
 `.omp/agents/{general-planner,ui-director,ui-implementer,ui-visual-reviewer,ui-correctness-reviewer}.md`.

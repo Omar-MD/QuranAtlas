@@ -20,10 +20,10 @@ modelRoles:
   smol: zai/glm-5.3-flash:low                    # fast mechanical work (sonic)
   commit: zai/glm-5.3-flash:low                  # commit messages
   tiny: zai/glm-5.3-flash:low                    # titles and misc
-  ui_director: openrouter/moonshotai/kimi-k3:max       # design briefs (ui-director)
+  ui_director: openrouter/moonshotai/kimi-k3:max       # one-shot design briefs, written to docs/design/** (ui-director)
   ui_implementer: zai/glm-5.3-flash:max          # implementation/repair (ui-implementer)
-  ui_visual: openrouter/moonshotai/kimi-k2.6:xhigh   # visual review (ui-visual-reviewer)
-  ui_correctness: openai-codex/gpt-5.6-luna:max       # correctness (ui-correctness-reviewer)
+  ui_visual: openrouter/moonshotai/kimi-k2.6:xhigh   # visual sign-off, judged against the written brief (ui-visual-reviewer)
+  ui_correctness: zai/glm-5.3-flash:high        # UI review: non-visual correctness (ui-correctness-reviewer)
 
 plan:
   defaultOnStartup: false
@@ -76,8 +76,10 @@ task:
   agentModelOverrides:
     task: "@task"
     scout: "@task"
-    reviewer: "@ui_correctness"
-    security-reviewer: "@ui_correctness"
+    # Generic review seats stay on the strong-reviewer role; the
+    # @ui_correctness seat is reserved for the UI feedback loop.
+    reviewer: "@slow"
+    security-reviewer: "@slow"
     sonic: "@smol"
   agentAdvisor:
     task: "off"
@@ -94,8 +96,10 @@ task:
 retry:
   maxRetries: 3
   modelFallback: true
-  # The design/visual seats run on OpenRouter; on any OpenRouter outage the
-  # chains below fail over to OpenCode Go instead of silently degrading.
+  # The design/visual seats run on OpenRouter — K3 solely for one-shot
+  # brief generation (single self-contained passes, no iteration), K2.6 for
+  # visual sign-off; on any OpenRouter outage the chains below fail over
+  # to OpenCode Go instead of silently degrading.
   # Both OpenRouter slugs are pinned to native-or-lossless endpoints via
   # ~/.omp/agent/models.yml (K3: mxfp4-native/bf16; K2.6: int4-native/bf16
   # — both models ship natively 4-bit, so the guarantee is "never
@@ -111,10 +115,14 @@ retry:
   # to cover exact and normalized lookups alike (keeping each failover at
   # the seat's max effort: k3 → :max, k2.6 → :xhigh).
   fallbackChains:
-    openrouter/moonshotai/kimi-k3: opencode-go/kimi-k3:max
-    openrouter/moonshotai/kimi-k3:max: opencode-go/kimi-k3:max
-    openrouter/moonshotai/kimi-k2.6: opencode-go/kimi-k2.6:xhigh
-    openrouter/moonshotai/kimi-k2.6:xhigh: opencode-go/kimi-k2.6:xhigh
+    openrouter/moonshotai/kimi-k3:
+      - opencode-go/kimi-k3:max
+    openrouter/moonshotai/kimi-k3:max:
+      - opencode-go/kimi-k3:max
+    openrouter/moonshotai/kimi-k2.6:
+      - opencode-go/kimi-k2.6:xhigh
+    openrouter/moonshotai/kimi-k2.6:xhigh:
+      - opencode-go/kimi-k2.6:xhigh
 
 providers:
   openai-codex:
