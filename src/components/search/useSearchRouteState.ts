@@ -356,6 +356,10 @@ export function useSearchRouteState(
   // hashchange, so this cannot loop.
   useEffect(() => {
     function onHashChange() {
+      // Overlay/base transitions (e.g. settings opening over a preserved
+      // search base) rewrite the hash away from #/search without unmounting
+      // us; only hashes that belong to the search route carry search state.
+      if (window.location.hash.split('?')[0] !== REACT_ROUTES.search) return
       const next = readSearchHashState()
       // Park until the pack is ready AND the initial restore has committed, so
       // a change landing in that window cannot be overwritten by a stale

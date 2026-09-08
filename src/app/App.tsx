@@ -41,7 +41,7 @@ export function App() {
   const initialRoute = useMemo(() => getInitialReactHash(), [])
   const [hash, setHash] = useState(initialRoute)
   const [launchRefreshVersion, setLaunchRefreshVersion] = useState(0)
-  const [lastReaderHash, setLastReaderHash] = useState<string | null>(null)
+  const [lastBaseHash, setLastBaseHash] = useState<string | null>(null)
   const [settingsOverlay, setSettingsOverlay] = useState<{
     initialAssetsExpanded?: boolean
     mode: SettingsRouteMode
@@ -54,8 +54,8 @@ export function App() {
   const activeRoute = matchReactRoute(activeHash)
   useFirstLaunchNotificationPermission(launchRestore.status === 'ready')
   const transientSettingsHash =
-    !settingsOverlay && activeRoute.type === 'settings' && lastReaderHash && isReaderHash(lastReaderHash)
-      ? lastReaderHash
+    !settingsOverlay && activeRoute.type === 'settings' && lastBaseHash && isBaseHash(lastBaseHash)
+      ? lastBaseHash
       : null
   const route = settingsOverlay
     ? matchReactRoute(settingsOverlay.previousHash)
@@ -72,7 +72,7 @@ export function App() {
       const nextHash = getInitialReactHash()
       if (matchReactRoute(nextHash).type === 'settings') {
         const previousHash = event.oldURL ? new URL(event.oldURL, window.location.href).hash : hash
-        if (isReaderHash(previousHash)) setLastReaderHash(previousHash)
+        if (isBaseHash(previousHash)) setLastBaseHash(previousHash)
       }
       setHash(nextHash)
     }
@@ -103,7 +103,7 @@ export function App() {
       subscribeReactSettingsOverlayRequests((request) => {
         const previousHash = window.location.hash
         if (!isReaderHash(previousHash)) return
-        setLastReaderHash(previousHash)
+        setLastBaseHash(previousHash)
         setSettingsOverlay({
           mode: settingsModeForHash(previousHash),
           previousHash,
@@ -121,7 +121,7 @@ export function App() {
 
   useEffect(() => {
     if (launchRestore.status !== 'ready') return
-    if (isReaderHash(activeHash)) setLastReaderHash(activeHash)
+    if (isBaseHash(activeHash)) setLastBaseHash(activeHash)
     if (!shouldPersistLastSurface(activeHash)) return
     let active = true
     void writeNormalizedLastSurface(activeHash, () => active).then(() => {
@@ -139,7 +139,7 @@ export function App() {
 
     async function openSettingsOverlay() {
       const initialAssetsExpanded = activeHash.split('?')[0] === REACT_ROUTES.assets
-      const previousHash = await resolveSettingsPreviousHash(lastReaderHash)
+      const previousHash = await resolveSettingsPreviousHash(lastBaseHash)
       if (!active) return
       setSettingsOverlay({
         initialAssetsExpanded,
@@ -154,7 +154,7 @@ export function App() {
     return () => {
       active = false
     }
-  }, [activeHash, activeRoute.type, lastReaderHash, launchRestore.status])
+  }, [activeHash, activeRoute.type, lastBaseHash, launchRestore.status])
 
   function closeSettingsOverlay() {
     const previousHash = settingsOverlay?.previousHash
@@ -239,8 +239,8 @@ export function App() {
   )
 }
 
-async function resolveSettingsPreviousHash(lastReaderHash: string | null): Promise<string> {
-  if (lastReaderHash && isReaderHash(lastReaderHash)) return lastReaderHash
+async function resolveSettingsPreviousHash(lastBaseHash: string | null): Promise<string> {
+  if (lastBaseHash && isBaseHash(lastBaseHash)) return lastBaseHash
   try {
     const record = await readNativeSetting('lastSurface')
     if (typeof record?.value === 'string' && isReaderHash(record.value)) return record.value
@@ -263,6 +263,12 @@ function settingsModeForHash(hash: string): SettingsRouteMode {
 function isReaderHash(hash: string): boolean {
   const route = matchReactRoute(hash)
   return route.type === 'reader' || route.type === 'mushaf'
+}
+
+function isBaseHash(hash: string): boolean {
+  if (isReaderHash(hash)) return true
+  const route = matchReactRoute(hash)
+  return route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'search' || route.type === 'about'
 }
 
 function UnsupportedRoute({ hash }: { hash: string }) {

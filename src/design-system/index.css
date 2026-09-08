@@ -1067,14 +1067,6 @@
     background: var(--qa-react-settings-header);
   }
 
-  .qar-react-mushaf-page-actions > button {
-    inline-size: 48px;
-    block-size: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    padding: 0;
-    border-radius: var(--qa-react-radius-pill);
-  }
   [data-sheet-variant="adaptive-settings"] > div:first-child > button {
     min-width: var(--qa-react-control-touch-target);
     min-height: var(--qa-react-control-touch-target);
@@ -1420,6 +1412,14 @@
     .qar-react-settings-shell .qar-react-settings-appearance-panel + .qar-react-settings-appearance-panel {
       border-top: 1px solid var(--qa-react-settings-divider);
       border-inline-start: 0;
+    }
+  }
+
+  /* Scroll cue is a narrow-viewport affordance (S-P7); the compact-landscape
+     layout above stays combined, but the cue must not leak to wide viewports. */
+  @media (max-width: 767px) {
+    .qar-react-settings-body {
+      box-shadow: inset 0 -1px 0 var(--qa-react-settings-divider);
     }
   }
   .qar-reader-chrome {
@@ -2553,6 +2553,16 @@
     box-shadow: var(--qa-react-nav-shadow-control);
     transform: translateX(-50%);
     backdrop-filter: blur(14px);
+  }
+
+  /* biome-ignore lint/style/noDescendingSpecificity: relocated here from the settings block (S-P8); the earlier settings-header `> button` rule styles a disjoint element tree, so the order is cosmetic only */
+  .qar-react-mushaf-page-actions > button {
+    inline-size: 48px;
+    block-size: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    border-radius: var(--qa-react-radius-pill);
   }
 
   .qar-react-mushaf-page-counter {

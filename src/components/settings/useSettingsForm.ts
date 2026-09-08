@@ -91,6 +91,9 @@ export function useSettingsForm(): {
     setSettingsWriteStatus('saving')
     setSettingsWriteError(null)
     const persist = () => {
+      // Retry re-enters here: flip error -> saving so Retry disables while the
+      // write is in flight, and clear the banner only when the write lands.
+      setSettingsWriteStatus('saving')
       const write = writeQueueRef.current.then(async () => {
         const db = await openReactDb()
         await writeReactReaderPreferences(db, {
@@ -104,6 +107,7 @@ export function useSettingsForm(): {
         .then(() => {
           retrySettingsWriteRef.current = null
           setSettingsWriteStatus('idle')
+          setSettingsWriteError(null)
         })
         .catch(() => {
           retrySettingsWriteRef.current = persist

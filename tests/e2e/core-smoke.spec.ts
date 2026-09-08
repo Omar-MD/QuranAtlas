@@ -16,7 +16,9 @@ test('boots the reader and reaches primary reader, search, and settings surfaces
   await expect(page.getByLabel('Search Quran text, translation, or context')).toBeVisible()
 
   await page.goto('/#/settings')
-  await expect(page).toHaveURL(/#\/s\/1$/)
+  // S-P4: opening settings from a ChromeFrame base (search) preserves that base
+  // instead of teleporting to the reader.
+  await expect(page).toHaveURL(/#\/search(?:\?.*)?$/)
   await expect(page.getByRole('heading', { name: 'Verse settings' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Included reading assets' })).toBeVisible()
   await page.getByRole('button', { name: 'Close settings', exact: true }).click()

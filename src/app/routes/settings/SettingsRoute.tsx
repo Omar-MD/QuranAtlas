@@ -8,7 +8,7 @@ import { SettingsGroup } from '../../../components/settings/SettingsGroup'
 import { ThemeNightControls } from '../../../components/settings/ThemeNightControls'
 import { VerseSettings } from '../../../components/settings/VerseSettings'
 import { useSettingsForm } from '../../../components/settings/useSettingsForm'
-import { Button, Switch } from '../../../components/ui'
+import { Button, Status, Switch } from '../../../components/ui'
 import { subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { readNativeSettings } from '../../../storage/native-reader-store'
 import type { NormalizedRect } from '../../../components/reader/mushaf-page-framing'
@@ -93,20 +93,20 @@ export function SettingsRoute({
       title={mode === 'verse' ? 'Verse settings' : 'Mushaf settings'}
     >
       {settingsWriteError ? (
-        <div
-          className="qar:flex qar:items-center qar:justify-between qar:gap-3 qar:border qar:border-danger qar:bg-surface qar:p-3"
-          role="alert"
-        >
-          <span>{settingsWriteError}</span>
-          <Button
-            disabled={settingsWriteStatus === 'saving'}
-            onClick={retrySettingsWrite}
-            size="sm"
-            variant="secondary"
-          >
-            {settingsWriteStatus === 'saving' ? 'Saving...' : 'Retry'}
-          </Button>
-        </div>
+        <Status
+          action={
+            <Button
+              disabled={settingsWriteStatus === 'saving'}
+              onClick={retrySettingsWrite}
+              size="sm"
+              variant="secondary"
+            >
+              {settingsWriteStatus === 'saving' ? 'Saving...' : 'Retry'}
+            </Button>
+          }
+          title={settingsWriteError}
+          tone="error"
+        />
       ) : null}
       {mode === 'verse' ? (
         <VerseSettings

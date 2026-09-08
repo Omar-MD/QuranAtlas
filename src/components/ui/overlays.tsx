@@ -172,7 +172,7 @@ export function Sheet({
               return
             }
             if (variant !== 'adaptive-settings' && !returnFocusId) return
-            const targetIds = [returnFocusId, 'reader-settings-trigger', 'reader-main']
+            const targetIds = [returnFocusId, 'chrome-settings-trigger', 'reader-settings-trigger', 'reader-main']
             const target = targetIds
               .filter((id): id is string => Boolean(id))
               .map((id) => document.getElementById(id))
