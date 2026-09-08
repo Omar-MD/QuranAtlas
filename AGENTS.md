@@ -65,92 +65,32 @@ shell fast and the reader usable without a connection.
 - Put temporary notes and scratch files under `.scratch/` and keep secrets out
   of the repository.
 
-## Main-Session Orchestration
-The main OMP session is a bounded orchestrator, not a production implementer.
-Follow OMP's built-in orchestration surfaces; no bespoke orchestrator code
-runs in this repository. Model bindings live only in `.omp/config.yml`
-(`modelRoles`); every document in this repository refers to roles, never to
-model IDs.
+## Orchestration (OMP)
 
-- **Vibe mode** (`/vibe`) is OMP's director pattern for orchestrator-only
-  main sessions: the director's active tools reduce to `read`, parent-owned
-  `todo`, and the `vibe_spawn`/`vibe_send`/`vibe_wait`/`vibe_kill`/
-  `vibe_list` controls, while persistent keep-alive workers do the
-  searching, editing, running, and building. `fast` workers resolve to
-  bundled `sonic` (`@smol`), `good` workers to bundled `task` (`@task`).
-  Enter `/vibe` whenever a session should stay orchestrator-only; there is
-  no persistent default-on setting, and it is mutually exclusive with
-  plan/goal modes.
-- **The `orchestrate` magic keyword** (enabled) injects OMP's per-turn
-  multi-agent contract: scope the whole task, delegate substantial
-  independent work in parallel, verify each phase, and continue until the
-  request is complete. Use it for one-off orchestration without entering
-  vibe mode.
-- **`task` + `hub`** are the ordinary delegation surfaces: batch fan-out
-  with the required shared `context`, follow-ups via `hub` messaging
-  instead of fresh spawns, outputs via `agent://<id>` and transcripts via
-  `history://<id>`.
-- The `default` role owns the main session, pinned at max effort: intent,
-  decomposition, dispatch, scheduling, evidence review, and the final
-  response.
-- The `plan` role backs the general-planner worker for substantial general
-  technical planning (max effort); the `ui_implementer` role backs the
-  broad implementation and repair worker, not a UI-only seat (max effort).
-  Generic workers run at the `@task` role (max effort).
-- Delegation stays shallow (`task.maxRecursionDepth: 1`); workers do not
-  become replacement orchestrators.
-- Advisors are disabled by default. Enable one only for a bounded,
-  independently useful review; never create a duplicate reasoning stream.
+The main OMP session is a bounded orchestrator, not a production implementer;
+no bespoke orchestrator code runs in this repository.
 
-## UI Model-Role Protocol
+- Use OMP's built-in surfaces: `/vibe` for orchestrator-only sessions, the
+  `orchestrate` keyword for one-off multi-agent turns, and `task` + `hub` for
+  ordinary delegation. Delegation stays shallow.
+- Model bindings live only in `.omp/config.yml` (`modelRoles`); every
+  document in this repository refers to roles, never to model IDs.
+- Advisors are disabled by default; enable one only for a bounded,
+  independently useful review.
 
-UI work follows the four-seat loop configured in `.omp/config.yml`
-(`modelRoles`) — the single source of model bindings. The `ui_director`
-and `ui_visual` seats run on OpenRouter with automatic failover to the
-OpenCode Go route (`retry.fallbackChains`); OpenCode Zen stays disabled.
-The main session remains the orchestrator and never switches into a UI
-specialist role.
+## UI Roles (OMP)
 
-- The `ui_director` role is the design director, pinned at max effort and
-  retained for one-shot use only: a single self-contained pass per coherent
-  design scope writes the complete durable brief under `docs/design/**`
-  (canonical system brief: `docs/design/Design.md`; scoped companion briefs
-  in `docs/design/briefs/`). It never iterates, answers follow-ups, or
-  implements production UI; later turns read the written brief instead of
-  re-engaging the director.
-- The `ui_implementer` role is the heavy implementation and repair seat,
-  pinned at max effort. It follows the written director brief exactly,
-  performs no independent aesthetic invention, and may handle non-UI
-  implementation when explicitly assigned.
-- The `ui_visual` role owns rendered visual review and final visual
-  sign-off, pinned at max effort. It judges the `ui_implementer`'s work
-  against the director's written brief, which is the foundation for every
-  visual judgment. It never edits production files.
-- The `ui_correctness` role reviews interaction logic, state, focus,
-  persistence, routing, accessibility, and TypeScript contracts only,
-  pinned at high effort. It never chooses styling.
-- The `vision` role backs in-session image and screenshot inspection for
-  visual review, pinned at max effort so visual evidence is never
-  pre-interpreted below the effort of the seat that owns sign-off.
-- The `plan` role handles substantial general technical planning, pinned
-  at max effort.
-- The `slow` role handles difficult engineering/correctness review and
-  exceptional architecture/debug escalation, pinned at max effort.
+UI work follows the role seats configured in `.omp/config.yml`; the main
+session never switches into a UI specialist role. Per design scope:
 
-The `plan` seat decomposes tasks so that any needed director engagement is
-a single self-contained one-shot dispatch carrying the full companion
-context (task breakdown, token and registry state, relevant primitives,
-affected screens, constraints).
+1. `ui_director` writes the complete brief under `docs/design/**` in a
+   single one-shot pass; later turns read the written brief instead of
+   re-engaging the director.
+2. `ui_implementer` implements or repairs strictly from the written brief,
+   with targeted runtime checks.
+3. `ui_visual` performs rendered review and sign-off against the brief.
+4. `ui_correctness` reviews when behavior or contracts changed — never
+   styling.
 
-The UI flow is: one-shot director brief written to `docs/design/**` →
-implementer implementation/repair from the written brief → targeted
-implementer runtime checks → optional independent correctness review when
-behavior changed → visual review and milestone sign-off against the written
-brief. Advisor
-review is off by default and is enabled only for a bounded, non-duplicative
-review. Follow `skill://ui-design` and `skill://ui-verify`; agents are
-`.omp/agents/{general-planner,ui-director,ui-implementer,ui-visual-reviewer,ui-correctness-reviewer}.md`.
-UI boundaries remain unchanged: check the component registry, compose
-`src/components/ui/**` primitives, keep Radix imports inside that layer, use
-design tokens instead of literals, and verify desktop/mobile across all
-themes.
+Follow `skill://ui-design` and `skill://ui-verify` for the full loop; agent
+definitions live in `.omp/agents/**`.

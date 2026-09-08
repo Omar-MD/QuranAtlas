@@ -10,16 +10,19 @@ Follow this sequence for QuranAtlas UI work. Roles resolve through
 never restate model IDs in skills, agents, or docs. Agents live in
 `.omp/agents/`.
 
-1. **Brief (`ui-director`, `@ui_director`; one-shot).** The director runs a
-   single self-contained pass per coherent design scope and writes durable
-   briefs under `docs/design/**` — canonical system brief
-   `docs/design/Design.md`, scoped companion briefs in
-   `docs/design/briefs/`. Briefs cover design aesthetics, color palette,
-   design-token definitions, spacing and margins, responsive behavior,
-   page and screen designs, and per-component implementation instructions:
-   exact tokens, components, states, themes, viewports, and motion, with no
-   aesthetic choice left to implementation. Iteration reads the written
-   brief; the director is never re-engaged for the same scope.
+1. **Brief (`ui-director`, `@ui_director`; one-shot).** The director owns
+   the complete polish/design/style surface — every decision that changes
+   how the product looks, reads, feels, animates, or responds perceptually
+   (aesthetics, palette, tokens, typography, spacing, motion,
+   interaction-state visuals, responsive behavior, page/screen designs,
+   per-component implementation instructions — illustrative, not
+   exhaustive). It runs a single self-contained pass per coherent design
+   scope and writes durable briefs under `docs/design/**` — canonical
+   system brief `docs/design/Design.md`, scoped companion briefs in
+   `docs/design/briefs/` — specifying exact tokens, components, states,
+   themes, viewports, and motion, with no design choice left to
+   implementation. Iteration reads the written brief; the director is
+   never re-engaged for the same scope.
 2. **Implement/repair (`ui-implementer`, `@ui_implementer`).** Apply the
    director brief exactly. The implementer is the broad implementation seat,
    not a UI-only seat. Use `skill://ui-verify` and exercise the affected

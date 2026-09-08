@@ -25,8 +25,8 @@ The `ui_director` role owns detailed UI direction; the `ui_visual` role
 owns rendered visual review and milestone sign-off. The `ui_correctness`
 role (and `advisor`, when explicitly enabled) reviews non-visual
 correctness. Advisors are disabled by default and may run only as a
-bounded independent review. OpenCode Go serves only as the failover route
-for the OpenRouter-backed design/visual seats; OpenCode Zen stays
+bounded independent review. OpenRouter serves only as the failover route
+for the OpenCode Go-backed design/visual seats; OpenCode Zen stays
 disabled.
 
 ## Screenshots

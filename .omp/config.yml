@@ -20,9 +20,9 @@ modelRoles:
   smol: zai/glm-5.3-flash:low                    # fast mechanical work (sonic)
   commit: zai/glm-5.3-flash:low                  # commit messages
   tiny: zai/glm-5.3-flash:low                    # titles and misc
-  ui_director: openrouter/moonshotai/kimi-k3:max       # one-shot design briefs, written to docs/design/** (ui-director)
+  ui_director: opencode-go/kimi-k3:max            # one-shot design briefs, written to docs/design/** (ui-director)
   ui_implementer: zai/glm-5.3-flash:max          # implementation/repair (ui-implementer)
-  ui_visual: openrouter/moonshotai/kimi-k2.6:xhigh   # visual sign-off, judged against the written brief (ui-visual-reviewer)
+  ui_visual: opencode-go/kimi-k2.6:xhigh          # visual sign-off, judged against the written brief (ui-visual-reviewer)
   ui_correctness: zai/glm-5.3-flash:high        # UI review: non-visual correctness (ui-correctness-reviewer)
 
 plan:
@@ -96,33 +96,34 @@ task:
 retry:
   maxRetries: 3
   modelFallback: true
-  # The design/visual seats run on OpenRouter — K3 solely for one-shot
-  # brief generation (single self-contained passes, no iteration), K2.6 for
-  # visual sign-off; on any OpenRouter outage the chains below fail over
-  # to OpenCode Go instead of silently degrading.
-  # Both OpenRouter slugs are pinned to native-or-lossless endpoints via
-  # ~/.omp/agent/models.yml (K3: mxfp4-native/bf16; K2.6: int4-native/bf16
-  # — both models ship natively 4-bit, so the guarantee is "never
-  # re-quantized below the official checkpoint"): re-encoded
-  # fp4/nvfp4/int4/fp8 endpoints and unverifiable ones are never used; when
-  # no eligible endpoint is up, requests fail over to the chains below.
+  # The design/visual seats run on OpenCode Go first — K3 solely for
+  # one-shot brief generation (single self-contained passes, no iteration),
+  # K2.6 for visual sign-off; on any OpenCode Go outage the chains below
+  # fail over to OpenRouter instead of silently degrading.
+  # The OpenRouter failover slugs are pinned to native-or-lossless
+  # endpoints via ~/.omp/agent/models.yml (K3: mxfp4-native/bf16;
+  # K2.6: int4-native/bf16 — both models ship natively 4-bit, so the
+  # guarantee is "never re-quantized below the official checkpoint"):
+  # re-encoded fp4/nvfp4/int4/fp8 endpoints and unverifiable ones are
+  # never used, so the failover route never degrades below the official
+  # checkpoint.
   # The models.yml pinning is machine-local and untracked: if that file is
   # lost, re-create its native-or-lossless filters before relying on the
-  # OpenRouter seats.
+  # OpenRouter failover.
   #
   # Both key spellings for each Kimi slug are deliberate: effort-suffix
   # matching is undocumented, so the bare and suffixed keys share one value
   # to cover exact and normalized lookups alike (keeping each failover at
   # the seat's max effort: k3 → :max, k2.6 → :xhigh).
   fallbackChains:
-    openrouter/moonshotai/kimi-k3:
-      - opencode-go/kimi-k3:max
-    openrouter/moonshotai/kimi-k3:max:
-      - opencode-go/kimi-k3:max
-    openrouter/moonshotai/kimi-k2.6:
-      - opencode-go/kimi-k2.6:xhigh
-    openrouter/moonshotai/kimi-k2.6:xhigh:
-      - opencode-go/kimi-k2.6:xhigh
+    opencode-go/kimi-k3:
+      - openrouter/moonshotai/kimi-k3:max
+    opencode-go/kimi-k3:max:
+      - openrouter/moonshotai/kimi-k3:max
+    opencode-go/kimi-k2.6:
+      - openrouter/moonshotai/kimi-k2.6:xhigh
+    opencode-go/kimi-k2.6:xhigh:
+      - openrouter/moonshotai/kimi-k2.6:xhigh
 
 providers:
   openai-codex:
