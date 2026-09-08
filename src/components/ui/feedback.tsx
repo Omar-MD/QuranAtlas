@@ -52,7 +52,7 @@ export function Spinner({ label, className, ...props }: SpinnerProps) {
     <span
       aria-label={label}
       className={cn(
-        'qar:inline-flex qar:size-5 qar:animate-spin qar:rounded-surface qar:border-2 qar:border-border qar:border-t-accent',
+        'qar:inline-flex qar:size-5 qar:animate-spin qar:motion-reduce:animate-none qar:rounded-surface qar:border-2 qar:border-border qar:border-t-accent',
         className,
       )}
       role="status"

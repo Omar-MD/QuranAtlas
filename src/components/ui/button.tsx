@@ -12,7 +12,7 @@ export const buttonVariants = cva(
         primary: 'qar:rounded-control qar:bg-accent qar:text-surface qar:hover:bg-accent-strong',
         secondary: 'qar:rounded-control qar:bg-surface qar:text-text qar:hover:border-accent',
         ghost: 'qar:rounded-control qar:border-transparent qar:bg-transparent qar:text-text qar:hover:bg-surface',
-        danger: 'qar:rounded-control qar:bg-danger qar:text-surface qar:hover:opacity-90',
+        danger: 'qar:rounded-control qar:bg-danger qar:text-text-on-danger qar:hover:opacity-90',
         pill: 'qar:rounded-pill',
       },
       size: {

@@ -13,6 +13,7 @@
     --qa-react-accent-strong: #5e3a18;
     --qa-react-focus: #78592e;
     --qa-react-text-on-accent: #faf1d8;
+    --qa-react-text-on-danger: #faf1d8;
     --qa-react-success: #2f6634;
     --qa-react-danger: var(--qar-color-danger-600);
     --qa-react-status-error-border: color-mix(in srgb, var(--qa-react-danger) 60%, var(--qa-react-border));
@@ -33,15 +34,12 @@
     --qa-react-reader-muted: var(--qa-react-text-muted);
     --qa-react-reader-selection: color-mix(in srgb, var(--qa-react-accent) 22%, transparent);
     --qa-react-bookmark-accent: var(--qa-react-accent);
-    --qa-react-bookmark-pulse-bg: color-mix(in srgb, var(--qa-react-bookmark-accent) 22%, transparent);
-    --qa-react-bookmark-pulse-edge: color-mix(in srgb, var(--qa-react-bookmark-accent) 72%, transparent);
     --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 62%, var(--qa-react-canvas));
     --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 88%, var(--qa-react-canvas));
     --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 5%, var(--qa-react-nav-row-surface));
     --qa-react-nav-row-border: color-mix(in srgb, var(--qa-react-border) 82%, var(--qa-react-accent));
     --qa-react-nav-row-separator: color-mix(in srgb, var(--qa-react-border) 70%, transparent);
     --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 10%, var(--qa-react-surface));
-    --qa-react-nav-current-spine: var(--qa-react-accent);
     --qa-react-nav-control-surface: color-mix(in srgb, var(--qa-react-surface) 84%, var(--qa-react-canvas));
     --qa-react-nav-control-selected-surface: color-mix(in srgb, var(--qa-react-accent) 13%, var(--qa-react-surface));
     --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 9%, var(--qa-react-surface));
@@ -152,6 +150,7 @@
     --qa-react-focus: #d4a253;
     --qa-react-text-on-accent: #15110a;
     --qa-react-success: #91c98a;
+    --qa-react-text-on-danger: #f8f2e4;
     --qa-react-nav-header-surface: color-mix(in srgb, var(--qa-react-surface) 72%, var(--qa-react-sheet));
     --qa-react-nav-row-surface: color-mix(in srgb, var(--qa-react-surface) 78%, var(--qa-react-canvas));
     --qa-react-nav-row-surface-hover: color-mix(in srgb, var(--qa-react-accent) 9%, var(--qa-react-nav-row-surface));
@@ -170,6 +169,6 @@
     --qa-react-settings-shadow: 0 18px 48px rgb(0 0 0 / 42%);
     /* Readable yellow: the inherited light #806100 is too dark on the #0f1215 canvas. */
     --qa-react-offline-warning: #d6ae37;
-    --qa-react-scrim: rgb(0 0 0 / 48%);
+    --qa-react-scrim: rgb(0 0 0 / 38%);
   }
 }

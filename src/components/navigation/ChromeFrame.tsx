@@ -36,20 +36,10 @@ export function ChromeBar({
         QuranAtlas
       </Button>
       <div className="qar:flex qar:items-center qar:gap-2">
-        <IconButton
-          className="qar:min-h-11 qar:min-w-11"
-          id="chrome-navigation-trigger"
-          label="Open navigation"
-          onClick={onOpenNavigation}
-        >
+        <IconButton id="chrome-navigation-trigger" label="Open navigation" onClick={onOpenNavigation}>
           <Menu aria-hidden="true" size={24} strokeWidth={1.7} />
         </IconButton>
-        <IconButton
-          className="qar:min-h-11 qar:min-w-11"
-          id="chrome-settings-trigger"
-          label="Open settings"
-          onClick={onOpenSettings}
-        >
+        <IconButton id="chrome-settings-trigger" label="Open settings" onClick={onOpenSettings}>
           <Settings aria-hidden="true" size={24} strokeWidth={1.6} />
         </IconButton>
       </div>

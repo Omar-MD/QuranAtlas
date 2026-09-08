@@ -34,7 +34,7 @@ export function Dialog({ initialFocusRef, title, trigger, children, onOpenChange
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30" />
+        <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-40 qar-react-scrim" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           className="qar:fixed qar:left-1/2 qar:top-1/2 qar:z-50 qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg"
@@ -151,8 +151,8 @@ export function Sheet({
           <DialogPrimitive.Overlay
             className={
               isNavigationDrawer
-                ? 'qar:fixed qar:inset-0 qar:z-40 qar-react-sheet-scrim'
-                : 'qar:fixed qar:inset-0 qar:z-40 qar:bg-text/30'
+                ? 'qar:fixed qar:inset-0 qar:z-40 qar-react-scrim qar-react-sheet-scrim'
+                : 'qar:fixed qar:inset-0 qar:z-40 qar-react-scrim'
             }
           />
         ) : null}

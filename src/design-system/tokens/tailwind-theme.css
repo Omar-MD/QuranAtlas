@@ -13,6 +13,7 @@
   --color-accent-strong: var(--qa-react-accent-strong);
   --color-focus: var(--qa-react-focus);
   --color-danger: var(--qa-react-danger);
+  --color-text-on-danger: var(--qa-react-text-on-danger);
   --radius-control: var(--qa-react-radius-control);
   --radius-surface: var(--qa-react-radius-surface);
   --radius-pill: var(--qa-react-radius-pill);

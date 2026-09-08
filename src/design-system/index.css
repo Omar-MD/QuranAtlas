@@ -1,8 +1,12 @@
+@import "./tokens/tailwind-theme.css";
+
+/* Tailwind's layer chain (theme, base, components, utilities) is declared by the
+   import above; declaring the author layers after it places qa-react-components
+   last, so component recipes reliably beat qar:* utilities in the cascade. */
 @layer qa-react-reset, qa-react-tokens, qa-react-base, qa-react-components;
 
 @import "./tokens/primitives.css";
 @import "./tokens/semantic.css";
-@import "./tokens/tailwind-theme.css";
 
 @layer qa-react-base {
   @font-face {
@@ -103,7 +107,7 @@
   }
 }
 
-@layer components {
+@layer qa-react-components {
   [data-font-size="xs"] {
     --qa-react-font-size-base: 0.75;
   }
@@ -912,8 +916,6 @@
   }
 
   .qar-react-search-result-jump {
-    min-width: 34px;
-    min-height: 34px;
     border-color: transparent;
     background: transparent;
     color: var(--qa-react-text-muted);
@@ -925,10 +927,6 @@
     border-color: var(--qa-react-border);
     background: var(--qa-react-surface);
     color: var(--qa-react-accent-strong);
-  }
-
-  .qar-react-search-result-actions .qar\:inline-flex {
-    min-height: 34px;
   }
 
   .qar-react-search-result-detail {
@@ -1482,9 +1480,13 @@
     }
   }
 
+  /* Shared modal scrim: every overlay paints var(--qa-react-scrim); z-index stays caller-owned. */
+  .qar-react-scrim {
+    background: var(--qa-react-scrim);
+  }
+
   .qar-react-sheet-scrim {
     z-index: 100;
-    background: var(--qa-react-scrim);
   }
 
   .qar-react-sheet-drawer[data-sheet-variant="navigation-drawer"] {
@@ -1497,7 +1499,6 @@
 
   [data-state="open"]:has(+ [data-sheet-variant="adaptive-settings"]) {
     z-index: 110;
-    background: var(--qa-react-settings-backdrop);
   }
 
   [data-sheet-variant="adaptive-settings"] {
@@ -1895,7 +1896,7 @@
     z-index: 95;
     height: calc(env(safe-area-inset-top) + 56px);
     padding: env(safe-area-inset-top) 8px 0;
-    background: color-mix(in srgb, var(--qa-react-surface) 92%, transparent);
+    background: var(--qa-react-chrome-surface);
     backdrop-filter: blur(14px);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
@@ -2248,7 +2249,7 @@
   }
 
   .qar-react-nav-drawer-source-tab {
-    min-height: 42px;
+    min-height: var(--qa-react-control-touch-target);
     padding: 0 4px;
     border: 0;
     border-radius: 0;
@@ -2323,10 +2324,9 @@
   .qar-react-nav-drawer-search-input {
     min-width: 0;
     flex: 1;
-    min-height: 40px;
+    min-height: var(--qa-react-control-touch-target);
     padding: 0;
     border: 0;
-    outline: 0;
     background: transparent;
     color: var(--qa-react-text);
     font: inherit;
@@ -3733,8 +3733,8 @@
     justify-content: center;
     gap: 5px;
     flex-shrink: 0;
-    min-width: 30px;
-    min-height: 32px;
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
     padding: 6px 4px;
     margin: -6px -4px;
     border: 0;
@@ -3800,8 +3800,12 @@
   }
 
   .qar-reader-fn-marker {
-    display: inline;
-    min-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
+    margin: -12px -9px;
     padding: 0 0.1em;
     border: 0;
     border-radius: 2px;
@@ -3850,7 +3854,8 @@
     position: absolute;
     top: 0.2rem;
     right: 0.3rem;
-    min-height: 0;
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
     padding: 0.15rem 0.4rem;
     border: 0;
     background: transparent;
