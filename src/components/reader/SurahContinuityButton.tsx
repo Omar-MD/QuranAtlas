@@ -42,7 +42,12 @@ export function SurahContinuityButton({
           ↑
         </span>
       )}
-      <span className="qar-reader-continue-title">{target.name}</span>
+      <span className="qar-reader-continue-label">
+        <span className="qar-reader-continue-kicker" aria-hidden="true">
+          {isPrevious ? 'Previous surah' : 'Next surah'}
+        </span>
+        <span className="qar-reader-continue-title">{target.name}</span>
+      </span>
       {!isPrevious && (
         <span className="qar-reader-continue-arrow" aria-hidden="true">
           ↓

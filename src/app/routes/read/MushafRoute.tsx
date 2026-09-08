@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
 import { MushafPageViewer } from '../../../components/reader/MushafPageViewer'
@@ -378,10 +378,19 @@ export function MushafRoute({
     chrome.setPinned('recovery', requestedPageFailure !== null)
   }, [chrome.setPinned, requestedPageFailure])
 
+  const gateSurfaceRendered =
+    assetState !== 'ready' ||
+    (visiblePage
+      ? requestedPageFailure !== null
+      : profileSession.status === 'error' ||
+        windowState.requested?.status === 'transient-error' ||
+        windowState.requested?.status === 'contract-error' ||
+        windowState.requested?.status === 'confirmed-missing')
+
   return (
     <ReaderPageShell
       chromeVisible={chrome.visible || assetState !== 'ready' || profileSession.status === 'error'}
-      interactionSuspended={interactionSuspended}
+      interactionSuspended={interactionSuspended || gateSurfaceRendered}
       mode="mushaf"
       onChromePinChange={handleChromePin}
       onChromeVisibleChange={(visible) => (visible ? chrome.reveal() : chrome.hide())}
@@ -405,7 +414,9 @@ export function MushafRoute({
       wirdSummary={wirdSummary}
     >
       {assetState !== 'ready' ? (
-        <ReaderAssetGate label="Qalun" onManageAssets={openAssetSettings} state={assetState} />
+        <MushafGateSurface>
+          <ReaderAssetGate label="Qalun" onManageAssets={openAssetSettings} state={assetState} />
+        </MushafGateSurface>
       ) : visiblePage ? (
         <>
           <MushafPageViewer
@@ -416,7 +427,7 @@ export function MushafRoute({
                 ? true
                 : (activeSettings?.mushafFitWidth ?? DEFAULT_REACT_READER_PREFERENCES.mushafFitWidth)
             }
-            framingValue={profileSession.framingCapability.hasValidFraming ? activeSettings?.mushafPageFraming : 0}
+            inert={gateSurfaceRendered}
             inlineSvg={visiblePage.media.kind === 'inline-svg' ? visiblePage.media.inlineSvg : emptyInlineSvg}
             onDominantPageChange={(nextPage) => {
               if (nextPage === visiblePage.resolved.page) return
@@ -450,22 +461,24 @@ export function MushafRoute({
             viewMode={activeSettings?.mushafViewMode ?? DEFAULT_REACT_READER_PREFERENCES.mushafViewMode}
           />
           {requestedPageFailure ? (
-            <Status
-              action={
-                <>
-                  <Button onClick={requestedPageFailure.retry} size="sm">
-                    Retry page {requestedPageFailure.requestedPage}
-                  </Button>
-                  <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">
-                    Stay on page {requestedPageFailure.visiblePage}
-                  </Button>
-                </>
-              }
-              aria-live="polite"
-              description={requestedPageFailure.message}
-              title={`Unable to load page ${requestedPageFailure.requestedPage}`}
-              tone="error"
-            />
+            <MushafGateSurface>
+              <Status
+                action={
+                  <>
+                    <Button onClick={requestedPageFailure.retry} size="sm">
+                      Retry page {requestedPageFailure.requestedPage}
+                    </Button>
+                    <Button onClick={requestedPageFailure.cancel} size="sm" variant="secondary">
+                      Stay on page {requestedPageFailure.visiblePage}
+                    </Button>
+                  </>
+                }
+                aria-live="polite"
+                description={requestedPageFailure.message}
+                title={`Unable to load page ${requestedPageFailure.requestedPage}`}
+                tone="error"
+              />
+            </MushafGateSurface>
           ) : pendingPage !== null && (pendingEntry?.status === 'loading' || pendingEntry?.status === 'retrying') ? (
             <Status
               aria-live="polite"
@@ -479,26 +492,32 @@ export function MushafRoute({
           ) : null}
         </>
       ) : profileSession.status === 'error' ? (
-        <ReaderAssetGate
-          label="Mushaf"
-          onManageAssets={openAssetSettings}
-          onRetry={profileSession.retry}
-          state="error"
-        />
+        <MushafGateSurface>
+          <ReaderAssetGate
+            label="Mushaf"
+            onManageAssets={openAssetSettings}
+            onRetry={profileSession.retry}
+            state="error"
+          />
+        </MushafGateSurface>
       ) : windowState.requested?.status === 'transient-error' || windowState.requested?.status === 'contract-error' ? (
-        <ReaderAssetGate
-          label="Mushaf"
-          onManageAssets={openAssetSettings}
-          onRetry={() => windowState.retry(page)}
-          state="error"
-        />
+        <MushafGateSurface>
+          <ReaderAssetGate
+            label="Mushaf"
+            onManageAssets={openAssetSettings}
+            onRetry={() => windowState.retry(page)}
+            state="error"
+          />
+        </MushafGateSurface>
       ) : windowState.requested?.status === 'confirmed-missing' ? (
-        <ReaderAssetGate
-          label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : (activeSettings?.riwayah ?? 'Mushaf')}
-          onManageAssets={openAssetSettings}
-          onRetry={() => windowState.retry(page)}
-          state="missing"
-        />
+        <MushafGateSurface>
+          <ReaderAssetGate
+            label={activeSettings?.riwayah === 'qaloon' ? 'Qalun' : (activeSettings?.riwayah ?? 'Mushaf')}
+            onManageAssets={openAssetSettings}
+            onRetry={() => windowState.retry(page)}
+            state="missing"
+          />
+        </MushafGateSurface>
       ) : (
         <section
           className="qar:m-5 qar:min-h-28 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4"
@@ -507,6 +526,20 @@ export function MushafRoute({
         />
       )}
     </ReaderPageShell>
+  )
+}
+
+function MushafGateSurface({ children }: { children: ReactNode }) {
+  const surfaceRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    surfaceRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+  }, [])
+
+  return (
+    <div ref={surfaceRef} className="qar-react-mushaf-page-status qar-react-mushaf-page-status--gate">
+      {children}
+    </div>
   )
 }
 

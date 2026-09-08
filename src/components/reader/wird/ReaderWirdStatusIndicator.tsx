@@ -12,7 +12,7 @@ export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => v
     <Tooltip content={label}>
       <span className="qar-reader-chrome-wird-anchor">
         <IconButton
-          className="qar-reader-chrome-wird-status"
+          className="qar-reader-chrome-pill qar-reader-chrome-wird-status"
           data-wird-state={summary.state}
           id="reader-wird-status-trigger"
           label={label}

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { AlertTriangle } from 'lucide-react'
 
 import { Button, Spinner, Status } from '../ui'
 
@@ -45,7 +46,13 @@ export function ReaderAssetGate({
       }
       aria-live={state === 'error' ? 'assertive' : 'polite'}
       description={message}
-      icon={state === 'installing' ? <Spinner label={`${label} page pack loading`} /> : undefined}
+      icon={
+        state === 'installing' ? (
+          <Spinner label={`${label} page pack loading`} />
+        ) : (
+          <AlertTriangle aria-hidden="true" size={18} />
+        )
+      }
       title={state === 'installing' ? `Installing ${label} page pack` : `${label} page pack`}
       tone={tone}
     />

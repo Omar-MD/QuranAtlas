@@ -33,7 +33,7 @@ export function VerseNumber({
         className="qar-reader-verse-bookmark-glyph"
         data-active={bookmarked ? 'true' : 'false'}
         fill={bookmarked ? 'currentColor' : 'none'}
-        size={13}
+        size={18}
         strokeWidth={1.9}
       />
       <span className="qar-reader-verse-number-text">{verse}</span>

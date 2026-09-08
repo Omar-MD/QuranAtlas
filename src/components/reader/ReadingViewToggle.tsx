@@ -41,7 +41,11 @@ export function ReadingViewToggle({
 
   return (
     <Tooltip content={label}>
-      <IconButton className="qar-reader-chrome-view-toggle" label={label} onClick={() => onModeChange(destination)}>
+      <IconButton
+        className="qar-reader-chrome-pill qar-reader-chrome-view-toggle"
+        label={label}
+        onClick={() => onModeChange(destination)}
+      >
         {destination === 'mushaf' ? <OpenMushafGlyph /> : <VerseLinesGlyph />}
       </IconButton>
     </Tooltip>

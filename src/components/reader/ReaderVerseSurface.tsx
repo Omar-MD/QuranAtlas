@@ -1,7 +1,7 @@
 import type { ReaderCorpusState } from '../../data/reader-corpus'
 import { findAdjacentSurah, type ReaderSurahIndexEntry } from '../../data/surah-index'
 import type { VerseMetadata } from '../../metadata/metadata-state'
-import { Spinner, Status } from '../ui'
+import { Button, Spinner, Status } from '../ui'
 import { SurahContinuityButton } from './SurahContinuityButton'
 import { VirtualVerseList } from './VirtualVerseList'
 
@@ -11,6 +11,7 @@ export type ReaderVerseSurfaceProps = {
   metadata?: Map<string, VerseMetadata>
   onSelectVerse?: (verseKey: string) => void
   onToggleBookmark?: (verseKey: string) => void
+  onRetry?: () => void
   selectedVerseKey?: string | null
   showVerseBookmarkHint?: boolean
   surahHeaderHidden?: boolean
@@ -29,6 +30,7 @@ export function ReaderVerseSurface({
   metadata = new Map(),
   onSelectVerse,
   onToggleBookmark,
+  onRetry,
   selectedVerseKey = null,
   showVerseBookmarkHint = false,
   surahHeaderHidden = false,
@@ -64,6 +66,13 @@ export function ReaderVerseSurface({
   if (corpus.status === 'error') {
     return (
       <Status
+        action={
+          onRetry ? (
+            <Button onClick={onRetry} size="sm">
+              Retry
+            </Button>
+          ) : undefined
+        }
         aria-live="assertive"
         description={corpus.error.message}
         title="Failed to load reader text"

@@ -95,6 +95,7 @@ export function ReaderRoute({
   surah: number
 }) {
   const [corpus, setCorpus] = useState<ReaderCorpusState>({ status: 'loading' })
+  const [corpusRequestToken, setCorpusRequestToken] = useState(0)
   const [metadata, setMetadata] = useState<Map<string, VerseMetadata>>(new Map())
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
@@ -168,6 +169,7 @@ export function ReaderRoute({
     }
   }, [wirdPlan?.unit, wirdProgressCounts])
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: corpusRequestToken intentionally retriggers the corpus load.
   useEffect(() => {
     const controller = new AbortController()
     setCorpus({ status: 'loading' })
@@ -213,7 +215,7 @@ export function ReaderRoute({
     return () => {
       controller.abort()
     }
-  }, [surah])
+  }, [surah, corpusRequestToken])
 
   useEffect(() => {
     if (corpus.status !== 'ready') return
@@ -279,6 +281,7 @@ export function ReaderRoute({
           const bookmarkSurah = surahFromVerseKey(verseKey) ?? surah
           void toggleBookmark({ surah: bookmarkSurah, verseKey })
         }}
+        onRetry={() => setCorpusRequestToken((token) => token + 1)}
         selectedVerseKey={selectedVerseKey}
         showVerseBookmarkHint={showVerseBookmarkHint}
         surahIndex={surahIndex}

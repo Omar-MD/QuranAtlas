@@ -34,6 +34,7 @@ export type MushafPageViewerProps = {
   chromeVisible?: boolean
   fitWidth?: boolean
   framingValue?: number
+  inert?: boolean
   inlineSvg: ReactInlineMushafSvg
   onChromePinChange?: (source: MushafChromePin, pinned: boolean) => void
   onDominantPageChange?: (page: number) => void
@@ -110,6 +111,7 @@ export function MushafPageViewer({
   chromeVisible = true,
   fitWidth = false,
   framingValue = 0,
+  inert = false,
   inlineSvg,
   onChromePinChange,
   onDominantPageChange,
@@ -448,7 +450,7 @@ export function MushafPageViewer({
       data-mushaf-chrome-visible={chromeVisible ? 'true' : 'false'}
       data-mushaf-fit-width={fitWidth ? 'true' : 'false'}
       data-mushaf-layout-mode={isScrollMode ? 'scroll' : 'single'}
-      data-mushaf-view-mode={viewMode}
+      inert={inert || undefined}
       onFocusCapture={revealChrome}
       style={
         {
