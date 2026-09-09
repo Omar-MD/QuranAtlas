@@ -497,3 +497,61 @@ test('downloads the custom external-image edition and renders it offline', async
     await goOnline()
   }
 })
+
+test('switches the Mushaf edition from settings and downloads the other edition pack', async ({ page }) => {
+  test.setTimeout(240_000)
+  await wipeApplicationData(page, ORIGIN)
+
+  await test.step('onboard and install the default edition pack', async () => {
+    await page.goto(`${ORIGIN}/#/s/1`)
+    const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
+    await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Download for offline reading' }).click()
+    await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
+    await page.getByRole('button', { name: 'Continue reading' }).click()
+    await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  })
+
+  await test.step('switch to the other edition from the settings Mushaf edition group', async () => {
+    await expectControlledServiceWorker(page)
+    await page.goto(`${ORIGIN}/#/settings`)
+    const offlineRegion = page.getByRole('region', { name: 'Offline reading data' })
+    await expect(offlineRegion.getByText(SYNTHETIC_EDITION_LABEL)).toBeVisible()
+
+    const editionRegion = page.getByRole('region', { name: 'Mushaf edition' })
+    const editionGroup = editionRegion.getByRole('radiogroup', { name: 'Mushaf edition' })
+    await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_EDITION_LABEL })).toBeVisible()
+    await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toBeVisible()
+    // The radio input is visually hidden (sr-only) under its label span; a real
+    // user clicks the visible label, so the test does too.
+    await editionRegion.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
+
+    // The offline rows re-derive from the newly active edition: its pack is
+    // not downloaded, while the previous edition's row leaves the surface.
+    await expect(offlineRegion.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL)).toBeVisible()
+    await expect(offlineRegion.getByText(SYNTHETIC_EDITION_LABEL)).toHaveCount(0)
+    await expect(offlineRegion.getByText('Not downloaded')).toBeVisible()
+  })
+
+  await test.step('download the switched edition pack from settings', async () => {
+    const offlineRegion = page.getByRole('region', { name: 'Offline reading data' })
+    await offlineRegion.getByRole('button', { name: 'Download', exact: true }).click()
+    await expect
+      .poll(async () => offlineRegion.getByText('Downloaded', { exact: true }).count(), { timeout: 180_000 })
+      .toBe(3)
+  })
+
+  await goOffline()
+  try {
+    await test.step('render the switched edition offline from its downloaded pack', async () => {
+      await page.reload()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+      await page.goto(`${ORIGIN}/#/m/1`)
+      await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
+      await expect(page.getByRole('img', { name: 'Mushaf page 1, Qaloon, beginning near 1:1' })).toBeVisible()
+    })
+  } finally {
+    await goOnline()
+  }
+})
