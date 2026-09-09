@@ -1,40 +1,28 @@
-# .omp/ — project harness config. The main session is a bounded
-# orchestrator (`default` role); worker roles own planning, implementation,
-# and review.
-
 modelRoleStorage: project
 defaultThinkingLevel: max
 disabledProviders:
   - opencode-zen
-
-# modelRoles is the single source of truth for the model roster. Every
-# other document (AGENTS.md, WATCHDOG, skills, agents) refers to roles
-# only — never restate model IDs elsewhere.
 modelRoles:
-  default: zai/glm-5.3:max                         # main-session orchestrator
-  task: zai/glm-5.3:max                            # generic workers
-  plan: zai/glm-5.3:max                          # general planning (general-planner)
-  advisor: openai-codex/gpt-5.6-luna:max         # bounded independent review
-  slow: openai-codex/gpt-5.6-luna:max            # difficult engineering review / escalation
-  vision: zai/glm-5.3-flash:max                  # image/screenshot inspection
-  smol: zai/glm-5.3-flash:low                    # fast mechanical work (sonic)
-  commit: zai/glm-5.3-flash:low                  # commit messages
-  tiny: zai/glm-5.3-flash:low                    # titles and misc
-  ui_director: opencode-go/kimi-k3:max            # one-shot design briefs, written to docs/design/** (ui-director)
-  ui_implementer: zai/glm-5.3-flash:max          # implementation/repair (ui-implementer)
-  ui_visual: opencode-go/kimi-k2.6:xhigh          # visual sign-off, judged against the written brief (ui-visual-reviewer)
-  ui_correctness: zai/glm-5.3-flash:high        # UI review: non-visual correctness (ui-correctness-reviewer)
-
+  default: zai/glm-5.3:max
+  task: zai/glm-5.3:max
+  plan: zai/glm-5.3:max
+  advisor: openai-codex/gpt-5.6-luna:max
+  slow: openai-codex/gpt-5.6-luna:max
+  vision: zai/glm-5.3-flash:max
+  smol: zai/glm-5.3-flash:low
+  commit: zai/glm-5.3-flash:low
+  tiny: zai/glm-5.3-flash:low
+  ui_director: opencode-go/kimi-k3:max
+  ui_implementer: zai/glm-5.3-flash:max
+  ui_visual: opencode-go/kimi-k2.6:xhigh
+  ui_correctness: zai/glm-5.3-flash:high
 plan:
   defaultOnStartup: false
-
 advisor:
   enabled: false
   syncBacklog: "off"
-
 prewalk:
   enabled: false
-
 lsp:
   enabled: true
   lazy: true
@@ -43,29 +31,21 @@ lsp:
   diagnosticsOnWrite: true
   diagnosticsOnEdit: true
   diagnosticsDeduplicate: true
-
 astGrep:
   enabled: true
-
 checkpoint:
   enabled: true
-
 github:
   enabled: true
-
 security:
   enabled: true
-
 secrets:
   enabled: true
-
 memory:
-  backend: off
-
+  backend: "off"
 autolearn:
   enabled: false
   autoContinue: false
-
 task:
   enableLsp: true
   enableEffort: false
@@ -76,8 +56,6 @@ task:
   agentModelOverrides:
     task: "@task"
     scout: "@task"
-    # Generic review seats stay on the strong-reviewer role; the
-    # @ui_correctness seat is reserved for the UI feedback loop.
     reviewer: "@slow"
     security-reviewer: "@slow"
     sonic: "@smol"
@@ -92,29 +70,9 @@ task:
     ui-implementer: "off"
     ui-visual-reviewer: "off"
     ui-correctness-reviewer: "off"
-
 retry:
   maxRetries: 3
   modelFallback: true
-  # The design/visual seats run on OpenCode Go first — K3 solely for
-  # one-shot brief generation (single self-contained passes, no iteration),
-  # K2.6 for visual sign-off; on any OpenCode Go outage the chains below
-  # fail over to OpenRouter instead of silently degrading.
-  # The OpenRouter failover slugs are pinned to native-or-lossless
-  # endpoints via ~/.omp/agent/models.yml (K3: mxfp4-native/bf16;
-  # K2.6: int4-native/bf16 — both models ship natively 4-bit, so the
-  # guarantee is "never re-quantized below the official checkpoint"):
-  # re-encoded fp4/nvfp4/int4/fp8 endpoints and unverifiable ones are
-  # never used, so the failover route never degrades below the official
-  # checkpoint.
-  # The models.yml pinning is machine-local and untracked: if that file is
-  # lost, re-create its native-or-lossless filters before relying on the
-  # OpenRouter failover.
-  #
-  # Both key spellings for each Kimi slug are deliberate: effort-suffix
-  # matching is undocumented, so the bare and suffixed keys share one value
-  # to cover exact and normalized lookups alike (keeping each failover at
-  # the seat's max effort: k3 → :max, k2.6 → :xhigh).
   fallbackChains:
     opencode-go/kimi-k3:
       - openrouter/moonshotai/kimi-k3:max
@@ -124,7 +82,6 @@ retry:
       - openrouter/moonshotai/kimi-k2.6:xhigh
     opencode-go/kimi-k2.6:xhigh:
       - openrouter/moonshotai/kimi-k2.6:xhigh
-
 providers:
   openai-codex:
-    codeMode: off
+    codeMode: "off"
