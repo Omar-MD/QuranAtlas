@@ -74,6 +74,14 @@ export async function seedOnboardedReader(page: Page, origin = ''): Promise<void
                 ['updatedAt', 'updatedAt', { unique: false }],
               ],
             ],
+            [
+              'offlinePacks',
+              { keyPath: 'packId' },
+              [
+                ['status', 'status', { unique: false }],
+                ['updatedAt', 'updatedAt', { unique: false }],
+              ],
+            ],
           ]
           for (const [name, options, indexes] of stores) {
             if (db.objectStoreNames.contains(name)) continue

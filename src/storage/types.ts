@@ -121,6 +121,30 @@ export type SearchPackStagingRecord = {
   error?: string
 }
 
+export type OfflinePackStatus = 'installing' | 'paused-user' | 'paused-network' | 'installed' | 'failed'
+
+export type OfflinePackKind = 'reader-core' | 'mushaf-pages'
+
+export type OfflinePackFilePlan = { url: string; bytes: number | null }
+
+export type OfflinePackRecord = {
+  packId: string
+  kind: OfflinePackKind
+  label: string
+  status: OfflinePackStatus
+  totalBytes: number | null // null when any planned file size is unknown
+  bytesDone: number // actual bytes of completed files
+  fileCount: number
+  filesDone: number
+  files: OfflinePackFilePlan[] // embedded plan: resume needs no network
+  completedUrls: string[]
+  persisted: boolean
+  error?: string
+  startedAt: number
+  updatedAt: number
+  completedAt?: number
+}
+
 export type StoreRecords = {
   settings: SettingRecord
   activationState: ActivationStateRecord
@@ -129,6 +153,7 @@ export type StoreRecords = {
   savedSearches: SavedSearchRecord
   searchPackActivations: SearchPackActivationRecord
   searchPackStaging: SearchPackStagingRecord
+  offlinePacks: OfflinePackRecord
 }
 
 export type StoreName = keyof StoreRecords

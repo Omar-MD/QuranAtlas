@@ -1,5 +1,5 @@
 export const QURAN_ATLAS_DB_NAME = 'quran-atlas'
-export const QURAN_ATLAS_DB_VERSION = 8
+export const QURAN_ATLAS_DB_VERSION = 9
 
 export const QURAN_ATLAS_V7_STORES = {
   settings: 'key',
@@ -14,5 +14,10 @@ export const QURAN_ATLAS_V8_STORES = {
   searchPackActivations: 'id, packId, contentHash, generation, status, updatedAt',
   searchPackStaging: 'id, contentHash, status, createdAt, updatedAt',
 } as const
+
+export const QURAN_ATLAS_V9_STORES = {
+  ...QURAN_ATLAS_V8_STORES,
+  offlinePacks: 'packId, status, updatedAt',
+}
 
 export type QuranAtlasStoreName = keyof typeof QURAN_ATLAS_V8_STORES

@@ -12,6 +12,11 @@ import {
   readPublicAssetFile,
 } from './scripts/ci/public-assets.mjs'
 
+export const offlineDownloadRuntimeCaching = {
+  urlPattern: ({ request }) => request.headers.has('x-quranatlas-offline-download'),
+  handler: 'NetworkOnly',
+}
+
 export const datasetRuntimeCaching = {
   urlPattern: ({ url }) =>
     url.pathname.startsWith('/dataset/') &&
@@ -23,10 +28,7 @@ export const datasetRuntimeCaching = {
     cacheableResponse: {
       statuses: [0, 200],
     },
-    expiration: {
-      maxEntries: 20_000,
-      maxAgeSeconds: 60 * 60 * 24 * 365,
-    },
+    // Durable offline-pack storage: the page downloader is the sole writer; do not reintroduce expiration.
   },
 }
 
@@ -136,7 +138,7 @@ export default defineConfig(() => {
           navigateFallback: '/index.html',
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
           globIgnores: ['**/dataset/**', '**/search-packs/**'],
-          runtimeCaching: [mushafIndexRuntimeCaching, datasetRuntimeCaching],
+          runtimeCaching: [offlineDownloadRuntimeCaching, mushafIndexRuntimeCaching, datasetRuntimeCaching],
         },
       }),
     ],
