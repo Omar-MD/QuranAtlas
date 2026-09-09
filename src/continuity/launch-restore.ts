@@ -2,19 +2,24 @@ import { useEffect, useRef, useState } from 'react'
 
 import type { SettingRecord } from '../storage/types'
 import { ensureReactMvpAssetContractReset } from '../launch/asset-contract-reset'
-import { resolveMushafEditionSetup, type MushafEditionSetupState } from '../launch/mushaf-edition-setup'
-import { nativeSettingsReader } from '../storage/native-reader-store'
+import {
+  MUSHAF_EDITION_SETUP_VERSION,
+  resolveMushafEditionSetup,
+  type MushafEditionSetupState,
+} from '../launch/mushaf-edition-setup'
+import {
+  resolveOfflineDownloadOffer,
+  writeOfflineDownloadSetupComplete,
+  type OfflineDownloadOffer,
+} from '../launch/offline-download-setup'
+import { nativeSettingsReader, readNativeSetting } from '../storage/native-reader-store'
 
 export type SavedPosition = { surah: number; verse: number }
+export type LaunchSetupState = Exclude<MushafEditionSetupState, { status: 'complete' }> | OfflineDownloadOffer
 export type LaunchRestoreState =
   | { status: 'loading'; hash: string; sourceHash: string }
   | { status: 'ready'; hash: string; sourceHash: string }
-  | {
-      status: 'setup'
-      hash: string
-      sourceHash: string
-      setup: Exclude<MushafEditionSetupState, { status: 'complete' }>
-    }
+  | { status: 'setup'; hash: string; sourceHash: string; setup: LaunchSetupState }
 
 const EXCLUDED = new Set(['#/onboarding', '#/settings', '#/assets', '#/search'])
 
@@ -96,6 +101,7 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
   }))
   const hasResolvedOnceRef = useRef(false)
   const setupPendingRef = useRef(false)
+  const onboardedAtBootRef = useRef<boolean | null>(null)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshVersion intentionally retriggers restoration.
   useEffect(() => {
@@ -111,14 +117,38 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
     }
 
     async function resolve() {
+      if (onboardedAtBootRef.current === null) {
+        // SESSION-scoped capture, read BEFORE resolveMushafEditionSetup (its
+        // auto-repair and contract reset can write the edition marker): a fresh
+        // user's marker appears between resolve #1 and resolve #2, so a
+        // per-resolve read would misclassify them as already onboarded.
+        const editionMarker = await readNativeSetting('mushafEditionSetupVersion')
+        onboardedAtBootRef.current = editionMarker?.value === MUSHAF_EDITION_SETUP_VERSION
+      }
       const assetContract = await ensureReactMvpAssetContractReset()
       const resolvedHash = await resolveHashWithLaunchState(nativeSettingsReader(), hash)
       const setup = await resolveMushafEditionSetup({ contractWasValid: assetContract.hadValidContract })
       if (active) {
         hasResolvedOnceRef.current = true
         if (setup.status === 'complete') {
-          setupPendingRef.current = false
-          setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+          if (onboardedAtBootRef.current === true) {
+            // Already-onboarded user: silent one-time migration, never an offer.
+            void writeOfflineDownloadSetupComplete().catch(() => undefined)
+            setupPendingRef.current = false
+            setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+          } else {
+            const offer = await resolveOfflineDownloadOffer().catch(() => null)
+            if (!active) return
+            if (offer) {
+              // The offer step must block canKeepReady fast-paths until the
+              // user leaves onboarding.
+              setupPendingRef.current = true
+              setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup: offer })
+            } else {
+              setupPendingRef.current = false
+              setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+            }
+          }
         } else {
           setupPendingRef.current = true
           setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup })

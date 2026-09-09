@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { clearReactSettingsReaderAnchor, restoreReactSettingsReaderAnchor } from '../../settings-overlay-events'
 import { SettingsShell } from '../../../components/settings/SettingsShell'
+import { OfflineDataSection } from '../../../components/settings/OfflineDataSection'
 import { IncludedAssetsSection } from '../../../components/settings/IncludedAssetsSection'
 import { MushafSettings } from '../../../components/settings/MushafSettings'
 import { SettingsGroup } from '../../../components/settings/SettingsGroup'
@@ -140,6 +141,7 @@ export function SettingsRoute({
           theme={preferences.theme}
         />
       </SettingsGroup>
+      <OfflineDataSection />
       <IncludedAssetsSection onVisibleChange={setIncludedAssetsVisible} visible={includedAssetsVisible} />
       <span className="qar:sr-only">Restores {previousHash} on close.</span>
     </SettingsShell>

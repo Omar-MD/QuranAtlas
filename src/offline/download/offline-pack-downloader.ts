@@ -247,10 +247,18 @@ async function withLock<T>(operation: () => Promise<T>): Promise<T> {
   return locks.request(OFFLINE_DOWNLOAD_LOCK_NAME, { mode: 'exclusive' }, operation)
 }
 
+// Rehydrates the mirror from Dexie at operation boundaries only. Records with
+// an active run are kept from the mirror: their in-memory counters are ahead
+// of the throttled Dexie writes and must not be clobbered mid-run.
 async function hydrate(): Promise<void> {
   const db = await openReactDb()
   const records = await db.offlinePacks.toArray()
-  state.records = new Map(records.map((record) => [record.packId, record]))
+  const next = new Map(records.map((record) => [record.packId, record]))
+  for (const packId of state.runs.keys()) {
+    const running = state.records.get(packId)
+    if (running) next.set(packId, running)
+  }
+  state.records = next
 }
 
 async function commitRecord(record: OfflinePackRecord): Promise<void> {
