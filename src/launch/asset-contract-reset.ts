@@ -4,6 +4,7 @@ import {
   RESET_CACHE_NAME_PREFIXES,
 } from '../../shared/reader-assets/default-profile'
 import { readNativeSetting, resetNativeReaderStores } from '../storage/native-reader-store'
+import { stopAndInvalidateOfflinePacks } from '../offline/download/offline-pack-downloader'
 
 export type ReactMvpAssetContractReset = {
   contractId: string
@@ -16,6 +17,8 @@ export async function ensureReactMvpAssetContractReset(): Promise<ReactMvpAssetC
   if (marker?.value === MVP_ASSET_CONTRACT_ID) {
     return { hadValidContract: true, resetApplied: false, contractId: MVP_ASSET_CONTRACT_ID }
   }
+
+  await stopAndInvalidateOfflinePacks()
 
   if (typeof caches !== 'undefined' && typeof caches.keys === 'function') {
     const names = await caches.keys()

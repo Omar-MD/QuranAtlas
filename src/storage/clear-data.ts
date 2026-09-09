@@ -1,8 +1,10 @@
+import { stopAndInvalidateOfflinePacks } from '../offline/download/offline-pack-downloader'
 import { closeReactDb } from './db'
 import { closeNativeReaderDb } from './native-reader-store'
 import { QURAN_ATLAS_DB_NAME } from './schema'
 
 export async function clearReactApplicationData() {
+  await stopAndInvalidateOfflinePacks()
   const browserWindow = globalThis.document?.defaultView
   if (browserWindow && !browserWindow.navigator.userAgent.includes('jsdom')) {
     clearStorage(browserWindow.localStorage)

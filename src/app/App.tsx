@@ -9,6 +9,7 @@ import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events
 import { shouldPersistLastSurface, useLaunchRestore } from '../continuity/launch-restore'
 import { normalizeLastSurface } from '../continuity/last-surface'
 import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } from '../storage/reader-preferences'
+import { reconcileOfflinePacks } from '../offline/download/offline-pack-downloader'
 import { readNativeReactReaderPreferences } from '../storage/settings-writer'
 import { useFirstLaunchNotificationPermission } from '../continuity/wird/use-first-launch-notification-permission'
 import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
@@ -98,6 +99,11 @@ export function App() {
       unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (launchRestore.status !== 'ready') return
+    void reconcileOfflinePacks()
+  }, [launchRestore.status])
 
   useEffect(
     () =>
