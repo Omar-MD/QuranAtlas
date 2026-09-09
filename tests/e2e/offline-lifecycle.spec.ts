@@ -127,7 +127,9 @@ test('preserves the production reader through offline, fallback, retry, and resy
     await test.step('show a visible fallback for an unfetched route offline', async () => {
       await page.goto(`${ORIGIN}/#/search`)
       await expect(page).toHaveURL(/#\/search(?:\?.*)?$/)
-      await expect(page.getByRole('status')).toContainText('Search data is not available on this device.')
+      await expect(page.getByRole('main', { name: 'Search' }).getByRole('status')).toContainText(
+        'Search data is not available on this device.',
+      )
     })
 
     await test.step('confirm the synchronized surah is still unfetched while offline', async () => {
