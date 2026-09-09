@@ -1,6 +1,6 @@
 ---
 name: ui-design
-description: QuranAtlas UI feedback loop — director design brief, implementer implementation, targeted independent review, visual review sign-off, and correctness review; every seat bound by a modelRoles role.
+description: QuranAtlas UI feedback loop — director design brief, implementer implementation, targeted independent review, visual review sign-off, and correctness review. Opt-in only: never auto-start; confirm seat models with the user first.
 ---
 
 # UI feedback loop
@@ -9,6 +9,19 @@ Follow this sequence for QuranAtlas UI work. Roles resolve through
 `modelRoles` in `.omp/config.yml` — the single source of model bindings;
 never restate model IDs in skills, agents, or docs. Agents live in
 `.omp/agents/`.
+
+## Activation gate
+
+- NEVER start this loop automatically because UI work was requested. Run it
+  only when the user explicitly asks for the UI loop/design brief flow.
+- Before starting, ask the user which model each seat should use (director,
+  implementer, visual, correctness). Read the current `modelRoles` bindings
+  from `.omp/config.yml` and present them concisely in the prompt — one line
+  per seat, `role: model` — as defaults the user can accept or override per
+  seat.
+- Apply the user's choices as explicit per-task model overrides for that run
+  only; never edit `.omp/config.yml`. "Use defaults" accepts the presented
+  bindings.
 
 1. **Brief (`ui-director`, `@ui_director`; one-shot).** The director owns
    the complete polish/design/style surface — every decision that changes

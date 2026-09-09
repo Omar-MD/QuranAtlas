@@ -82,6 +82,10 @@ no bespoke orchestrator code runs in this repository.
 
 UI work follows the role seats configured in `.omp/config.yml`; the main
 session never switches into a UI specialist role. Per design scope:
+- The loop is opt-in only: it never starts automatically from a UI
+  request — the user must explicitly ask for it, and must first be
+  prompted to confirm or override each seat's model (defaults shown
+  concisely from `.omp/config.yml`).
 
 1. `ui_director` writes the complete brief under `docs/design/**` in a
    single one-shot pass; later turns read the written brief instead of

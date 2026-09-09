@@ -1,9 +1,15 @@
 ---
 name: ui-verify
-description: QuranAtlas manual browser verification loop — hub-managed servers, OMP browser tabs at fixed viewports, themes, transient screenshots, no persisted artifacts.
+description: QuranAtlas manual browser verification loop — hub-managed servers, OMP browser tabs at fixed viewports, themes, transient screenshots, no persisted artifacts. Opt-in only: never auto-start.
 ---
 
 # OMP browser verification loop
+
+## Activation gate
+
+- NEVER start this loop automatically because UI work was requested. Run it
+  only when the user explicitly asks for verification, or as part of a
+  user-approved `skill://ui-design` run.
 
 ## Servers
 
