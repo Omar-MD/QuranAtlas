@@ -12,6 +12,8 @@ import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { inspectPrivateMushafTar } from './release-archive.mjs'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
 const ASSET_CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-assets.json')
@@ -50,15 +52,82 @@ function extractArchive(archivePath, destinationRoot) {
   if (result.status !== 0) throw new Error(`Failed to extract ${archivePath}`)
 }
 
+function extractPlainArchive(archivePath, destinationRoot) {
+  const result = spawnSync('tar', ['-xf', archivePath, '-C', destinationRoot], { stdio: 'inherit' })
+  if (result.status !== 0) throw new Error(`Failed to extract ${archivePath}`)
+}
+
+function sha256Hex(bytes) {
+  return createHash('sha256').update(bytes).digest('hex')
+}
+
+// Private (internal) editions ship a plain USTAR archive rooted at the edition
+// id. The pinned sha256 plus inspectPrivateMushafTar verify the whole archive
+// in pure Node (inventory, import contract, per-rendition digests); the
+// webpinfo re-measurement stays on the owner-only `restore-release` path,
+// which also accepts hand-carried archives.
+async function fetchPrivateEdition({ asset, contract }) {
+  const editionRoot = join(NORMALIZED_ROOT, asset.riwayah)
+  const editionDir = join(editionRoot, asset.mushafEditionId)
+  const expectedPages = contract.fileCount - 1
+  if (existsSync(join(editionDir, 'import.json')) && (await countPages(editionDir)) >= expectedPages) {
+    console.log(`[mushaf-pages] ${asset.mushafEditionId}: local media already complete, skipping fetch`)
+    return
+  }
+  await rm(editionDir, { recursive: true, force: true })
+  const url = `https://github.com/${contract.repository}/releases/download/${contract.releaseTag}/${contract.assetName}`
+  await mkdir(STAGE_ROOT, { recursive: true })
+  const staged = join(STAGE_ROOT, contract.assetName)
+  // A previously staged archive that still matches the pinned digest is
+  // reused as-is: a failed extraction (or full disk) must not force another
+  // heavy download of the exact same bytes.
+  const stagedBytes = await readFile(staged).catch(() => null)
+  let buffer = null
+  if (
+    stagedBytes &&
+    stagedBytes.byteLength === contract.archiveBytes &&
+    sha256Hex(stagedBytes) === contract.archiveSha256
+  ) {
+    console.log(`[mushaf-pages] ${asset.mushafEditionId}: reusing staged archive ${contract.assetName}`)
+    buffer = stagedBytes
+  } else {
+    console.log(`[mushaf-pages] ${asset.mushafEditionId}: fetching ${url}`)
+    buffer = await download(url, staged, contract.archiveBytes)
+  }
+  if (sha256Hex(buffer) !== contract.archiveSha256) {
+    throw new Error(`Release artifact checksum mismatch for ${contract.assetName}: ${sha256Hex(buffer)}`)
+  }
+  const inspected = inspectPrivateMushafTar(buffer, contract)
+  await mkdir(editionRoot, { recursive: true })
+  extractPlainArchive(staged, editionRoot)
+  const extractedImport = await readFile(join(editionDir, 'import.json'))
+  if (!extractedImport.equals(inspected.importBytes)) {
+    throw new Error(`${asset.mushafEditionId}: extracted import.json differs from the verified archive`)
+  }
+  for (const rendition of inspected.renditions) {
+    const bytes = await readFile(join(editionDir, rendition.assetPath))
+    if (bytes.byteLength !== rendition.bytes || sha256Hex(bytes) !== rendition.sha256) {
+      throw new Error(`${asset.mushafEditionId}: extracted rendition ${rendition.assetPath} bytes are invalid`)
+    }
+  }
+  const pages = await countPages(editionDir)
+  if (pages < expectedPages) {
+    throw new Error(`${asset.mushafEditionId}: extracted ${pages} page files, expected ${expectedPages}`)
+  }
+  console.log(`[mushaf-pages] ${asset.mushafEditionId}: verified ${pages} page files`)
+  await rm(staged, { force: true })
+}
+
 export async function main(argv = process.argv.slice(2)) {
   const editionFilter = argValue(argv, 'edition')
   const catalog = await readJson(ASSET_CATALOG_PATH)
-  // Only public, baseline-shipped editions. Private (internal) editions use
-  // their dedicated validated restore path (`pnpm run data -- mushaf-pages
-  // restore-release`), whose plain-tar layout and import metadata this fetch
-  // path does not handle.
+  // Baseline-shipped editions and pinned private editions. Both carry a
+  // tracked distribution contract; private (internal) archives go through
+  // their inspection-verified plain-tar path instead of the gzipped layout.
   const assets = (catalog.assets ?? []).filter(
-    (asset) => typeof asset?.distributionPath === 'string' && asset.visibility === 'baseline',
+    (asset) =>
+      typeof asset?.distributionPath === 'string' &&
+      (asset.visibility === 'baseline' || asset.sourceKind === 'local-pdf'),
   )
 
   const targets = []
@@ -75,6 +144,10 @@ export async function main(argv = process.argv.slice(2)) {
 
   await mkdir(STAGE_ROOT, { recursive: true })
   for (const { asset, contract } of targets) {
+    if (asset.sourceKind === 'local-pdf') {
+      await fetchPrivateEdition({ asset, contract })
+      continue
+    }
     const editionDir = join(NORMALIZED_ROOT, asset.riwayah, asset.mushafEditionId)
     if ((await countPages(editionDir)) >= contract.fileCount) {
       console.log(`[mushaf-pages] ${asset.mushafEditionId}: local media already complete, skipping fetch`)

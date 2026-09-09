@@ -40,7 +40,7 @@ jobs:
             public/dataset
             public/search-packs
             .data-build-complete
-          key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml') }}
+          key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml', '.github/workflows/ci.yml') }}
       # The key already hashes every data:build source; restoring outputs with
       # older mtimes would still look stale to mise's timestamp freshness, so
       # re-stamp them to skip the rebuild. data:check remains the real gate.
@@ -50,8 +50,12 @@ jobs:
       - name: Fetch Mushaf page media from release artifacts (cache miss)
         if: steps.dataset-cache.outputs.cache-hit != 'true'
         run: mise run data:media
-      - run: mise run data:build
-      - run: mise run data:check
+      # The deployed dataset ships every catalog edition (quran.ws plus the
+      # private Furatiyyah archive). The pnpm profile flag bypasses the mise
+      # task's baseline freshness stamp, which would otherwise skip the build
+      # on trees carrying baseline outputs.
+      - run: pnpm run data -- build --profile=private
+      - run: pnpm run data -- check --profile=private
 
   build:
     name: Release build
@@ -72,10 +76,19 @@ jobs:
             public/dataset
             public/search-packs
             .data-build-complete
-          key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml') }}
+          key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml', '.github/workflows/ci.yml') }}
       - name: Restamp restored dataset outputs for mise freshness
         if: steps.dataset-cache.outputs.cache-hit == 'true'
         run: find public/dataset public/search-packs -exec touch {} + && touch .data-build-complete
+      # On a cache miss this job must materialize the same private-profile
+      # dataset the data job builds, or the baseline data:build dependency
+      # inside build:release would emit a media-less dataset into dist.
+      - name: Fetch Mushaf page media from release artifacts (cache miss)
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: mise run data:media
+      - name: Build the private-profile dataset (cache miss)
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: pnpm run data -- build --profile=private
       - run: mise run build:release
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
