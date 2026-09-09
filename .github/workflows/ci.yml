@@ -47,6 +47,9 @@ jobs:
       - name: Restamp restored dataset outputs for mise freshness
         if: steps.dataset-cache.outputs.cache-hit == 'true'
         run: find public/dataset public/search-packs -exec touch {} + && touch .data-build-complete
+      - name: Fetch Mushaf page media from release artifacts (cache miss)
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: mise run data:media
       - run: mise run data:build
       - run: mise run data:check
 

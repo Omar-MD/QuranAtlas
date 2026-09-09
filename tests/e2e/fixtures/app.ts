@@ -4,6 +4,10 @@ import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION } from '../../../src/storag
 
 const MVP_ASSET_CONTRACT_ID = 'mvp-default-assets-qaloon-bridges-v1'
 
+// Mirrors OFFLINE_DOWNLOAD_SETUP_VERSION (src/launch/offline-download-setup);
+// inlined like MVP_ASSET_CONTRACT_ID to keep app modules out of the Node runtime.
+const OFFLINE_DOWNLOAD_SETUP_VERSION = 2
+
 export async function wipeApplicationData(page: Page, origin = ''): Promise<void> {
   await page.goto(`${origin}/favicon.ico`)
   await page.evaluate(async (dbName) => {
@@ -28,7 +32,7 @@ export async function seedOnboardedReader(page: Page, origin = ''): Promise<void
   await wipeApplicationData(page, origin)
 
   await page.evaluate(
-    ({ dbName, dbVersion, contractId }) =>
+    ({ dbName, dbVersion, contractId, offlineDownloadSetupVersion }) =>
       new Promise<void>((resolve, reject) => {
         const request = indexedDB.open(dbName, dbVersion * 10)
         request.onupgradeneeded = () => {
@@ -107,7 +111,7 @@ export async function seedOnboardedReader(page: Page, origin = ''): Promise<void
             { key: 'translationId', value: 'bridges' },
             { key: 'translationVisible', value: true },
             { key: 'lastSurface', value: '#/s/1' },
-            { key: 'offlineDownloadSetupVersion', value: 1 },
+            { key: 'offlineDownloadSetupVersion', value: offlineDownloadSetupVersion },
           ])
             settings.put(record)
           transaction.oncomplete = () => {
@@ -125,6 +129,7 @@ export async function seedOnboardedReader(page: Page, origin = ''): Promise<void
       dbName: QURAN_ATLAS_DB_NAME,
       dbVersion: QURAN_ATLAS_DB_VERSION,
       contractId: MVP_ASSET_CONTRACT_ID,
+      offlineDownloadSetupVersion: OFFLINE_DOWNLOAD_SETUP_VERSION,
     },
   )
 }

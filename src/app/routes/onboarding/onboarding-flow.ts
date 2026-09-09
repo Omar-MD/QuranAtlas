@@ -20,7 +20,10 @@ export type OnboardingSourceOption = {
 export function createInitialMushafEditionSetupState(editions: MushafEditionOption[]): MushafEditionSetupFlowState {
   return {
     persistenceStatus: 'idle',
-    selectedEditionId: editions.length === 1 ? (editions[0]?.id ?? null) : null,
+    // SegmentedControl visually defaults to its first enabled option; the flow
+    // state must agree or Continue stays disabled while the first option looks
+    // selected (clicking an already-checked radio fires no change event).
+    selectedEditionId: editions[0]?.id ?? null,
   }
 }
 

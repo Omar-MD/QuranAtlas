@@ -29,6 +29,10 @@ run = "pnpm run dev"
 description = "Serve a production build on 127.0.0.1:4173"
 run = "pnpm run preview"
 
+[tasks."data:media"]
+description = "Fetch Mushaf page media from pinned GitHub Release artifacts"
+run = "pnpm run data -- mushaf-pages fetch-release"
+
 [tasks."check:type"]
 description = "TypeScript project check"
 run = "pnpm exec tsc --project tsconfig.json --noEmit"

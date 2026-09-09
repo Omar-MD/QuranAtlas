@@ -58,6 +58,10 @@ async function main(argv = process.argv.slice(2)) {
       run('mushaf-pages/build.mjs', rest)
       return
     }
+    if (subcommand === 'fetch-release') {
+      run('mushaf-pages/fetch-release.mjs', rest)
+      return
+    }
     if (subcommand === 'restore-release') {
       const archive = rest.find((arg) => arg.startsWith('--archive='))?.slice('--archive='.length)
       const check = rest.length === 1 && rest[0] === '--check'
@@ -70,9 +74,8 @@ async function main(argv = process.argv.slice(2)) {
       run('mushaf-pages/release-archive.mjs', check ? ['--check'] : [`--archive=${archive}`])
       return
     }
-    console.error(`Unknown mushaf-pages command: ${subcommand}`)
     console.error(
-      'Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)',
+      'Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages fetch-release [--edition=qalun-quran-ws-v1] | mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)',
     )
     process.exit(1)
   }

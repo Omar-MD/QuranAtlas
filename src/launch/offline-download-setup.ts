@@ -12,7 +12,7 @@ import { readNativeSetting, readNativeSettings, writeNativeSetting } from '../st
 import type { Riwayah } from '../storage/types'
 import { loadMushafEditionEntries } from './mushaf-edition-setup'
 
-export const OFFLINE_DOWNLOAD_SETUP_VERSION = 1
+export const OFFLINE_DOWNLOAD_SETUP_VERSION = 2
 
 export type OfflineDownloadOffer = {
   status: 'offer'
@@ -23,7 +23,6 @@ export type OfflineDownloadOffer = {
     mushafEditionId: string
   }
   editionLabel: string
-  readerCorePlan: OfflinePackPlan
   mushafPlan: OfflinePackPlan
 }
 
@@ -55,22 +54,28 @@ export async function readActiveReaderProfile(): Promise<ActiveReaderProfile> {
   }
 }
 
+// The verse/reader-text pack is required offline data, not an offer: it is
+// enqueued automatically (idempotently) whenever launch resolves the reader.
+// Byte sizes stay best-effort — the plan is valid without them.
+export async function beginRequiredReaderCoreDownload(profile: ActiveReaderProfile): Promise<void> {
+  const byteSizes = await loadDatasetByteSizes().catch(() => null)
+  const plan = buildReaderCorePackPlan(profile, byteSizes)
+  const persisted = await ensureStoragePersistence().catch(() => false)
+  await requestOfflinePackInstall(plan, { persisted })
+}
+
 export async function resolveOfflineDownloadOffer(fetcher: typeof fetch = fetch): Promise<OfflineDownloadOffer | null> {
   try {
     const marker = await readNativeSetting('offlineDownloadSetupVersion')
     if (marker?.value === OFFLINE_DOWNLOAD_SETUP_VERSION) return null
     const profile = await readActiveReaderProfile()
-    const [entries, byteSizes] = await Promise.all([
-      loadMushafEditionEntries(fetcher),
-      loadDatasetByteSizes(fetcher).catch(() => null),
-    ])
+    const entries = await loadMushafEditionEntries(fetcher)
     const entry = entries.find((candidate) => candidate.mushafEditionId === profile.mushafEditionId)
     if (!entry) return null
     return {
       status: 'offer',
       profile,
       editionLabel: entry.label,
-      readerCorePlan: buildReaderCorePackPlan(profile, byteSizes),
       mushafPlan: buildMushafPackPlan(entry),
     }
   } catch {
@@ -85,9 +90,9 @@ export async function writeOfflineDownloadSetupComplete(): Promise<void> {
 }
 
 export async function startOfflineDownloadFromOnboarding(offer: OfflineDownloadOffer): Promise<{ persisted: boolean }> {
-  // User-gesture context only: persistence consent may prompt (Firefox).
+  // User-gesture context only: persistence consent may prompt (Firefox). The
+  // required reader-core pack enqueues outside this consent path.
   const persisted = await ensureStoragePersistence()
-  await requestOfflinePackInstall(offer.readerCorePlan, { persisted })
   await requestOfflinePackInstall(offer.mushafPlan, { persisted })
   return { persisted }
 }

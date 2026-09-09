@@ -177,3 +177,39 @@ Every interactive element is ≥44×44: all `Button`s carry `qar:min-h-11` (all 
 3. **SD-6 completion semantics** — accepted: unknown-size bar ≠ completion; only both-`installed` hides progress and shows `Downloaded`.
 4. **§7 Badge success token** — advisor claim verified in source (`feedback.tsx`: success tone = `qar:border-accent qar:text-accent`); brief now cites the existing treatment, not `--qa-react-success`.
 5. **§8 motion claims** — advisor claims verified (`Progress` Indicator is raw `qar:transition-transform`; `.qar-react-scrim` has no transition rule); §8 rewritten to claim zero added motion and no scrim fade.
+
+---
+
+## 12. Revision 2026-09-09 (post-review): required reader texts, optional Mushaf pages
+
+Owner ruling after the initial implementation: the two packs are NOT peers.
+
+1. **Reader texts (`reader-core`) are required offline data, never an offer.**
+   `beginRequiredReaderCoreDownload(profile)` (`src/launch/offline-download-setup.ts`)
+   enqueues the pack automatically (idempotently) for every launch-resolved
+   reader — fresh onboarding AND already-onboarded users. No consent UI, no
+   opt-out; `Skip for now` declines only the page pack.
+2. **The onboarding offer (§2 OD-P1) covers the Mushaf page pack only.** The
+   offer's size list drops the `Reader texts · {size}` line; the instruction
+   copy becomes exactly: `Your reader texts are saved to this device
+   automatically. Add the complete Mushaf pages to keep reading without a
+   connection.` `Complete Mushaf · {size}` (SD-2) remains. The downloading
+   step still aggregates BOTH pack ids (the auto reader-core run plus the
+   consented page pack) under the SD-6 known-bytes rule, and completion is
+   still both-`installed`.
+3. **Already-onboarded users** get the same one-time page-pack offer
+   (`OFFLINE_DOWNLOAD_SETUP_VERSION = 2` supersedes the v1 silent marker);
+   `resolveOfflineDownloadOffer` and the auto enqueue run identically for
+   them. Marker v2 is written only when the user answers the offer.
+4. **Edition coverage:** the offer and settings rows support BOTH Mushaf
+   source kinds — inline-SVG editions (v1, quran.ws shape, `pages/NNN.svg`)
+   and external-image editions (v2, private PDF shape, `pages/NNN-1280.webp`
+   + `pages/NNN-2136.webp` pairs, `version: "v2"` + `pageUrls` index rows).
+   `parseMushafEditionEntry`, the offline pack URL identity, and the media
+   type check accept both shapes; v2 page-pack downloads are part of the
+   e2e contract.
+5. **Deployment contract:** Mushaf page media ships as pinned GitHub Release
+   artifacts fetched by `mise run data:media` before `data:build` (CI: on
+   dataset-cache miss). Heavy media never enters git history; the tracked
+   `data/catalog/mushaf-asset-index.json` anchor remains the shipping
+   contract the built dataset is verified against.

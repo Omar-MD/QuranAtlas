@@ -134,16 +134,13 @@ function OfflineDownloadRoute({
     return (
       <OnboardingPageRecipe kicker="QuranAtlas" title="Download for offline reading">
         <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          Save the complete Mushaf and your reader texts to this device so the reader works without a connection.
+          Your reader texts are saved to this device automatically. Add the complete Mushaf pages to keep reading
+          without a connection.
         </p>
         <div className="qar:grid qar:gap-1">
           <p className="qar:m-0 qar:text-sm qar:text-text">
             Complete Mushaf ·{' '}
             <span className="qar:text-muted">{formatOfflinePackSize(setup.mushafPlan.totalBytes)}</span>
-          </p>
-          <p className="qar:m-0 qar:text-sm qar:text-text">
-            Reader texts ·{' '}
-            <span className="qar:text-muted">{formatOfflinePackSize(setup.readerCorePlan.totalBytes)}</span>
           </p>
         </div>
         {consentFailed ? (

@@ -20,8 +20,8 @@ shell fast and the reader usable without a connection.
 - Run `mise install`, then `mise run install` for a reproducible checkout.
 - Use `mise run dev`, `mise run preview`, `mise run check`, `mise run smoke`,
   `mise run offline`, `mise run data:check`, `mise run data:build`,
-  `mise run build:release`, `mise run storybook:build`, and
-  `mise run validate` instead of creating ad hoc orchestration commands.
+  `mise run data:media`, `mise run build:release`, `mise run storybook:build`,
+  and `mise run validate` instead of creating ad hoc orchestration commands.
 - `mise run check` includes GitHub Actions workflow-schema validation via
   task-scoped actionlint (installed on demand).
 - pnpm remains the dependency resolver and owns `pnpm-lock.yaml`.

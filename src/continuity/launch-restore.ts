@@ -8,8 +8,9 @@ import {
   type MushafEditionSetupState,
 } from '../launch/mushaf-edition-setup'
 import {
+  beginRequiredReaderCoreDownload,
+  readActiveReaderProfile,
   resolveOfflineDownloadOffer,
-  writeOfflineDownloadSetupComplete,
   type OfflineDownloadOffer,
 } from '../launch/offline-download-setup'
 import { nativeSettingsReader, readNativeSetting } from '../storage/native-reader-store'
@@ -131,23 +132,21 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
       if (active) {
         hasResolvedOnceRef.current = true
         if (setup.status === 'complete') {
-          if (onboardedAtBootRef.current === true) {
-            // Already-onboarded user: silent one-time migration, never an offer.
-            void writeOfflineDownloadSetupComplete().catch(() => undefined)
+          // The verse/reader-text pack is required offline data: it enqueues
+          // automatically for every launch-resolved reader, onboarded or not.
+          const profile = await readActiveReaderProfile().catch(() => null)
+          if (profile) await beginRequiredReaderCoreDownload(profile).catch(() => undefined)
+          if (!active) return
+          const offer = await resolveOfflineDownloadOffer().catch(() => null)
+          if (!active) return
+          if (offer) {
+            // The offer step must block canKeepReady fast-paths until the
+            // user leaves onboarding.
+            setupPendingRef.current = true
+            setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup: offer })
+          } else {
             setupPendingRef.current = false
             setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
-          } else {
-            const offer = await resolveOfflineDownloadOffer().catch(() => null)
-            if (!active) return
-            if (offer) {
-              // The offer step must block canKeepReady fast-paths until the
-              // user leaves onboarding.
-              setupPendingRef.current = true
-              setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup: offer })
-            } else {
-              setupPendingRef.current = false
-              setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
-            }
           }
         } else {
           setupPendingRef.current = true

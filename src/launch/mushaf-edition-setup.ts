@@ -1,6 +1,6 @@
 import { DEFAULT_READER_ASSET_PROFILE } from '../../shared/reader-assets/default-profile'
 import { assertRuntimeDatasetUrl } from '../data/runtime-boundary'
-import { assertOfflinePackUrl } from '../offline/download/offline-pack-plan'
+
 import { readNativeSettings, writeNativeMushafEditionSelection } from '../storage/native-reader-store'
 
 export const MUSHAF_EDITION_SETUP_VERSION = 1
@@ -19,8 +19,10 @@ export type MushafEditionIndexEntry = {
   label: string
   shortLabel?: string
   pageCount: number
+  version: 'v1' | 'v2'
   manifestUrl: string
   totalBytes: number
+  pageUrls?: string[]
   files: Array<{ url: string; bytes: number }>
 }
 
@@ -138,6 +140,9 @@ function parseMushafEditionEntry(
   if (mushafEditionId === '') {
     throw new Error('Mushaf edition entry is invalid: missing edition id')
   }
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(mushafEditionId)) {
+    throw new Error(`Mushaf edition entry is invalid: bad edition id: ${mushafEditionId}`)
+  }
   if (asset.label === '') {
     throw new Error(`Mushaf edition entry is invalid: missing label: ${mushafEditionId}`)
   }
@@ -147,12 +152,48 @@ function parseMushafEditionEntry(
   if (typeof asset.totalBytes !== 'number' || !Number.isFinite(asset.totalBytes) || asset.totalBytes < 0) {
     throw new Error(`Mushaf edition entry is invalid: missing total bytes: ${mushafEditionId}`)
   }
+  if (typeof asset.pageCount !== 'number' || !Number.isInteger(asset.pageCount) || asset.pageCount <= 0) {
+    throw new Error(`Mushaf edition entry is invalid: missing page count: ${mushafEditionId}`)
+  }
+  const pageCount = asset.pageCount
+  const version = editionIndexVersion(asset, mushafEditionId)
+
+  const manifestUrl = `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/manifest.json`
+  if (asset.manifestUrl !== manifestUrl) {
+    throw new Error(`Mushaf edition entry is invalid: manifest URL outside the edition scope: ${mushafEditionId}`)
+  }
+
+  // Expected file set per source kind. Inline-SVG editions (v1, the quran.ws
+  // shape) ship one page per logical page; external-image editions (v2, the
+  // private PDF shape) ship a preview (1280px) and full (2136px) WebP pair.
+  const expectedUrls = new Set<string>([manifestUrl])
+  const expectedPageUrls: string[] = []
+  for (let page = 1; page <= pageCount; page += 1) {
+    const padded = String(page).padStart(3, '0')
+    const editionPageUrl = (assetPath: string) => `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/${assetPath}`
+    if (version === 'v2') {
+      expectedUrls.add(editionPageUrl(`pages/${padded}-1280.webp`))
+      expectedUrls.add(editionPageUrl(`pages/${padded}-2136.webp`))
+      expectedPageUrls.push(editionPageUrl(`pages/${padded}-2136.webp`))
+    } else {
+      expectedUrls.add(editionPageUrl(`pages/${padded}.svg`))
+    }
+  }
+  const pageUrls = readEditionPageUrls(asset.pageUrls, mushafEditionId)
+  if (version === 'v2' && (pageUrls == null || pageUrls.length !== expectedPageUrls.length)) {
+    throw new Error(`Mushaf edition entry is invalid: v2 entries require the full page URL list: ${mushafEditionId}`)
+  }
+  if (pageUrls != null && pageUrls.join('\n') !== expectedPageUrls.join('\n')) {
+    throw new Error(
+      `Mushaf edition entry is invalid: page URL list disagrees with the edition scope: ${mushafEditionId}`,
+    )
+  }
+
   if (!Array.isArray(asset.files)) {
     throw new Error(`Mushaf edition entry is invalid: missing files: ${mushafEditionId}`)
   }
   const files: Array<{ url: string; bytes: number }> = []
   const seenUrls = new Set<string>()
-  let manifestRows = 0
   let totalBytes = 0
   for (const row of asset.files) {
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
@@ -171,13 +212,16 @@ function parseMushafEditionEntry(
       throw new Error(`Mushaf edition entry is invalid: duplicate file URL: ${file.url}`)
     }
     seenUrls.add(file.url)
-    assertOfflinePackUrl(file.url, 'mushaf-pages', { riwayah, mushafEditionId })
-    if (file.url.endsWith('/manifest.json')) manifestRows += 1
+    if (!expectedUrls.has(file.url)) {
+      throw new Error(`Mushaf edition entry is invalid: unexpected file URL: ${file.url}`)
+    }
     totalBytes += file.bytes
     files.push({ url: file.url, bytes: file.bytes })
   }
-  if (files.length !== 605 || manifestRows !== 1) {
-    throw new Error(`Mushaf edition entry is invalid: expected manifest + 604 pages: ${mushafEditionId}`)
+  if (files.length !== expectedUrls.size) {
+    const expectedFiles =
+      version === 'v2' ? `manifest + ${pageCount} preview/full page pairs` : `manifest + ${pageCount} pages`
+    throw new Error(`Mushaf edition entry is invalid: expected ${expectedFiles}: ${mushafEditionId}`)
   }
   if (totalBytes !== asset.totalBytes) {
     throw new Error(`Mushaf edition entry is invalid: total bytes mismatch: ${mushafEditionId}`)
@@ -187,11 +231,30 @@ function parseMushafEditionEntry(
     mushafEditionId,
     label: asset.label,
     ...(typeof asset.shortLabel === 'string' && asset.shortLabel.trim() !== '' ? { shortLabel: asset.shortLabel } : {}),
-    pageCount: asset.pageCount as number,
-    manifestUrl: asset.manifestUrl,
+    pageCount,
+    version,
+    manifestUrl,
     totalBytes: asset.totalBytes,
+    ...(pageUrls != null ? { pageUrls } : {}),
     files,
   }
+}
+
+function editionIndexVersion(
+  asset: Record<string, unknown> & { mushafEditionId: string },
+  mushafEditionId: string,
+): 'v1' | 'v2' {
+  if (asset.version === undefined) return 'v1'
+  if (asset.version === 'v1' || asset.version === 'v2') return asset.version
+  throw new Error(`Mushaf edition entry is invalid: unsupported version: ${mushafEditionId}`)
+}
+
+function readEditionPageUrls(value: unknown, mushafEditionId: string): string[] | null {
+  if (value === undefined) return null
+  if (!Array.isArray(value) || value.some((url) => typeof url !== 'string')) {
+    throw new Error(`Mushaf edition entry is invalid: bad page URL list: ${mushafEditionId}`)
+  }
+  return value as string[]
 }
 
 function isAcceptedMushafAvailability(value: unknown): value is undefined | 'available' | 'unavailable' | 'not-built' {

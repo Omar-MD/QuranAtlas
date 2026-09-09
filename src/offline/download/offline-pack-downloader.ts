@@ -553,9 +553,14 @@ function assertMediaType(url: string, contentType: string | null): void {
     if (mediaType !== 'image/svg+xml') {
       throw new Error(`offline pack content type mismatch for ${url}: ${mediaType || 'missing'}`)
     }
+    return
+  }
+  if (url.endsWith('.webp')) {
+    if (mediaType !== 'image/webp') {
+      throw new Error(`offline pack content type mismatch for ${url}: ${mediaType || 'missing'}`)
+    }
   }
 }
-
 function failRun(run: PackRun, message: string): void {
   if (run.cancel) return
   run.cancel = 'fail'

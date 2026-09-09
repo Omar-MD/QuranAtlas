@@ -19,7 +19,7 @@ modelRoles:
 plan:
   defaultOnStartup: false
 advisor:
-  enabled: false
+  enabled: true
   syncBacklog: "off"
 prewalk:
   enabled: false

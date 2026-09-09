@@ -15,6 +15,7 @@
       "shipped": true,
       "sourceSlug": "qalun",
       "pageCount": 604,
+      "distributionPath": "mushaf-editions/qalun-quran-ws-v1/distribution.json",
       "provenance": {
         "source": "quran.ws page PDFs"
       },

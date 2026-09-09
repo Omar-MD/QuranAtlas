@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "mushafEditionId": "qalun-quran-ws-v1",
+  "repository": "Omar-MD/QuranAtlas",
+  "releaseTag": "mushaf-qalun-quran-ws-v1",
+  "assetName": "qalun-quran-ws-v1-normalized-v1.tar.gz",
+  "archiveBytes": 198588619,
+  "archiveSha256": "cc52e6971c5f454897a90fc603079edcd6bb3b9187dda0f466487f5239d5741e",
+  "fileCount": 604,
+  "sourceAvailability": "Normalized quran.ws page SVGs (converted from https://pdf.quran.ws per-page PDFs). Heavy media ships as a GitHub Release artifact and is fetched by CI before data:build; it is never committed to the repository."
+}

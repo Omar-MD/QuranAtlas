@@ -72,8 +72,11 @@ function escapeRegExp(value: string): string {
 }
 
 function mushafPagesUrlPattern(identity: { riwayah: string; mushafEditionId: string }): RegExp {
+  // v1 editions ship one inline SVG per page; v2 editions ship a preview
+  // (1280px) and full (2136px) WebP pair per page.
   return new RegExp(
-    `^/dataset/mushaf-pages/${escapeRegExp(identity.riwayah)}/${escapeRegExp(identity.mushafEditionId)}/(?:manifest\\.json|pages/\\d{3}\\.svg)$`,
+    `^/dataset/mushaf-pages/${escapeRegExp(identity.riwayah)}/${escapeRegExp(identity.mushafEditionId)}/` +
+      `(?:manifest\\.json|pages/\\d{3}\\.svg|pages/\\d{3}-(?:1280|2136)\\.webp)$`,
   )
 }
 
