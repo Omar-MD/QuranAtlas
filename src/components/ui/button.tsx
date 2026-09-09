@@ -1,10 +1,9 @@
-import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 
-export const buttonVariants = cva(
+const buttonVariants = cva(
   'qar:inline-flex qar:min-h-11 qar:items-center qar:justify-center qar:gap-2 qar:border qar:border-border qar:px-4 qar:py-2 qar:font-ui qar:text-sm qar:font-medium qar:transition-colors qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-55',
   {
     variants: {
@@ -13,12 +12,10 @@ export const buttonVariants = cva(
         secondary: 'qar:rounded-control qar:bg-surface qar:text-text qar:hover:border-accent',
         ghost: 'qar:rounded-control qar:border-transparent qar:bg-transparent qar:text-text qar:hover:bg-surface',
         danger: 'qar:rounded-control qar:bg-danger qar:text-text-on-danger qar:hover:opacity-90',
-        pill: 'qar:rounded-pill',
       },
       size: {
         sm: 'qar:min-h-11 qar:px-3 qar:text-xs',
         md: 'qar:min-h-11 qar:px-4 qar:text-sm',
-        lg: 'qar:min-h-11 qar:px-5 qar:text-base',
       },
     },
     defaultVariants: {
@@ -30,22 +27,12 @@ export const buttonVariants = cva(
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
     children: ReactNode
-    unstyled?: boolean
   }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { asChild = false, className, unstyled = false, variant, size, type = 'button', ...props },
+  { className, variant, size, type = 'button', ...props },
   ref,
 ) {
-  const Comp = asChild ? Slot : 'button'
-  return (
-    <Comp
-      className={cn(unstyled ? undefined : buttonVariants({ variant, size }), className)}
-      ref={ref}
-      type={asChild ? undefined : type}
-      {...props}
-    />
-  )
+  return <button className={cn(buttonVariants({ variant, size }), className)} ref={ref} type={type} {...props} />
 })

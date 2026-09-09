@@ -8,8 +8,6 @@ export type RecentSurahPosition = {
 
 const RECENT_SURAH_LIMIT = 7
 
-let recentWriteQueue: Promise<void> = Promise.resolve()
-
 export function normalizeRecentSurahs(value: unknown): RecentSurahPosition[] {
   if (!Array.isArray(value)) return []
   const seen = new Set<number>()
@@ -29,25 +27,6 @@ export function normalizeRecentSurahs(value: unknown): RecentSurahPosition[] {
 export async function readRecentSurahs(db: QuranAtlasReactDb): Promise<RecentSurahPosition[]> {
   const record = await db.settings.get('recentSurahs')
   return normalizeRecentSurahs(record?.value)
-}
-
-export function trackRecentSurahPosition(
-  db: QuranAtlasReactDb,
-  position: Pick<RecentSurahPosition, 'surah' | 'verse'>,
-  updatedAt = Date.now(),
-): Promise<void> {
-  recentWriteQueue = recentWriteQueue
-    .catch(() => undefined)
-    .then(async () => {
-      const record = await db.settings.get('recentSurahs')
-      const previous = normalizeRecentSurahs(record?.value)
-      const next = [
-        { surah: position.surah, updatedAt, verse: position.verse },
-        ...previous.filter((row) => row.surah !== position.surah),
-      ].slice(0, RECENT_SURAH_LIMIT)
-      await db.settings.put({ key: 'recentSurahs', value: next })
-    })
-  return recentWriteQueue
 }
 
 function normalizeRecentSurah(value: unknown): RecentSurahPosition | null {

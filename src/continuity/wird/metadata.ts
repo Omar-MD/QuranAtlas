@@ -1,12 +1,6 @@
 import { refFromIndex, refToIndex } from './progress'
 import type { QuranRef, SurahCount, WirdBoundaries, WirdBoundary } from './types'
 
-export const PREVIEW_SURAH_COUNTS: SurahCount[] = [
-  { n: 1, count: 7 },
-  { n: 2, count: 286 },
-  { n: 3, count: 200 },
-]
-
 const JUZ_STARTS: ReadonlyArray<readonly [number, number]> = [
   [1, 1],
   [2, 142],

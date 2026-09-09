@@ -4,7 +4,7 @@ import type { ComponentProps, HTMLAttributes, ReactNode } from 'react'
 import { cn } from '../../design-system/utils/cn'
 
 export type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
-  tone?: 'neutral' | 'success' | 'warning' | 'danger'
+  tone?: 'neutral' | 'success'
 }
 
 export function Badge({ tone = 'neutral', className, ...props }: BadgeProps) {
@@ -12,11 +12,7 @@ export function Badge({ tone = 'neutral', className, ...props }: BadgeProps) {
     <span
       className={cn(
         'qar:inline-flex qar:min-h-7 qar:items-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:px-2 qar:text-xs qar:font-medium qar:text-text',
-        {
-          'qar:border-accent qar:text-accent': tone === 'success',
-          'qar:border-focus qar:text-text': tone === 'warning',
-          'qar:border-danger qar:text-danger': tone === 'danger',
-        },
+        { 'qar:border-accent qar:text-accent': tone === 'success' },
         className,
       )}
       data-tone={tone}

@@ -1,35 +1,24 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadSourceCatalog } from '../../sources/catalog.mjs'
-import { sha256Hex, stableJson } from '../abi-writer.mjs'
+import { sha256Hex } from '../abi-writer.mjs'
 import { SEARCH_NORMALIZER_VERSION } from '../normalizer.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 export const REPO_ROOT = join(__dirname, '..', '..', '..', '..')
 export const QAC_SOURCE_ID = 'search-qac-morphology-0-4'
 export const QAC_TRANSFORM_VERSION = 1
-export const NORMALIZED_MORPHOLOGY_PATH = join(
-  REPO_ROOT,
-  'data',
-  'normalized',
-  'search',
-  'qac',
-  'qac-morphology-0.4.normalized.json',
-)
 
 const ROW_RE = /^\((\d+):(\d+):(\d+):(\d+)\)\t([^\t]*)\t([^\t]*)\t(.*)$/
 const FIELD_VALUE_RE = /(?:^|\|)(LEM|ROOT):([^|]+)/g
 const SAFE_VALUE_RE = /^[^\s|]+$/
 
-export async function importQacMorphologySource({
-  catalogDir = join(REPO_ROOT, 'data', 'catalog'),
-  write = false,
-} = {}) {
+export async function importQacMorphologySource({ catalogDir = join(REPO_ROOT, 'data', 'catalog') } = {}) {
   const catalog = await loadSourceCatalog(catalogDir)
   const metadata = readMorphologyCatalog(catalog)
   const sourcePath = join(REPO_ROOT, metadata.sourcePath)
@@ -60,12 +49,6 @@ export async function importQacMorphologySource({
     rows: parsed.rows,
     words: parsed.words,
   }
-
-  if (write) {
-    await mkdir(dirname(NORMALIZED_MORPHOLOGY_PATH), { recursive: true })
-    await writeFile(NORMALIZED_MORPHOLOGY_PATH, `${stableJson(output)}\n`)
-  }
-
   return output
 }
 
@@ -212,21 +195,4 @@ function featureValues(features) {
     if (match[1] === 'ROOT' && !root) root = match[2]
   }
   return { lemma, root }
-}
-
-export async function main(argv = process.argv.slice(2)) {
-  const write = argv.includes('--write')
-  const output = await importQacMorphologySource({ write })
-  if (write) {
-    console.log(`Generated ${relative(REPO_ROOT, NORMALIZED_MORPHOLOGY_PATH)}`)
-  } else {
-    console.log(`Validated QAC morphology ${output.sourceVersion}: ${output.coverage.rows} rows`)
-  }
-}
-
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
-  main().catch((error) => {
-    console.error(error instanceof Error ? error.message : String(error))
-    process.exit(1)
-  })
 }

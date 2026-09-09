@@ -1,7 +1,3 @@
-export function createBookmarkPulseId(verseKey: string): string {
-  return `bookmark-pulse-${verseKey.replace(':', '-')}`
-}
-
 const PULSE_DURATION_MS = 1000
 const PULSE_POLL_INTERVAL_MS = 100
 const PULSE_POLL_TIMEOUT_MS = 3000

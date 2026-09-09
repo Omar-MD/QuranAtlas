@@ -4,12 +4,11 @@
  * Reads normalized source files committed to the repo:
  *   data/normalized/quran/riwayat/{hafs,warsh,qaloon}.json
  *   data/normalized/translations/{id}.json
- *   data/normalized/tafsir/{id}.json
  *
  * Emits:
- *   public/dataset/riwayat/{name}/{NNN}.json          (per selected profile)
+ *   public/dataset/quran-text/{riwayah}/{style}/{NNN}.json (per text-style asset)
  *   public/dataset/translations/{id}/{NNN}.json       (114 per selectable translation)
- *   public/dataset/tafsir/**                          (removed from the MVP runtime profile)
+ *   public/dataset/translations/_verse-aliases.json   (copied from tracked data/catalog)
  *   public/dataset/surahs.json                        (114 entries, per-Riwayah counts)
  *   public/dataset/juz.json                           (30 entries)
  *   public/dataset/manifest.json                      (inventory per shipped file)
@@ -36,13 +35,10 @@ const REPO_ROOT = join(__dirname, '..', '..', '..')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat')
 const NORMALIZED_TRANSLATIONS_DIR = join(REPO_ROOT, 'data', 'normalized', 'translations')
-const NORMALIZED_TAFSIR_DIR = join(REPO_ROOT, 'data', 'normalized', 'tafsir')
-const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat') // shipped output (per-surah split files)
+const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat') // cleaned each build; text ships via quran-text/
 const QURAN_TEXT_DIR = join(DATASET_DIR, 'quran-text')
 const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
-const TAFSIR_DIR = join(DATASET_DIR, 'tafsir')
 const INDEXES_DIR = join(DATASET_DIR, 'indexes')
-const VERSE_MAP_PATH = join(TRANSLATIONS_DIR, '_verse-map.json')
 const VERSE_MAP_SOURCE = join(REPO_ROOT, 'data', 'catalog', 'translation-verse-map.json')
 const VERSE_ALIASES_PATH = join(TRANSLATIONS_DIR, '_verse-aliases.json')
 const VERSE_ALIASES_SOURCE = join(REPO_ROOT, 'data', 'catalog', 'translation-verse-aliases.json')
@@ -99,39 +95,6 @@ const SHIPPED_TRANSLATIONS = [
   },
 ]
 
-const SHIPPED_TAFSIR = [
-  {
-    id: 'muyassar',
-    normalizedFile: 'muyassar.json',
-    label: 'Tafsir Muyassar',
-    language: 'ar',
-    license: 'QUL downloadable resource',
-    licenseUrl: 'https://qul.tarteel.ai/resources/tafsir/38',
-    source: 'QUL tafsir resource 38',
-    sourceUrl: 'https://qul.tarteel.ai/resources/tafsir/38',
-  },
-  {
-    id: 'mukhtasar',
-    normalizedFile: 'mukhtasar.json',
-    label: 'Al-Mukhtasar fi al-Tafsir',
-    language: 'ar',
-    license: 'QUL downloadable resource',
-    licenseUrl: 'https://qul.tarteel.ai/resources/tafsir/251',
-    source: 'QUL tafsir resource 251',
-    sourceUrl: 'https://qul.tarteel.ai/resources/tafsir/251',
-  },
-  {
-    id: 'saadi',
-    normalizedFile: 'saadi.json',
-    label: "Tafsir al-Sa'di",
-    language: 'ar',
-    license: 'QUL downloadable resource',
-    licenseUrl: 'https://qul.tarteel.ai/resources/tafsir/24',
-    source: 'QUL tafsir resource 24',
-    sourceUrl: 'https://qul.tarteel.ai/resources/tafsir/24',
-  },
-]
-
 export const AYAT_COUNTS = { hafs: 6236, warsh: 6214, qaloon: 6214 }
 export const RIWAYAT = ['hafs', 'warsh', 'qaloon']
 const DEFAULT_PROFILE = JSON.parse(
@@ -148,55 +111,7 @@ const DATASET_PROFILES = {
     name: 'baseline',
     riwayat: RUNTIME_RIWAYAT,
     translations: [DEFAULT_TRANSLATION],
-    tafsir: [],
   },
-  full: {
-    name: 'full',
-    riwayat: RUNTIME_RIWAYAT,
-    translations: [DEFAULT_TRANSLATION],
-    tafsir: [],
-  },
-  catalog: {
-    name: 'catalog',
-    riwayat: [],
-    translations: [],
-    tafsir: [],
-  },
-}
-
-function emittedSourceIdsForProfile(profile) {
-  return profile.name === 'catalog' ? { translations: [], tafsir: [] } : { translations: [], tafsir: [] }
-}
-
-async function collectSourceAssetGroup(kind, sourceId, baseDir) {
-  const files = []
-  let totalBytes = 0
-  for (let n = 1; n <= 114; n++) {
-    const filename = `${pad3(n)}.json`
-    const fullPath = join(baseDir, sourceId, filename)
-    const bytes = (await stat(fullPath)).size
-    const path = `${kind}/${sourceId}/${filename}`
-    files.push({ path, bytes })
-    totalBytes += bytes
-  }
-  return {
-    id: sourceId,
-    type: kind === 'translations' ? 'translation' : 'tafsir',
-    totalBytes,
-    files,
-  }
-}
-
-async function writeSourceAssetIndex({ translationIds, tafsirIds }) {
-  const translations = []
-  const tafsir = []
-  for (const id of translationIds) {
-    translations.push(await collectSourceAssetGroup('translations', id, TRANSLATIONS_DIR))
-  }
-  for (const id of tafsirIds) {
-    tafsir.push(await collectSourceAssetGroup('tafsir', id, TAFSIR_DIR))
-  }
-  await writeFile(join(INDEXES_DIR, 'source-assets.json'), JSON.stringify({ version: 1, translations, tafsir }), 'utf8')
 }
 
 async function writeTextStyleSplits({ riwayah, textStyleId, perSurah }) {
@@ -247,7 +162,6 @@ export function getDatasetProfile(name = 'baseline') {
     name: profile.name,
     riwayat: [...profile.riwayat],
     translations: [...profile.translations],
-    tafsir: [...profile.tafsir],
   }
 }
 
@@ -505,110 +419,6 @@ function canonicalizeSourceSurahs(sourceSurahs, label) {
   return canonical
 }
 
-export function normalizeQulTafsir(tafsirId, rawSource, options = {}) {
-  if (!rawSource || typeof rawSource !== 'object' || Array.isArray(rawSource)) {
-    throw new Error('QUL tafsir source must be an object')
-  }
-  const entries = []
-  const seenEntryIds = new Set()
-  for (const [rawKey, value] of Object.entries(rawSource)) {
-    const key = canonicalAyahKey(rawKey, `QUL tafsir key ${rawKey}`)
-    if (typeof value === 'string') {
-      canonicalAyahKey(value, `QUL tafsir pointer ${rawKey}`)
-      continue
-    }
-    if (!value || typeof value !== 'object') {
-      throw new Error(`QUL tafsir ${key} must be an object or group pointer`)
-    }
-    if (seenEntryIds.has(key)) {
-      throw new Error(`QUL tafsir duplicate ayah ref ${key}`)
-    }
-    seenEntryIds.add(key)
-    const ayahKeys = Array.isArray(value.ayah_keys)
-      ? value.ayah_keys.map((ayahKey) => canonicalAyahKey(ayahKey, `QUL tafsir ${key} ayah_keys`))
-      : [key]
-    if (ayahKeys.length === 0) {
-      throw new Error(`QUL tafsir ${key} has no ayah_keys`)
-    }
-    const duplicateAyahKeys = ayahKeys.filter((ayahKey, index) => ayahKeys.indexOf(ayahKey) !== index)
-    if (duplicateAyahKeys.length > 0) {
-      throw new Error(`QUL tafsir ${key} duplicate ayah refs: ${duplicateAyahKeys.join(',')}`)
-    }
-    entries.push({
-      id: key,
-      startKey: ayahKeys[0],
-      endKey: ayahKeys[ayahKeys.length - 1],
-      ayahKeys,
-      sourceGranularity: ayahKeys.length > 1 ? 'range' : 'ayah',
-      text: String(value.text ?? ''),
-    })
-  }
-  entries.sort((a, b) => {
-    const pa = parseAyahKey(a.startKey)
-    const pb = parseAyahKey(b.startKey)
-    return pa.surah - pb.surah || pa.ayah - pb.ayah
-  })
-  return {
-    tafsirId,
-    tafsirVersion: options.tafsirVersion ?? `qul-resource-${options.resourceId ?? tafsirId}`,
-    language: options.language ?? 'ar',
-    entries,
-  }
-}
-
-export function buildTafsirSplits(normalizedSource) {
-  if (!normalizedSource || typeof normalizedSource !== 'object' || !Array.isArray(normalizedSource.entries)) {
-    throw new Error('normalized tafsir source missing entries')
-  }
-  const perSurah = {}
-  const seenEntryIds = new Set()
-  const seenAyahKeys = new Set()
-  for (const [index, entry] of normalizedSource.entries.entries()) {
-    const id = canonicalAyahKey(entry.id, `normalized tafsir entry[${index}].id`)
-    if (seenEntryIds.has(id)) {
-      throw new Error(`normalized tafsir duplicate entry id ${id}`)
-    }
-    seenEntryIds.add(id)
-    const startKey = canonicalAyahKey(entry.startKey, `normalized tafsir entry[${index}].startKey`)
-    const endKey = canonicalAyahKey(entry.endKey, `normalized tafsir entry[${index}].endKey`)
-    const ayahKeys = Array.isArray(entry.ayahKeys)
-      ? entry.ayahKeys.map((ayahKey) => canonicalAyahKey(ayahKey, `normalized tafsir entry[${index}].ayahKeys`))
-      : []
-    if (ayahKeys.length === 0) {
-      throw new Error(`normalized tafsir entry ${id} has no ayahKeys`)
-    }
-    if (startKey !== ayahKeys[0] || endKey !== ayahKeys[ayahKeys.length - 1]) {
-      throw new Error(`normalized tafsir entry ${id} start/end keys do not match ayahKeys range`)
-    }
-    for (const ayahKey of ayahKeys) {
-      if (seenAyahKeys.has(ayahKey)) {
-        throw new Error(`normalized tafsir duplicate ayah ref ${ayahKey}`)
-      }
-      seenAyahKeys.add(ayahKey)
-    }
-    const { surah } = parseAyahKey(startKey)
-    const key = canonicalSurahKey(surah)
-    if (!perSurah[key]) {
-      perSurah[key] = {
-        tafsirId: normalizedSource.tafsirId,
-        tafsirVersion: normalizedSource.tafsirVersion,
-        language: normalizedSource.language,
-        surahNo: surah,
-        entries: [],
-      }
-    }
-    perSurah[key].entries.push({
-      id,
-      startKey,
-      endKey,
-      ayahKeys,
-      sourceGranularity: entry.sourceGranularity,
-      text: entry.text,
-    })
-  }
-  return perSurah
-}
-
 /**
  * Validate _verse-map.json against the freshly-computed surahs.json counts.
  * The verse-map is the canonical fact file enumerating every surah whose
@@ -832,7 +642,7 @@ function buildSourceIndex(catalog, profile) {
         licenseStatus: licensesById(catalog).get(source.licenseId)?.status ?? null,
         visibility: source.visibility,
         default: source.default === true,
-        availableInManifest: profile.name !== 'catalog' && runtimeSources.has(`${source.type}:${source.id}`),
+        availableInManifest: runtimeSources.has(`${source.type}:${source.id}`),
         outputPath: source.outputPath,
         sourceUrl: source.sourceUrl,
       })),
@@ -845,7 +655,6 @@ function licensesById(catalog) {
 
 export async function main() {
   const profile = getDatasetProfile(parseProfileArg())
-  const emittedSources = emittedSourceIdsForProfile(profile)
   console.log(`[build-dataset] starting profile=${profile.name}`)
 
   const sourceCatalog = await loadSourceCatalog()
@@ -873,7 +682,8 @@ export async function main() {
     console.log(`[build-dataset] ${r}: ${sources[r].length} ayat`)
   }
 
-  // 2. Wipe + emit per-surah split files
+  // 2. Split each riwayah source; shipped text files come from
+  // writeTextAssetIndex (quran-text/), the splits feed indexes and coverage.
   const splits = {}
   await cleanPackDirs(RIWAYAT_DIR)
   await cleanPackDirs(QURAN_TEXT_DIR)
@@ -882,19 +692,7 @@ export async function main() {
     if (Object.keys(splits[r]).length !== 114) {
       throw new Error(`${r} produced ${Object.keys(splits[r]).length} surahs, expected 114`)
     }
-    let total = 0
-    if (profile.riwayat.includes(r)) {
-      const outDir = join(RIWAYAT_DIR, r)
-      await mkdir(outDir, { recursive: true })
-      for (const [key, payload] of Object.entries(splits[r])) {
-        await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
-        total += payload.ayat.length
-      }
-    } else {
-      for (const payload of Object.values(splits[r])) {
-        total += payload.ayat.length
-      }
-    }
+    const total = Object.values(splits[r]).reduce((sum, payload) => sum + payload.ayat.length, 0)
     if (total !== AYAT_COUNTS[r]) {
       throw new Error(`${r} split total ${total}, expected ${AYAT_COUNTS[r]}`)
     }
@@ -922,14 +720,11 @@ export async function main() {
   const surahsMeta = computeSurahsMeta(namesEn, namesAr, perRiwayahCounts)
   await writeFile(join(DATASET_DIR, 'surahs.json'), JSON.stringify(surahsMeta), 'utf8')
 
-  // 3a. Validate translations/_verse-map.json matches surahs.json divergences.
-  // This is a checks anchor: any future riwayah dataset bump that changes a
-  // surah's count must be reflected in the verse-map in the same commit.
-  // The canonical verse-map lives in tracked data/catalog and is copied into
-  // the dataset here so fresh checkouts bootstrap without local state.
-  await mkdir(TRANSLATIONS_DIR, { recursive: true })
-  await copyFile(VERSE_MAP_SOURCE, VERSE_MAP_PATH)
-  const verseMap = JSON.parse(await readFile(VERSE_MAP_PATH, 'utf8'))
+  // 3a. Validate the canonical verse-map (tracked data/catalog) against
+  // surahs.json divergences. This is a checks anchor: any future riwayah
+  // dataset bump that changes a surah's count must be reflected in the
+  // verse-map in the same commit.
+  const verseMap = JSON.parse(await readFile(VERSE_MAP_SOURCE, 'utf8'))
   const vmResult = validateVerseMap(verseMap, surahsMeta)
   console.log(`[build-dataset] verse-map: ${vmResult.divergent} divergent surahs validated against surahs.json`)
 
@@ -956,7 +751,7 @@ export async function main() {
   // 5. translations — split each shipped translation pack from its raw source.
   const translationProvenance = []
   const hafsCounts = perRiwayahCounts.hafs.slice() // 114-entry array, matches surah index
-  await cleanPackDirs(TRANSLATIONS_DIR, ['_verse-map.json', '_verse-aliases.json'])
+  await cleanPackDirs(TRANSLATIONS_DIR, ['_verse-aliases.json'])
   for (const t of SHIPPED_TRANSLATIONS.filter((entry) => profile.translations.includes(entry.id))) {
     const rawPath = join(NORMALIZED_TRANSLATIONS_DIR, t.normalizedFile)
     if (!existsSync(rawPath)) {
@@ -1025,54 +820,6 @@ export async function main() {
     })
   }
 
-  // 5b. tafsir — split committed normalized source packs.
-  const tafsirProvenance = []
-  await cleanPackDirs(TAFSIR_DIR)
-  for (const t of SHIPPED_TAFSIR.filter((entry) => emittedSources.tafsir.includes(entry.id))) {
-    const normalizedPath = join(NORMALIZED_TAFSIR_DIR, t.normalizedFile)
-    if (!existsSync(normalizedPath)) {
-      throw new Error(`Missing normalized tafsir source: ${normalizedPath}`)
-    }
-    const normalized = JSON.parse(await readFile(normalizedPath, 'utf8'))
-    if (normalized.tafsirId !== t.id) {
-      throw new Error(`tafsir source ${normalizedPath} has tafsirId=${normalized.tafsirId}, expected ${t.id}`)
-    }
-    const perSurah = buildTafsirSplits(normalized)
-    const outDir = join(TAFSIR_DIR, t.id)
-    await mkdir(outDir, { recursive: true })
-    for (let n = 1; n <= 114; n++) {
-      const key = pad3(n)
-      const payload = perSurah[key] ?? {
-        tafsirId: t.id,
-        tafsirVersion: normalized.tafsirVersion,
-        language: normalized.language,
-        surahNo: n,
-        entries: [],
-      }
-      await writeFile(join(outDir, `${key}.json`), JSON.stringify(payload), 'utf8')
-    }
-    const rangeCount = normalized.entries.filter((entry) => entry.sourceGranularity === 'range').length
-    tafsirProvenance.push({
-      id: t.id,
-      label: t.label,
-      language: t.language,
-      version: normalized.tafsirVersion,
-      entryCount: normalized.entries.length,
-      rangeEntryCount: rangeCount,
-      license: t.license,
-      licenseUrl: t.licenseUrl,
-      source: t.source,
-      sourceUrl: t.sourceUrl,
-      coverage: { surahs: Object.keys(perSurah).length },
-    })
-    console.log(`[build-dataset] tafsir ${t.id}: ${normalized.entries.length} entries (${rangeCount} ranges)`)
-  }
-
-  await writeSourceAssetIndex({
-    translationIds: emittedSources.translations,
-    tafsirIds: emittedSources.tafsir,
-  })
-
   // 6. provenance.json
   const builtAt = await resolveDatasetBuiltAt(profile.name)
   const provenance = {
@@ -1095,24 +842,21 @@ export async function main() {
       minLineHeight: RIWAYAH_META[id].minLineHeight,
     })),
     translations: translationProvenance,
-    tafsir: tafsirProvenance,
     fonts: FONT_PATHS,
   }
   await writeFile(join(DATASET_DIR, 'provenance.json'), JSON.stringify(provenance), 'utf8')
 
   const manifest = await buildManifestPayload({
     datasetDir: DATASET_DIR,
-    riwayatDir: RIWAYAT_DIR,
-    translationsDir: TRANSLATIONS_DIR,
     provenance,
     packageVersion: PACKAGE_VERSION,
     profileName: profile.name,
-    manifestTextSources: new Set([...profile.translations, ...profile.tafsir]),
+    manifestTextSources: new Set(profile.translations),
   })
   await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
 
   console.log(
-    `[build-dataset] done — wrote per-surah riwayat + translation files, surahs.json, juz.json, provenance.json, manifest.json`,
+    `[build-dataset] done — wrote quran-text + translation files, surahs.json, juz.json, provenance.json, manifest.json`,
   )
 }
 

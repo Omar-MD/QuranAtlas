@@ -1,6 +1,5 @@
 import type {
   NormalizedReactMushafViewMode,
-  ReactNightModePreference,
   ReactPreferenceStep,
   ReactReaderPreferences,
   ReactThemePreference,
@@ -68,10 +67,4 @@ function resolveTheme(theme: ReactThemePreference): 'light' | 'sepia' | 'dark' {
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   }
   return theme
-}
-
-export function isNightModeEnabled(nightMode: ReactNightModePreference): boolean {
-  if (nightMode === 'on') return true
-  if (nightMode === 'auto') return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
-  return false
 }

@@ -50,7 +50,6 @@ export type SearchWorkerRequest =
 
 export const SEARCH_WORKER_ERROR_CODES = [
   'unavailable-pack',
-  'incompatible-version',
   'missing-feature',
   'corrupt-shard',
   'offline-miss',
@@ -58,7 +57,6 @@ export const SEARCH_WORKER_ERROR_CODES = [
   'unsupported-query',
   'stale-epoch',
   'activation-changed',
-  'quota-unavailable',
 ] as const
 
 export type SearchWorkerErrorCode = (typeof SEARCH_WORKER_ERROR_CODES)[number]
@@ -244,12 +242,3 @@ export type SearchWorkerResponse =
         retryable: boolean
       }
     }
-
-export function assertSearchWorkerResponseForRequest(
-  request: Pick<SearchWorkerRequest, 'requestId'>,
-  response: Pick<SearchWorkerResponse, 'requestId'>,
-): void {
-  if (request.requestId !== response.requestId) {
-    throw new Error(`Search worker response request id ${response.requestId} does not match ${request.requestId}`)
-  }
-}

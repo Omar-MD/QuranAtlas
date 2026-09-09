@@ -7,14 +7,12 @@ export {
   Select,
   Slider,
   Switch,
-  Textarea,
   type CheckboxProps,
   type InputProps,
   type SegmentedControlProps,
   type SelectProps,
   type SliderProps,
   type SwitchProps,
-  type TextareaProps,
 } from './form-controls'
 export {
   Badge,
@@ -33,25 +31,5 @@ export {
   type StatusProps,
 } from './feedback'
 export { Tooltip, type TooltipProps } from './tooltip'
-export {
-  Dialog,
-  Popover,
-  Sheet,
-  SheetBody,
-  Toast,
-  type DialogProps,
-  type PopoverProps,
-  type SheetProps,
-  type ToastProps,
-} from './overlays'
-export {
-  Accordion,
-  Command,
-  DropdownMenu,
-  Tabs,
-  type AccordionProps,
-  type CommandProps,
-  type DropdownMenuProps,
-  type TabsProps,
-} from './menus'
-export { Disclosure, type DisclosureProps } from './disclosure'
+export { Dialog, Sheet, SheetBody, type DialogProps, type SheetProps } from './overlays'
+export { Accordion, Tabs, type AccordionProps, type TabsProps } from './menus'

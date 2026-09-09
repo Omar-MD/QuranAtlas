@@ -33,22 +33,11 @@ export type MushafResolvedPage = {
 
 export type QuranRef = { surah: number; verse: number }
 
-export type MushafPageAssetState =
-  | { status: 'loading' }
-  | { status: 'ready'; media: MushafReadyMedia; resolved: MushafResolvedPage }
-  | { status: 'unavailable'; reason: string; riwayah: Riwayah; mushafEditionId: string }
-  | { status: 'error'; error: Error }
-  | { status: 'aborted' }
-
-export type MushafReadyPageAssetState = Extract<MushafPageAssetState, { status: 'ready' }>
+export type MushafReadyPageAssetState = { status: 'ready'; media: MushafReadyMedia; resolved: MushafResolvedPage }
 
 export type MushafReadyMedia =
   | { kind: 'inline-svg'; inlineSvg: ReactInlineMushafSvg }
   | { kind: 'external-image'; source: MushafExternalImageSource }
-
-export type PreparedMushafPage =
-  | { kind: 'inline-svg'; assetUrl: string; inlineSvg: ReactInlineMushafSvg; resolved: MushafResolvedPage }
-  | PreparedExternalMushafPage
 
 export type MushafPageDescriptor =
   | {
@@ -137,8 +126,6 @@ export type PreparedExternalMushafPage = {
   resolved: MushafResolvedPage
 }
 
-export type MushafPageLoadPurpose = 'current' | 'preview'
-
 export type PreparedExternalMushafImage =
   | { status: 'ready'; image: HTMLImageElement }
   | { status: 'aborted' }
@@ -194,61 +181,6 @@ const COLOR_TOKENS: Record<string, string> = {
 }
 
 const validatedProfileContexts = new WeakSet<MushafPageProfileContext>()
-
-export async function loadMushafPageAsset({
-  context,
-  fetcher = fetch,
-  mushafEditionId,
-  page,
-  riwayah,
-  signal,
-}: LoadMushafPageAssetOptions): Promise<MushafPageAssetState> {
-  if (signal?.aborted) return { status: 'aborted' }
-  try {
-    const prepared = await loadPreparedMushafPage({ context, fetcher, mushafEditionId, page, riwayah, signal })
-    if (prepared.kind !== 'inline-svg') throw new Error('External-image Mushaf pages require the prepared page loader')
-    return {
-      status: 'ready',
-      media: { kind: 'inline-svg', inlineSvg: prepared.inlineSvg },
-      resolved: prepared.resolved,
-    }
-  } catch (error) {
-    if (isAbortError(error) || signal?.aborted) return { status: 'aborted' }
-    if (error instanceof Error && /Failed to fetch .*: 404/.test(error.message)) {
-      return { status: 'unavailable', reason: error.message, riwayah, mushafEditionId }
-    }
-    return { status: 'error', error: error instanceof Error ? error : new Error('Mushaf page unavailable') }
-  }
-}
-
-export async function loadPreparedExternalMushafPage({
-  context,
-  fetcher = fetch,
-  mushafEditionId,
-  page,
-  riwayah,
-  signal,
-}: LoadMushafPageAssetOptions): Promise<PreparedExternalMushafPage> {
-  const prepared = await loadPreparedMushafPage({ context, fetcher, mushafEditionId, page, riwayah, signal })
-  if (prepared.kind !== 'external-image') throw new Error('Prepared external Mushaf pages require a V2 manifest')
-  return prepared
-}
-
-export async function loadPreparedMushafPage(options: LoadMushafPageAssetOptions): Promise<PreparedMushafPage> {
-  const { fetcher = fetch, mushafEditionId, page, riwayah, signal } = options
-  if (signal?.aborted) throw abortError()
-  const context = options.context ?? (await loadMushafPageProfileContext({ fetcher, mushafEditionId, riwayah, signal }))
-  const descriptor = describeMushafPage(context, page)
-  if (descriptor.kind === 'external-image') return descriptor
-  const media = await prepareMushafDescriptorMedia(descriptor, 'readable', signal, fetcher)
-  if (media.kind !== 'inline-svg') throw new Error('Inline Mushaf descriptor did not prepare SVG media')
-  return {
-    kind: 'inline-svg',
-    assetUrl: descriptor.assetUrl,
-    inlineSvg: media.inlineSvg,
-    resolved: descriptor.resolved,
-  }
-}
 
 export async function loadMushafPageProfileContext({
   fetcher = fetch,
@@ -342,13 +274,6 @@ export async function prepareMushafDescriptorMedia(
       displayViewBox: descriptor.displayViewBox,
     }),
   }
-}
-
-export function selectExternalMushafSource(
-  page: PreparedExternalMushafPage,
-  purpose: MushafPageLoadPurpose,
-): MushafExternalImageSource {
-  return purpose === 'current' ? page.full : page.preview
 }
 
 export async function prepareExternalMushafImage(

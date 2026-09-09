@@ -1,5 +1,5 @@
 import type { AnswerPreview } from '../../../shared/search'
-import type { ParsedSearchQuery, SearchBriefDto, SearchQueryMode, SearchResultDto } from '../../search/schema'
+import type { SearchBriefDto, SearchResultDto } from '../../search/schema'
 import { formatSearchReference, laneLabel, mappingLabel, modeLabel } from './search-labels'
 import { getResultMatchEvidence } from './search-result-evidence'
 
@@ -118,14 +118,7 @@ export function previewIsAskIntent(preview: AnswerPreview): boolean {
   return preview.queryUnderstanding.intent === 'answer-question'
 }
 
-export function defaultTabForParsedSearch(parsed: ParsedSearchQuery, mode: SearchQueryMode): SearchWorkspaceTab {
-  if (parsed.reference) return 'verses'
-  if (mode === 'phrase') return 'verses'
-  if (mode === 'all' && isExplicitPhraseShape(parsed)) return 'verses'
-  return 'overview'
-}
-
-export function toOverviewViewModel(
+function toOverviewViewModel(
   brief: SearchBriefDto | null,
   hasMoreResults: boolean,
   results: SearchResultDto[],
@@ -493,10 +486,4 @@ function mappingSummaryRows(brief: SearchBriefDto): Array<{ label: string; value
     })
   }
   return rows
-}
-
-function isExplicitPhraseShape(parsed: ParsedSearchQuery): boolean {
-  const raw = parsed.ast.rawText.trim()
-  const hasQuotePair = /^["'“‘].+["'”’]$/.test(raw)
-  return hasQuotePair && parsed.phraseTokens.length >= 2
 }

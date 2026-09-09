@@ -1,6 +1,4 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import * as PopoverPrimitive from '@radix-ui/react-popover'
-import * as ToastPrimitive from '@radix-ui/react-toast'
 import { X } from 'lucide-react'
 import { useEffect, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 
@@ -195,49 +193,5 @@ export function Sheet({
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
-  )
-}
-
-export type PopoverProps = PopoverPrimitive.PopoverProps & {
-  trigger: ReactNode
-  children: ReactNode
-}
-
-export function Popover({ trigger, children, ...props }: PopoverProps) {
-  return (
-    <PopoverPrimitive.Root {...props}>
-      <PopoverPrimitive.Trigger asChild>{trigger}</PopoverPrimitive.Trigger>
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          className="qar:z-50 qar:max-w-sm qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-3 qar:text-sm qar:text-text qar:shadow-lg"
-          sideOffset={8}
-        >
-          {children}
-          <PopoverPrimitive.Arrow className="qar:fill-surface" />
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
-  )
-}
-
-export type ToastProps = ToastPrimitive.ToastProps & {
-  title: string
-  description?: string
-}
-
-export function Toast({ title, description, ...props }: ToastProps) {
-  return (
-    <ToastPrimitive.Provider>
-      <ToastPrimitive.Root
-        className="qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-3 qar:text-text qar:shadow-lg"
-        {...props}
-      >
-        <ToastPrimitive.Title className="qar:text-sm qar:font-semibold">{title}</ToastPrimitive.Title>
-        {description ? (
-          <ToastPrimitive.Description className="qar:text-sm qar:text-muted">{description}</ToastPrimitive.Description>
-        ) : null}
-      </ToastPrimitive.Root>
-      <ToastPrimitive.Viewport className="qar:fixed qar:bottom-4 qar:right-4 qar:z-50 qar:grid qar:w-80 qar:gap-2" />
-    </ToastPrimitive.Provider>
   )
 }

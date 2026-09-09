@@ -2,6 +2,13 @@ export const SEARCH_NORMALIZER_VERSION = 1
 export const SEARCH_QUERY_AST_VERSION = 1
 export const SEARCH_PHASE1_MAX_PHRASE_TOKENS = 8
 
+// Search pack shard byte budgets. The generated pack manifest declares these
+// per pack (shared/search/abi.ts SearchByteBudget); this is the build-side
+// single source for them.
+export const MAX_SHARD_BYTES = 4 * 1024 * 1024
+export const MAX_DECODED_SHARD_BYTES = 8 * 1024 * 1024
+export const MAX_RESIDENT_WORKER_BYTES = 48 * 1024 * 1024
+
 const QURAN_MARKS_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g
 const TATWEEL_RE = /\u0640/g
 const HAMZA_ALIF_RE = /[\u0622\u0623\u0625\u0671]/g
@@ -37,10 +44,4 @@ export function normalizeQueryText(input, mode = 'normalized') {
 export function tokenizeSearchText(input, mode = 'normalized') {
   const normalized = normalizeQueryText(input, mode)
   return normalized ? normalized.split(' ') : []
-}
-
-export function assertPhase1PhraseLength(tokens) {
-  if (tokens.length > SEARCH_PHASE1_MAX_PHRASE_TOKENS) {
-    throw new Error(`Search phrase exceeds Phase 1 maximum of ${SEARCH_PHASE1_MAX_PHRASE_TOKENS} tokens`)
-  }
 }

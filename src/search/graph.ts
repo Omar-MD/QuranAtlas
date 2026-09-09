@@ -22,7 +22,7 @@ export interface SearchGraphPolicyRow {
   value: string
 }
 
-export interface SearchGraphCursor {
+interface SearchGraphCursor {
   sectionId: SearchGraphSectionId
   offset: number
 }
@@ -39,7 +39,7 @@ export interface SearchGraphSectionBase {
   cursor?: SearchGraphCursor | null
 }
 
-export interface SearchFollowingWordingSection extends SearchGraphSectionBase {
+interface SearchFollowingWordingSection extends SearchGraphSectionBase {
   id: 'following-wording'
   rows: Array<{
     phrase: string
@@ -51,7 +51,7 @@ export interface SearchFollowingWordingSection extends SearchGraphSectionBase {
   }>
 }
 
-export interface SearchSharedWordingSection extends SearchGraphSectionBase {
+interface SearchSharedWordingSection extends SearchGraphSectionBase {
   id: 'shared-wording'
   rows: Array<{
     ref: `${number}:${number}`
@@ -60,7 +60,7 @@ export interface SearchSharedWordingSection extends SearchGraphSectionBase {
   }>
 }
 
-export interface SearchPhrasePatternSection extends SearchGraphSectionBase {
+interface SearchPhrasePatternSection extends SearchGraphSectionBase {
   id: 'repeated-phrases' | 'occurs-once'
   rows: Array<{
     phrase: string
@@ -69,7 +69,7 @@ export interface SearchPhrasePatternSection extends SearchGraphSectionBase {
   }>
 }
 
-export interface SearchAyahEndingsSection extends SearchGraphSectionBase {
+interface SearchAyahEndingsSection extends SearchGraphSectionBase {
   id: 'ayah-endings'
   rows: Array<{
     phrase: string

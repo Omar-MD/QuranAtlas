@@ -75,13 +75,18 @@ async function main(argv = process.argv.slice(2)) {
       return
     }
     console.error(
-      'Usage: pnpm run data -- mushaf-pages build [--profile=baseline|full|private] [--require-riwayah=qaloon] [--require-edition=qalun-furatiyyah-2023-v1] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages fetch-release [--edition=qalun-quran-ws-v1] | mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)',
+      'Usage: pnpm run data -- mushaf-pages build [--profile=baseline|private] | mushaf-pages import --edition=qalun-furatiyyah-2023-v1 --pdf="/absolute/path/to/pinned.pdf" | mushaf-pages fetch-release [--edition=qalun-quran-ws-v1] | mushaf-pages restore-release (--archive=/absolute/path/to/archive.tar | --check)',
     )
     process.exit(1)
   }
 
   if (command === 'aliases') {
     run('derive-verse-aliases.mjs')
+    return
+  }
+
+  if (command === 'search-tanzil-import') {
+    run('search/tanzil/import.mjs')
     return
   }
 
@@ -111,18 +116,16 @@ async function main(argv = process.argv.slice(2)) {
     const skipped = skipSet(args)
     await rm(BUILD_STAMP, { force: true })
     run('text/build.mjs', [`--profile=${sharedProfile}`])
-    if (profile !== 'catalog') {
-      run('search/build.mjs', [`--profile=${sharedProfile}`])
-      run('knowledge/build.mjs')
-      if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
-      run('riwayah-packages/build.mjs', [`--profile=${profile}`])
-    }
+    run('search/build.mjs', [`--profile=${sharedProfile}`])
+    run('knowledge/build.mjs')
+    if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
+    run('riwayah-packages/build.mjs', [`--profile=${profile}`])
     await writeFile(BUILD_STAMP, `${new Date().toISOString()}\n`, 'utf8')
     return
   }
 
   console.error(
-    'Usage: pnpm run data -- build [--profile=baseline|full|private|catalog] | check [--profile=baseline|private] | aliases | mushaf-pages',
+    'Usage: pnpm run data -- build [--profile=baseline|private] | check [--profile=baseline|private] | aliases | search-tanzil-import | mushaf-pages',
   )
   process.exit(1)
 }

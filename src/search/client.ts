@@ -231,10 +231,6 @@ export function getSearchClient(): SearchClient {
   return new SearchClient()
 }
 
-export function resetSearchClient(): void {
-  // Search clients are intentionally not kept in module-level mutable state.
-}
-
 function defaultWorkerFactory(): Worker {
   return new Worker(new URL('../search-worker/search.worker.ts', import.meta.url), { type: 'module' })
 }

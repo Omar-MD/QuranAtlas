@@ -33,7 +33,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { AYAT_COUNTS, RIWAYAT, splitRiwayah } from './build-dataset.mjs'
+import { AYAT_COUNTS, RIWAYAT, splitRiwayah } from './text/build.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..')

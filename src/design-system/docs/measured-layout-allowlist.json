@@ -1,10 +1,6 @@
 {
   "allowedArbitraryUtilities": [
     {
-      "className": "qar:aspect-[2/3]",
-      "reason": "Future Mushaf page proof may need a fixed page aspect ratio before page assets load."
-    },
-    {
       "className": "qar:z-[125]",
       "reason": "Dialog overlay must stack above the z-120 settings sheet (brief 2026-09-09 SD-P7); z is untokenized in this repo."
     },

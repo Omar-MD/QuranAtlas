@@ -152,19 +152,15 @@ function emissionContractInput(source, review, framing, media) {
 }
 
 /**
- * Loads and validates the pinned, local-only source contracts. The optional
- * second argument is test-only root injection; production uses repo paths.
+ * Loads and validates the pinned, local-only source contracts.
  */
-export async function loadPrivateMushafEditionContract(
-  editionId,
-  { contractDir = CONTRACT_DIR, repoRoot = REPO_ROOT } = {},
-) {
+export async function loadPrivateMushafEditionContract(editionId) {
   ensure(editionId === PRIVATE_EDITION_ID, `Unsupported private Mushaf edition: ${editionId}`)
   const [source, review, framing, media] = await Promise.all([
-    readJson(contractPath(contractDir, 'source.json')),
-    readJson(contractPath(contractDir, 'page-start-review.json')),
-    readJson(contractPath(contractDir, 'framing.json')),
-    readJson(contractPath(contractDir, 'media.json')),
+    readJson(contractPath(CONTRACT_DIR, 'source.json')),
+    readJson(contractPath(CONTRACT_DIR, 'page-start-review.json')),
+    readJson(contractPath(CONTRACT_DIR, 'framing.json')),
+    readJson(contractPath(CONTRACT_DIR, 'media.json')),
   ])
 
   ensure(
@@ -191,18 +187,18 @@ export async function loadPrivateMushafEditionContract(
     'Private Mushaf source expectedFilename is invalid',
   )
 
-  const pageMapPath = join(repoRoot, review.pageMapSource ?? '')
-  const aliasesPath = join(repoRoot, review.verseAliasSource ?? '')
+  const pageMapPath = join(REPO_ROOT, review.pageMapSource ?? '')
+  const aliasesPath = join(REPO_ROOT, review.verseAliasSource ?? '')
   ensure(
     review?.mushafEditionId === editionId && review.sourcePdfSha256 === source.sha256,
     'Private Mushaf review source digest is invalid',
   )
   ensure(
-    review.pageMapSource === 'data/normalized/quran/riwayat/qaloon.json' && isInside(repoRoot, pageMapPath),
+    review.pageMapSource === 'data/normalized/quran/riwayat/qaloon.json' && isInside(REPO_ROOT, pageMapPath),
     'Private Mushaf review page-map path is invalid',
   )
   ensure(
-    review.verseAliasSource === 'public/dataset/translations/_verse-aliases.json' && isInside(repoRoot, aliasesPath),
+    review.verseAliasSource === 'public/dataset/translations/_verse-aliases.json' && isInside(REPO_ROOT, aliasesPath),
     'Private Mushaf review alias path is invalid',
   )
   ensure(
@@ -470,13 +466,9 @@ async function readExistingImportMetadata(normalizedDir) {
 
 /**
  * Renders the sole pinned edition into an ignored immutable normalized sibling.
- * `paths` is intentionally test-only injection for temporary roots.
  */
-export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand = defaultCommandRunner, paths = {} }) {
-  const contractDir = paths.contractDir ?? CONTRACT_DIR
-  const repoRoot = paths.repoRoot ?? REPO_ROOT
-  const normalizedRoot = paths.normalizedRoot ?? NORMALIZED_ROOT
-  const contract = await loadPrivateMushafEditionContract(editionId, { contractDir, repoRoot })
+export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand = defaultCommandRunner }) {
+  const contract = await loadPrivateMushafEditionContract(editionId)
   ensure(
     typeof pdfPath === 'string' && pdfPath.length > 0 && existsSync(pdfPath),
     'Private Mushaf PDF path does not exist',
@@ -508,10 +500,10 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
     'Private Mushaf PDF CropBox does not match the pinned source contract',
   )
 
-  const normalizedDir = join(normalizedRoot, editionId)
-  ensure(isInside(normalizedRoot, normalizedDir), 'Unsafe private Mushaf normalized output path')
-  await mkdir(normalizedRoot, { recursive: true })
-  const stageDir = join(normalizedRoot, `.${editionId}.stage-${randomUUID()}`)
+  const normalizedDir = join(NORMALIZED_ROOT, editionId)
+  ensure(isInside(NORMALIZED_ROOT, normalizedDir), 'Unsafe private Mushaf normalized output path')
+  await mkdir(NORMALIZED_ROOT, { recursive: true })
+  const stageDir = join(NORMALIZED_ROOT, `.${editionId}.stage-${randomUUID()}`)
   const pagesDir = join(stageDir, 'pages')
   const renderDir = join(stageDir, 'render')
   await mkdir(pagesDir, { recursive: true })

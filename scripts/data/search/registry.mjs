@@ -1,11 +1,5 @@
-import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-
-import { stableJson } from './abi-writer.mjs'
-
 export const SEARCH_PACK_REGISTRY_RUNTIME_URL = '/search-packs/registry.json'
 export const SEARCH_PACKS_RUNTIME_PREFIX = '/search-packs/packs/'
-export const SEARCH_PACKS_FILESYSTEM_REGISTRY = 'public/search-packs/registry.json'
 export const SEARCH_PACKS_FILESYSTEM_PREFIX = 'public/search-packs/packs/'
 
 export function assertNoStableMutableSearchUrls(value) {
@@ -37,11 +31,3 @@ export function buildSearchRegistry({ generatedAt, manifest }) {
   assertNoStableMutableSearchUrls(registry)
   return registry
 }
-
-export async function writeSearchRegistry(repoRoot, registry) {
-  const registryPath = join(repoRoot, SEARCH_PACK_REGISTRY_FILESYSTEM_PATH)
-  await mkdir(dirname(registryPath), { recursive: true })
-  await writeFile(registryPath, `${stableJson(registry)}\n`, 'utf8')
-}
-
-const SEARCH_PACK_REGISTRY_FILESYSTEM_PATH = SEARCH_PACK_REGISTRY_RUNTIME_URL.replace(/^\//, 'public/')

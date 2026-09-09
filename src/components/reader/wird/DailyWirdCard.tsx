@@ -89,9 +89,7 @@ export function DailyWirdCard({
       </span>
       {summary.reminderLabel && (
         <span className="qar-react-wird-card-reminder-row">
-          <span className="qar-react-wird-card-reminder-icon" aria-hidden="true">
-            ○
-          </span>
+          <span aria-hidden="true">○</span>
           <span className="qar-react-wird-card-reminder">{summary.reminderLabel}</span>
         </span>
       )}

@@ -1,22 +1,6 @@
 import type { QuranAtlasReactDb } from './db'
 import { readNativeSettings } from './native-reader-store'
-import type { Riwayah, SettingRecord } from './types'
-
-export type ReaderAssetBundleSettings = {
-  riwayah: Riwayah
-  quranTextStyleId: string
-  mushafEditionId: string
-}
-
-export type OnboardingCompletionSettings = {
-  riwayah: Riwayah
-  translationId: string
-}
-
-export type MushafEditionSelectionSettings = {
-  mushafEditionId: string
-  mushafEditionSetupVersion: number
-}
+import type { SettingRecord } from './types'
 
 export type ReactPreferenceStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type ReactThemePreference = 'light' | 'sepia' | 'dark' | 'auto'
@@ -94,32 +78,6 @@ function clampMushafPageFraming(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
 }
 
-export async function writeReaderAssetBundleSettings(
-  db: QuranAtlasReactDb,
-  settings: ReaderAssetBundleSettings,
-): Promise<void> {
-  const records: SettingRecord[] = [
-    { key: 'riwayah', value: settings.riwayah },
-    { key: 'quranTextStyleId', value: settings.quranTextStyleId },
-    { key: 'mushafEditionId', value: settings.mushafEditionId },
-  ]
-  await db.transaction('rw', db.settings, async () => {
-    await db.settings.bulkPut(records)
-  })
-}
-
-export async function writeMushafEditionSelection(
-  db: QuranAtlasReactDb,
-  settings: MushafEditionSelectionSettings,
-): Promise<void> {
-  await db.transaction('rw', db.settings, async () => {
-    await db.settings.bulkPut([
-      { key: 'mushafEditionId', value: settings.mushafEditionId },
-      { key: 'mushafEditionSetupVersion', value: settings.mushafEditionSetupVersion },
-    ])
-  })
-}
-
 export async function readReactReaderPreferences(db: QuranAtlasReactDb): Promise<ReactReaderPreferences> {
   const records = await db.settings.bulkGet([...READER_PREFERENCE_KEYS])
   return reactReaderPreferencesFromRecords(records)
@@ -177,20 +135,6 @@ export async function writeReactReaderPreferences(
     { key: 'mushafViewMode', value: normalizeMushafViewMode(preferences.mushafViewMode) },
     { key: 'mushafFitWidth', value: preferences.mushafFitWidth },
     { key: 'mushafPageFraming', value: clampMushafPageFraming(preferences.mushafPageFraming) },
-  ]
-  await db.transaction('rw', db.settings, async () => {
-    await db.settings.bulkPut(records)
-  })
-}
-
-export async function writeOnboardingCompletion(
-  db: QuranAtlasReactDb,
-  settings: OnboardingCompletionSettings,
-): Promise<void> {
-  const records: SettingRecord[] = [
-    { key: 'onboardingComplete', value: true },
-    { key: 'riwayah', value: settings.riwayah },
-    { key: 'translationId', value: settings.translationId },
   ]
   await db.transaction('rw', db.settings, async () => {
     await db.settings.bulkPut(records)

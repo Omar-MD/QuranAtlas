@@ -111,25 +111,6 @@ export function useSavedSearches() {
     [refresh],
   )
 
-  const renameSearch = useCallback(
-    async (id: string, name: string) => {
-      const db = await openReactDb()
-      const record = await db.savedSearches.get(id)
-      const nextName = name.trim()
-      if (!record || !nextName) return
-      const now = Date.now()
-      await db.savedSearches.put({
-        ...record,
-        intent: { ...record.intent, name: nextName, updatedAt: now },
-        updatedAt: now,
-      })
-      setLastDeleted(null)
-      setStatus(`Renamed saved search ${nextName}`)
-      await refresh()
-    },
-    [refresh],
-  )
-
   const deleteSearch = useCallback(
     async (id: string) => {
       const db = await openReactDb()
@@ -158,8 +139,6 @@ export function useSavedSearches() {
     lastDeleted,
     openSearch,
     records,
-    refresh,
-    renameSearch,
     saveSearch,
     status,
     undoDelete,

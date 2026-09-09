@@ -27,7 +27,7 @@ export function parseSearchReference(input: string): ParsedSearchReference | nul
   return null
 }
 
-export function isValidSearchReference(surah: number, ayah: number): boolean {
+function isValidSearchReference(surah: number, ayah: number): boolean {
   return (
     Number.isInteger(surah) &&
     Number.isInteger(ayah) &&

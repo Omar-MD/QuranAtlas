@@ -44,7 +44,6 @@ export function resolveLaunchRoute({
 }: {
   currentPosition?: SavedPosition
   lastSurface?: string
-  onboardingComplete?: boolean
 }): string {
   if (lastSurface && shouldPersistLastSurface(lastSurface)) return lastSurface
   if (currentPosition) return `#/s/${currentPosition.surah}/${currentPosition.verse}`

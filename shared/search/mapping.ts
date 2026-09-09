@@ -39,24 +39,3 @@ export interface SearchMappingAsset {
   readerChecksum: string
   mappingVersion: number
 }
-
-export function assertSearchMappingAsset(asset: SearchMappingAsset): void {
-  if (!SEARCH_MAPPING_STATES.includes(asset.mappingState)) {
-    throw new Error(`unsupported Search mapping state ${asset.mappingState}`)
-  }
-  if (asset.readerRefs.length === 0 && asset.canOpenInRead) {
-    throw new Error('Search mapping cannot open in Read without reader refs')
-  }
-  if (asset.canHighlightWordsInRead && asset.mappingState !== 'same-wording-in-reader') {
-    throw new Error('Search mapping cannot highlight Reader words without same wording validation')
-  }
-  if (asset.aliasRole === 'identity-verified' && asset.mappingState !== 'same-wording-in-reader') {
-    throw new Error('Search mapping identity aliases must be explicitly same-wording in Reader')
-  }
-  if (asset.sourceCorpusId === asset.readerCorpusId && asset.sourceRef === asset.readerRefs[0]?.verseKey) {
-    throw new Error('Search mapping must not silently fall back to an identity reader ref')
-  }
-  if (!asset.reason.trim()) {
-    throw new Error('Search mapping reason is required')
-  }
-}

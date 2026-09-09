@@ -1,7 +1,39 @@
 {
-  // Entry points not auto-detected by Knip's Vite/Playwright/Storybook plugins:
-  // data tooling, CI build, and guardrail scripts invoked only from mise tasks.
-  "entry": ["scripts/**/*.{js,mjs}"],
+  // Entry points not auto-detected by Knip's Vite/Playwright/Storybook plugins.
+  // Narrowed to files that are actually EXECUTED (the previous
+  // "scripts/**/*.{js,mjs}" catch-all marked every script an entry, which
+  // permanently masked orphaned scripts from the unused-files audit):
+  //   - package.json scripts: data → data/cli.mjs, data:fetch →
+  //     data/fetch-source.mjs, ci:build → ci/build.mjs
+  //   - mise guardrail tasks: scripts/check-*
+  //   - data-lane scripts that data/cli.mjs spawns via spawnSync by path
+  //     (text/search/knowledge/mushaf-pages/riwayah-packages builders,
+  //     derive-verse-aliases, source-catalog, mushaf-pages release-archive).
+  //     These run as independent processes, so they are genuine entry points
+  //     even though Knip cannot see the string-path spawns — keeping them as
+  //     entries also keeps their transitive imports (e.g. jsdom via
+  //     mushaf-pages/display-view-box.mjs) visible to --dependencies.
+  // Library-only modules (scripts/data/lib/**, sources/**, search lane
+  // helpers, mushaf-pages/private-pdf.mjs, ci/public-assets.mjs, …) are
+  // deliberately NOT entries: they stay reachable through the import graph,
+  // and anything unreachable (an orphan) surfaces as an unused file.
+  "entry": [
+    "scripts/check-*.{js,mjs}",
+    "scripts/ci/build.mjs",
+    "scripts/data/cli.mjs",
+    "scripts/data/fetch-source.mjs",
+    "scripts/data/source-catalog.mjs",
+    "scripts/data/derive-verse-aliases.mjs",
+    "scripts/data/text/build.mjs",
+    "scripts/data/search/build.mjs",
+    "scripts/data/search/tanzil/import.mjs",
+    "scripts/data/knowledge/build.mjs",
+    "scripts/data/mushaf-pages/build.mjs",
+    "scripts/data/mushaf-pages/import.mjs",
+    "scripts/data/mushaf-pages/fetch-release.mjs",
+    "scripts/data/mushaf-pages/release-archive.mjs",
+    "scripts/data/riwayah-packages/build.mjs"
+  ],
   // Binaries consumed outside source imports and outside Knip plugin detection:
   // editor/OMP language servers (.omp/lsp.json references the Tailwind server)
   // and Biome, invoked only via `pnpm exec biome` in mise tasks (Knip has no

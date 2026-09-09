@@ -11,12 +11,6 @@ export type MushafEditionSetupFlowAction =
   | { type: 'persistenceFailed' }
   | { type: 'persistenceSucceeded' }
 
-export type OnboardingSourceOption = {
-  id: string
-  label: string
-  disabled: boolean
-}
-
 export function createInitialMushafEditionSetupState(editions: MushafEditionOption[]): MushafEditionSetupFlowState {
   return {
     persistenceStatus: 'idle',

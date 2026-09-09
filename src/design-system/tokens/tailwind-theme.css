@@ -11,7 +11,7 @@
   --color-muted: var(--qa-react-text-muted);
   --color-accent: var(--qa-react-accent);
   --color-accent-strong: var(--qa-react-accent-strong);
-  --color-focus: var(--qa-react-focus);
+  --color-focus: var(--qa-react-accent);
   --color-danger: var(--qa-react-danger);
   --color-text-on-danger: var(--qa-react-text-on-danger);
   --radius-control: var(--qa-react-radius-control);
@@ -19,7 +19,4 @@
   --radius-pill: var(--qa-react-radius-pill);
   --container-page: var(--qa-react-page-max-width);
   --font-ui: var(--qa-react-font-ui);
-  --font-arabic: var(--qa-react-font-arabic);
-  --font-translation: var(--qa-react-font-translation);
-  --font-mono: var(--qa-react-font-mono);
 }

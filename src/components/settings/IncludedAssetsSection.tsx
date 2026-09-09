@@ -181,7 +181,6 @@ function TextFontIcon() {
   return (
     <svg
       aria-hidden="true"
-      className="qar-react-settings-text-font-icon"
       fill="none"
       height="19"
       stroke="currentColor"

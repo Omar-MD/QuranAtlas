@@ -7,14 +7,10 @@ import {
   Button,
   Card,
   Checkbox,
-  Command,
   Dialog,
-  Disclosure,
-  DropdownMenu,
   IconButton,
   Input,
   ListRow,
-  Popover,
   Progress,
   SegmentedControl,
   Select,
@@ -25,8 +21,6 @@ import {
   Status,
   Switch,
   Tabs,
-  Textarea,
-  Toast,
   Tooltip,
 } from '.'
 
@@ -55,7 +49,6 @@ export const Primitives: Story = {
       </div>
       <Progress label="Download progress" value={64} />
       <Input label="Search" />
-      <Textarea label="Description" />
       <Select
         label="Riwayah"
         defaultValue="qaloon"
@@ -91,12 +84,6 @@ export const Behavior: Story = {
       <Sheet title="Sheet" trigger={<Button>Open sheet</Button>}>
         Sheet content
       </Sheet>
-      <Popover trigger={<Button>Open popover</Button>}>Popover content</Popover>
-      <Toast title="Saved" description="Bookmark saved" open />
-      <DropdownMenu
-        trigger={<Button>Menu</Button>}
-        items={[{ label: 'Install' }, { label: 'Remove', destructive: true }]}
-      />
       <Tabs
         label="Reader tabs"
         items={[
@@ -105,8 +92,6 @@ export const Behavior: Story = {
         ]}
       />
       <Accordion items={[{ title: 'Pack details', content: 'Install-before-activate state' }]} />
-      <Command label="Commands" items={[{ label: 'Go to Surah', icon: Settings }]} />
-      <Disclosure title="More">Disclosure content</Disclosure>
     </div>
   ),
 }
@@ -214,17 +199,6 @@ export const Cards: Story = {
     <div className="qar:grid qar:max-w-3xl qar:gap-4 qar:bg-canvas qar:p-6 qar:text-text">
       <Card title="Continue reading">Surah Al-Baqarah · Ayah 255</Card>
       <Card>Onboarding edition card without a header</Card>
-    </div>
-  ),
-}
-
-export const ButtonPill: Story = {
-  render: () => (
-    <div className="qar:flex qar:max-w-3xl qar:items-center qar:gap-2 qar:bg-canvas qar:p-6 qar:text-text">
-      <Button variant="pill">Page 42</Button>
-      <Button size="sm" variant="pill">
-        Jump to page
-      </Button>
     </div>
   ),
 }

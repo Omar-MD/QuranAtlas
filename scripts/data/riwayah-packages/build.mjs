@@ -151,8 +151,6 @@ async function refreshDatasetManifest(profileName) {
   const provenance = await readJson(join(DATASET_DIR, 'provenance.json'))
   const manifest = await buildManifestPayload({
     datasetDir: DATASET_DIR,
-    riwayatDir: join(DATASET_DIR, 'riwayat'),
-    translationsDir: join(DATASET_DIR, 'translations'),
     provenance,
     packageVersion: provenance.packageVersion,
     profileName,

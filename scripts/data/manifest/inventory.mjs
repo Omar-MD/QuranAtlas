@@ -6,17 +6,11 @@ import { listFiles } from '../lib/fs.mjs'
 const LANE_KEYS = ['text', 'knowledge', 'reflection', 'search', 'pages']
 
 function classifyDatasetFile(path) {
-  if (path.startsWith('riwayat/')) {
-    return { lane: 'text', category: 'text-riwayah' }
-  }
   if (path.startsWith('quran-text/')) {
     return { lane: 'text', category: 'text-riwayah' }
   }
   if (path.startsWith('translations/') && !path.startsWith('translations/_')) {
     return { lane: 'text', category: 'text-translation' }
-  }
-  if (path === 'translations/_verse-map.json' || path === 'translations/_verse-aliases.json') {
-    return { lane: 'text', category: 'text-core' }
   }
   if (path.startsWith('tafsir/')) {
     throw new Error(`MVP dataset manifest must not include tafsir files: ${path}`)
@@ -31,9 +25,6 @@ function classifyDatasetFile(path) {
     path === 'indexes/mushaf-assets.json' ||
     path === 'provenance.json'
   ) {
-    return { lane: 'text', category: 'text-index' }
-  }
-  if (path === 'indexes/source-assets.json') {
     return { lane: 'text', category: 'text-index' }
   }
   if (path.startsWith('knowledge/ayah/')) {
@@ -78,8 +69,6 @@ function createLaneSummary(files) {
 
 export async function buildManifestPayload({
   datasetDir,
-  riwayatDir,
-  translationsDir,
   provenance,
   packageVersion,
   profileName,
@@ -94,17 +83,16 @@ export async function buildManifestPayload({
     if (path.startsWith('tafsir/')) {
       throw new Error(`MVP dataset manifest must not include tafsir files: ${path}`)
     }
-    if (dirname(fullPath) === riwayatDir) continue
-    if (dirname(fullPath) === translationsDir) continue
-    if (profileName === 'catalog' && path.startsWith('mushaf-pages/')) {
-      continue
-    }
+    // The legacy riwayat/ split tree ships via quran-text/ only; skip any
+    // stale riwayat/** files (including per-riwayah subdirectories) and the
+    // translations/_* underscore files so they stay out of the manifest.
+    if (path.startsWith('riwayat/')) continue
+    if (dirname(path) === 'translations') continue
     if (
       manifestTextSources &&
-      ((path.startsWith('translations/') &&
-        !path.startsWith('translations/_') &&
-        !manifestTextSources.has(path.split('/')[1])) ||
-        (path.startsWith('tafsir/') && !manifestTextSources.has(path.split('/')[1])))
+      path.startsWith('translations/') &&
+      !path.startsWith('translations/_') &&
+      !manifestTextSources.has(path.split('/')[1])
     ) {
       continue
     }

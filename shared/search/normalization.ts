@@ -1,4 +1,4 @@
-export const SEARCH_NORMALIZER_VERSION = 1
+const SEARCH_NORMALIZER_VERSION = 1
 export const SEARCH_QUERY_AST_VERSION = 1
 export const SEARCH_PHASE1_MAX_PHRASE_TOKENS = 8
 
@@ -15,34 +15,7 @@ export interface SearchNormalizationPolicy {
   preserveExactWordMarks: boolean
 }
 
-export interface SearchTokenizationPolicy {
-  splitOnPunctuation: boolean
-  splitOnWhitespace: boolean
-  keepArabicAndLatinLetters: boolean
-  keepDigits: boolean
-}
-
-export interface SearchPhraseWindowPolicy {
-  maxPhase1PhraseTokens: typeof SEARCH_PHASE1_MAX_PHRASE_TOKENS
-  canCrossAyahBoundary: false
-  canCrossSurahBoundary: false
-  canCrossBismillahBoundary: false
-  maxMaterializedNgramTokensPhase3: number
-}
-
-export interface SearchByteBudgetGates {
-  maxShardBytes: number
-  maxDecodedShardBytes: number
-  maxResidentWorkerBytes: number
-}
-
-export const SEARCH_PHASE1_BYTE_BUDGET: SearchByteBudgetGates = {
-  maxShardBytes: 4 * 1024 * 1024,
-  maxDecodedShardBytes: 8 * 1024 * 1024,
-  maxResidentWorkerBytes: 48 * 1024 * 1024,
-}
-
-export const SEARCH_NORMALIZATION_POLICY: SearchNormalizationPolicy = {
+const SEARCH_NORMALIZATION_POLICY: SearchNormalizationPolicy = {
   version: SEARCH_NORMALIZER_VERSION,
   unicodeNormalization: 'NFC',
   removeQuranMarks: true,
@@ -53,21 +26,6 @@ export const SEARCH_NORMALIZATION_POLICY: SearchNormalizationPolicy = {
   normalizeArabicIndicDigits: true,
   collapseWhitespace: true,
   preserveExactWordMarks: true,
-}
-
-export const SEARCH_TOKENIZATION_POLICY: SearchTokenizationPolicy = {
-  splitOnPunctuation: true,
-  splitOnWhitespace: true,
-  keepArabicAndLatinLetters: true,
-  keepDigits: true,
-}
-
-export const SEARCH_PHRASE_WINDOW_POLICY: SearchPhraseWindowPolicy = {
-  maxPhase1PhraseTokens: SEARCH_PHASE1_MAX_PHRASE_TOKENS,
-  canCrossAyahBoundary: false,
-  canCrossSurahBoundary: false,
-  canCrossBismillahBoundary: false,
-  maxMaterializedNgramTokensPhase3: 6,
 }
 
 const QURAN_MARKS_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]/g
@@ -115,17 +73,5 @@ export function tokenizeSearchInput(input: string, mode: SearchNormalizationMode
 export function assertSearchPhraseWithinPhase1Policy(tokens: readonly string[]): void {
   if (tokens.length > SEARCH_PHASE1_MAX_PHRASE_TOKENS) {
     throw new Error(`Search phrase exceeds Phase 1 maximum of ${SEARCH_PHASE1_MAX_PHRASE_TOKENS} tokens`)
-  }
-}
-
-export function assertSearchShardWithinByteBudget(bytes: number, decodedBytes: number, residentBytes: number): void {
-  if (bytes > SEARCH_PHASE1_BYTE_BUDGET.maxShardBytes) {
-    throw new Error('Search shard exceeds Phase 1 encoded byte budget')
-  }
-  if (decodedBytes > SEARCH_PHASE1_BYTE_BUDGET.maxDecodedShardBytes) {
-    throw new Error('Search shard exceeds Phase 1 decoded byte budget')
-  }
-  if (residentBytes > SEARCH_PHASE1_BYTE_BUDGET.maxResidentWorkerBytes) {
-    throw new Error('Search worker exceeds Phase 1 resident byte budget')
   }
 }

@@ -63,9 +63,3 @@ export interface SavedSearchIntentV1 {
   updatedAt: number
   lastOpenedAt: number | null
 }
-
-export function assertSearchQueryMode(mode: string): asserts mode is SearchQueryMode {
-  if (!(SEARCH_QUERY_MODES as readonly string[]).includes(mode)) {
-    throw new Error(`unsupported Search query mode ${mode}`)
-  }
-}

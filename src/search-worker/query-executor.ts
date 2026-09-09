@@ -16,10 +16,6 @@ import { cooperativeYield, type SearchCancellationToken } from './cancellation'
 import { SearchMorphologyExecutor } from './morphology-executor'
 import { buildSearchBrief, evidenceForCandidate } from './search-brief'
 
-export interface SearchQueryExecutorOptions {
-  aliases?: unknown
-}
-
 interface Candidate {
   ayah: SearchAyahRow
   lane: SearchResultMatchLane
@@ -35,8 +31,7 @@ export class SearchQueryExecutor {
   private readonly reader: SearchPackReader
   private readonly morphology: SearchMorphologyExecutor
 
-  constructor(reader: SearchPackReader, _options: SearchQueryExecutorOptions = {}) {
-    void _options
+  constructor(reader: SearchPackReader) {
     this.reader = reader
     this.morphology = new SearchMorphologyExecutor(reader)
   }

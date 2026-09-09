@@ -209,12 +209,7 @@ function WirdSettingsSection({
             <span className="qar-react-settings-row-label">Daily Wird</span>
             <span className="qar-react-settings-row-control">Show progress in reader and navigation</span>
           </span>
-          <Switch
-            checked={enabled}
-            className="qar-react-settings-switch"
-            label="Enable Daily Wird"
-            onCheckedChange={onEnabledChange}
-          />
+          <Switch checked={enabled} label="Enable Daily Wird" onCheckedChange={onEnabledChange} />
         </div>
       </div>
     </SettingsGroup>

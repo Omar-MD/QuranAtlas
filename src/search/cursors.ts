@@ -25,14 +25,6 @@ export function createSearchResultCursor({
   }
 }
 
-export function encodeSearchResultCursor(cursor: SearchResultCursor): string {
-  return encodeURIComponent(JSON.stringify(cursor))
-}
-
-export function decodeSearchResultCursor(encoded: string): SearchResultCursor {
-  return JSON.parse(decodeURIComponent(encoded)) as SearchResultCursor
-}
-
 export function assertSearchCursorValid(
   cursor: SearchResultCursor | undefined,
   expected: Pick<SearchResultCursor, 'packId' | 'packVersion' | 'queryHash' | 'sort'>,

@@ -37,12 +37,7 @@ export function VerseSettings({
             <span className="qar-react-settings-row-label">Translation</span>
             <span className="qar-react-settings-row-control">Show meaning below each verse</span>
           </span>
-          <Switch
-            checked={translationVisible}
-            className="qar-react-settings-switch"
-            label="Show translation"
-            onCheckedChange={onTranslationVisibleChange}
-          />
+          <Switch checked={translationVisible} label="Show translation" onCheckedChange={onTranslationVisibleChange} />
         </div>
       </div>
     </SettingsGroup>
@@ -101,7 +96,6 @@ function ReadingFlowControl({
     <div className="qar-react-settings-row qar-react-settings-row--select">
       <span className="qar-react-settings-row-label">{label}</span>
       <Select
-        className="qar-react-settings-reading-flow-select"
         label={label}
         onValueChange={(nextValue) => onChange(nextValue as ReactPreferenceStep)}
         options={FLOW_STEPS}

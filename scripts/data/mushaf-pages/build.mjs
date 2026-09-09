@@ -19,9 +19,6 @@ const ASSET_CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-assets.jso
 // this into the dataset so the reader still resolves its default edition (page
 // files stay lazy); trees with media rebuild the index and re-sync the anchor.
 const ASSET_INDEX_ANCHOR_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-asset-index.json')
-const DEFAULT_PROFILE = JSON.parse(
-  await readFile(join(REPO_ROOT, 'shared', 'reader-assets', 'default-profile.json'), 'utf8'),
-).profile
 const NORMALIZED_DIR = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages')
 const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
@@ -29,11 +26,6 @@ const OUT_ROOT = join(DATASET_DIR, 'mushaf-pages')
 const RIWAYAT = ['hafs', 'warsh', 'qaloon']
 const BUILD_STAMP_VERSION = 2
 const BUILD_TRANSFORM_ID = 'quranatlas-mushaf-pages-theme-v2'
-const PROFILE_RIWAYAT = {
-  baseline: [DEFAULT_PROFILE.riwayah],
-  full: [DEFAULT_PROFILE.riwayah],
-  catalog: [],
-}
 const PRIVATE_EDITION_ID = 'qalun-furatiyyah-2023-v1'
 const PRIVATE_MEDIA_KIND = 'external-image'
 const PRIVATE_MIME_TYPE = 'image/webp'
@@ -49,18 +41,6 @@ function ensure(condition, message) {
 function argValue(argv, name, fallback = null) {
   const flag = argv.find((arg) => arg.startsWith(`--${name}=`))
   return flag ? flag.slice(name.length + 3) : fallback
-}
-
-function argList(argv, name) {
-  return argv
-    .filter((arg) => arg.startsWith(`--${name}=`))
-    .flatMap((arg) =>
-      arg
-        .slice(name.length + 3)
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    )
 }
 
 function sourceSurahNo(ayah) {
@@ -131,37 +111,20 @@ export function optimizeSvgForDataset(text) {
     .trim()
 }
 
-export function riwayatForProfile(profile = 'baseline') {
-  if (profile === 'private') return [DEFAULT_PROFILE.riwayah]
-  const riwayat = PROFILE_RIWAYAT[profile]
-  if (!riwayat) throw new Error(`Unsupported Mushaf page profile: ${profile}`)
-  return [...riwayat]
-}
-
 /**
  * Select the explicit page editions that a build profile is permitted to emit.
  * The standard profiles deliberately never infer an internal edition from the
  * catalog: quran.ws remains the only default output.
  */
 export function editionIdsForProfile(profile, catalog) {
-  if (profile === 'catalog') return []
   const defaultEdition = catalog?.defaults?.qaloon
   ensure(
     typeof defaultEdition === 'string' && defaultEdition.length > 0,
     'Mushaf asset catalog missing default Qaloon edition',
   )
-  if (profile === 'baseline' || profile === 'full') return [defaultEdition]
+  if (profile === 'baseline') return [defaultEdition]
   if (profile === 'private') return [defaultEdition, PRIVATE_EDITION_ID]
   throw new Error(`Unsupported Mushaf page profile: ${profile}`)
-}
-
-export function resolveRequiredEditionIds(profile, explicitIds = []) {
-  const required = new Set(explicitIds)
-  if (profile === 'private') {
-    required.add('qalun-quran-ws-v1')
-    required.add('qalun-furatiyyah-2023-v1')
-  }
-  return [...required]
 }
 
 export function derivePageMappings(ayat) {
@@ -183,10 +146,6 @@ export function derivePageMappings(ayat) {
   }
 
   return { firstVerse, verseToPage }
-}
-
-export function firstVerseByPage(ayat) {
-  return derivePageMappings(ayat).firstVerse
 }
 
 export function assertSafeSvg(filename, text) {
@@ -362,12 +321,6 @@ export async function buildMushafManifestPayload({
     verseToPage,
     pages,
   }
-}
-
-export async function writeMushafManifest(options) {
-  const path = join(options.outDir, 'manifest.json')
-  await writeJson(path, await buildMushafManifestPayload(options))
-  return path
 }
 
 async function loadCatalog() {
@@ -925,10 +878,7 @@ function assertPrivateNormalizedProvenance(metadata, contract) {
   }
 }
 
-async function loadPrivateNormalizedPages(
-  asset,
-  { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {},
-) {
+async function loadPrivateNormalizedPages(asset, { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
   const normalizedDir = join(normalizedRoot, asset.riwayah, asset.mushafEditionId)
   const importPath = join(normalizedDir, 'import.json')
   const bytes = await readExistingBytes(importPath)
@@ -941,7 +891,7 @@ async function loadPrivateNormalizedPages(
     metadata?.version === 1 && metadata.riwayah === asset.riwayah && metadata.mushafEditionId === asset.mushafEditionId,
     'Private Mushaf normalized metadata identity is invalid',
   )
-  const contract = await loadPrivateMushafEditionContract(asset.mushafEditionId, { contractDir })
+  const contract = await loadPrivateMushafEditionContract(asset.mushafEditionId)
   assertPrivateNormalizedProvenance(metadata, contract)
   ensure(
     metadata.media?.kind === PRIVATE_MEDIA_KIND &&
@@ -999,11 +949,8 @@ async function loadPrivateNormalizedPages(
   return { normalizedDir, metadata, pages, sourceDigest: metadata.contentDigest }
 }
 
-async function preflightPrivateEdition(
-  asset,
-  { contractDir, missing = 'error', normalizedRoot = NORMALIZED_DIR } = {},
-) {
-  const normalized = await loadPrivateNormalizedPages(asset, { contractDir, missing, normalizedRoot })
+async function preflightPrivateEdition(asset, { missing = 'error', normalizedRoot = NORMALIZED_DIR } = {}) {
+  const normalized = await loadPrivateNormalizedPages(asset, { missing, normalizedRoot })
   if (!normalized) return false
   const mappings = await deriveRiwayahMappings(asset.riwayah, asset.pageCount)
   for (const row of normalized.pages) {
@@ -1018,9 +965,9 @@ async function preflightPrivateEdition(
 
 async function buildPrivateEdition(
   asset,
-  { check = false, contractDir, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {},
+  { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {},
 ) {
-  const normalized = await loadPrivateNormalizedPages(asset, { contractDir, missing, normalizedRoot })
+  const normalized = await loadPrivateNormalizedPages(asset, { missing, normalizedRoot })
   if (!normalized) {
     console.warn(`[mushaf-pages] skipping ${asset.mushafEditionId}: missing local normalized image artifacts`)
     return false
@@ -1274,8 +1221,6 @@ async function refreshDatasetManifest(profileName, datasetDir = DATASET_DIR) {
   const provenance = await readJson(join(datasetDir, 'provenance.json'))
   const manifest = await buildManifestPayload({
     datasetDir,
-    riwayatDir: join(datasetDir, 'riwayat'),
-    translationsDir: join(datasetDir, 'translations'),
     provenance,
     packageVersion: provenance.packageVersion,
     profileName,
@@ -1284,22 +1229,9 @@ async function refreshDatasetManifest(profileName, datasetDir = DATASET_DIR) {
   await writeFile(join(datasetDir, 'manifest.json'), JSON.stringify(manifest), 'utf8')
 }
 
-/**
- * `paths` is test-only output/input injection. Production uses repository
- * roots, while contract tests can prove profile transitions without touching
- * generated runtime output.
- */
-export async function main(argv = process.argv.slice(2), paths = {}) {
-  const outRoot = paths.outRoot ?? OUT_ROOT
-  const datasetDir = paths.datasetDir ?? DATASET_DIR
-  const normalizedRoot = paths.normalizedRoot ?? NORMALIZED_DIR
-  const contractDir = paths.contractDir
-  const refreshManifest = paths.refreshManifest ?? true
+export async function main(argv = process.argv.slice(2)) {
   const profile = argValue(argv, 'profile', 'baseline')
   const check = argv.includes('--check')
-  const requiredRiwayat = new Set(argList(argv, 'require-riwayah'))
-  const requiredEditions = new Set(resolveRequiredEditionIds(profile, argList(argv, 'require-edition')))
-  for (const riwayah of requiredRiwayat) validateRiwayahId(riwayah)
   const catalog = await loadCatalog()
   const assetCatalog = await loadAssetCatalog()
   const selectedEditionIds = editionIdsForProfile(profile, assetCatalog)
@@ -1308,27 +1240,14 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
     ensure(asset, `Mushaf asset catalog missing selected edition ${editionId}`)
     return asset
   })
-  const selectedRiwayat = new Set(selectedAssets.map((asset) => asset.riwayah))
-  for (const riwayah of requiredRiwayat) {
-    if (!selectedRiwayat.has(riwayah))
-      throw new Error(`Required Mushaf page riwayah ${riwayah} is not part of profile ${profile}`)
-  }
-  for (const editionId of requiredEditions) {
-    if (!selectedEditionIds.includes(editionId))
-      throw new Error(`Required Mushaf page edition ${editionId} is not part of profile ${profile}`)
-  }
   if (selectedAssets.length === 0) {
     console.warn(`[mushaf-pages] skipping profile=${profile}: no Mushaf page body output`)
     return
   }
 
-  const selectionIsStrict = profile === 'private'
-  const missingPolicy = (asset) =>
-    selectionIsStrict || requiredRiwayat.has(asset.riwayah) || requiredEditions.has(asset.mushafEditionId)
-      ? 'error'
-      : 'skip'
+  const missingPolicy = profile === 'private' ? 'error' : 'skip'
   for (const asset of selectedAssets) {
-    const options = { contractDir, missing: missingPolicy(asset), normalizedRoot }
+    const options = { missing: missingPolicy }
     if (asset.sourceKind === 'local-pdf') {
       await preflightPrivateEdition(asset, options)
     } else {
@@ -1340,23 +1259,12 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
   for (const asset of selectedAssets) {
     const model =
       asset.sourceKind === 'local-pdf'
-        ? await buildPrivateEdition(asset, {
-            check,
-            contractDir,
-            missing: missingPolicy(asset),
-            outRoot,
-            normalizedRoot,
-          })
-        : await buildQuranWsEdition(asset, catalog, assetCatalog, {
-            check,
-            missing: missingPolicy(asset),
-            outRoot,
-            normalizedRoot,
-          })
+        ? await buildPrivateEdition(asset, { check, missing: missingPolicy })
+        : await buildQuranWsEdition(asset, catalog, assetCatalog, { check, missing: missingPolicy })
     if (model && typeof model === 'object') models.push(model)
   }
 
-  const datasetIndexPath = join(datasetDir, 'indexes', 'mushaf-assets.json')
+  const datasetIndexPath = join(DATASET_DIR, 'indexes', 'mushaf-assets.json')
   if (models.length === 0) {
     if (profile !== 'baseline') return
     // Baseline tree without local Mushaf media: the dataset must still
@@ -1372,26 +1280,26 @@ export async function main(argv = process.argv.slice(2), paths = {}) {
       }
       return
     }
-    await mkdir(join(datasetDir, 'indexes'), { recursive: true })
+    await mkdir(join(DATASET_DIR, 'indexes'), { recursive: true })
     await copyFile(ASSET_INDEX_ANCHOR_PATH, datasetIndexPath)
-    if (refreshManifest) await refreshDatasetManifest(profile, datasetDir)
+    await refreshDatasetManifest(profile, DATASET_DIR)
     return
   }
   const resolvedAssets = models.map((model) => model.asset)
   const indexPayload = buildMushafAssetIndexPayload(resolvedAssets, assetCatalog)
   if (check) {
-    await assertExactMushafTree(models, outRoot)
-    await assertExpectedIndex(indexPayload, datasetDir)
-    if (refreshManifest || existsSync(join(datasetDir, 'manifest.json'))) {
-      await assertDatasetManifestMembership(models, indexPayload, datasetDir)
+    await assertExactMushafTree(models, OUT_ROOT)
+    await assertExpectedIndex(indexPayload, DATASET_DIR)
+    if (existsSync(join(DATASET_DIR, 'manifest.json'))) {
+      await assertDatasetManifestMembership(models, indexPayload, DATASET_DIR)
     }
     return
   }
 
-  await pruneMushafOutput(resolvedAssets, { outRoot })
-  await writeMushafAssetIndex(indexPayload, { datasetDir })
+  await pruneMushafOutput(resolvedAssets, { outRoot: OUT_ROOT })
+  await writeMushafAssetIndex(indexPayload, { datasetDir: DATASET_DIR })
   if (profile === 'baseline') await copyFile(datasetIndexPath, ASSET_INDEX_ANCHOR_PATH)
-  if (refreshManifest) await refreshDatasetManifest(profile, datasetDir)
+  await refreshDatasetManifest(profile, DATASET_DIR)
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

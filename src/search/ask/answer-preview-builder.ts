@@ -34,9 +34,9 @@ import {
 import { blockersForAskQuery, recoveryForAskBlockers } from './boundaries'
 import { understandAskQuery } from './query-understanding'
 
-export const ASK_PREVIEW_LIMIT = 5
-export const ASK_PREVIEW_EVIDENCE_ATOM_LIMIT = 20
-export const ASK_MATCHES_PAGE_LIMIT = 10
+const ASK_PREVIEW_LIMIT = 5
+const ASK_PREVIEW_EVIDENCE_ATOM_LIMIT = 20
+const ASK_MATCHES_PAGE_LIMIT = 10
 
 type BuildPreviewInput = {
   query: string

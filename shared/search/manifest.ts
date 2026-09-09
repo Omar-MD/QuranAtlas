@@ -2,16 +2,12 @@ import type { SearchByteBudget, SearchChecksumScope, SearchFeatureId, SearchShar
 
 export const SEARCH_PACK_REGISTRY_RUNTIME_URL = '/search-packs/registry.json'
 export const SEARCH_PACKS_RUNTIME_PREFIX = '/search-packs/packs/'
-export const SEARCH_PACKS_FILESYSTEM_REGISTRY = 'public/search-packs/registry.json'
+
 export const SEARCH_PACKS_FILESYSTEM_PREFIX = 'public/search-packs/packs/'
-export const SEARCH_PACK_CACHE_PREFIX = 'quran-atlas-search-pack'
-export const SEARCH_PACK_STAGED_CACHE_PREFIX = 'quran-atlas-search-pack-staged'
 export const SEARCH_PACK_CHECKSUM_ALGORITHM = 'sha-256'
 export const FORBIDDEN_SEARCH_DATASET_PREFIX = '/dataset/search/'
 
-export type SearchPackActivationProtection = 'active' | 'previous-active' | 'staged' | 'orphaned'
-
-export interface SearchPackNotice {
+interface SearchPackNotice {
   id: string
   label: string
   body: string
@@ -100,70 +96,6 @@ export interface SearchPackRegistry {
   packs: SearchPackRegistryEntry[]
 }
 
-export interface SearchPackCacheOwnership {
-  registryRuntimeUrl: typeof SEARCH_PACK_REGISTRY_RUNTIME_URL
-  runtimePackPrefix: typeof SEARCH_PACKS_RUNTIME_PREFIX
-  activeCachePrefix: typeof SEARCH_PACK_CACHE_PREFIX
-  stagedCachePrefix: typeof SEARCH_PACK_STAGED_CACHE_PREFIX
-  genericDatasetCacheExcludedPrefix: typeof FORBIDDEN_SEARCH_DATASET_PREFIX
-  protectedStates: SearchPackActivationProtection[]
-}
-
-export interface SearchPackActivationRecord {
-  schemaVersion: 1
-  activePackId: string | null
-  activeContentHash: string | null
-  previousActivePackId: string | null
-  previousActiveContentHash: string | null
-  activationGeneration: number
-  activationState:
-    | 'not-available'
-    | 'available-online'
-    | 'installing'
-    | 'staged'
-    | 'verifying'
-    | 'active'
-    | 'update-available'
-    | 'incompatible'
-    | 'failed'
-    | 'offline-unavailable'
-  lastVerifiedAt: number | null
-  lastError: string | null
-}
-
-export interface SearchRuntimeVersionHandshake {
-  appVersion: string
-  serviceWorkerVersion: string
-  searchWorkerVersion: string
-  activePackId: string | null
-  activePackVersion: string | null
-  minAppVersion: string | null
-  minWorkerVersion: string | null
-}
-
-export const SEARCH_PACK_CACHE_OWNERSHIP: SearchPackCacheOwnership = {
-  registryRuntimeUrl: SEARCH_PACK_REGISTRY_RUNTIME_URL,
-  runtimePackPrefix: SEARCH_PACKS_RUNTIME_PREFIX,
-  activeCachePrefix: SEARCH_PACK_CACHE_PREFIX,
-  stagedCachePrefix: SEARCH_PACK_STAGED_CACHE_PREFIX,
-  genericDatasetCacheExcludedPrefix: FORBIDDEN_SEARCH_DATASET_PREFIX,
-  protectedStates: ['active', 'previous-active'],
-}
-
-export function searchStagedCacheName(contentHash: string): string {
-  assertContentHashSegment(contentHash)
-  return `${SEARCH_PACK_STAGED_CACHE_PREFIX}-${contentHash}`
-}
-
-export function searchActiveCacheName(contentHash: string): string {
-  assertContentHashSegment(contentHash)
-  return `${SEARCH_PACK_CACHE_PREFIX}-${contentHash}`
-}
-
-export function isSearchPackRegistryRuntimeUrl(url: string): boolean {
-  return url === SEARCH_PACK_REGISTRY_RUNTIME_URL
-}
-
 export function isStableMutableSearchDatasetUrl(url: string): boolean {
   return url.startsWith(FORBIDDEN_SEARCH_DATASET_PREFIX)
 }
@@ -175,12 +107,6 @@ export function isImmutableSearchPackRuntimeUrl(url: string, contentHash?: strin
   const remainder = url.slice(SEARCH_PACKS_RUNTIME_PREFIX.length)
   const [hashSegment, ...pathParts] = remainder.split('/')
   return isContentHashSegment(hashSegment) && pathParts.length > 0 && pathParts.every(Boolean)
-}
-
-export function assertSearchPackRegistryUrl(url: string): void {
-  if (!isSearchPackRegistryRuntimeUrl(url)) {
-    throw new Error(`Search pack registry must be ${SEARCH_PACK_REGISTRY_RUNTIME_URL}`)
-  }
 }
 
 export function assertImmutableSearchPackRuntimeUrl(url: string, contentHash?: string): void {
@@ -203,23 +129,6 @@ export function assertSearchPackManifestUrls(manifest: SearchPackManifestV1): vo
       throw new Error(`Search shard ${shard.shardId} checksum must cover fetched encoded bytes`)
     }
   }
-}
-
-export function assertSearchPackRegistry(registry: SearchPackRegistry): void {
-  assertSearchPackRegistryUrl(registry.registryUrl)
-  for (const entry of registry.packs) {
-    assertImmutableSearchPackRuntimeUrl(entry.manifestUrl, entry.contentHash)
-  }
-}
-
-export function assertSearchPackUrlHasSingleOwner(url: string): void {
-  if (isStableMutableSearchDatasetUrl(url) && isImmutableSearchPackRuntimeUrl(url)) {
-    throw new Error('Search pack URL cannot be owned by both dataset cache and Search installer')
-  }
-  if (isStableMutableSearchDatasetUrl(url)) {
-    throw new Error('Search pack URL is under the generic dataset cache owner')
-  }
-  assertImmutableSearchPackRuntimeUrl(url)
 }
 
 function isContentHashSegment(value: string): boolean {

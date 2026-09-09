@@ -100,7 +100,7 @@ export function WirdDetail({
   return (
     <section aria-labelledby="wird-detail-title" className="qar-react-wird-detail">
       <div className="qar-react-wird-detail-head">
-        <Button aria-label="Back" className="qar-react-wird-back" onClick={onBack} size="sm" variant="ghost">
+        <Button aria-label="Back" onClick={onBack} size="sm" variant="ghost">
           Back
         </Button>
         <h2 className="qar-react-wird-detail-title" id="wird-detail-title">
@@ -110,7 +110,7 @@ export function WirdDetail({
 
       {showEditor ? (
         <div className="qar-react-wird-setup">
-          <div className="qar-react-wird-setup-intro">
+          <div>
             <p className="qar-react-wird-eyebrow">Plan setup</p>
             <p className="qar-react-wird-help">Choose a finish target and QuranAtlas will size each daily reading.</p>
           </div>
@@ -145,7 +145,6 @@ export function WirdDetail({
             />
             {targetMode === 'custom' && (
               <Input
-                className="qar-react-wird-input"
                 label="Finish date"
                 onChange={(event) => setTargetEndOn(event.currentTarget.value)}
                 type="date"
@@ -189,7 +188,7 @@ export function WirdDetail({
             />
           </section>
 
-          <section className="qar-react-wird-field qar-react-wird-field--reminder" aria-label="Daily Wird reminders">
+          <section className="qar-react-wird-field" aria-label="Daily Wird reminders">
             <div className="qar-react-wird-field-head">
               <span className="qar-react-wird-field-label">
                 <Bell aria-hidden="true" size={16} />
@@ -206,7 +205,6 @@ export function WirdDetail({
             {reminderEnabled && (
               <>
                 <Input
-                  className="qar-react-wird-input"
                   label="Reminder time"
                   onChange={(event) => setReminderTime(event.currentTarget.value)}
                   type="time"
@@ -223,7 +221,6 @@ export function WirdDetail({
                 )}
                 {currentNotificationState !== 'unsupported' && currentNotificationState !== 'granted' && (
                   <Button
-                    className="qar-react-wird-secondary"
                     onClick={() => {
                       void requestNotifications()
                     }}
@@ -237,7 +234,7 @@ export function WirdDetail({
             )}
           </section>
 
-          <Button className="qar-react-wird-primary" disabled={!canCreate} onClick={submitCreate}>
+          <Button disabled={!canCreate} onClick={submitCreate}>
             {summary.state === 'no-plan' ? 'Create Plan' : 'Save Plan'}
           </Button>
         </div>
@@ -246,17 +243,17 @@ export function WirdDetail({
           <p className="qar-react-wird-range">{summary.todayRangeLabel}</p>
           <p className="qar-react-wird-remaining">{summary.remainingLabel}</p>
           {summary.reminderLabel && <p className="qar-react-wird-reminder-line">{summary.reminderLabel}</p>}
-          <Button className="qar-react-wird-primary" disabled={summary.state === 'plan-complete'} onClick={onContinue}>
+          <Button disabled={summary.state === 'plan-complete'} onClick={onContinue}>
             {summary.state === 'plan-complete' ? 'Plan complete' : 'Continue Wird'}
           </Button>
-          <Button className="qar-react-wird-secondary" onClick={startEditing} variant="secondary">
+          <Button onClick={startEditing} variant="secondary">
             Edit Plan
           </Button>
-          <Button className="qar-react-wird-danger" onClick={() => setConfirmingReset(true)} variant="danger">
+          <Button onClick={() => setConfirmingReset(true)} variant="danger">
             Reset Plan
           </Button>
           {confirmingReset && (
-            <Button className="qar-react-wird-danger" onClick={onReset} variant="danger">
+            <Button onClick={onReset} variant="danger">
               Confirm reset
             </Button>
           )}

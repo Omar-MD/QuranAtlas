@@ -18,8 +18,7 @@ export class SearchMorphologyExecutor {
   private ayahsById: Map<number, SearchAyahRow> | null = null
   private postingCounts = new Map<string, Map<string, number>>()
 
-  constructor(reader: SearchPackReader, _options: { aliases?: unknown } = {}) {
-    void _options
+  constructor(reader: SearchPackReader) {
     this.reader = reader
   }
 

@@ -4,7 +4,7 @@ import * as SliderPrimitive from '@radix-ui/react-slider'
 import * as SwitchPrimitive from '@radix-ui/react-switch'
 import { Check, ChevronDown } from 'lucide-react'
 import { forwardRef, useState } from 'react'
-import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 
@@ -31,17 +31,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     </label>
   )
 })
-
-export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }
-export function Textarea({ label, className, id, ...props }: TextareaProps) {
-  const inputId = id ?? `qa-textarea-${label.replace(/\W+/g, '-').toLowerCase()}`
-  return (
-    <label className={labelClass} htmlFor={inputId}>
-      <span>{label}</span>
-      <textarea className={cn(fieldClass, 'qar:min-h-24', className)} id={inputId} {...props} />
-    </label>
-  )
-}
 
 export type SelectOption = { label: string; value: string; disabled?: boolean }
 export type SelectProps = SelectPrimitive.SelectProps & {

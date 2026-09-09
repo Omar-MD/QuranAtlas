@@ -3,7 +3,7 @@
 /* Tailwind's layer chain (theme, base, components, utilities) is declared by the
    import above; declaring the author layers after it places qa-react-components
    last, so component recipes reliably beat qar:* utilities in the cascade. */
-@layer qa-react-reset, qa-react-tokens, qa-react-base, qa-react-components;
+@layer qa-react-tokens, qa-react-base, qa-react-components;
 
 @import "./tokens/primitives.css";
 @import "./tokens/semantic.css";
@@ -623,7 +623,7 @@
   }
 
   .qar-react-search-result-detail:focus-visible {
-    outline: 2px solid var(--qa-react-focus);
+    outline: 2px solid var(--qa-react-accent);
     outline-offset: 3px;
   }
 
@@ -656,29 +656,6 @@
     flex: 1;
     min-height: 0;
     flex-direction: column;
-  }
-
-  .qar-react-nav-drawer-search-appearance {
-    display: grid;
-    gap: 8px;
-    margin: 0 14px 12px;
-    padding: 10px;
-    border: 1px solid var(--qa-react-nav-row-border);
-    border-radius: var(--qa-react-radius-control);
-    background: color-mix(in srgb, var(--qa-react-nav-row-surface) 86%, var(--qa-react-sheet));
-  }
-
-  .qar-react-nav-drawer-search-appearance .qar-react-settings-theme-night {
-    gap: 10px;
-  }
-
-  .qar-react-nav-drawer-search-appearance .qar-react-settings-appearance-panel {
-    gap: 6px;
-  }
-
-  .qar-react-nav-drawer-search-appearance .qar-react-settings-theme-strip,
-  .qar-react-nav-drawer-search-appearance .qar-react-settings-night-strip {
-    grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
   }
 
   .qar-react-nav-drawer-saved-searches {
@@ -738,7 +715,7 @@
     padding: 8px 10px;
     border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-surface-raised);
+    background: var(--qa-react-surface);
     color: var(--qa-react-text);
     font-size: 0.82rem;
     line-height: 1.35;
@@ -943,7 +920,6 @@
     --qa-react-mushaf-safe-left: max(0.25rem, env(safe-area-inset-left));
     --qa-react-mushaf-safe-right: max(0.25rem, env(safe-area-inset-right));
     --qa-react-mushaf-safe-bottom: max(0.5rem, env(safe-area-inset-bottom));
-    --qa-react-mushaf-available-height: 100%;
     --qa-react-mushaf-stage-width: min(100%, calc(100dvh * var(--qa-react-mushaf-page-ratio)));
     position: relative;
     display: grid;
@@ -1061,8 +1037,7 @@
     z-index: 1;
     flex: 0 0 auto;
     min-height: calc(env(safe-area-inset-top) + var(--qa-react-control-touch-target));
-    padding: calc(env(safe-area-inset-top) + var(--qa-react-settings-space-2)) var(--qa-react-settings-space-4)
-      var(--qa-react-settings-space-2);
+    padding: calc(env(safe-area-inset-top) + 0.5rem) 1rem 0.5rem;
     border-bottom: 1px solid var(--qa-react-settings-divider);
     background: var(--qa-react-settings-header);
   }
@@ -1082,7 +1057,7 @@
 
   .qar-react-settings-subtitle {
     margin: 0;
-    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4) 0;
+    padding: 0.75rem 1rem 0;
     color: var(--qa-react-settings-muted);
   }
 
@@ -1090,10 +1065,9 @@
     display: grid;
     align-content: start;
     grid-auto-rows: max-content;
-    gap: var(--qa-react-settings-space-4);
+    gap: 1rem;
     min-height: 0;
-    padding: var(--qa-react-settings-space-4) var(--qa-react-settings-space-4)
-      calc(env(safe-area-inset-bottom) + var(--qa-react-settings-space-4));
+    padding: 1rem 1rem calc(env(safe-area-inset-bottom) + 1rem);
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--qa-react-settings-sheet);
@@ -1109,8 +1083,8 @@
 
   .qar-react-settings-group-heading {
     display: grid;
-    gap: var(--qa-react-settings-space-1);
-    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4);
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--qa-react-settings-divider);
   }
 
@@ -1145,9 +1119,9 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--qa-react-settings-space-4);
+    gap: 1rem;
     min-height: var(--qa-react-control-touch-target);
-    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4);
+    padding: 0.75rem 1rem;
   }
 
   .qar-react-settings-row + .qar-react-settings-row {
@@ -1156,7 +1130,7 @@
 
   .qar-react-settings-row-copy {
     display: grid;
-    gap: var(--qa-react-settings-space-1);
+    gap: 0.25rem;
     min-width: 0;
   }
 
@@ -1181,7 +1155,7 @@
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--qa-react-settings-space-3);
+    gap: 0.75rem;
     min-width: 0;
   }
 
@@ -1229,7 +1203,7 @@
   .qar-react-settings-section-heading {
     display: flex;
     justify-content: flex-end;
-    padding: var(--qa-react-settings-space-2) var(--qa-react-settings-space-3);
+    padding: 0.5rem 0.75rem;
   }
 
   .qar-react-settings-assets-toggle {
@@ -1245,9 +1219,9 @@
     display: grid;
     grid-template-columns: var(--qa-react-control-touch-target) minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--qa-react-settings-space-3);
-    min-height: calc(var(--qa-react-control-touch-target) + var(--qa-react-settings-space-3));
-    padding: var(--qa-react-settings-space-2) var(--qa-react-settings-space-4);
+    gap: 0.75rem;
+    min-height: calc(var(--qa-react-control-touch-target) + 0.75rem);
+    padding: 0.5rem 1rem;
   }
 
   .qar-react-settings-asset-row + .qar-react-settings-asset-row {
@@ -1293,9 +1267,9 @@
   .qar-react-settings-shell .qar-react-settings-appearance-panel {
     display: grid;
     align-content: start;
-    gap: var(--qa-react-settings-space-3);
+    gap: 0.75rem;
     min-width: 0;
-    padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-4) var(--qa-react-settings-space-4);
+    padding: 0.75rem 1rem 1rem;
   }
 
   .qar-react-settings-shell .qar-react-settings-appearance-panel + .qar-react-settings-appearance-panel {
@@ -1313,7 +1287,7 @@
   .qar-react-settings-shell .qar-react-settings-night-strip {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(var(--qa-react-control-touch-target), 1fr));
-    gap: var(--qa-react-settings-space-2);
+    gap: 0.5rem;
     min-width: 0;
   }
 
@@ -1324,8 +1298,8 @@
     min-height: var(--qa-react-control-touch-target);
     height: auto;
     place-items: center;
-    gap: var(--qa-react-settings-space-1);
-    padding: var(--qa-react-settings-space-2);
+    gap: 0.25rem;
+    padding: 0.5rem;
     border: 1px solid var(--qa-react-settings-group-border);
     border-radius: var(--qa-react-radius-control);
     background: transparent;
@@ -1337,14 +1311,6 @@
     border-color: var(--qa-react-accent-strong);
     background: var(--qa-react-settings-selected);
     color: var(--qa-react-settings-selected-text);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-appearance-icon {
-    display: contents;
-  }
-
-  .qar-react-settings-appearance-icon > svg {
-    grid-row: 1;
   }
 
   .qar-react-settings-shell .qar-react-settings-theme-swatch {
@@ -1377,22 +1343,21 @@
   @media (min-width: 768px) and (min-height: 560px) {
     [data-sheet-variant="adaptive-settings"] {
       inset: 0 0 0 auto;
-      width: min(28rem, calc(100vw - var(--qa-react-settings-space-6)));
+      width: min(28rem, calc(100vw - 1.5rem));
       border-inline-start: 1px solid var(--qa-react-settings-group-border);
     }
   }
 
   @media (max-width: 767px), (max-height: 559px) and (orientation: landscape) {
     .qar-react-settings-body {
-      gap: var(--qa-react-settings-space-3);
-      padding: var(--qa-react-settings-space-3) var(--qa-react-settings-space-3)
-        calc(env(safe-area-inset-bottom) + var(--qa-react-settings-space-3));
+      gap: 0.75rem;
+      padding: 0.75rem 0.75rem calc(env(safe-area-inset-bottom) + 0.75rem);
     }
 
     .qar-react-settings-row,
     .qar-react-settings-row--font-size {
       grid-template-columns: minmax(0, 1fr);
-      gap: var(--qa-react-settings-space-2);
+      gap: 0.5rem;
     }
 
     .qar-react-settings-row--switch {
@@ -1871,22 +1836,6 @@
     overscroll-behavior: contain;
   }
 
-  .qar-react-bookmarks-empty {
-    display: grid;
-    align-content: center;
-    gap: 9px;
-    min-height: 132px;
-    margin: 0 14px 14px;
-    padding: 16px;
-    border: 1px solid var(--qa-react-nav-row-border);
-    border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-nav-row-surface);
-    color: var(--qa-react-text-muted);
-    font-size: 0.9rem;
-    line-height: 1.45;
-    text-align: center;
-  }
-
   .qar-react-bookmarks-section + .qar-react-bookmarks-section {
     border-top: 1px solid var(--qa-react-nav-row-separator);
   }
@@ -2212,7 +2161,7 @@
   }
 
   .qar-react-segmented-option:has(input:focus-visible) {
-    outline: 2px solid var(--qa-react-focus);
+    outline: 2px solid var(--qa-react-accent);
     outline-offset: 2px;
   }
 
@@ -2303,7 +2252,7 @@
 
   .qar-react-list-row:focus-visible,
   .qar-react-list-row-select:focus-visible {
-    outline: 2px solid var(--qa-react-focus);
+    outline: 2px solid var(--qa-react-accent);
     outline-offset: 2px;
   }
 
@@ -2395,7 +2344,7 @@
   }
 
   .qar-react-mushaf-page-stage:focus-visible {
-    outline: 2px solid var(--qa-react-focus);
+    outline: 2px solid var(--qa-react-accent);
     outline-offset: 2px;
   }
 
@@ -2499,11 +2448,6 @@
     display: grid;
     gap: var(--qa-space-2);
     min-inline-size: min(18rem, 100%);
-  }
-
-  .qar-react-mushaf-framing-presets {
-    display: flex;
-    gap: var(--qa-space-2);
   }
 
   .qar-react-mushaf-page-status {

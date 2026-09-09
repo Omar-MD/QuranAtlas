@@ -76,10 +76,8 @@ export async function writeNativeMushafEditionSelection(editionId: string, setup
 
 export async function resetNativeReaderStores(settings: SettingRecord[]): Promise<void> {
   await withNativeReaderDb(async (db) => {
-    const tx = db.transaction(['settings', 'activationState', 'datasetMeta', 'bookmarks'], 'readwrite')
+    const tx = db.transaction(['settings', 'bookmarks'], 'readwrite')
     tx.objectStore('settings').clear()
-    tx.objectStore('activationState').clear()
-    tx.objectStore('datasetMeta').clear()
     tx.objectStore('bookmarks').clear()
     const settingsStore = tx.objectStore('settings')
     for (const record of settings) settingsStore.put(record)
@@ -109,8 +107,6 @@ export function nativeSettingsReader() {
 
 function applyNativeSchema(db: IDBDatabase): void {
   if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' })
-  if (!db.objectStoreNames.contains('activationState')) db.createObjectStore('activationState', { keyPath: 'id' })
-  if (!db.objectStoreNames.contains('datasetMeta')) db.createObjectStore('datasetMeta', { keyPath: 'id' })
   if (!db.objectStoreNames.contains('bookmarks')) {
     const bookmarks = db.createObjectStore('bookmarks', { keyPath: ['riwayah', 'verseKey'] })
     bookmarks.createIndex('riwayah_surah', ['riwayah', 'surah'], { unique: false })

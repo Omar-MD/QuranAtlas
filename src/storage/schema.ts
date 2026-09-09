@@ -1,5 +1,5 @@
 export const QURAN_ATLAS_DB_NAME = 'quran-atlas'
-export const QURAN_ATLAS_DB_VERSION = 9
+export const QURAN_ATLAS_DB_VERSION = 10
 
 export const QURAN_ATLAS_V7_STORES = {
   settings: 'key',
@@ -20,4 +20,11 @@ export const QURAN_ATLAS_V9_STORES = {
   offlinePacks: 'packId, status, updatedAt',
 }
 
-export type QuranAtlasStoreName = keyof typeof QURAN_ATLAS_V8_STORES
+// Dexie merges store specs across versions, so dropping a store requires an
+// explicit null entry; the upgrade transaction then deletes the object store.
+export const QURAN_ATLAS_V10_STORES = {
+  ...QURAN_ATLAS_V9_STORES,
+  activationState: null,
+  datasetMeta: null,
+  searchPackStaging: null,
+} as const

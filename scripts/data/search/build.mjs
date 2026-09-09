@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { decodeJsonShard, sha256Hex, stableJson, writeJsonShard } from './abi-writer.mjs'
+import { sha256Hex, stableJson, writeJsonShard } from './abi-writer.mjs'
 import { buildSearchCorePostings } from './postings.mjs'
 import { buildSearchMorphologyPayloads, MORPHOLOGY_REQUIRED_SHARDS } from './morphology/build.mjs'
 import { buildSearchGraphPayloads, GRAPH_REQUIRED_SHARDS } from './graph/build.mjs'
@@ -15,7 +15,14 @@ import {
   buildSearchRegistry,
   assertNoStableMutableSearchUrls,
 } from './registry.mjs'
-import { SEARCH_NORMALIZER_VERSION, SEARCH_PHASE1_MAX_PHRASE_TOKENS, SEARCH_QUERY_AST_VERSION } from './normalizer.mjs'
+import {
+  MAX_DECODED_SHARD_BYTES,
+  MAX_RESIDENT_WORKER_BYTES,
+  MAX_SHARD_BYTES,
+  SEARCH_NORMALIZER_VERSION,
+  SEARCH_PHASE1_MAX_PHRASE_TOKENS,
+  SEARCH_QUERY_AST_VERSION,
+} from './normalizer.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -30,9 +37,6 @@ const GENERATED_AT = '2026-05-31T00:00:00.000Z'
 const PACK_VERSION = '1.0.0'
 const PACK_ID = 'qa-search-core-hafs-v1'
 const GRAPH_CORPUS_ID = 'hafs-search-core-v1'
-const MAX_SHARD_BYTES = 4 * 1024 * 1024
-const MAX_DECODED_SHARD_BYTES = 8 * 1024 * 1024
-const MAX_RESIDENT_WORKER_BYTES = 48 * 1024 * 1024
 
 export async function buildSearchCorePack({ profile = 'baseline', write = true, check = false } = {}) {
   if (profile !== 'baseline' && profile !== 'full') {
@@ -160,7 +164,7 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     checksum: file.checksum,
     checksumAlgorithm: 'sha-256',
     checksumScope: 'encoded-bytes',
-    requiredDictionaries: file.filename === 'core-postings.qas' ? ['core-dictionaries'] : [],
+    requiredDictionaries: [],
     estimatedMemoryBytes: Math.min(file.bytes.byteLength * 2, MAX_DECODED_SHARD_BYTES),
     decodingFixtureId: `phase-1-${file.filename.replace(/\.qas$/, '')}`,
     maxDecodedBytes: MAX_DECODED_SHARD_BYTES,
@@ -259,7 +263,6 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
     phase1: {
       maxPhraseTokens: SEARCH_PHASE1_MAX_PHRASE_TOKENS,
       queryAstVersion: SEARCH_QUERY_AST_VERSION,
-      profiles: ['baseline', 'full'],
     },
     phase2: {
       morphologySourceId: 'search-qac-morphology-0-4',
@@ -287,32 +290,6 @@ export async function buildSearchCorePack({ profile = 'baseline', write = true, 
   if (check) await verifyGeneratedFiles(files, manifest)
   if (write) await writeGeneratedFiles(files, contentHash)
   return { contentHash, manifest, registry, files }
-}
-
-export async function validateSearchCorePack() {
-  if (!existsSync(REGISTRY_PATH)) throw new Error('missing public/search-packs/registry.json')
-  const registry = JSON.parse(await readFile(REGISTRY_PATH, 'utf8'))
-  assertNoStableMutableSearchUrls(registry)
-  if (registry.registryUrl !== '/search-packs/registry.json')
-    throw new Error('Search registry URL must be /search-packs/registry.json')
-  if (!Array.isArray(registry.packs) || registry.packs.length === 0)
-    throw new Error('Search registry must include at least one generated core pack')
-  for (const entry of registry.packs) {
-    if (!entry.manifestUrl.startsWith(`${SEARCH_PACKS_RUNTIME_PREFIX}${entry.contentHash}/`)) {
-      throw new Error(`Search registry entry ${entry.packId} must use immutable pack manifest URL`)
-    }
-    const manifestPath = join(REPO_ROOT, entry.manifestUrl.replace(/^\//, 'public/'))
-    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
-    assertNoStableMutableSearchUrls(manifest)
-    if (manifest.contentHash !== entry.contentHash) throw new Error(`Search manifest hash mismatch for ${entry.packId}`)
-    for (const shard of manifest.shards) {
-      const shardPath = join(REPO_ROOT, shard.url.replace(/^\//, 'public/'))
-      const bytes = await readFile(shardPath)
-      if (bytes.byteLength !== shard.byteLength) throw new Error(`Search shard ${shard.shardId} byte length mismatch`)
-      if (sha256Hex(bytes) !== shard.checksum) throw new Error(`Search shard ${shard.shardId} checksum mismatch`)
-      decodeJsonShard(bytes)
-    }
-  }
 }
 
 async function writeGeneratedFiles(files, contentHash) {
@@ -419,17 +396,12 @@ function parseArgs(argv) {
   return {
     profile,
     check: argv.includes('--check'),
-    validateOnly: argv.includes('--validate'),
-    write: !argv.includes('--check') && !argv.includes('--validate'),
+    write: !argv.includes('--check'),
   }
 }
 
 export async function main(argv = process.argv.slice(2)) {
   const options = parseArgs(argv)
-  if (options.validateOnly) {
-    await validateSearchCorePack()
-    return
-  }
   await buildSearchCorePack(options)
   if (options.write) {
     const generated = relative(REPO_ROOT, REGISTRY_PATH)

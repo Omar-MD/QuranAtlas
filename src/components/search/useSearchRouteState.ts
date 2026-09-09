@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AnswerPreview, MatchCardLite, SearchLensLite, SearchQueryAstV1 } from '../../../shared/search'
 import { REACT_ROUTES } from '../../app/router/routes'
-import type { SearchPackAvailabilityState } from '../../offline/search/repair'
 import { getSearchClient, type SearchClient } from '../../search/client'
 import { parseSearchQuery, SearchQueryParseError } from '../../search/query-parser'
 import type {
@@ -23,6 +22,18 @@ export type SearchExploreGraphState = {
   resultId: string | null
   sections: SearchGraphSection[]
 }
+
+export type SearchPackAvailabilityState =
+  | 'not available'
+  | 'available online'
+  | 'installing'
+  | 'staged'
+  | 'verifying'
+  | 'active'
+  | 'update available'
+  | 'incompatible'
+  | 'failed'
+  | 'offline unavailable'
 
 export type SearchRoutePackState = SearchPackAvailabilityState | 'loading'
 

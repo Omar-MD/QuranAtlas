@@ -35,7 +35,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": ["src/components/settings/settings.stories.tsx", "tests/e2e/configure/react-golden.spec.ts"]
+        "references": ["src/components/settings/settings.stories.tsx"]
       },
       "owner": {
         "surface": "configure",
@@ -88,7 +88,7 @@
       "maturity": "primitive",
       "exportPath": "src/components/ui/feedback.tsx",
       "namedExport": "Badge",
-      "allowedVariants": ["neutral", "success", "warning", "danger"],
+      "allowedVariants": ["neutral", "success"],
       "allowedSizes": [],
       "slots": ["root"],
       "dependencies": {
@@ -169,18 +169,18 @@
       "maturity": "primitive",
       "exportPath": "src/components/ui/button.tsx",
       "namedExport": "Button",
-      "allowedVariants": ["primary", "secondary", "ghost", "danger", "pill"],
-      "allowedSizes": ["sm", "md", "lg"],
+      "allowedVariants": ["primary", "secondary", "ghost", "danger"],
+      "allowedSizes": ["sm", "md"],
       "slots": ["root"],
       "dependencies": {
-        "radix": ["@radix-ui/react-slot"],
+        "radix": [],
         "icons": []
       },
       "tokenNamespaces": ["--qa-react-*"],
       "stories": [
         {
           "path": "src/components/ui/ui.stories.tsx",
-          "states": ["default", "disabled", "focus-visible", "pill"]
+          "states": ["default", "disabled", "focus-visible"]
         }
       ],
       "tests": [
@@ -327,44 +327,6 @@
       "forbiddenUses": ["Do not mount a second drawer host or app header outside the shared chrome composition."]
     },
     {
-      "id": "command",
-      "name": "Command",
-      "maturity": "behavior",
-      "exportPath": "src/components/ui/menus.tsx",
-      "namedExport": "Command",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["listbox", "option"],
-      "dependencies": {
-        "radix": [],
-        "icons": ["lucide-react"]
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/ui/ui.stories.tsx",
-          "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["command menu surfaces operate in the core search journey"]
-        }
-      ],
-      "accessibility": ["labelled listbox", "button options"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/ui/ui.stories.tsx"]
-      },
-      "owner": {
-        "surface": "react-design-system",
-        "package": "src/components/ui"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not create ad hoc command lists."]
-    },
-    {
       "id": "daily-wird-card",
       "name": "DailyWirdCard",
       "maturity": "product",
@@ -439,82 +401,6 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not import Radix dialog from feature code."]
-    },
-    {
-      "id": "disclosure",
-      "name": "Disclosure",
-      "maturity": "primitive",
-      "exportPath": "src/components/ui/disclosure.tsx",
-      "namedExport": "Disclosure",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["summary", "content"],
-      "dependencies": {
-        "radix": [],
-        "icons": []
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/ui/ui.stories.tsx",
-          "states": ["collapsed", "expanded"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["disclosure panels operate in the core settings journey"]
-        }
-      ],
-      "accessibility": ["native disclosure semantics"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/ui/ui.stories.tsx"]
-      },
-      "owner": {
-        "surface": "react-design-system",
-        "package": "src/components/ui"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not create unlabelled expandable panels."]
-    },
-    {
-      "id": "dropdown-menu",
-      "name": "DropdownMenu",
-      "maturity": "behavior",
-      "exportPath": "src/components/ui/menus.tsx",
-      "namedExport": "DropdownMenu",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["trigger", "content", "item"],
-      "dependencies": {
-        "radix": ["@radix-ui/react-dropdown-menu"],
-        "icons": []
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/ui/ui.stories.tsx",
-          "states": ["closed", "open"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["drawer menu actions operate in the core reader journey"]
-        }
-      ],
-      "accessibility": ["menu semantics", "keyboard navigation"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/ui/ui.stories.tsx"]
-      },
-      "owner": {
-        "surface": "react-design-system",
-        "package": "src/components/ui"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not import Radix dropdown menu from feature code."]
     },
     {
       "id": "hizb-list",
@@ -895,7 +781,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": ["src/components/navigation/navigation.stories.tsx", "tests/e2e/search/react-search.spec.ts"]
+        "references": ["src/components/navigation/navigation.stories.tsx"]
       },
       "owner": {
         "surface": "navigate",
@@ -979,7 +865,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": ["src/components/settings/settings.stories.tsx", "tests/e2e/configure/react-golden.spec.ts"]
+        "references": ["src/components/settings/settings.stories.tsx"]
       },
       "owner": {
         "surface": "onboard",
@@ -987,44 +873,6 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
-    },
-    {
-      "id": "popover",
-      "name": "Popover",
-      "maturity": "behavior",
-      "exportPath": "src/components/ui/overlays.tsx",
-      "namedExport": "Popover",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["trigger", "content"],
-      "dependencies": {
-        "radix": ["@radix-ui/react-popover"],
-        "icons": []
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/ui/ui.stories.tsx",
-          "states": ["closed", "open"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["triggered popover surfaces operate in the core reader journey"]
-        }
-      ],
-      "accessibility": ["triggered content", "keyboard dismiss"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/ui/ui.stories.tsx"]
-      },
-      "owner": {
-        "surface": "react-design-system",
-        "package": "src/components/ui"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not import Radix popover from feature code."]
     },
     {
       "id": "progress",
@@ -1166,7 +1014,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": ["src/components/reader/reader.stories.tsx", "tests/e2e/read/react-golden.spec.ts"]
+        "references": ["src/components/reader/reader.stories.tsx"]
       },
       "owner": {
         "surface": "read",
@@ -1208,7 +1056,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": ["src/components/reader/reader.stories.tsx", "tests/e2e/read/react-golden.spec.ts"]
+        "references": ["src/components/reader/reader.stories.tsx"]
       },
       "owner": {
         "surface": "read",
@@ -1254,10 +1102,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": [
-          "src/components/reader/reader.stories.tsx",
-          "docs/ui-references/read/reading-view-toggle/default.mobile.light.png"
-        ]
+        "references": ["src/components/reader/reader.stories.tsx"]
       },
       "owner": {
         "surface": "read",
@@ -1339,7 +1184,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": ["src/components/search/search.stories.tsx", "tests/e2e/search/react-search.spec.ts"]
+        "references": ["src/components/search/search.stories.tsx"]
       },
       "owner": {
         "surface": "search",
@@ -1453,10 +1298,7 @@
       "accessibility": ["region labelled by its visible heading", "optional description remains adjacent to heading"],
       "visualProof": {
         "status": "covered",
-        "references": [
-          "src/components/settings/settings.stories.tsx",
-          "docs/ui-references/configure/settings-shell/default.mobile.light.png"
-        ]
+        "references": ["src/components/settings/settings.stories.tsx"]
       },
       "owner": {
         "surface": "configure",
@@ -1544,11 +1386,7 @@
       ],
       "visualProof": {
         "status": "covered",
-        "references": [
-          "src/components/settings/settings.stories.tsx",
-          "tests/e2e/configure/react-golden.spec.ts",
-          "docs/ui-references/configure/settings-shell/default.mobile.light.png"
-        ]
+        "references": ["src/components/settings/settings.stories.tsx"]
       },
       "owner": {
         "surface": "configure",
@@ -1885,82 +1723,6 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not import Radix tabs from feature code."]
-    },
-    {
-      "id": "textarea",
-      "name": "Textarea",
-      "maturity": "primitive",
-      "exportPath": "src/components/ui/form-controls.tsx",
-      "namedExport": "Textarea",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["label", "textarea"],
-      "dependencies": {
-        "radix": [],
-        "icons": []
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/ui/ui.stories.tsx",
-          "states": ["default", "disabled", "invalid"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["settings form controls operate in the core settings journey"]
-        }
-      ],
-      "accessibility": ["visible label", "native textarea semantics"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/ui/ui.stories.tsx"]
-      },
-      "owner": {
-        "surface": "react-design-system",
-        "package": "src/components/ui"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not use raw <textarea> in feature code."]
-    },
-    {
-      "id": "toast",
-      "name": "Toast",
-      "maturity": "behavior",
-      "exportPath": "src/components/ui/overlays.tsx",
-      "namedExport": "Toast",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["root", "title", "description", "viewport"],
-      "dependencies": {
-        "radix": ["@radix-ui/react-toast"],
-        "icons": []
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/ui/ui.stories.tsx",
-          "states": ["open"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["transient confirmation feedback operates in the core reader journey"]
-        }
-      ],
-      "accessibility": ["status announcement", "visible message"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/ui/ui.stories.tsx"]
-      },
-      "owner": {
-        "surface": "react-design-system",
-        "package": "src/components/ui"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not create ad hoc toast containers."]
     },
     {
       "id": "tooltip",

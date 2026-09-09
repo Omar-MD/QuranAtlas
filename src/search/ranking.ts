@@ -23,7 +23,7 @@ export function rankSearchResults(results: SearchResultDto[], sort: SearchSort):
   }))
 }
 
-export function stableResultKey(result: Pick<SearchResultDto, 'sourceRef' | 'matchLanes' | 'resultId'>): string {
+function stableResultKey(result: Pick<SearchResultDto, 'sourceRef' | 'matchLanes' | 'resultId'>): string {
   return [sourceRefOrderKey(result.sourceRef), bestLane(result.matchLanes), result.resultId].join('|')
 }
 

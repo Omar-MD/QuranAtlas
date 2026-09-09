@@ -5,8 +5,6 @@ import type {
   SearchPackManifestV1,
   SearchWorkerErrorCode,
 } from '../../shared/search'
-import { openReactDb } from '../storage/db'
-import { SEARCH_PACK_ACTIVATION_ID } from '../offline/search/activation'
 import {
   SearchPackReader,
   SearchPackReaderError,
@@ -22,7 +20,6 @@ import { SearchShardCache } from './shard-cache'
 
 export interface SearchWorkerSessionOptions extends SearchPackReaderOptions {
   manifest?: SearchPackManifestV1
-  aliases?: unknown
 }
 
 export class SearchWorkerSession {
@@ -32,7 +29,6 @@ export class SearchWorkerSession {
   private askBuilder: AskSearchPreviewBuilder | null = null
   private graphExecutor: SearchGraphExecutor | null = null
   private shardCache: SearchShardCache | null = null
-  private activeGeneration: number | null = null
   private readonly cancellations = new SearchCancellationRegistry()
   private readonly options: SearchWorkerSessionOptions
 
@@ -57,7 +53,6 @@ export class SearchWorkerSession {
         return this.ok(request.requestId, { kind: 'feature-loaded', featureId: request.featureId })
       }
       if (request.type === 'askPreview') {
-        await this.assertActivationUnchanged()
         const answerPreview = await this.requireAskBuilder().buildPreview({
           query: request.query,
           lens: request.lens,
@@ -66,11 +61,9 @@ export class SearchWorkerSession {
           token,
         })
         token.throwIfCancelled()
-        await this.assertActivationUnchanged()
         return this.ok(request.requestId, { kind: 'ask-preview', answerPreview })
       }
       if (request.type === 'askMatchesPage') {
-        await this.assertActivationUnchanged()
         const page = await this.requireAskBuilder().buildMatchesPage({
           previewId: request.previewId,
           query: request.query,
@@ -82,11 +75,9 @@ export class SearchWorkerSession {
           token,
         })
         token.throwIfCancelled()
-        await this.assertActivationUnchanged()
         return this.ok(request.requestId, { kind: 'ask-matches-page', page })
       }
       if (request.type === 'query') {
-        await this.assertActivationUnchanged()
         const window = await this.requireExecutor().execute({
           query: request.query,
           cursor: request.cursor,
@@ -95,11 +86,9 @@ export class SearchWorkerSession {
           token,
         })
         token.throwIfCancelled()
-        await this.assertActivationUnchanged()
         return this.ok(request.requestId, { kind: 'query-window', window })
       }
       if (request.type === 'explore') {
-        await this.assertActivationUnchanged()
         const response = await this.requireGraphExecutor().explore({
           query: request.query,
           result: request.result,
@@ -108,7 +97,6 @@ export class SearchWorkerSession {
           token,
         })
         token.throwIfCancelled()
-        await this.assertActivationUnchanged()
         return this.ok(request.requestId, { kind: 'explore-sections', sections: response.sections })
       }
       if (request.type === 'dispose') {
@@ -143,7 +131,6 @@ export class SearchWorkerSession {
     this.askBuilder = new AskSearchPreviewBuilder(this.reader)
     this.graphExecutor = new SearchGraphExecutor(this.reader)
     this.shardCache = new SearchShardCache(manifest.byteBudget.maxResidentWorkerBytes)
-    this.activeGeneration = await readActivationGeneration().catch(() => null)
   }
 
   private async loadFeature(featureId: SearchFeatureId): Promise<void> {
@@ -175,18 +162,6 @@ export class SearchWorkerSession {
     if (!this.graphExecutor)
       throw new SearchPackReaderError('unavailable-pack', 'Search worker is not initialized', true)
     return this.graphExecutor
-  }
-
-  private async assertActivationUnchanged(): Promise<void> {
-    if (this.activeGeneration === null) return
-    const current = await readActivationGeneration()
-    if (current !== this.activeGeneration) {
-      throw new SearchPackReaderError(
-        'activation-changed',
-        'Search pack activation changed while the request was running',
-        true,
-      )
-    }
   }
 
   private cancel(request: Extract<SearchWorkerRequest, { type: 'cancel' }>): SearchWorkerResponse {
@@ -232,10 +207,4 @@ export class SearchWorkerSession {
       error: { code, message, retryable },
     }
   }
-}
-
-async function readActivationGeneration(): Promise<number | null> {
-  const db = await openReactDb()
-  const record = await db.searchPackActivations.get(SEARCH_PACK_ACTIVATION_ID)
-  return record?.generation ?? null
 }

@@ -33,7 +33,7 @@ export function MushafSettings({
   return (
     <SettingsGroup title="Page layout">
       <div className="qar-react-settings-panel-controls">
-        <div className="qar-react-settings-row qar-react-settings-row--control">
+        <div className="qar-react-settings-row">
           <span className="qar-react-settings-row-copy">
             <span className="qar-react-settings-row-label">Navigation mode</span>
             <span className="qar-react-settings-row-control">Single page or vertical page scroll</span>
@@ -45,15 +45,10 @@ export function MushafSettings({
             <span className="qar-react-settings-row-label">Fit width</span>
             <span className="qar-react-settings-row-control">Fill available screen width</span>
           </span>
-          <Switch
-            checked={fitWidth}
-            className="qar-react-settings-switch"
-            label="Fit width"
-            onCheckedChange={(checked) => onFitWidthChange?.(checked)}
-          />
+          <Switch checked={fitWidth} label="Fit width" onCheckedChange={(checked) => onFitWidthChange?.(checked)} />
         </div>
         {hasValidFraming ? (
-          <div className="qar-react-settings-row qar-react-settings-row--control">
+          <div className="qar-react-settings-row">
             <span className="qar-react-settings-row-copy">
               <span className="qar-react-settings-row-label">Qur'an text size</span>
               <span className="qar-react-settings-row-control">{frameWidth}% reviewed frame width</span>

@@ -1,7 +1,6 @@
 import type { SavedSearchIntentV1 } from '../../shared/search'
 
 export type SettingsKey =
-  | 'onboardingComplete'
   | 'theme'
   | 'fontSize'
   | 'lineSpacing'
@@ -32,29 +31,6 @@ export type SettingRecord = {
 }
 
 export type Riwayah = 'qaloon'
-export type ActivationStatus =
-  | 'none'
-  | 'idle'
-  | 'downloading'
-  | 'cached'
-  | 'pending-confirmation'
-  | 'applying'
-  | 'failed'
-
-export type ActivationStateRecord = {
-  id: 'current'
-  status: ActivationStatus
-  version?: string
-  progress?: number
-  error?: string
-  stagedAt?: number
-}
-
-export type DatasetMetaRecord = {
-  id: string
-  version?: string
-  [key: string]: unknown
-}
 
 export type BookmarkKind = 'verse' | 'page'
 
@@ -107,20 +83,6 @@ export type SearchPackActivationRecord = {
   error?: string
 }
 
-export type SearchPackStagingRecord = {
-  id: string
-  packId: string
-  packVersion: string
-  contentHash: string
-  status: Extract<SearchPackLifecycleStatus, 'installing' | 'staged' | 'verifying' | 'failed'>
-  cacheName: string
-  totalBytes: number
-  verifiedBytes: number
-  createdAt: number
-  updatedAt: number
-  error?: string
-}
-
 export type OfflinePackStatus = 'installing' | 'paused-user' | 'paused-network' | 'installed' | 'failed'
 
 export type OfflinePackKind = 'reader-core' | 'mushaf-pages'
@@ -144,16 +106,3 @@ export type OfflinePackRecord = {
   updatedAt: number
   completedAt?: number
 }
-
-export type StoreRecords = {
-  settings: SettingRecord
-  activationState: ActivationStateRecord
-  datasetMeta: DatasetMetaRecord
-  bookmarks: BookmarkRecord
-  savedSearches: SavedSearchRecord
-  searchPackActivations: SearchPackActivationRecord
-  searchPackStaging: SearchPackStagingRecord
-  offlinePacks: OfflinePackRecord
-}
-
-export type StoreName = keyof StoreRecords
