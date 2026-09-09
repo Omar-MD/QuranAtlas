@@ -87,11 +87,9 @@ export function ReaderPageShell({
       }
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true })
-    document.addEventListener('scroll', onScroll, { capture: true, passive: true })
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true })
     return () => {
-      window.removeEventListener('scroll', onScroll)
-      document.removeEventListener('scroll', onScroll, { capture: true })
+      window.removeEventListener('scroll', onScroll, { capture: true })
     }
   }, [mode, setChromeVisible])
 

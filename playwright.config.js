@@ -16,7 +16,7 @@ export default defineConfig({
   // timeout kills it without a trace.
   // Bounded but generous: a 2-vCPU runner runs the suites ~50x slower than
   // a workstation (service-worker compile + dataset sync dominate).
-  globalTimeout: process.env.CI ? 600_000 : 0,
+  globalTimeout: process.env.CI ? 2_400_000 : 0,
   use: {
     baseURL,
     trace: 'retain-on-failure',

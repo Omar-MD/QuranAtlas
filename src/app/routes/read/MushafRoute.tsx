@@ -559,8 +559,18 @@ export function MushafRoute({
 function MushafGateSurface({ children }: { children: ReactNode }) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
 
+  // Keyboard focus moves into the gate on mount; when the gate dismisses,
+  // return it to the pre-gate element unless the user has since focused
+  // elsewhere or that element left the document.
   useEffect(() => {
-    surfaceRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+    const surface = surfaceRef.current
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    surface?.querySelector<HTMLButtonElement>('button')?.focus()
+    return () => {
+      if (!previouslyFocused?.isConnected) return
+      const active = document.activeElement
+      if (active === document.body || surface?.contains(active)) previouslyFocused.focus({ preventScroll: true })
+    }
   }, [])
 
   return (

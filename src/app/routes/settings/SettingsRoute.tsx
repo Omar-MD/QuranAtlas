@@ -74,7 +74,7 @@ export function SettingsRoute({
               : DEFAULT_READER_ASSET_PROFILE.mushafEditionId
           return loadMushafFramingCapability({
             mushafEditionId: editionId,
-            riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : 'qaloon',
+            riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : DEFAULT_READER_ASSET_PROFILE.riwayah,
           }).then((capability) => ({ capability, editionId }))
         })
         .then(({ capability, editionId }) => {

@@ -205,11 +205,22 @@ export function useReaderPositionSync(
       if (visiblePosition) commitPosition(visiblePosition, 'deferred')
     }
 
-    window.addEventListener('scroll', syncVisibleVerse, { passive: true })
-    document.addEventListener('scroll', syncVisibleVerse, { capture: true, passive: true })
+    let syncFrameId: number | null = null
+    function scheduleSyncVisibleVerse() {
+      if (syncFrameId !== null) return
+      syncFrameId = requestAnimationFrame(() => {
+        syncFrameId = null
+        syncVisibleVerse()
+      })
+    }
+
+    window.addEventListener('scroll', scheduleSyncVisibleVerse, { capture: true, passive: true })
     return () => {
-      window.removeEventListener('scroll', syncVisibleVerse)
-      document.removeEventListener('scroll', syncVisibleVerse, { capture: true })
+      window.removeEventListener('scroll', scheduleSyncVisibleVerse, { capture: true })
+      if (syncFrameId !== null) {
+        cancelAnimationFrame(syncFrameId)
+        syncFrameId = null
+      }
       if (persistTimerRef.current) {
         clearTimeout(persistTimerRef.current)
         persistTimerRef.current = null

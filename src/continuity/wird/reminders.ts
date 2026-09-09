@@ -21,13 +21,6 @@ export function getBrowserNotificationState(
   return 'default'
 }
 
-export function updateReminderPermission(
-  reminder: WirdReminder,
-  browserNotifications: BrowserNotificationState,
-): WirdReminder {
-  return { ...reminder, browserNotifications }
-}
-
 export function getNextReminderDelay(time: string, now = new Date()): number {
   const [hours, minutes] = parseReminderTime(time)
   const next = new Date(now)

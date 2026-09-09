@@ -1,3 +1,4 @@
+import hizbStarts from './hizb-starts.json'
 import { loadReaderSurahIndex } from './surah-index'
 
 export type QuranRef = { surah: number; verse: number }
@@ -10,68 +11,21 @@ export type HizbIndexEntry = {
 
 type HizbSurahCount = { count: number; n: number }
 
-const HIZB_STARTS: ReadonlyArray<readonly [number, number]> = [
-  [1, 1],
-  [2, 75],
-  [2, 142],
-  [2, 253],
-  [3, 93],
-  [3, 147],
-  [4, 24],
-  [4, 88],
-  [4, 148],
-  [5, 27],
-  [5, 82],
-  [6, 36],
-  [6, 111],
-  [7, 88],
-  [8, 41],
-  [9, 93],
-  [10, 26],
-  [11, 6],
-  [11, 84],
-  [12, 53],
-  [15, 1],
-  [17, 1],
-  [18, 75],
-  [20, 135],
-  [21, 1],
-  [22, 1],
-  [23, 1],
-  [24, 21],
-  [25, 21],
-  [26, 111],
-  [27, 56],
-  [28, 51],
-  [29, 46],
-  [33, 31],
-  [35, 1],
-  [36, 28],
-  [37, 145],
-  [39, 32],
-  [41, 47],
-  [43, 24],
-  [46, 1],
-  [48, 18],
-  [51, 31],
-  [53, 33],
-  [58, 1],
-  [62, 1],
-  [67, 1],
-  [72, 1],
-  [78, 1],
-  [83, 15],
-  [87, 1],
-  [90, 1],
-  [94, 1],
-  [100, 9],
-  [104, 1],
-  [107, 1],
-  [112, 1],
-  [113, 1],
-  [114, 1],
-  [114, 6],
-] as const
+// Canonical 60-entry hizb start table. Single-sourced from
+// src/data/hizb-starts.json so the data pipeline
+// (scripts/data/check-juz-hizb.mjs) can assert the same table the reader uses.
+//
+// Derivation: the repo's normalized sources carry jozz (juz) markers but no
+// rubʿ (quarter) markers, so the table comes from Tanzil's published quarter
+// metadata (240 quarters; every 4th quarter starts a hizb), with every
+// boundary verified to be an actual Hafs ayah start, plus one deviation forced
+// by this app's canonical juz table: hizb 21 = 9:94 — Tanzil starts juz 11 at
+// 9:93, while the KFGQPC source this app builds from (and
+// src/data/juz-starts.json) use 9:94. Invariant: hizb 2N−1 must start exactly
+// at juz N's start ayah (N = 1..30).
+export const HIZB_STARTS: ReadonlyArray<readonly [number, number]> = hizbStarts.map(
+  ([surah, verse]) => [surah, verse] as const,
+)
 
 export function buildHizbRows(counts: ReadonlyArray<HizbSurahCount>): HizbIndexEntry[] {
   const total = counts.reduce((sum, row) => sum + row.count, 0)

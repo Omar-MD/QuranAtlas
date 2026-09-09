@@ -23,7 +23,7 @@ export type MushafEditionIndexEntry = {
   manifestUrl: string
   totalBytes: number
   pageUrls?: string[]
-  files: Array<{ url: string; bytes: number }>
+  files: Array<{ url: string; bytes: number; sha256?: string }>
 }
 
 export type MushafEditionSetupState =
@@ -192,7 +192,7 @@ function parseMushafEditionEntry(
   if (!Array.isArray(asset.files)) {
     throw new Error(`Mushaf edition entry is invalid: missing files: ${mushafEditionId}`)
   }
-  const files: Array<{ url: string; bytes: number }> = []
+  const files: Array<{ url: string; bytes: number; sha256?: string }> = []
   const seenUrls = new Set<string>()
   let totalBytes = 0
   for (const row of asset.files) {
@@ -215,8 +215,12 @@ function parseMushafEditionEntry(
     if (!expectedUrls.has(file.url)) {
       throw new Error(`Mushaf edition entry is invalid: unexpected file URL: ${file.url}`)
     }
+    const sha256 = typeof file.sha256 === 'string' ? file.sha256.trim().toLowerCase() : undefined
+    if (sha256 != null && !/^[a-f0-9]{64}$/.test(sha256)) {
+      throw new Error(`Mushaf edition entry is invalid: bad file sha256: ${file.url}`)
+    }
     totalBytes += file.bytes
-    files.push({ url: file.url, bytes: file.bytes })
+    files.push({ url: file.url, bytes: file.bytes, ...(sha256 != null ? { sha256 } : {}) })
   }
   if (files.length !== expectedUrls.size) {
     const expectedFiles =

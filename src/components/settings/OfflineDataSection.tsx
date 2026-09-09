@@ -440,7 +440,7 @@ function OfflineDataRow({
             Pause
           </Button>
         ) : null}
-        {row.status === 'paused-user' ? (
+        {row.status === 'paused-user' || row.status === 'paused-network' ? (
           <Button onClick={() => onResume(row.packId)} size="sm" variant="secondary">
             Resume
           </Button>

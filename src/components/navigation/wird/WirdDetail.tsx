@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Bell, CalendarDays, CircleDot, MapPin } from 'lucide-react'
 
+import { getBrowserNotificationState } from '../../../continuity/wird/reminders'
 import type {
   BrowserNotificationState,
   QuranRef,
@@ -200,7 +201,10 @@ export function WirdDetail({
               checked={reminderEnabled}
               className="qar-react-wird-reminder"
               label="Reminder"
-              onCheckedChange={(checked) => setReminderEnabled(checked === true)}
+              onCheckedChange={(checked) => {
+                setReminderEnabled(checked === true)
+                if (checked === true && getBrowserNotificationState() === 'default') void requestNotifications()
+              }}
             />
             {reminderEnabled && (
               <>

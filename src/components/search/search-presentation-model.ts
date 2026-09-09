@@ -371,7 +371,7 @@ function exploreSummariesForBrief(brief: SearchBriefDto | null, results: SearchR
   const summaries: SearchExploreSummary[] = []
   const topSurahs = brief.distribution.surahsWithMostIndexedMatches.slice(0, 8).map((item) => ({
     label: `Surah ${item.surah}`,
-    scope: item.occurrenceCount === undefined ? ('all indexed matches' as const) : ('all indexed matches' as const),
+    scope: 'all indexed matches' as const,
     value:
       item.occurrenceCount === undefined
         ? `${item.matchedSourceAyahCount} matched ayat`

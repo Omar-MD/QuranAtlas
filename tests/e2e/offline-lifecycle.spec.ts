@@ -253,6 +253,7 @@ async function cachedResources(
 }
 
 test('preserves the production reader through offline, fallback, retry, and resynchronization', async ({ page }) => {
+  test.setTimeout(240_000)
   await seedOnboardedReader(page, ORIGIN)
 
   await test.step('warm the production shell while the required reader pack installs', async () => {

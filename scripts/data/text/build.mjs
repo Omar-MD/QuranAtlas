@@ -598,6 +598,17 @@ export function computeTranslationCoverage(translationPerSurah, splitsByRiwayah,
   return coverage
 }
 
+// The KFGQPC source's `jozz` marker for juz 4 sits one ayah early — it is
+// attached to 3:92, canonically the last ayah of juz 3, instead of 3:93 where
+// juz 4 begins. All other 29 markers match the canonical division (verified
+// against Tanzil's published quarter metadata), so the derivation stays
+// marker-driven and only the affected start is pinned here. `data -- check`
+// (scripts/data/check-juz-hizb.mjs) asserts the generated table against the
+// canonical list, so a source change that moves any other marker fails loudly.
+const JOZZ_MARKER_START_CORRECTIONS = {
+  4: { surah: 3, ayah: 93 },
+}
+
 /** Build the 30-entry juz array from Hafs (juz boundaries are constant across Riwayat). */
 export function computeJuzMeta(hafsAyat) {
   const seen = new Set()
@@ -608,7 +619,8 @@ export function computeJuzMeta(hafsAyat) {
     }
     seen.add(a.jozz)
     const suraNo = a.sora ?? a.sura_no
-    out.push({ n: a.jozz, start: { surah: suraNo, ayah: a.aya_no } })
+    const start = JOZZ_MARKER_START_CORRECTIONS[a.jozz] ?? { surah: suraNo, ayah: a.aya_no }
+    out.push({ n: a.jozz, start })
   }
   return out.sort((a, b) => a.n - b.n)
 }

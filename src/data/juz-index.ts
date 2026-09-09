@@ -1,3 +1,4 @@
+import juzStarts from './juz-starts.json'
 import { assertRuntimeDatasetUrl } from './runtime-boundary'
 
 export type DatasetJuzEntry = {
@@ -17,38 +18,14 @@ export type JuzIndexEntry = {
   }
 }
 
-const DEFAULT_JUZ_STARTS: JuzIndexEntry[] = [
-  { n: 1, start: { surah: 1, verse: 1 } },
-  { n: 2, start: { surah: 2, verse: 142 } },
-  { n: 3, start: { surah: 2, verse: 253 } },
-  { n: 4, start: { surah: 3, verse: 92 } },
-  { n: 5, start: { surah: 4, verse: 24 } },
-  { n: 6, start: { surah: 4, verse: 148 } },
-  { n: 7, start: { surah: 5, verse: 82 } },
-  { n: 8, start: { surah: 6, verse: 111 } },
-  { n: 9, start: { surah: 7, verse: 88 } },
-  { n: 10, start: { surah: 8, verse: 41 } },
-  { n: 11, start: { surah: 9, verse: 94 } },
-  { n: 12, start: { surah: 11, verse: 6 } },
-  { n: 13, start: { surah: 12, verse: 53 } },
-  { n: 14, start: { surah: 15, verse: 1 } },
-  { n: 15, start: { surah: 17, verse: 1 } },
-  { n: 16, start: { surah: 18, verse: 75 } },
-  { n: 17, start: { surah: 21, verse: 1 } },
-  { n: 18, start: { surah: 23, verse: 1 } },
-  { n: 19, start: { surah: 25, verse: 21 } },
-  { n: 20, start: { surah: 27, verse: 56 } },
-  { n: 21, start: { surah: 29, verse: 46 } },
-  { n: 22, start: { surah: 33, verse: 31 } },
-  { n: 23, start: { surah: 36, verse: 28 } },
-  { n: 24, start: { surah: 39, verse: 32 } },
-  { n: 25, start: { surah: 41, verse: 47 } },
-  { n: 26, start: { surah: 46, verse: 1 } },
-  { n: 27, start: { surah: 51, verse: 31 } },
-  { n: 28, start: { surah: 58, verse: 1 } },
-  { n: 29, start: { surah: 67, verse: 1 } },
-  { n: 30, start: { surah: 78, verse: 1 } },
-]
+// Canonical juz start table. Single-sourced from src/data/juz-starts.json so
+// the data pipeline (scripts/data/check-juz-hizb.mjs) can assert the same
+// table the reader uses. Invariant: hizb 2N−1 in hizb-index.ts must start
+// exactly at juz N's start.
+export const DEFAULT_JUZ_STARTS: JuzIndexEntry[] = juzStarts.map(([surah, verse], index) => ({
+  n: index + 1,
+  start: { surah, verse },
+}))
 
 async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {
   assertRuntimeDatasetUrl(url)

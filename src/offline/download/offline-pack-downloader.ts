@@ -1,5 +1,6 @@
 import { openReactDb } from '../../storage/db'
 import type { OfflinePackFilePlan, OfflinePackKind, OfflinePackRecord, OfflinePackStatus } from '../../storage/types'
+import { verifyContentHash } from './content-hash'
 import { assertOfflinePackUrl, type OfflinePackPlan } from './offline-pack-plan'
 import { readStoragePersisted } from './storage-persistence'
 
@@ -395,6 +396,7 @@ async function runPack(packId: string): Promise<void> {
     workers: new Set<Promise<void>>(),
   }
   state.runs.set(packId, run)
+  let networkPaused = false
   try {
     const pack: { files: OfflinePackFilePlan[]; kind: OfflinePackKind } = { files: [], kind: 'reader-core' }
     await withLock(async () => {
@@ -442,6 +444,7 @@ async function runPack(packId: string): Promise<void> {
       record.updatedAt = Date.now()
       if (run.cancel === 'network') {
         record.status = 'paused-network'
+        networkPaused = true
       } else if (run.cancel === 'fail') {
         record.status = 'failed'
         record.error = run.error ?? 'Download failed.'
@@ -458,6 +461,16 @@ async function runPack(packId: string): Promise<void> {
     })
   } finally {
     state.runs.delete(packId)
+  }
+  // The `online` listener only enqueues records already marked paused-network,
+  // so a connectivity flap inside the final-commit window above strands the
+  // record until the next launch. Re-check connectivity after the run has been
+  // deregistered and resume through the public path: its status re-check plus
+  // the pending/runs guards make the re-enqueue idempotent, and the single
+  // pump loop (still awaiting this call) is the only consumer of the queue, so
+  // no second run can start for this pack.
+  if (networkPaused && (typeof navigator === 'undefined' || navigator.onLine)) {
+    await resumeOfflinePack(packId)
   }
 }
 
@@ -484,6 +497,11 @@ async function downloadOneFile(
       const bytes = await response.arrayBuffer()
       if (file.bytes != null && bytes.byteLength !== file.bytes) {
         throw new Error(`offline pack byte mismatch for ${file.url}`)
+      }
+      // Length is the cheap early exit; V2 manifests also pin a per-file
+      // sha256, while V1 editions and legacy records carry no hash to check.
+      if (file.sha256 != null && !(await verifyContentHash(bytes, file.sha256))) {
+        throw new Error(`offline pack checksum mismatch for ${file.url}`)
       }
       if (run.cancel || run.controller.signal.aborted) return
       assertOfflinePackUrl(file.url, kind, identity)

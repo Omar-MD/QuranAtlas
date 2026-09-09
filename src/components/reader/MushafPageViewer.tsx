@@ -156,6 +156,7 @@ export function MushafPageViewer({
   const pageListKey = orderedPages.map((entry) => `${entry.page}:${entry.status}`).join('|')
   const lastResetPageRef = useRef(resolved.page)
   const lastFocusModeRef = useRef(isScrollMode)
+  const requestFromPageArrowRef = useRef<(page: number) => void>(() => undefined)
   const lastFocusPageRef = useRef(resolved.page)
   const lastFitWidthRef = useRef(fitWidth)
   const lastPageListKeyRef = useRef(pageListKey)
@@ -181,7 +182,7 @@ export function MushafPageViewer({
     if (isReaderChromeTarget(document.activeElement)) stageRef.current?.focus({ preventScroll: true })
     requestOrNavigate(page)
   }
-
+  requestFromPageArrowRef.current = requestFromPageArrow
   function activateStageAt(clientX: number, stage: HTMLElement): void {
     const rect = stage.getBoundingClientRect()
     if (rect.width <= 0) return
@@ -261,12 +262,12 @@ export function MushafPageViewer({
       }
       if (!isScrollMode && event.key === 'ArrowLeft') {
         event.preventDefault()
-        requestFromPageArrow(resolved.page + 1)
+        requestFromPageArrowRef.current(resolved.page + 1)
         return
       }
       if (!isScrollMode && event.key === 'ArrowRight') {
         event.preventDefault()
-        requestFromPageArrow(resolved.page - 1)
+        requestFromPageArrowRef.current(resolved.page - 1)
         return
       }
       if (stageScrollable) scrollStageForKey(event, stageRef.current)
@@ -274,7 +275,7 @@ export function MushafPageViewer({
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  })
+  }, [chromeVisible, interactionSuspended, isScrollMode, onToggleChrome, resolved.page, stageScrollable])
 
   useLayoutEffect(() => {
     if (lastResetPageRef.current === resolved.page) return
@@ -522,7 +523,7 @@ export function MushafPageViewer({
           >
             <ChevronLeft aria-hidden="true" />
           </IconButton>
-          <div className="qar-react-mushaf-page-counter">
+          <div aria-live="polite" className="qar-react-mushaf-page-counter" role="status">
             <span className="qar:sr-only">Mushaf page</span>
             {resolved.page}
           </div>

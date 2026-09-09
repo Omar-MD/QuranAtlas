@@ -18,12 +18,6 @@ export type ReaderVerseSurfaceProps = {
   surahIndex?: ReaderSurahIndexEntry[]
 }
 
-function shouldRenderBasmala(corpus: Extract<ReaderCorpusState, { status: 'ready' }>): boolean {
-  if (corpus.surah.number === 9) return false
-  if (corpus.surah.number === 1) return true
-  return true
-}
-
 export function ReaderVerseSurface({
   bookmarkedVerseKeys = new Set<string>(),
   corpus,
@@ -111,7 +105,7 @@ export function ReaderVerseSurface({
           </h1>
         </header>
       )}
-      {startsAtSurahBeginning && shouldRenderBasmala(readyCorpus) && (
+      {startsAtSurahBeginning && readyCorpus.surah.number !== 9 && (
         <section className="qar-reader-basmala" aria-label="Basmala">
           <span className="qar-reader-basmala-text" dir="rtl" lang="ar" aria-label="بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ" role="img">
             ﷽

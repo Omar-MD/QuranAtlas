@@ -11,7 +11,6 @@ import { normalizeLastSurface } from '../continuity/last-surface'
 import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } from '../storage/reader-preferences'
 import { reconcileOfflinePacks } from '../offline/download/offline-pack-downloader'
 import { readNativeReactReaderPreferences } from '../storage/settings-writer'
-import { useFirstLaunchNotificationPermission } from '../continuity/wird/use-first-launch-notification-permission'
 import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
 import { BookmarksProvider } from '../continuity/bookmarks/use-bookmarks'
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
@@ -54,7 +53,6 @@ export function App() {
   const activeHash =
     launchRestore.status === 'ready' ? launchRestore.hash : launchRestore.status === 'setup' ? '#/onboarding' : hash
   const activeRoute = matchReactRoute(activeHash)
-  useFirstLaunchNotificationPermission(launchRestore.status === 'ready')
   const transientSettingsHash =
     !settingsOverlay && activeRoute.type === 'settings' && lastBaseHash && isBaseHash(lastBaseHash)
       ? lastBaseHash

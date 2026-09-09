@@ -129,7 +129,11 @@ export function buildMushafPackPlan(entry: MushafEditionIndexEntry): OfflinePack
     packId: mushafPackId(entry),
     kind: 'mushaf-pages',
     label: entry.label,
-    files: entry.files.map((file) => ({ url: file.url, bytes: file.bytes })),
+    files: entry.files.map((file) => ({
+      url: file.url,
+      bytes: file.bytes,
+      ...(file.sha256 != null ? { sha256: file.sha256 } : {}),
+    })),
     totalBytes: entry.totalBytes,
   }
 }

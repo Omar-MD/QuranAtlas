@@ -122,7 +122,7 @@ export class SearchPackReader {
         ? this.manifest.shards
             .filter((shard) => shard.shardId.startsWith('phrase-postings-'))
             .map((shard) => shard.shardId)
-        : [`${lane === 'exact-word' ? 'exact-word' : lane}-postings`]
+        : [`${lane}-postings`]
     const postings: SearchPostingsPayload[] = []
     for (const shardId of shardIds) {
       const shard = await this.loadShard(shardId)
@@ -434,7 +434,7 @@ function readTableDirectoryEntry(view: DataView, offset: number): SearchShardTab
   }
 }
 
-function isSearchPackShardPayload(payload: SearchPackShardPayload): payload is SearchPackShardPayload {
+function isSearchPackShardPayload(payload: SearchPackShardPayload): boolean {
   return (
     isReferencesPayload(payload) ||
     isPostingsPayload(payload) ||

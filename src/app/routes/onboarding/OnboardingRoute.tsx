@@ -9,6 +9,8 @@ import { readerCorePackId } from '../../../offline/download/offline-pack-plan'
 import {
   getOfflineDownloadSnapshot,
   pauseOfflinePack,
+  readOfflinePackRecords,
+  requestOfflinePackInstall,
   resumeOfflinePack,
   subscribeOfflineDownloads,
   type OfflineDownloadSnapshotItem,
@@ -26,6 +28,7 @@ import {
   createInitialMushafEditionSetupState,
   mushafEditionSetupReducer,
 } from './onboarding-flow'
+import type { OfflinePackRecord } from '../../../storage/types'
 
 export function OnboardingRoute({
   onComplete,
@@ -92,6 +95,10 @@ function OfflineDownloadRoute({
     readerItem?.status === 'paused-network' ||
     mushafItem?.status === 'paused-user' ||
     mushafItem?.status === 'paused-network'
+  const readerFailed = readerItem?.status === 'failed'
+  const mushafFailed = mushafItem?.status === 'failed'
+  const anyFailed = readerFailed || mushafFailed
+  const failedError = readerFailed ? readerItem?.error : mushafFailed ? mushafItem?.error : undefined
 
   const startDownload = useCallback(async () => {
     setConsentFailed(false)
@@ -129,6 +136,29 @@ function OfflineDownloadRoute({
       await Promise.all([pauseOfflinePack(readerPackId), pauseOfflinePack(mushafPackId)])
     }
   }, [anyPaused, mushafPackId, readerPackId])
+
+  const retryFailed = useCallback(async () => {
+    if (!readerFailed && !mushafFailed) return
+    // Mirrors the Settings retry: resolve fresh records (the snapshot alone
+    // carries no file plans) and rebuild each failed pack's plan from the
+    // record's embedded files — re-enqueueing needs no network.
+    const records = await readOfflinePackRecords().catch(() => [] as OfflinePackRecord[])
+    for (const record of records) {
+      const retryable =
+        (record.packId === readerPackId && readerFailed) || (record.packId === mushafPackId && mushafFailed)
+      if (!retryable) continue
+      await requestOfflinePackInstall(
+        {
+          packId: record.packId,
+          kind: record.kind,
+          label: record.label,
+          files: record.files,
+          totalBytes: record.totalBytes,
+        },
+        { persisted: record.persisted },
+      )
+    }
+  }, [mushafFailed, mushafPackId, readerFailed, readerPackId])
 
   if (step === 'offer') {
     return (
@@ -199,6 +229,23 @@ function OfflineDownloadRoute({
     <OnboardingPageRecipe kicker="QuranAtlas" title="Download for offline reading">
       {bothInstalled ? (
         <Badge tone="success">Downloaded</Badge>
+      ) : anyFailed ? (
+        <Status
+          action={
+            <Button
+              onClick={() => {
+                void retryFailed()
+              }}
+              variant="secondary"
+            >
+              Retry download
+            </Button>
+          }
+          description={failedError}
+          icon={<AlertTriangle aria-hidden="true" size={18} />}
+          title="Download failed"
+          tone="error"
+        />
       ) : (
         <>
           <Progress label="Downloading offline reading data" value={progressValue} />
@@ -218,7 +265,7 @@ function OfflineDownloadRoute({
         <Button onClick={continueReading} ref={continueRef} variant="primary">
           Continue reading
         </Button>
-        {bothInstalled ? null : (
+        {bothInstalled || anyFailed ? null : (
           <Button
             disabled={!bothTracked}
             onClick={() => {

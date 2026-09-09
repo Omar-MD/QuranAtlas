@@ -22,7 +22,6 @@ export type SettingsKey =
   | 'lastSurface'
   | 'recentSurahs'
   | 'wirdPlan'
-  | 'wirdNotificationPermissionPrompted'
   | 'wirdReminderLastSentDay'
 
 export type SettingRecord = {
@@ -87,7 +86,7 @@ export type OfflinePackStatus = 'installing' | 'paused-user' | 'paused-network' 
 
 export type OfflinePackKind = 'reader-core' | 'mushaf-pages'
 
-export type OfflinePackFilePlan = { url: string; bytes: number | null }
+export type OfflinePackFilePlan = { url: string; bytes: number | null; sha256?: string }
 
 export type OfflinePackRecord = {
   packId: string

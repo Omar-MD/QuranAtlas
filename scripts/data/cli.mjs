@@ -102,6 +102,7 @@ async function main(argv = process.argv.slice(2)) {
     const sharedProfile = datasetProfile(profile)
     run('source-catalog.mjs')
     run('text/build.mjs', [`--profile=${sharedProfile}`])
+    run('check-juz-hizb.mjs')
     run('search/build.mjs', [`--profile=${sharedProfile}`, '--check'])
     run('knowledge/build.mjs', ['--check'])
     run('mushaf-pages/build.mjs', [`--profile=${profile}`, '--check'])
