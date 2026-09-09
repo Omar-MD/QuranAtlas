@@ -4,7 +4,7 @@ import { QURAN_ATLAS_DB_NAME, QURAN_ATLAS_DB_VERSION } from '../../../src/storag
 
 const MVP_ASSET_CONTRACT_ID = 'mvp-default-assets-qaloon-bridges-v1'
 
-export async function seedOnboardedReader(page: Page, origin = ''): Promise<void> {
+export async function wipeApplicationData(page: Page, origin = ''): Promise<void> {
   await page.goto(`${origin}/favicon.ico`)
   await page.evaluate(async (dbName) => {
     localStorage.clear()
@@ -22,6 +22,10 @@ export async function seedOnboardedReader(page: Page, origin = ''): Promise<void
       request.onblocked = () => resolve()
     })
   }, QURAN_ATLAS_DB_NAME)
+}
+
+export async function seedOnboardedReader(page: Page, origin = ''): Promise<void> {
+  await wipeApplicationData(page, origin)
 
   await page.evaluate(
     ({ dbName, dbVersion, contractId }) =>
@@ -103,6 +107,7 @@ export async function seedOnboardedReader(page: Page, origin = ''): Promise<void
             { key: 'translationId', value: 'bridges' },
             { key: 'translationVisible', value: true },
             { key: 'lastSurface', value: '#/s/1' },
+            { key: 'offlineDownloadSetupVersion', value: 1 },
           ])
             settings.put(record)
           transaction.oncomplete = () => {
