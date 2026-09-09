@@ -27,6 +27,9 @@ import {
   type ActiveReaderProfile,
 } from '../../launch/offline-download-setup'
 import { loadMushafEditionEntries, type MushafEditionIndexEntry } from '../../launch/mushaf-edition-setup'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../../shared/reader-assets/default-profile'
+import { readNativeSettings } from '../../storage/native-reader-store'
+import { subscribeReactReaderPreferencesChanged } from '../../storage/reader-preferences'
 import type { OfflinePackRecord, OfflinePackStatus } from '../../storage/types'
 
 // SD-1: snapshot/record status → exact visible status string (e2e contract).
@@ -136,7 +139,10 @@ export function OfflineDataSection() {
   const [hydrated, setHydrated] = useState(false)
   const cancelRemoveRef = useRef<HTMLButtonElement>(null)
   const recordsRef = useRef<OfflinePackRecord[] | null>(null)
-
+  // §3 safety rules: the section tracks the edition id it last resolved and
+  // re-derives only when the native edition id actually changed.
+  const resolvedEditionIdRef = useRef<string | null>(null)
+  const metadataRef = useRef<SectionMetadata | null>(null)
   const applyRecords = useCallback((rows: OfflinePackRecord[]) => {
     recordsRef.current = rows
     setRecords(rows)
@@ -167,9 +173,27 @@ export function OfflineDataSection() {
           .catch(() => undefined)
       }
     })
+    // §3 wiring: the shared preferences event fires on every settings write
+    // and carries no edition id — read the native one and bump the metadata
+    // reload only on an actual edition change. A failed re-derivation keeps
+    // the shown metadata; the metadata effect's abort + null-profile guards
+    // discard stale or failed reads (latest-request-wins, preserve-on-failure).
+    const unsubscribePreferences = subscribeReactReaderPreferencesChanged(() => {
+      void readNativeSettings(['mushafEditionId'])
+        .then(([mushafEditionId]) => {
+          const editionId =
+            typeof mushafEditionId?.value === 'string'
+              ? mushafEditionId.value
+              : DEFAULT_READER_ASSET_PROFILE.mushafEditionId
+          if (editionId === resolvedEditionIdRef.current) return
+          setReloadKey((key) => key + 1)
+        })
+        .catch(() => undefined)
+    })
     return () => {
       controller.abort()
       unsubscribe()
+      unsubscribePreferences()
     }
   }, [])
 
@@ -185,8 +209,19 @@ export function OfflineDataSection() {
       loadDatasetByteSizes().catch(() => null),
     ]).then(([profile, entries, byteSizes]) => {
       if (controller.signal.aborted || profile == null) return
+      // §3 preserve-on-failure: a FAILED entries or byteSizes leg on a
+      // refresh keeps the prior metadata wholesale — profile included, since
+      // the new pack id must never pair with the old entry's file list — and
+      // leaves the tracked edition id untouched so `online`/reopen recovery
+      // still works. Initial resolution (no prior metadata) keeps the
+      // degraded semantics. Confirmed reads (empty entries, no matching
+      // edition) apply as today.
+      if ((entries === null || byteSizes === null) && metadataRef.current != null) return
       const entry = entries?.find((candidate) => candidate.mushafEditionId === profile.mushafEditionId) ?? null
-      setMetadata({ profile, entry, byteSizes })
+      const nextMetadata = { profile, entry, byteSizes }
+      metadataRef.current = nextMetadata
+      resolvedEditionIdRef.current = profile.mushafEditionId
+      setMetadata(nextMetadata)
     })
     const handleOnline = () => setReloadKey((key) => key + 1)
     window.addEventListener('online', handleOnline)

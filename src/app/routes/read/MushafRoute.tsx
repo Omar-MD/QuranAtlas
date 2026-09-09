@@ -171,8 +171,12 @@ export function MushafRoute({
 
   useEffect(() => {
     let active = true
+    let settingsEpoch = 0
+    let trackedEditionId: string | null = null
     void loadActiveMushafSettings().then((settings) => {
-      if (active) setActiveSettings(settings)
+      if (!active) return
+      trackedEditionId = settings.mushafEditionId
+      setActiveSettings(settings)
     })
     const unsubscribe = subscribeReactReaderPreferencesChanged((preferences) => {
       setActiveSettings((current) =>
@@ -181,7 +185,10 @@ export function MushafRoute({
               ...current,
               mushafFitWidth:
                 typeof preferences.mushafFitWidth === 'boolean' ? preferences.mushafFitWidth : current.mushafFitWidth,
-              mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
+              mushafPageFraming:
+                typeof preferences.mushafPageFraming === 'number'
+                  ? clampMushafPageFraming(preferences.mushafPageFraming)
+                  : current.mushafPageFraming,
               mushafViewMode: isReactMushafViewMode(preferences.mushafViewMode)
                 ? preferences.mushafViewMode
                 : current.mushafViewMode,
@@ -189,6 +196,26 @@ export function MushafRoute({
             }
           : current,
       )
+      // §3: the event carries no edition id — read the native one and
+      // re-resolve the active settings only on an actual edition change.
+      // The refresh reads through readActiveMushafSettings so a failed read
+      // keeps the current settings (loadActiveMushafSettings's shipped-default
+      // fallback must never leak into a refresh); the epoch discards stale
+      // resolutions after rapid A→B→A switching.
+      void readNativeSettings(['mushafEditionId'])
+        .then(([mushafEditionId]) => {
+          const editionId =
+            typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID
+          if (!active || editionId === trackedEditionId) return
+          const epoch = settingsEpoch + 1
+          settingsEpoch = epoch
+          return readActiveMushafSettings().then((settings) => {
+            if (!active || settingsEpoch !== epoch) return
+            trackedEditionId = settings.mushafEditionId
+            setActiveSettings(settings)
+          })
+        })
+        .catch(() => undefined)
     })
     return () => {
       active = false
@@ -579,18 +606,25 @@ function openAssetSettings(): void {
   window.location.hash = REACT_ROUTES.assets
 }
 
+// Confirmed read: rejects when the native state cannot be read, so refreshes
+// can keep their current settings instead of swallowing a failure into the
+// shipped defaults (§3 preserve-on-failure).
+async function readActiveMushafSettings(): Promise<ActiveMushafSettings> {
+  const [riwayah, mushafEditionId] = await readNativeSettings(['riwayah', 'mushafEditionId'])
+  const preferences = await readNativeReactReaderPreferences()
+  return {
+    riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
+    mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
+    mushafFitWidth: preferences.mushafFitWidth,
+    mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
+    mushafViewMode: preferences.mushafViewMode,
+    wirdReaderStatusVisible: preferences.wirdReaderStatusVisible,
+  }
+}
+
 async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
   try {
-    const [riwayah, mushafEditionId] = await readNativeSettings(['riwayah', 'mushafEditionId'])
-    const preferences = await readNativeReactReaderPreferences()
-    return {
-      riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
-      mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
-      mushafFitWidth: preferences.mushafFitWidth,
-      mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
-      mushafViewMode: preferences.mushafViewMode,
-      wirdReaderStatusVisible: preferences.wirdReaderStatusVisible,
-    }
+    return await readActiveMushafSettings()
   } catch {
     return {
       riwayah: DEFAULT_RIWAYAH,

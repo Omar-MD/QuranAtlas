@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BookOpen, ChevronDown, ChevronUp, FileText } from 'lucide-react'
 
 import { Button } from '../ui'
@@ -10,7 +10,10 @@ import {
   resolveReaderAssetProfileRows,
   type ReaderAssetInventoryDisplayRow,
   type ReaderAssetInventoryGroup,
+  type ReaderAssetProfile,
 } from '../../../shared/reader-assets/default-profile'
+import { readNativeSettings } from '../../storage/native-reader-store'
+import { subscribeReactReaderPreferencesChanged } from '../../storage/reader-preferences'
 
 const pendingRows = readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
   ...row,
@@ -26,24 +29,81 @@ export function IncludedAssetsSection({
 }) {
   const [rows, setRows] = useState<ReaderAssetInventoryDisplayRow[]>(pendingRows)
   const listId = 'qar-react-settings-included-assets-list'
+  // §3 safety rules: the section tracks the edition id it last resolved and
+  // re-resolves only when the native edition id actually changed.
+  const resolvedEditionIdRef = useRef<string | null>(null)
+  const resolvedOnceRef = useRef(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
+  // §3 step 5: rows resolve for the CURRENT native profile — the shipped
+  // defaults cover only the fields nothing persists (readActiveReaderProfile's
+  // per-field fallback idiom), never wholesale.
+  async function resolveActiveAssetProfile(): Promise<ReaderAssetProfile> {
+    const [riwayah, quranTextStyleId, translationId, mushafEditionId] = await readNativeSettings([
+      'riwayah',
+      'quranTextStyleId',
+      'translationId',
+      'mushafEditionId',
+    ])
+    return {
+      ...DEFAULT_READER_ASSET_PROFILE,
+      riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : DEFAULT_READER_ASSET_PROFILE.riwayah,
+      quranTextStyleId:
+        typeof quranTextStyleId?.value === 'string'
+          ? quranTextStyleId.value
+          : DEFAULT_READER_ASSET_PROFILE.quranTextStyleId,
+      translationId: translationId?.value === 'bridges' ? 'bridges' : DEFAULT_READER_ASSET_PROFILE.translationId,
+      mushafEditionId:
+        typeof mushafEditionId?.value === 'string'
+          ? mushafEditionId.value
+          : DEFAULT_READER_ASSET_PROFILE.mushafEditionId,
+    }
+  }
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey intentionally retriggers inventory resolution.
   useEffect(() => {
     const controller = new AbortController()
-    void resolveReaderAssetProfileRows(DEFAULT_READER_ASSET_PROFILE, { signal: controller.signal })
-      .then((loadedRows) => {
-        if (!controller.signal.aborted) setRows(loadedRows)
+    void resolveActiveAssetProfile()
+      .then((profile) =>
+        resolveReaderAssetProfileRows(profile, { signal: controller.signal }).then((loadedRows) => ({
+          loadedRows,
+          profile,
+        })),
+      )
+      .then(({ loadedRows, profile }) => {
+        if (controller.signal.aborted) return
+        resolvedEditionIdRef.current = profile.mushafEditionId
+        resolvedOnceRef.current = true
+        setRows(loadedRows)
       })
       .catch(() => {
-        if (!controller.signal.aborted) {
-          setRows(
-            readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
-              ...row,
-              label: readerAssetRowFallbackLabel(row),
-            })),
-          )
-        }
+        // Preserve-on-failure: a refresh keeps the shown rows; only the
+        // initial (never-resolved) load falls back to labelled default rows.
+        if (controller.signal.aborted || resolvedOnceRef.current) return
+        setRows(
+          readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
+            ...row,
+            label: readerAssetRowFallbackLabel(row),
+          })),
+        )
       })
     return () => controller.abort()
+  }, [reloadKey])
+
+  useEffect(() => {
+    const unsubscribe = subscribeReactReaderPreferencesChanged(() => {
+      void readNativeSettings(['mushafEditionId'])
+        .then(([mushafEditionId]) => {
+          const editionId =
+            typeof mushafEditionId?.value === 'string'
+              ? mushafEditionId.value
+              : DEFAULT_READER_ASSET_PROFILE.mushafEditionId
+          if (editionId === resolvedEditionIdRef.current) return
+          setReloadKey((key) => key + 1)
+        })
+        .catch(() => undefined)
+    })
+    return unsubscribe
   }, [])
 
   return (

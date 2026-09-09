@@ -18,7 +18,7 @@ const FONT_SIZE_SCALE: Record<ReactPreferenceStep, number> = {
   xs: 0.75,
 }
 
-export function emitReactReaderPreferencesChanged(preferences: ReactReaderPreferences): void {
+export function emitReactReaderPreferencesChanged(preferences: Partial<ReactReaderPreferences>): void {
   if (typeof window === 'undefined') return
   window.dispatchEvent(new CustomEvent(REACT_READER_PREFERENCES_CHANGED_EVENT, { detail: preferences }))
 }

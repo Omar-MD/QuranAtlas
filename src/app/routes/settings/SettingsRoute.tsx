@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { clearReactSettingsReaderAnchor, restoreReactSettingsReaderAnchor } from '../../settings-overlay-events'
 import { SettingsShell } from '../../../components/settings/SettingsShell'
-import { OfflineDataSection } from '../../../components/settings/OfflineDataSection'
 import { IncludedAssetsSection } from '../../../components/settings/IncludedAssetsSection'
+import { OfflineDataSection } from '../../../components/settings/OfflineDataSection'
+import { MushafEditionSection } from '../../../components/settings/MushafEditionSection'
 import { MushafSettings } from '../../../components/settings/MushafSettings'
 import { SettingsGroup } from '../../../components/settings/SettingsGroup'
 import { ThemeNightControls } from '../../../components/settings/ThemeNightControls'
@@ -12,6 +13,7 @@ import { useSettingsForm } from '../../../components/settings/useSettingsForm'
 import { Button, Status, Switch } from '../../../components/ui'
 import { subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { readNativeSettings } from '../../../storage/native-reader-store'
+import { DEFAULT_READER_ASSET_PROFILE } from '../../../../shared/reader-assets/default-profile'
 import type { NormalizedRect } from '../../../components/reader/mushaf-page-framing'
 import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
 
@@ -37,6 +39,10 @@ export function SettingsRoute({
     hasValidFraming: boolean
     representativeTextFrame?: NormalizedRect
   }>({ hasValidFraming: false })
+  // §3 wiring: the framing effect tracks the edition id it resolved and
+  // re-runs only when the native edition id actually changes.
+  const framingEditionIdRef = useRef<string | null>(null)
+  const framingLoadEpochRef = useRef(0)
   const {
     mushafFramingWriteStatus,
     retryMushafPageFraming,
@@ -57,21 +63,48 @@ export function SettingsRoute({
   const preferences = state.preferences
   useEffect(() => {
     let active = true
-    void readNativeSettings(['riwayah', 'mushafEditionId'])
-      .then(([riwayah, mushafEditionId]) =>
-        loadMushafFramingCapability({
-          mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : 'qalun-quran-ws-v1',
-          riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : 'qaloon',
-        }),
-      )
-      .then((value) => {
-        if (active) setFramingCapability(value)
-      })
-      .catch(() => {
-        if (active) setFramingCapability({ hasValidFraming: false })
-      })
+    const loadFramingCapability = () => {
+      const epoch = framingLoadEpochRef.current + 1
+      framingLoadEpochRef.current = epoch
+      void readNativeSettings(['riwayah', 'mushafEditionId'])
+        .then(([riwayah, mushafEditionId]) => {
+          const editionId =
+            typeof mushafEditionId?.value === 'string'
+              ? mushafEditionId.value
+              : DEFAULT_READER_ASSET_PROFILE.mushafEditionId
+          return loadMushafFramingCapability({
+            mushafEditionId: editionId,
+            riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : 'qaloon',
+          }).then((capability) => ({ capability, editionId }))
+        })
+        .then(({ capability, editionId }) => {
+          if (!active || framingLoadEpochRef.current !== epoch) return
+          framingEditionIdRef.current = editionId
+          setFramingCapability(capability)
+        })
+        .catch(() => {
+          // Preserve-on-failure: a refresh keeps the current capability and
+          // the mount default is already the no-framing capability.
+        })
+    }
+    loadFramingCapability()
+    const unsubscribe = subscribeReactReaderPreferencesChanged(() => {
+      // The shared event carries no edition id — read the native one and
+      // re-run the capability load only on an actual edition change.
+      void readNativeSettings(['mushafEditionId'])
+        .then(([mushafEditionId]) => {
+          const editionId =
+            typeof mushafEditionId?.value === 'string'
+              ? mushafEditionId.value
+              : DEFAULT_READER_ASSET_PROFILE.mushafEditionId
+          if (editionId === framingEditionIdRef.current) return
+          loadFramingCapability()
+        })
+        .catch(() => undefined)
+    })
     return () => {
       active = false
+      unsubscribe()
     }
   }, [])
 
@@ -141,6 +174,7 @@ export function SettingsRoute({
           theme={preferences.theme}
         />
       </SettingsGroup>
+      <MushafEditionSection />
       <OfflineDataSection />
       <IncludedAssetsSection onVisibleChange={setIncludedAssetsVisible} visible={includedAssetsVisible} />
       <span className="qar:sr-only">Restores {previousHash} on close.</span>
