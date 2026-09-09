@@ -34,7 +34,7 @@ jobs:
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
       - name: Cache deterministic dataset + search-pack output
         id: dataset-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             public/dataset
@@ -70,7 +70,7 @@ jobs:
       # datasets are not rebuilt a second time on this runner.
       - name: Cache deterministic dataset + search-pack output
         id: dataset-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             public/dataset
@@ -128,7 +128,7 @@ jobs:
           path: dist/
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
@@ -167,7 +167,7 @@ jobs:
           path: dist/
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
