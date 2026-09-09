@@ -254,6 +254,9 @@ export function useSearchRouteState(
         .askPreview({ query: trimmed, lens: lensForMode(effectiveMode), queryAst: parsed.ast, sort })
         .then((preview) => {
           if (sequence !== requestSequence.current) return
+          // Unmounted (route left) or pack torn down: a late preview must not
+          // touch hash or state.
+          if (!readyRef.current) return
           answerPreviewRef.current = preview
           setAnswerPreview(preview)
           setBrief(null)
@@ -764,6 +767,12 @@ function readSearchHashState(hash = typeof window === 'undefined' ? '' : window.
 
 function writeSearchHashState(state: SearchHashState): void {
   if (typeof window === 'undefined') return
+  // Stale async continuations (an in-flight askPreview resolving after the
+  // user left #/search) must never reclaim the address bar: only write while
+  // the search route still owns the current hash. Synchronous callers all run
+  // on the search surface; the settings overlay preserves the search base
+  // hash, and onHashChange already ignores non-search hashes.
+  if (window.location.hash.split('?')[0] !== REACT_ROUTES.search) return
   const params = new URLSearchParams()
   if (state.query?.trim()) params.set('q', state.query.trim())
   if (state.tab && state.tab !== 'overview') params.set('tab', state.tab)
