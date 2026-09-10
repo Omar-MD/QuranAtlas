@@ -1,4 +1,4 @@
-import { assertRuntimeDatasetUrl } from './runtime-boundary'
+import { fetchJson, isAbortError } from './fetch'
 import { loadVerseAliases, resolveTranslationFor } from './verse-aliases'
 import type { Riwayah } from '../storage/types'
 
@@ -67,17 +67,6 @@ const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
 const DEFAULT_QURAN_TEXT_STYLE_ID = 'uthmani-kfgqpc-v1'
 const DEFAULT_TRANSLATION_ID = 'bridges'
 
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError'
-}
-
-async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {
-  assertRuntimeDatasetUrl(url)
-  const response = await fetcher(url, { signal })
-  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
-  return response.json() as Promise<T>
-}
-
 function assertQuranTextPayload(payload: QuranTextPayload, surah: number): void {
   if (payload.sura_no !== surah || !Array.isArray(payload.ayat) || payload.ayat.length === 0) {
     throw new Error(`Invalid reader Quran text payload for Surah ${surah}`)
@@ -100,7 +89,9 @@ async function loadTranslation(
     const payload = await fetchJson<TranslationPayload>(
       fetcher,
       `/dataset/translations/${translationId}/${padded}.json`,
-      signal,
+      {
+        signal,
+      },
     )
     if (payload.surahNo !== surah || !Array.isArray(payload.verses)) return null
     return payload
@@ -123,7 +114,7 @@ export async function loadReaderSurah(surah: number, options: ReaderCorpusOption
   try {
     const url = `/dataset/quran-text/${riwayah}/${quranTextStyleId}/${padded}.json`
     const [payload, translation, aliases] = await Promise.all([
-      fetchJson<QuranTextPayload>(fetcher, url, options.signal),
+      fetchJson<QuranTextPayload>(fetcher, url, { signal: options.signal }),
       loadTranslation(surah, translationId, fetcher, options.signal),
       loadVerseAliases(fetcher, options.signal),
     ])

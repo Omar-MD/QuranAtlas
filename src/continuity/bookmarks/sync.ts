@@ -1,3 +1,4 @@
+import { isRiwayah } from '../../storage/reader-settings'
 import type { Riwayah } from '../../storage/types'
 
 export const SYNC_CHANNEL_NAME = 'quran-atlas:sync'
@@ -15,10 +16,6 @@ export type BookmarkSyncMessage = {
 }
 
 const BOOKMARK_KEY_RE = /^(?:\d+:\d+|m:\d+)$/
-
-function isRiwayah(value: unknown): value is Riwayah {
-  return value === 'qaloon'
-}
 
 function normalizeVerseKeys(value: unknown): string[] | null {
   const verseKeys = Array.isArray(value) ? value : typeof value === 'string' ? [value] : null

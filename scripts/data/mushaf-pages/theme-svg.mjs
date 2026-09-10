@@ -1,3 +1,6 @@
+import { hasUnsafeCssUrlReference, isUnsafeReference, localName, normalizeCssEscapes } from '../lib/svg-safety.mjs'
+import { decodeHtmlEntities } from '../lib/html-entities.mjs'
+
 export const MUSHAF_COLOR_TOKENS = {
   ground: 'var(--qa-mushaf-ground)',
   ink: 'var(--qa-mushaf-ink)',
@@ -245,47 +248,6 @@ function assertSame(before, after, filename, subject) {
   if (before !== after) {
     throw new Error(`Mushaf page ${filename} changed ${subject}`)
   }
-}
-
-function localName(name) {
-  return String(name ?? '')
-    .split(':')
-    .pop()
-    .toLowerCase()
-}
-
-function hasUnsafeCssUrlReference(value) {
-  for (const match of String(value).matchAll(/\burl\s*\(\s*(?:(["'])(.*?)\1|([^)]*?))\s*\)/gis)) {
-    const raw = (match[2] ?? match[3] ?? '').trim()
-    if (!/^#[A-Za-z_][\w:.-]*$/.test(raw)) return true
-  }
-  return false
-}
-
-function decodeHtmlEntities(value) {
-  const named = { amp: '&', apos: "'", colon: ':', gt: '>', lt: '<', quot: '"' }
-  return String(value)
-    .replace(/&#x([0-9a-f]+);?/gi, (_, hex) => codepointToString(Number.parseInt(hex, 16)))
-    .replace(/&#(\d+);?/g, (_, dec) => codepointToString(Number.parseInt(dec, 10)))
-    .replace(/&([a-z]+);/gi, (entity, name) => named[name.toLowerCase()] ?? entity)
-}
-
-function codepointToString(codepoint) {
-  if (!Number.isInteger(codepoint) || codepoint < 0 || codepoint > 0x10ffff) return ''
-  return String.fromCodePoint(codepoint)
-}
-
-function normalizeCssEscapes(value) {
-  return String(value)
-    .replace(/\\([0-9a-f]{1,6})\s?/gi, (_, hex) => codepointToString(Number.parseInt(hex, 16)))
-    .replace(/\\([^0-9a-f])/gi, '$1')
-}
-
-function isUnsafeReference(value) {
-  const normalized = normalizeCssEscapes(decodeHtmlEntities(value))
-    .replace(/[\p{Cc}\s]+/gu, '')
-    .toLowerCase()
-  return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/.test(normalized)
 }
 
 function escapeAttribute(value) {

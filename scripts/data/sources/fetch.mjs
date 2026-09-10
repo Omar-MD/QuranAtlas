@@ -4,23 +4,16 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { writeJson, readJson } from '../lib/json.mjs'
-import { loadSourceCatalog, validateSourceCatalog } from './catalog.mjs'
+import { fetchJson } from '../lib/fetch.mjs'
 import { normalizeQuranDbTranslation } from './providers/quran-db-translation.mjs'
 import { fetchQulTranslationSource, normalizeQulTranslationRows } from './providers/qul-translation.mjs'
 import { fetchQulTafsirSource, normalizeQulTafsirEntries } from './providers/qul-tafsir.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
-const UA = 'QuranAtlas-fetch/1.0 (https://quranatlas.org)'
 
 function repoPath(path) {
   return resolve(REPO_ROOT, path)
-}
-
-async function fetchJson(url) {
-  const response = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } })
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.json()
 }
 
 async function fetchSourcePayload(source, inputPath) {

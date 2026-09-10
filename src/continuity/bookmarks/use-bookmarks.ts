@@ -12,15 +12,10 @@ import {
 
 import { openReactDb } from '../../storage/db'
 import { listNativeBookmarks, readNativeSetting } from '../../storage/native-reader-store'
+import { DEFAULT_RIWAYAH, isRiwayah } from '../../storage/reader-settings'
 import type { BookmarkKind, BookmarkRecord, Riwayah } from '../../storage/types'
 import { deleteBookmark, toggleBookmark as toggleStoredBookmark, type BookmarkIdentity } from './store'
 import { subscribeBookmarkChanges } from './sync'
-
-const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
-
-function isRiwayah(value: unknown): value is Riwayah {
-  return value === 'hafs' || value === 'warsh' || value === 'qaloon'
-}
 
 export type BookmarksStatus = 'loading' | 'ready' | 'error'
 

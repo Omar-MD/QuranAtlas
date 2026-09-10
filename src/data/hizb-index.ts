@@ -1,15 +1,12 @@
 import hizbStarts from './hizb-starts.json'
 import { loadReaderSurahIndex } from './surah-index'
-
-export type QuranRef = { surah: number; verse: number }
+import { refFromIndex, refToIndex, type QuranRef, type SurahCount } from '../continuity/verse-key'
 
 export type HizbIndexEntry = {
   end: QuranRef
   n: number
   start: QuranRef
 }
-
-type HizbSurahCount = { count: number; n: number }
 
 // Canonical 60-entry hizb start table. Single-sourced from
 // src/data/hizb-starts.json so the data pipeline
@@ -27,7 +24,7 @@ export const HIZB_STARTS: ReadonlyArray<readonly [number, number]> = hizbStarts.
   ([surah, verse]) => [surah, verse] as const,
 )
 
-export function buildHizbRows(counts: ReadonlyArray<HizbSurahCount>): HizbIndexEntry[] {
+export function buildHizbRows(counts: ReadonlyArray<SurahCount>): HizbIndexEntry[] {
   const total = counts.reduce((sum, row) => sum + row.count, 0)
   return HIZB_STARTS.map(([surah, verse], index) => {
     const next = HIZB_STARTS[index + 1]
@@ -43,23 +40,4 @@ export function buildHizbRows(counts: ReadonlyArray<HizbSurahCount>): HizbIndexE
 export async function loadHizbIndex(fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<HizbIndexEntry[]> {
   const rows = await loadReaderSurahIndex(fetcher, signal)
   return buildHizbRows(rows.map((row) => ({ count: row.counts.qaloon, n: row.n })))
-}
-
-function refToIndex(ref: QuranRef, counts: ReadonlyArray<HizbSurahCount>): number {
-  let total = 0
-  for (const row of counts) {
-    if (row.n === ref.surah) return total + ref.verse
-    total += row.count
-  }
-  return total + ref.verse
-}
-
-function refFromIndex(index: number, counts: ReadonlyArray<HizbSurahCount>): QuranRef {
-  let remaining = Math.max(1, Math.floor(index))
-  for (const row of counts) {
-    if (remaining <= row.count) return { surah: row.n, verse: remaining }
-    remaining -= row.count
-  }
-  const last = counts[counts.length - 1] ?? { count: 1, n: 1 }
-  return { surah: last.n, verse: last.count }
 }

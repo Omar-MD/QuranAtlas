@@ -1,10 +1,8 @@
 import { readFileSync } from 'node:fs'
-import { readdir } from 'node:fs/promises'
-import { dirname, extname, join, relative, resolve } from 'node:path'
+import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const modulePath = fileURLToPath(import.meta.url).replace(/^\/@fs\//, '/')
-const repoRoot = resolve(dirname(modulePath), '..')
+import { REPO_ROOT as repoRoot, walkFiles } from './data/lib/fs.mjs'
 const allowlist = JSON.parse(
   readFileSync(join(repoRoot, 'src/design-system/docs/measured-layout-allowlist.json'), 'utf8'),
 )
@@ -17,20 +15,6 @@ const arbitraryUtility = /\bqar:[\w:-]+-\[[^\]]+\]/g
 const hexColor = /#[0-9a-fA-F]{3,8}\b/g
 const primitiveToken = /var\(--qar-/g
 const inlineColorStyle = /style=\{\{[^}]*color\s*:/g
-
-async function walk(dir) {
-  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
-  const files = []
-  for (const entry of entries) {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      files.push(...(await walk(path)))
-    } else if (checkedExtensions.has(extname(entry.name))) {
-      files.push(path)
-    }
-  }
-  return files
-}
 
 export function checkReactDesignText(repoRelativePath, text) {
   const failures = []
@@ -57,9 +41,9 @@ export function checkReactDesignText(repoRelativePath, text) {
   return failures
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const failures = []
-  for (const file of await walk(join(repoRoot, 'src'))) {
+  for (const file of await walkFiles(join(repoRoot, 'src'), checkedExtensions)) {
     const repoRelativePath = relative(repoRoot, file)
     failures.push(...checkReactDesignText(repoRelativePath, readFileSync(file, 'utf8')))
   }

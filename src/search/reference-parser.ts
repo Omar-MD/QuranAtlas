@@ -1,4 +1,5 @@
 import type { SearchGraphRef } from './schema'
+import { SURAH_COUNT } from '../continuity/verse-key'
 
 export interface ParsedSearchReference {
   ref: SearchGraphRef
@@ -6,7 +7,6 @@ export interface ParsedSearchReference {
   ayah: number
 }
 
-const MAX_SURAH = 114
 const MAX_AYAH = 286
 
 const REFERENCE_PATTERNS = [
@@ -32,7 +32,7 @@ function isValidSearchReference(surah: number, ayah: number): boolean {
     Number.isInteger(surah) &&
     Number.isInteger(ayah) &&
     surah >= 1 &&
-    surah <= MAX_SURAH &&
+    surah <= SURAH_COUNT &&
     ayah >= 1 &&
     ayah <= MAX_AYAH
   )

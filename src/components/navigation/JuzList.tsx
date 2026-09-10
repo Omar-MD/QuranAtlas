@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { loadJuzIndex, type JuzIndexEntry } from '../../data/juz-index'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/surah-index'
+import { compareQuranRefs, type QuranRef } from '../../continuity/verse-key'
 import { Button, ListRow, Spinner, Status } from '../ui'
 
 type JuzListProps = {
@@ -10,8 +11,6 @@ type JuzListProps = {
   rows?: JuzIndexEntry[]
   surahRows?: ReaderSurahIndexEntry[]
 }
-
-type QuranRef = { surah: number; verse: number }
 
 export function JuzList({
   currentRef = null,
@@ -115,16 +114,11 @@ export function JuzList({
 function findCurrentJuz(rows: JuzIndexEntry[], ref: QuranRef): number | null {
   let current: number | null = null
   for (const row of rows) {
-    if (compareRefs(row.start, ref) <= 0) {
+    if (compareQuranRefs(row.start, ref) <= 0) {
       current = row.n
     } else {
       break
     }
   }
   return current
-}
-
-function compareRefs(a: QuranRef, b: QuranRef): number {
-  if (a.surah !== b.surah) return a.surah - b.surah
-  return a.verse - b.verse
 }

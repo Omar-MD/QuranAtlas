@@ -2,6 +2,7 @@ import type { SearchByteBudget, SearchChecksumScope, SearchFeatureId, SearchShar
 
 export const SEARCH_PACK_REGISTRY_RUNTIME_URL = '/search-packs/registry.json'
 export const SEARCH_PACKS_RUNTIME_PREFIX = '/search-packs/packs/'
+export const SEARCH_PACK_CACHE_PREFIX = 'quran-atlas-search-pack'
 
 export const SEARCH_PACKS_FILESYSTEM_PREFIX = 'public/search-packs/packs/'
 export const SEARCH_PACK_CHECKSUM_ALGORITHM = 'sha-256'
@@ -139,4 +140,9 @@ function assertContentHashSegment(value: string): void {
   if (!isContentHashSegment(value)) {
     throw new Error(`invalid Search pack content hash ${value}`)
   }
+}
+
+export function searchPackCacheName(contentHash: string): string {
+  assertContentHashSegment(contentHash)
+  return `${SEARCH_PACK_CACHE_PREFIX}-${contentHash}`
 }

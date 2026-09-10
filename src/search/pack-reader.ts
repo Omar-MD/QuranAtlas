@@ -1,9 +1,12 @@
 import {
+  SEARCH_NORMALIZER_VERSION,
+  SEARCH_PACK_CACHE_PREFIX,
   SEARCH_PACK_REGISTRY_RUNTIME_URL,
   SEARCH_TABLE_DIRECTORY_ENTRY_LENGTH,
-  SEARCH_TABLE_ROLES,
   SEARCH_VALUE_WIDTHS,
+  SEARCH_TABLE_ROLES,
   assertImmutableSearchPackRuntimeUrl,
+  searchPackCacheName,
   assertSearchPackManifestUrls,
   assertSearchTableDirectoryEntry,
   assertSupportedSearchPackAbi,
@@ -13,7 +16,6 @@ import {
   type SearchPackShardManifest,
   type SearchShardTableDirectoryEntry,
 } from '../../shared/search'
-import { searchPackCacheName } from '../offline/cache-names'
 import { openReactDb } from '../storage/db'
 import type {
   SearchAyahRow,
@@ -62,6 +64,12 @@ export class SearchPackReader {
     assertSearchPackManifestUrls(manifest)
     const [majorText, minorText] = manifest.packAbiVersion.split('.')
     assertSupportedSearchPackAbi(Number(majorText), Number(minorText))
+    if (manifest.normalizerVersion !== SEARCH_NORMALIZER_VERSION) {
+      throw new SearchPackReaderError(
+        'incompatible-version',
+        `Search pack ${manifest.packId} normalizer version ${manifest.normalizerVersion} does not match app normalizer version ${SEARCH_NORMALIZER_VERSION}`,
+      )
+    }
     this.manifest = manifest
     this.options = options
   }
@@ -377,7 +385,7 @@ async function loadCachedSearchPackManifest(
   }
 
   for (const cacheName of await globalThis.caches.keys()) {
-    if (!cacheName.startsWith('quran-atlas-search-pack-')) continue
+    if (!cacheName.startsWith(`${SEARCH_PACK_CACHE_PREFIX}-`)) continue
     const cache = await globalThis.caches.open(cacheName)
     if (!('keys' in cache)) continue
     for (const request of await cache.keys()) {

@@ -1,35 +1,28 @@
-import { createHash, randomUUID } from 'node:crypto'
-import { existsSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { existsSync } from 'node:fs'
+import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { defaultCommandRunner } from './private-pdf.mjs'
+import { ensure, isInside, runChecked, sha256Hex as sha256 } from '../lib/script.mjs'
+import { jsonText } from '../lib/json.mjs'
+import {
+  MUSHAF_PRIVATE_ASSET_NAME as PRIVATE_ASSET_NAME,
+  MUSHAF_PRIVATE_EDITION_ID as PRIVATE_EDITION_ID,
+  MUSHAF_PRIVATE_MEDIA_KIND,
+  MUSHAF_PRIVATE_MIME_TYPE,
+  MUSHAF_PRIVATE_RENDER_DPI,
+  MUSHAF_PRIVATE_RELEASE_TAG as PRIVATE_RELEASE_TAG,
+  isMushafMediaRenditionPolicy,
+  isMushafPrivateEncoderPolicy,
+  validateMushafRenditionDescriptor,
+} from '../lib/mushaf-contract.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
-const PRIVATE_EDITION_ID = 'qalun-furatiyyah-2023-v1'
-const PRIVATE_RELEASE_TAG = 'mushaf-qalun-furatiyyah-2023-v1'
-const PRIVATE_ASSET_NAME = 'qalun-furatiyyah-2023-v1-normalized-v1.tar'
 const DISTRIBUTION_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-editions', PRIVATE_EDITION_ID, 'distribution.json')
 const BLOCK_BYTES = 512
-
-function ensure(condition, message) {
-  if (!condition) throw new Error(message)
-}
-
-function sha256(bytes) {
-  return createHash('sha256').update(bytes).digest('hex')
-}
-
-function jsonText(value) {
-  return `${JSON.stringify(value, null, 2)}\n`
-}
-
-function isInside(parent, candidate) {
-  const path = relative(resolve(parent), resolve(candidate))
-  return path === '' || (path !== '..' && !path.startsWith(`..${sep}`))
-}
 
 function tarString(header, offset, length) {
   const field = header.subarray(offset, offset + length)
@@ -185,24 +178,14 @@ function validateNormalizedMetadata(bytes, distribution) {
     'Private Mushaf release normalized content digest is stale or forged',
   )
   ensure(
-    metadata.media?.kind === 'external-image' &&
-      metadata.media.mimeType === 'image/webp' &&
-      metadata.media.renderDpi === 300,
+    metadata.media?.kind === MUSHAF_PRIVATE_MEDIA_KIND &&
+      metadata.media.mimeType === MUSHAF_PRIVATE_MIME_TYPE &&
+      metadata.media.renderDpi === MUSHAF_PRIVATE_RENDER_DPI,
     'Private Mushaf release media policy is invalid',
   )
+  ensure(isMushafPrivateEncoderPolicy(metadata.media.encoder), 'Private Mushaf release encoder policy is invalid')
   ensure(
-    metadata.media.encoder?.command === 'cwebp' &&
-      metadata.media.encoder.quality === 88 &&
-      metadata.media.encoder.method === 6,
-    'Private Mushaf release encoder policy is invalid',
-  )
-  ensure(
-    Array.isArray(metadata.media.renditions) &&
-      metadata.media.renditions.length === 2 &&
-      metadata.media.renditions[0]?.role === 'preview' &&
-      metadata.media.renditions[0]?.width === 1280 &&
-      metadata.media.renditions[1]?.role === 'full' &&
-      metadata.media.renditions[1]?.width === 2136,
+    isMushafMediaRenditionPolicy(metadata.media.renditions),
     'Private Mushaf release rendition policy is incomplete',
   )
   ensure(
@@ -241,23 +224,19 @@ function validateNormalizedMetadata(bytes, distribution) {
       `Private Mushaf release page ${page} framing is invalid`,
     )
     for (let renditionIndex = 0; renditionIndex < row.renditions.length; renditionIndex += 1) {
-      const descriptor = row.renditions[renditionIndex]
       const role = renditionIndex === 0 ? 'preview' : 'full'
-      const width = renditionIndex === 0 ? 1280 : 2136
-      const expectedPath = `pages/${String(page).padStart(3, '0')}-${width}.webp`
       ensure(
-        descriptor?.role === role &&
-          descriptor.assetPath === expectedPath &&
-          descriptor.width === width &&
-          Number.isInteger(descriptor.height) &&
-          descriptor.height > 0 &&
-          descriptor.mimeType === 'image/webp' &&
-          Number.isSafeInteger(descriptor.bytes) &&
-          descriptor.bytes > 0 &&
-          /^[a-f0-9]{64}$/.test(descriptor.sha256 ?? ''),
+        row.renditions[renditionIndex]?.role === role,
         `Private Mushaf release page ${page} ${role} rendition contract is invalid`,
       )
-      renditions.push(descriptor)
+      renditions.push(
+        validateMushafRenditionDescriptor(
+          row.renditions[renditionIndex],
+          page,
+          role,
+          `Private Mushaf release page ${page} ${role}`,
+        ),
+      )
     }
   }
   return { metadata, renditions }
@@ -320,14 +299,6 @@ export function inspectPrivateMushafTar(buffer, distribution) {
     metadata,
     renditions,
   }
-}
-
-async function runChecked(runCommand, command, args) {
-  const result = await runCommand(command, args)
-  if (result.status !== 0) {
-    throw new Error(`${command} failed: ${(result.stderr || result.stdout || `status ${result.status}`).trim()}`)
-  }
-  return result.stdout ?? ''
 }
 
 function parseWebpDimensions(output, assetPath) {

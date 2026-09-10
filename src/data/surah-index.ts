@@ -1,5 +1,6 @@
-import { assertRuntimeDatasetUrl } from './runtime-boundary'
+import { fetchJson } from './fetch'
 import type { Riwayah } from '../storage/types'
+import { SURAH_COUNT } from '../continuity/verse-key'
 
 export type ReaderSurahIndexEntry = {
   counts: Record<Riwayah, number>
@@ -11,14 +12,6 @@ export type ReaderSurahIndexEntry = {
 export type ReaderSurahDirection = 'next' | 'previous'
 
 const FIRST_SURAH = 1
-const LAST_SURAH = 114
-
-async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {
-  assertRuntimeDatasetUrl(url)
-  const response = await fetcher(url, { signal })
-  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
-  return response.json() as Promise<T>
-}
 
 function isReaderSurahIndexEntry(value: unknown): value is ReaderSurahIndexEntry {
   if (!value || typeof value !== 'object') return false
@@ -37,16 +30,16 @@ export async function loadReaderSurahIndex(
   fetcher: typeof fetch = fetch,
   signal?: AbortSignal,
 ): Promise<ReaderSurahIndexEntry[]> {
-  const rows = await fetchJson<unknown>(fetcher, '/dataset/surahs.json', signal)
-  if (!Array.isArray(rows) || rows.length !== LAST_SURAH || !rows.every(isReaderSurahIndexEntry)) {
+  const rows = await fetchJson<unknown>(fetcher, '/dataset/surahs.json', { signal })
+  if (!Array.isArray(rows) || rows.length !== SURAH_COUNT || !rows.every(isReaderSurahIndexEntry)) {
     throw new Error('Invalid reader Surah index payload')
   }
   return rows
 }
 
 export function adjacentSurahNumber(surah: number, direction: ReaderSurahDirection): number {
-  if (direction === 'next') return surah >= LAST_SURAH ? FIRST_SURAH : surah + 1
-  return surah <= FIRST_SURAH ? LAST_SURAH : surah - 1
+  if (direction === 'next') return surah >= SURAH_COUNT ? FIRST_SURAH : surah + 1
+  return surah <= FIRST_SURAH ? SURAH_COUNT : surah - 1
 }
 
 export function findAdjacentSurah(

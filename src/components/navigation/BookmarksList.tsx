@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { X } from 'lucide-react'
 
 import { isMushafPageBookmark, pageNumberForBookmark } from '../../continuity/bookmarks/page-bookmark'
+import { verseNumberOfKey } from '../../continuity/verse-key'
 import type { Riwayah } from '../../storage/types'
 import { pulseBookmarkLandingWhenRouteReady } from '../../continuity/bookmarks/pulse'
 import { Badge, IconButton, ListRow, Status } from '../ui'
@@ -226,7 +227,7 @@ async function loadSnippets(meta: BookmarkMeta, bookmarks: BookmarkListItem[]): 
         if (!response.ok) return
         const payload = (await response.json()) as { ayat?: Array<{ aya_no?: number; aya_text?: string }> }
         for (const row of rows) {
-          const verse = verseNumber(row.verseKey)
+          const verse = verseNumberOfKey(row.verseKey)
           const ayah = payload.ayat?.find((candidate) => candidate.aya_no === verse)
           if (typeof ayah?.aya_text === 'string') meta.snippets.set(row.verseKey, ayah.aya_text)
         }
@@ -235,11 +236,6 @@ async function loadSnippets(meta: BookmarkMeta, bookmarks: BookmarkListItem[]): 
       }
     }),
   )
-}
-
-function verseNumber(verseKey: string): number {
-  const parsed = Number.parseInt(verseKey.split(':')[1] ?? '', 10)
-  return Number.isInteger(parsed) ? parsed : 0
 }
 
 function sectionName(surah: number, rows: BookmarkListItem[], meta: BookmarkMeta): string {
@@ -262,7 +258,7 @@ function compareBookmarkRows(a: BookmarkListItem, b: BookmarkListItem): number {
     if (aPage && bPage) return (pageNumberForBookmark(a) ?? 0) - (pageNumberForBookmark(b) ?? 0)
     return aPage ? 1 : -1
   }
-  return verseNumber(a.verseKey) - verseNumber(b.verseKey)
+  return verseNumberOfKey(a.verseKey) - verseNumberOfKey(b.verseKey)
 }
 
 function bookmarkDisplayRef(bookmark: BookmarkListItem): string {

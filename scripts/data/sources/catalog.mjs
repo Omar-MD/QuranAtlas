@@ -1,9 +1,20 @@
 #!/usr/bin/env node
 import { existsSync } from 'node:fs'
-import { dirname, join, relative, resolve, sep } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { readJson } from '../lib/json.mjs'
+import { isInside } from '../lib/script.mjs'
+import {
+  MUSHAF_PRIVATE_ASSET_NAME,
+  MUSHAF_PRIVATE_FILE_COUNT,
+  MUSHAF_PRIVATE_MEDIA_KIND,
+  MUSHAF_PRIVATE_MIME_TYPE,
+  MUSHAF_PRIVATE_RELEASE_TAG,
+  MUSHAF_PRIVATE_RENDER_DPI,
+  isMushafMediaRenditionPolicy,
+  isMushafPrivateEncoderPolicy,
+} from '../lib/mushaf-contract.mjs'
 import { validatePassedPrivateMediaGate } from '../mushaf-pages/private-pdf.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -63,11 +74,6 @@ export async function loadSourceCatalog(catalogDir = CATALOG_DIR) {
   }
   catalog.mushafContractEvidence = await loadMushafContractEvidence(catalog.mushafAssets, catalogDir)
   return catalog
-}
-
-function isInside(parent, candidate) {
-  const path = relative(resolve(parent), resolve(candidate))
-  return path === '' || (path !== '..' && !path.startsWith(`..${sep}`))
 }
 
 async function loadMushafContractEvidence(mushafAssets, catalogDir) {
@@ -559,13 +565,11 @@ function validatePrivateMushafContractEvidence(asset, key, context) {
   } else if (
     media.version !== 1 ||
     media.mushafEditionId !== asset.mushafEditionId ||
-    media.kind !== 'external-image' ||
-    media.mimeType !== 'image/webp' ||
-    media.renderDpi !== 300 ||
-    media.encoder?.command !== 'cwebp' ||
-    media.encoder?.quality !== 88 ||
-    media.encoder?.method !== 6 ||
-    !hasValidMediaRenditions(media.renditions)
+    media.kind !== MUSHAF_PRIVATE_MEDIA_KIND ||
+    media.mimeType !== MUSHAF_PRIVATE_MIME_TYPE ||
+    media.renderDpi !== MUSHAF_PRIVATE_RENDER_DPI ||
+    !isMushafPrivateEncoderPolicy(media.encoder) ||
+    !isMushafMediaRenditionPolicy(media.renditions)
   ) {
     context.errors.push(`mushaf asset ${key} media policy contract is invalid`)
   } else {
@@ -586,14 +590,14 @@ function validatePrivateMushafContractEvidence(asset, key, context) {
     distribution.mushafEditionId !== asset.mushafEditionId ||
     distribution.authorization !== asset.distributionAuthorizationId ||
     distribution.repository !== 'Omar-MD/QuranAtlas' ||
-    distribution.releaseTag !== 'mushaf-qalun-furatiyyah-2023-v1' ||
-    distribution.assetName !== 'qalun-furatiyyah-2023-v1-normalized-v1.tar' ||
+    distribution.releaseTag !== MUSHAF_PRIVATE_RELEASE_TAG ||
+    distribution.assetName !== MUSHAF_PRIVATE_ASSET_NAME ||
     !Number.isInteger(distribution.archiveBytes) ||
     distribution.archiveBytes <= 0 ||
     !isSha256(distribution.archiveSha256) ||
     !isSha256(distribution.normalizedContentDigest) ||
     !isSha256(distribution.normalizedContractDigest) ||
-    distribution.fileCount !== 1209
+    distribution.fileCount !== MUSHAF_PRIVATE_FILE_COUNT
   ) {
     context.errors.push(`mushaf asset ${key} distribution contract is invalid`)
   }
@@ -648,17 +652,6 @@ function hasUnitRect(rect) {
     rect.height > 0 &&
     rect.x + rect.width <= 1 &&
     rect.y + rect.height <= 1
-  )
-}
-
-function hasValidMediaRenditions(renditions) {
-  return (
-    Array.isArray(renditions) &&
-    renditions.length === 2 &&
-    renditions[0]?.role === 'preview' &&
-    renditions[0]?.width === 1280 &&
-    renditions[1]?.role === 'full' &&
-    renditions[1]?.width === 2136
   )
 }
 

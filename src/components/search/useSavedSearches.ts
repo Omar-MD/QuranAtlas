@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { SavedSearchIntentV1 } from '../../../shared/search'
+import { SEARCH_NORMALIZER_VERSION } from '../../../shared/search'
 import { parseSearchQuery } from '../../search/query-parser'
 import type { SearchQueryMode, SearchSort } from '../../search/schema'
 import { openReactDb } from '../../storage/db'
@@ -63,7 +64,7 @@ export function useSavedSearches() {
         sort: input.sort ?? 'relevance',
         compatiblePackRequirements: {
           packAbiMajor: 1,
-          normalizerVersion: 1,
+          normalizerVersion: SEARCH_NORMALIZER_VERSION,
           requiredFeatures: input.mode === 'phrase' ? ['core', 'phrase'] : ['core'],
         },
         displayPreferences: { showSourceNotes: true },

@@ -1,5 +1,7 @@
+import { NATIVE_READER_STORES } from './reader-settings'
 import { QURAN_ATLAS_DB_NAME } from './schema'
 import type { BookmarkRecord, Riwayah, SettingRecord } from './types'
+import { verseNumberOfKeyFinite } from '../continuity/verse-key'
 
 type NativeWriteGuard = () => boolean
 
@@ -106,11 +108,12 @@ export function nativeSettingsReader() {
 }
 
 function applyNativeSchema(db: IDBDatabase): void {
-  if (!db.objectStoreNames.contains('settings')) db.createObjectStore('settings', { keyPath: 'key' })
-  if (!db.objectStoreNames.contains('bookmarks')) {
-    const bookmarks = db.createObjectStore('bookmarks', { keyPath: ['riwayah', 'verseKey'] })
-    bookmarks.createIndex('riwayah_surah', ['riwayah', 'surah'], { unique: false })
-    bookmarks.createIndex('riwayah', 'riwayah', { unique: false })
+  for (const [name, spec] of Object.entries(NATIVE_READER_STORES)) {
+    if (db.objectStoreNames.contains(name)) continue
+    const store = db.createObjectStore(name, { autoIncrement: spec.autoIncrement, keyPath: spec.keyPath })
+    for (const index of spec.indexes) {
+      store.createIndex(index.name, index.keyPath, { multiEntry: index.multiEntry, unique: index.unique })
+    }
   }
 }
 
@@ -138,12 +141,6 @@ function transactionDone(tx: IDBTransaction): Promise<void> {
   })
 }
 
-function verseNumber(verseKey: string): number {
-  const [, verse] = verseKey.split(':')
-  const parsed = Number(verse)
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 function compareBookmarks(a: BookmarkRecord, b: BookmarkRecord): number {
   const aPage = a.kind === 'page' ? (a.page ?? 0) : null
   const bPage = b.kind === 'page' ? (b.page ?? 0) : null
@@ -151,5 +148,5 @@ function compareBookmarks(a: BookmarkRecord, b: BookmarkRecord): number {
     if (aPage !== null && bPage !== null) return aPage - bPage
     return aPage !== null ? 1 : -1
   }
-  return a.surah - b.surah || verseNumber(a.verseKey) - verseNumber(b.verseKey)
+  return a.surah - b.surah || verseNumberOfKeyFinite(a.verseKey) - verseNumberOfKeyFinite(b.verseKey)
 }

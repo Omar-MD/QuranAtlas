@@ -8,8 +8,8 @@
   //   - mise guardrail tasks: scripts/check-*
   //   - data-lane scripts that data/cli.mjs spawns via spawnSync by path
   //     (text/search/knowledge/mushaf-pages/riwayah-packages builders,
-  //     derive-verse-aliases, source-catalog, check-juz-hizb, mushaf-pages
-  //     release-archive).
+  //     derive-verse-aliases, source-catalog, check-juz-hizb,
+  //     check-search-packs, mushaf-pages release-archive).
   //     These run as independent processes, so they are genuine entry points
   //     even though Knip cannot see the string-path spawns — keeping them as
   //     entries also keeps their transitive imports (e.g. jsdom via
@@ -25,6 +25,7 @@
     "scripts/data/fetch-source.mjs",
     "scripts/data/source-catalog.mjs",
     "scripts/data/check-juz-hizb.mjs",
+    "scripts/data/check-search-packs.mjs",
     "scripts/data/derive-verse-aliases.mjs",
     "scripts/data/text/build.mjs",
     "scripts/data/search/build.mjs",

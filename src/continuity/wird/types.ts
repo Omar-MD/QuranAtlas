@@ -1,7 +1,7 @@
-export type QuranRef = { surah: number; verse: number }
+import type { QuranRef } from '../verse-key'
+export type { QuranRef, SurahCount } from '../verse-key'
 export type WirdUnit = 'juz' | 'hizb' | 'page' | 'verse'
 export type BrowserNotificationState = 'unsupported' | 'default' | 'granted' | 'denied'
-export type SurahCount = { n: number; count: number }
 
 export type WirdReminder = { enabled: boolean; time: string; browserNotifications: BrowserNotificationState }
 export type WirdProgress = {

@@ -1,7 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const repoRoot = new URL('..', import.meta.url).pathname
+import { REPO_ROOT as repoRoot } from './data/lib/fs.mjs'
+import {
+  MUSHAF_FULL_RENDITION_WIDTH,
+  MUSHAF_PREVIEW_RENDITION_WIDTH,
+  mushafRenditionDescriptorFailure,
+} from './data/lib/mushaf-contract.mjs'
+
 const indexPath = join(repoRoot, 'public/dataset/indexes/mushaf-assets.json')
 
 function isEditionAwareMushafUrl(url) {
@@ -26,20 +33,7 @@ function isUnitRect(value) {
 }
 
 function descriptorFailure(descriptor, page, role) {
-  if (!descriptor || typeof descriptor !== 'object') return `page ${page} ${role} descriptor is missing`
-  const expectedPath = `pages/${String(page).padStart(3, '0')}-${descriptor.width}.webp`
-  if (descriptor.assetPath !== expectedPath) return `page ${page} ${role} assetPath is invalid`
-  if (!Number.isInteger(descriptor.bytes) || descriptor.bytes <= 0) return `page ${page} ${role} bytes are invalid`
-  if (!/^[a-f0-9]{64}$/.test(descriptor.sha256 ?? '')) return `page ${page} ${role} sha256 is invalid`
-  if (
-    !Number.isInteger(descriptor.width) ||
-    descriptor.width <= 0 ||
-    !Number.isInteger(descriptor.height) ||
-    descriptor.height <= 0
-  )
-    return `page ${page} ${role} dimensions are invalid`
-  if (descriptor.mimeType !== 'image/webp') return `page ${page} ${role} MIME type is invalid`
-  return null
+  return mushafRenditionDescriptorFailure(descriptor, page, role, `page ${page} ${role}`)
 }
 
 export function validateMushafManifestData(manifest) {
@@ -62,8 +56,8 @@ export function validateMushafManifestData(manifest) {
       failures.push(`page ${page} sources are incomplete`)
       continue
     }
-    const preview = sourceDescriptors.find((descriptor) => descriptor?.width === 1280)
-    const full = sourceDescriptors.find((descriptor) => descriptor?.width === 2136)
+    const preview = sourceDescriptors.find((descriptor) => descriptor?.width === MUSHAF_PREVIEW_RENDITION_WIDTH)
+    const full = sourceDescriptors.find((descriptor) => descriptor?.width === MUSHAF_FULL_RENDITION_WIDTH)
     for (const [role, descriptor] of [
       ['preview', preview],
       ['full', full],
@@ -137,9 +131,8 @@ export function validateMushafIndexData(data) {
   return failures
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (!existsSync(indexPath)) {
-    console.log('react-mushaf-indexes: no public/dataset/indexes/mushaf-assets.json present')
     process.exit(0)
   }
   const indexData = JSON.parse(readFileSync(indexPath, 'utf8'))

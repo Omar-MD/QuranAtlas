@@ -6,6 +6,8 @@ import { spawnSync } from 'node:child_process'
 import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { argValue, pad3 } from '../lib/script.mjs'
+import { readJson } from '../lib/json.mjs'
 import { assertSafeSvg, quranWsPagePdfUrl } from './build.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -14,15 +16,6 @@ const CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-pages.json')
 const SCRATCH_DIR = join(REPO_ROOT, '.scratch', 'mushaf-pages')
 const NORMALIZED_DIR = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages')
 const QURAN_WS_EDITION_ID = 'qalun-quran-ws-v1'
-
-function argValue(argv, name, fallback = null) {
-  const flag = argv.find((arg) => arg.startsWith(`--${name}=`))
-  return flag ? flag.slice(name.length + 3) : fallback
-}
-
-function pad3(n) {
-  return String(n).padStart(3, '0')
-}
 
 function parsePages(raw, pageCount) {
   if (!raw || raw === 'all') return Array.from({ length: pageCount }, (_, i) => i + 1)
@@ -43,10 +36,6 @@ function parsePages(raw, pageCount) {
     }
     return page
   })
-}
-
-async function readJson(path) {
-  return JSON.parse(await readFile(path, 'utf8'))
 }
 
 async function download(url, target) {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import type { SettingRecord } from '../storage/types'
+import type { QuranRef } from './verse-key'
 import { ensureReactMvpAssetContractReset } from '../launch/asset-contract-reset'
 import {
   MUSHAF_EDITION_SETUP_VERSION,
@@ -15,7 +16,7 @@ import {
 } from '../launch/offline-download-setup'
 import { nativeSettingsReader, readNativeSetting } from '../storage/native-reader-store'
 
-export type SavedPosition = { surah: number; verse: number }
+export type SavedPosition = QuranRef
 export type LaunchSetupState = Exclude<MushafEditionSetupState, { status: 'complete' }> | OfflineDownloadOffer
 export type LaunchRestoreState =
   | { status: 'loading'; hash: string; sourceHash: string }

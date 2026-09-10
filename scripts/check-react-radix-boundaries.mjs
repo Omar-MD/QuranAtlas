@@ -1,21 +1,10 @@
 import { readFileSync } from 'node:fs'
-import { readdir } from 'node:fs/promises'
-import { extname, join, relative } from 'node:path'
+import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const repoRoot = new URL('..', import.meta.url).pathname
+import { REPO_ROOT as repoRoot, walkFiles } from './data/lib/fs.mjs'
 const checkedExtensions = new Set(['.ts', '.tsx'])
 const radixImportPattern = /(?:import|export)\s+(?:[^'"]+\s+from\s+)?['"](@radix-ui\/react-[^'"]+)['"]/g
-
-async function walk(dir) {
-  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
-  const files = []
-  for (const entry of entries) {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) files.push(...(await walk(path)))
-    else if (checkedExtensions.has(extname(entry.name))) files.push(path)
-  }
-  return files
-}
 
 export function checkReactRadixBoundaryText(repoRelativePath, text) {
   if (repoRelativePath.startsWith('src/components/ui/')) return []
@@ -28,9 +17,9 @@ export function checkReactRadixBoundaryText(repoRelativePath, text) {
   return failures
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const failures = []
-  for (const file of await walk(join(repoRoot, 'src'))) {
+  for (const file of await walkFiles(join(repoRoot, 'src'), checkedExtensions)) {
     const repoRelativePath = relative(repoRoot, file)
     failures.push(...checkReactRadixBoundaryText(repoRelativePath, readFileSync(file, 'utf8')))
   }

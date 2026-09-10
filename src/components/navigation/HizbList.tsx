@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { loadHizbIndex, type HizbIndexEntry, type QuranRef } from '../../data/hizb-index'
+import { loadHizbIndex, type HizbIndexEntry } from '../../data/hizb-index'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/surah-index'
+import { compareQuranRefs, type QuranRef } from '../../continuity/verse-key'
 import { Badge, Button, ListRow, Spinner, Status } from '../ui'
 
 type HizbListProps = {
@@ -144,12 +145,7 @@ function groupHizbs(rows: HizbIndexEntry[], surahRows: ReaderSurahIndexEntry[]):
 }
 
 function refInRange(ref: QuranRef, hizb: HizbIndexEntry): boolean {
-  return compareRefs(hizb.start, ref) <= 0 && compareRefs(ref, hizb.end) <= 0
-}
-
-function compareRefs(a: QuranRef, b: QuranRef): number {
-  if (a.surah !== b.surah) return a.surah - b.surah
-  return a.verse - b.verse
+  return compareQuranRefs(hizb.start, ref) <= 0 && compareQuranRefs(ref, hizb.end) <= 0
 }
 
 function compactRangeLabel(hizb: HizbIndexEntry): string {

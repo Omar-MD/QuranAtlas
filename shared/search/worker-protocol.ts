@@ -50,6 +50,7 @@ export type SearchWorkerRequest =
 
 export const SEARCH_WORKER_ERROR_CODES = [
   'unavailable-pack',
+  'incompatible-version',
   'missing-feature',
   'corrupt-shard',
   'offline-miss',

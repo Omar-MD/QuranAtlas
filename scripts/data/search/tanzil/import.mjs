@@ -5,21 +5,15 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { HAFS_AYAH_COUNTS, assertCompleteHafsAyahCoverage } from '../../lib/ayah.mjs'
+import { fetchText } from '../../lib/fetch.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..', '..')
 const OUT_PATH = join(REPO_ROOT, 'data', 'normalized', 'search', 'tanzil', 'hafs.json')
-const UA = 'QuranAtlas-fetch/1.0 (https://quranatlas.org)'
 
 const TANZIL_DOWNLOAD_URLS = {
   simpleClean: 'https://tanzil.net/pub/download/index.php?quranType=simple-clean&outType=txt-2&agree=true',
   uthmani: 'https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true',
-}
-
-async function fetchTanzilText(url) {
-  const response = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'text/plain' } })
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`)
-  return response.text()
 }
 
 function parseTanzilNumberedText(text, label) {
@@ -73,8 +67,8 @@ export function normalizeTanzilHafsSearchRows({ simpleCleanText, uthmaniText }) 
 
 export async function importTanzilHafsSearchText() {
   const [simpleCleanText, uthmaniText] = await Promise.all([
-    fetchTanzilText(TANZIL_DOWNLOAD_URLS.simpleClean),
-    fetchTanzilText(TANZIL_DOWNLOAD_URLS.uthmani),
+    fetchText(TANZIL_DOWNLOAD_URLS.simpleClean),
+    fetchText(TANZIL_DOWNLOAD_URLS.uthmani),
   ])
   const rows = normalizeTanzilHafsSearchRows({ simpleCleanText, uthmaniText })
   await mkdir(dirname(OUT_PATH), { recursive: true })
@@ -87,7 +81,7 @@ export async function main() {
   console.log(`[search:tanzil] wrote ${result.rows} rows to ${result.outputPath}`)
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error))
     process.exit(1)

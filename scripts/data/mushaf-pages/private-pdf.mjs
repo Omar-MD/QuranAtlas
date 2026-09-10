@@ -1,35 +1,29 @@
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { basename, dirname, join, relative, resolve, sep } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import {
+  MUSHAF_PRIVATE_EDITION_ID as PRIVATE_EDITION_ID,
+  MUSHAF_PRIVATE_MEDIA_KIND,
+  MUSHAF_PRIVATE_MIME_TYPE,
+  MUSHAF_PRIVATE_RENDER_DPI,
+  isMushafMediaRenditionPolicy,
+  isMushafPrivateEncoderPolicy,
+} from '../lib/mushaf-contract.mjs'
+import { ensure, isInside, pad3, runChecked, sha256Hex as sha256 } from '../lib/script.mjs'
+import { jsonText, readJson } from '../lib/json.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
-const PRIVATE_EDITION_ID = 'qalun-furatiyyah-2023-v1'
 const RIWAYAH = 'qaloon'
 const PAGE_COUNT = 604
 const PDFINFO_CROP_BOX_PRECISION = 0.01
 export const CURRENT_PRIVATE_EMISSION_CONTRACT_VERSION = 2
 const CONTRACT_DIR = join(REPO_ROOT, 'data', 'catalog', 'mushaf-editions', PRIVATE_EDITION_ID)
 const NORMALIZED_ROOT = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages', RIWAYAH)
-
-function ensure(condition, message) {
-  if (!condition) throw new Error(message)
-}
-
-function sha256(bytes) {
-  return createHash('sha256').update(bytes).digest('hex')
-}
-
-function pad3(page) {
-  return String(page).padStart(3, '0')
-}
-
-function jsonText(value) {
-  return `${JSON.stringify(value, null, 2)}\n`
-}
 
 export function parsePdfCropBox(text) {
   const match = /^CropBox:\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/m.exec(text)
@@ -70,15 +64,6 @@ export function validateLegacyMetadata(metadata) {
     throw new Error('Legacy normalized contract is not accepted; regenerate the private Mushaf normalized directory')
   }
   return metadata
-}
-
-async function readJson(path) {
-  return JSON.parse(await readFile(path, 'utf8'))
-}
-
-function isInside(parent, candidate) {
-  const path = relative(resolve(parent), resolve(candidate))
-  return path === '' || (path !== '..' && !path.startsWith(`..${sep}`))
 }
 
 function contractPath(contractDir, name) {
@@ -262,24 +247,13 @@ export async function loadPrivateMushafEditionContract(editionId) {
 
   ensure(
     media?.mushafEditionId === editionId &&
-      media.kind === 'external-image' &&
-      media.mimeType === 'image/webp' &&
-      media.renderDpi === 300,
+      media.kind === MUSHAF_PRIVATE_MEDIA_KIND &&
+      media.mimeType === MUSHAF_PRIVATE_MIME_TYPE &&
+      media.renderDpi === MUSHAF_PRIVATE_RENDER_DPI,
     'Private Mushaf media policy is invalid',
   )
-  ensure(
-    media.encoder?.command === 'cwebp' && media.encoder.quality === 88 && media.encoder.method === 6,
-    'Private Mushaf media encoder is invalid',
-  )
-  ensure(
-    Array.isArray(media.renditions) &&
-      media.renditions.length === 2 &&
-      media.renditions[0]?.role === 'preview' &&
-      media.renditions[0]?.width === 1280 &&
-      media.renditions[1]?.role === 'full' &&
-      media.renditions[1]?.width === 2136,
-    'Private Mushaf media renditions are incomplete',
-  )
+  ensure(isMushafPrivateEncoderPolicy(media.encoder), 'Private Mushaf media encoder is invalid')
+  ensure(isMushafMediaRenditionPolicy(media.renditions), 'Private Mushaf media renditions are incomplete')
   validatePassedPrivateMediaGate(media)
 
   return {
@@ -305,14 +279,6 @@ export async function defaultCommandRunner(command, args) {
     child.once('error', rejectCommand)
     child.once('close', (status) => resolveCommand({ status: status ?? 1, stdout, stderr }))
   })
-}
-
-async function run(runCommand, command, args) {
-  const result = await runCommand(command, args)
-  if (result.status !== 0) {
-    throw new Error(`${command} failed: ${(result.stderr || result.stdout || `status ${result.status}`).trim()}`)
-  }
-  return result.stdout
 }
 
 async function exactCommandOutput(runCommand, command, args) {
@@ -358,7 +324,7 @@ function cropPixels(rect, dimensions, label) {
   return { x, y, width, height }
 }
 
-function runtimeTextFrame(text, full) {
+export function runtimeTextFrame(text, full) {
   const result = {
     x: (text.x - full.x) / full.width,
     y: (text.y - full.y) / full.height,
@@ -370,7 +336,7 @@ function runtimeTextFrame(text, full) {
 }
 
 async function fileDescriptor(path, expectedWidth, expectedHeight, runCommand) {
-  const info = await run(runCommand, 'webpinfo', [path])
+  const info = await runChecked(runCommand, 'webpinfo', [path])
   const dimensions = parseWebpDimensions(info, basename(path))
   ensure(
     dimensions.width === expectedWidth && dimensions.height === expectedHeight,
@@ -383,7 +349,7 @@ async function fileDescriptor(path, expectedWidth, expectedHeight, runCommand) {
     sha256: sha256(bytes),
     width: dimensions.width,
     height: dimensions.height,
-    mimeType: 'image/webp',
+    mimeType: MUSHAF_PRIVATE_MIME_TYPE,
   }
 }
 
@@ -489,7 +455,7 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
   }
   validateToolVersionProvenance(toolVersions, 'Private Mushaf import')
 
-  const pdfInfo = parsePdfInfo(await run(runCommand, 'pdfinfo', ['-box', pdfPath]))
+  const pdfInfo = parsePdfInfo(await runChecked(runCommand, 'pdfinfo', ['-box', pdfPath]))
   ensure(
     pdfInfo.pages === contract.source.documentPageCount,
     'Private Mushaf PDF page count does not match the pinned source contract',
@@ -521,7 +487,7 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
       )
       const stem = join(renderDir, pad3(page))
       const pngPath = `${stem}.png`
-      await run(runCommand, 'pdftocairo', [
+      await runChecked(runCommand, 'pdftocairo', [
         '-f',
         String(review.sourcePdfPage),
         '-l',
@@ -541,7 +507,7 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
       for (const rendition of contract.mediaPolicy.renditions) {
         const filename = `${pad3(page)}-${rendition.width}.webp`
         const output = join(pagesDir, filename)
-        await run(runCommand, 'cwebp', [
+        await runChecked(runCommand, 'cwebp', [
           '-q',
           String(contract.mediaPolicy.encoder.quality),
           '-m',

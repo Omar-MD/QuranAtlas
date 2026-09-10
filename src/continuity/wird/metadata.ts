@@ -1,6 +1,6 @@
 import { HIZB_STARTS } from '../../data/hizb-index'
 import { DEFAULT_JUZ_STARTS } from '../../data/juz-index'
-import { refFromIndex, refToIndex } from './progress'
+import { refFromIndex, refToIndex } from '../verse-key'
 import type { QuranRef, SurahCount, WirdBoundaries, WirdBoundary } from './types'
 
 // Juz/hizb boundary tables are single-sourced from src/data (juz-starts.json

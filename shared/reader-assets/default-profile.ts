@@ -33,8 +33,8 @@ export const RESET_CACHE_NAME_PREFIXES = rawProfile.resetCacheNamePrefixes
 
 export const DEFAULT_READER_ASSET_PROFILE = rawProfile.profile as ReaderAssetProfile
 
-const TEXT_ASSET_INDEX_URL = '/dataset/indexes/text-assets.json'
-const MUSHAF_ASSET_INDEX_URL = '/dataset/indexes/mushaf-assets.json'
+export const TEXT_ASSET_INDEX_URL = '/dataset/indexes/text-assets.json'
+export const MUSHAF_ASSET_INDEX_URL = '/dataset/indexes/mushaf-assets.json'
 const SOURCE_INDEX_URL = '/dataset/indexes/sources.json'
 const PROVENANCE_URL = '/dataset/provenance.json'
 

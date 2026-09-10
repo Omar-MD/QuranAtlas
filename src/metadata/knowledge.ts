@@ -1,4 +1,5 @@
 import type { SurahMetadataResult, VerseMetadata } from './metadata-state'
+import { fetchJson } from '../data/fetch'
 
 type AyahKnowledgeRow = {
   key: string
@@ -14,13 +15,6 @@ type PassageRow = {
 
 type AyahKnowledgePayload = AyahKnowledgeRow[] | { ayahs?: AyahKnowledgeRow[] }
 type PassagePayload = PassageRow[] | { passages?: PassageRow[] }
-
-async function fetchJson<T>(url: string, fetcher: typeof fetch, signal?: AbortSignal): Promise<T | null> {
-  const response = await fetcher(url, { signal })
-  if (response.status === 404) return null
-  if (!response.ok) throw new Error(`metadata ${response.status}`)
-  return response.json() as Promise<T>
-}
 
 function normalizeTheme(theme: string | { id: string; label?: string }) {
   if (typeof theme === 'string') return { id: theme, label: theme }
@@ -50,11 +44,19 @@ export async function loadKnowledgeForSurah(
   const padded = String(surah).padStart(3, '0')
   try {
     const ayahRows = normalizeAyahRows(
-      await fetchJson<AyahKnowledgePayload>(`/dataset/knowledge/ayah/${padded}.json`, fetcher, signal),
+      await fetchJson<AyahKnowledgePayload | null>(fetcher, `/dataset/knowledge/ayah/${padded}.json`, {
+        signal,
+        nullOnNotFound: true,
+        httpError: (_url, status) => new Error(`metadata ${status}`),
+      }),
     )
     if (!ayahRows) return { state: 'missing', rows: new Map() }
     const passageRows = normalizePassageRows(
-      await fetchJson<PassagePayload>(`/dataset/knowledge/passages/${padded}.json`, fetcher, signal),
+      await fetchJson<PassagePayload | null>(fetcher, `/dataset/knowledge/passages/${padded}.json`, {
+        signal,
+        nullOnNotFound: true,
+        httpError: (_url, status) => new Error(`metadata ${status}`),
+      }),
     )
     const passages = new Map(passageRows.map((row) => [row.id, localizedText(row.summary) ?? localizedText(row.title)]))
     const rows = new Map<string, VerseMetadata>()

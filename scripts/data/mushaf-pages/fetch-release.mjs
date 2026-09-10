@@ -5,13 +5,14 @@
 // CI (or a local developer) fetches the artifact and verifies it byte-exact
 // before data:build consumes it.
 
-import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { argValue, sha256Hex } from '../lib/script.mjs'
+import { readJson } from '../lib/json.mjs'
 import { inspectPrivateMushafTar } from './release-archive.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -20,15 +21,6 @@ const ASSET_CATALOG_PATH = join(REPO_ROOT, 'data', 'catalog', 'mushaf-assets.jso
 const CATALOG_DIR = join(REPO_ROOT, 'data', 'catalog')
 const NORMALIZED_ROOT = join(REPO_ROOT, 'data', 'normalized', 'mushaf-pages')
 const STAGE_ROOT = join(REPO_ROOT, '.scratch', 'mushaf-pages', 'releases')
-
-function argValue(argv, name) {
-  const flag = argv.find((arg) => arg.startsWith(`--${name}=`))
-  return flag ? flag.slice(name.length + 3) : null
-}
-
-async function readJson(path) {
-  return JSON.parse(await readFile(path, 'utf8'))
-}
 
 async function countPages(editionDir) {
   const pagesDir = join(editionDir, 'pages')
@@ -55,10 +47,6 @@ function extractArchive(archivePath, destinationRoot) {
 function extractPlainArchive(archivePath, destinationRoot) {
   const result = spawnSync('tar', ['-xf', archivePath, '-C', destinationRoot], { stdio: 'inherit' })
   if (result.status !== 0) throw new Error(`Failed to extract ${archivePath}`)
-}
-
-function sha256Hex(bytes) {
-  return createHash('sha256').update(bytes).digest('hex')
 }
 
 // Private (internal) editions ship a plain USTAR archive rooted at the edition
@@ -158,7 +146,7 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(`[mushaf-pages] ${asset.mushafEditionId}: fetching ${url}`)
     const staged = join(STAGE_ROOT, contract.assetName)
     const buffer = await download(url, staged, contract.archiveBytes)
-    const digest = createHash('sha256').update(buffer).digest('hex')
+    const digest = sha256Hex(buffer)
     if (digest !== contract.archiveSha256) {
       throw new Error(`Release artifact checksum mismatch for ${contract.assetName}: ${digest}`)
     }

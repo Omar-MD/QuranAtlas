@@ -9,6 +9,7 @@ import type {
   SearchResultMatchEvidence,
   SearchResultMatchLane,
 } from '../../shared/search'
+import { compareQuranRefKeys } from '../continuity/verse-key'
 
 type LaneCountKey = SearchResultMatchLane | 'reference'
 
@@ -26,7 +27,7 @@ export function buildSearchBrief({
   windowResults: SearchResultDto[]
 }): SearchBriefDto {
   const occurrenceCountKnown = occurrenceCountKnownForQuery(query)
-  const sortedRefs = [...new Set(rankedResults.map((result) => result.sourceRef))].sort(compareRefs)
+  const sortedRefs = [...new Set(rankedResults.map((result) => result.sourceRef))].sort(compareQuranRefKeys)
   const laneCounts = buildLaneCounts(rankedResults, query, occurrenceCountKnown)
   const evidenceTypes = buildEvidenceTypes(rankedResults, query)
 
@@ -204,7 +205,7 @@ function buildRepresentativeRefs(
   const firstRanked = rankedResults[0]
   if (firstRanked) refs.push({ label: 'top-ranked', ref: firstRanked.sourceRef })
 
-  const mushafOrdered = [...rankedResults].sort((left, right) => compareRefs(left.sourceRef, right.sourceRef))
+  const mushafOrdered = [...rankedResults].sort((left, right) => compareQuranRefKeys(left.sourceRef, right.sourceRef))
   const firstInMushafOrder = mushafOrdered[0]
   if (firstInMushafOrder) refs.push({ label: 'first-in-mushaf-order', ref: firstInMushafOrder.sourceRef })
 
@@ -412,10 +413,4 @@ function laneOrder(lane: LaneCountKey): number {
     'surah-context': 9,
   }
   return order[lane]
-}
-
-function compareRefs(left: string, right: string): number {
-  const [leftSurah, leftAyah] = left.split(':').map(Number)
-  const [rightSurah, rightAyah] = right.split(':').map(Number)
-  return leftSurah - rightSurah || leftAyah - rightAyah
 }

@@ -1,4 +1,5 @@
 import type { SearchResultDto, SearchSort } from './schema'
+import { compareQuranRefKeys } from '../continuity/verse-key'
 
 export const SEARCH_RANK_VERSION = 'phase-1-rank-v1'
 
@@ -29,11 +30,11 @@ function stableResultKey(result: Pick<SearchResultDto, 'sourceRef' | 'matchLanes
 
 function compareResults(left: SearchResultDto, right: SearchResultDto, sort: SearchSort): number {
   if (sort === 'mushaf-order' || sort === 'surah-order')
-    return compareRefs(left.sourceRef, right.sourceRef) || left.resultId.localeCompare(right.resultId)
+    return compareQuranRefKeys(left.sourceRef, right.sourceRef) || left.resultId.localeCompare(right.resultId)
   if (sort === 'recent') return right.resultId.localeCompare(left.resultId)
   return (
     compareLane(left, right) ||
-    compareRefs(left.sourceRef, right.sourceRef) ||
+    compareQuranRefKeys(left.sourceRef, right.sourceRef) ||
     left.rankKey.localeCompare(right.rankKey) ||
     left.resultId.localeCompare(right.resultId)
   )
@@ -45,12 +46,6 @@ function compareLane(left: SearchResultDto, right: SearchResultDto): number {
 
 function bestLane(lanes: SearchResultDto['matchLanes']): SearchResultDto['matchLanes'][number] {
   return [...lanes].sort((left, right) => LANE_WEIGHT[left] - LANE_WEIGHT[right])[0] ?? 'context'
-}
-
-function compareRefs(left: string, right: string): number {
-  const [leftSurah, leftAyah] = left.split(':').map(Number)
-  const [rightSurah, rightAyah] = right.split(':').map(Number)
-  return leftSurah - rightSurah || leftAyah - rightAyah
 }
 
 function sourceRefOrderKey(ref: string): string {

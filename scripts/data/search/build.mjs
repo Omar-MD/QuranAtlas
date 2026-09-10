@@ -6,6 +6,8 @@ import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { sha256Hex, stableJson, writeJsonShard } from './abi-writer.mjs'
+import { chunkRows } from '../lib/script.mjs'
+import { featureForShard } from '../lib/shard-features.mjs'
 import { buildSearchCorePostings } from './postings.mjs'
 import { buildSearchMorphologyPayloads, MORPHOLOGY_REQUIRED_SHARDS } from './morphology/build.mjs'
 import { buildSearchGraphPayloads, GRAPH_REQUIRED_SHARDS } from './graph/build.mjs'
@@ -343,31 +345,6 @@ function assertRequiredShardsPresent(shardFiles, requiredShards) {
   }
 }
 
-function featureForShard(filename) {
-  if (filename.startsWith('arabic-postings')) return 'arabic-text'
-  if (filename.startsWith('translation-postings')) return 'translation'
-  if (filename.startsWith('exact-word-postings')) return 'arabic-text'
-  if (filename.startsWith('phrase-postings')) return 'phrase'
-  if (
-    filename.startsWith('morphology-') ||
-    filename.startsWith('same-written-form-') ||
-    filename.startsWith('same-root-') ||
-    filename.startsWith('lemma-') ||
-    filename.startsWith('surah-context')
-  )
-    return 'morphology'
-  if (filename.startsWith('following-wording')) return 'following-wording'
-  if (filename.startsWith('shared-wording')) return 'shared-wording'
-  if (filename.startsWith('repeated-phrases')) return 'repeated-phrases'
-  if (filename.startsWith('occurs-once')) return 'occurs-once'
-  if (filename.startsWith('ayah-endings')) return 'ayah-endings'
-  if (filename.startsWith('counts-patterns')) return 'counts-patterns'
-  if (filename.startsWith('graph-provenance')) return 'provenance'
-  if (filename.includes('provenance')) return 'provenance'
-  if (filename.includes('dictionaries')) return 'core'
-  return 'core'
-}
-
 function schemaForShard(filename) {
   return `search-shard-${featureForShard(filename)}-v1`
 }
@@ -381,14 +358,6 @@ function phrasePostingGroups(rows) {
     groups.set(length, group)
   }
   return [...groups.entries()].sort(([a], [b]) => a - b)
-}
-
-function chunkRows(rows, chunkSize) {
-  const chunks = []
-  for (let index = 0; index < rows.length; index += chunkSize) {
-    chunks.push(rows.slice(index, index + chunkSize))
-  }
-  return chunks
 }
 
 function parseArgs(argv) {
@@ -409,7 +378,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error))
     process.exit(1)

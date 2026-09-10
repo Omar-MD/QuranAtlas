@@ -1,5 +1,5 @@
 import juzStarts from './juz-starts.json'
-import { assertRuntimeDatasetUrl } from './runtime-boundary'
+import { fetchJson } from './fetch'
 
 export type DatasetJuzEntry = {
   n: number
@@ -27,13 +27,6 @@ export const DEFAULT_JUZ_STARTS: JuzIndexEntry[] = juzStarts.map(([surah, verse]
   start: { surah, verse },
 }))
 
-async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {
-  assertRuntimeDatasetUrl(url)
-  const response = await fetcher(url, { signal })
-  if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`)
-  return response.json() as Promise<T>
-}
-
 export function buildJuzRows(rows: DatasetJuzEntry[]): JuzIndexEntry[] {
   const byNumber = new Map(rows.map((row) => [row.n, row]))
   return DEFAULT_JUZ_STARTS.map((fallback) => {
@@ -45,7 +38,7 @@ export function buildJuzRows(rows: DatasetJuzEntry[]): JuzIndexEntry[] {
 }
 
 export async function loadJuzIndex(fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<JuzIndexEntry[]> {
-  const rows = await fetchJson<unknown>(fetcher, '/dataset/juz.json', signal)
+  const rows = await fetchJson<unknown>(fetcher, '/dataset/juz.json', { signal })
   if (!Array.isArray(rows)) throw new Error('Invalid Juz index payload')
   return buildJuzRows(rows as DatasetJuzEntry[])
 }

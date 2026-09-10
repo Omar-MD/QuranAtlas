@@ -14,6 +14,7 @@ import {
 } from '../../../shared/reader-assets/default-profile'
 import { readNativeSettings } from '../../storage/native-reader-store'
 import { subscribeReactReaderPreferencesChanged } from '../../storage/reader-preferences'
+import { DEFAULT_TRANSLATION_ID, readActiveReaderProfile } from '../../storage/reader-settings'
 
 const pendingRows = readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
   ...row,
@@ -39,25 +40,10 @@ export function IncludedAssetsSection({
   // defaults cover only the fields nothing persists (readActiveReaderProfile's
   // per-field fallback idiom), never wholesale.
   async function resolveActiveAssetProfile(): Promise<ReaderAssetProfile> {
-    const [riwayah, quranTextStyleId, translationId, mushafEditionId] = await readNativeSettings([
-      'riwayah',
-      'quranTextStyleId',
-      'translationId',
-      'mushafEditionId',
-    ])
-    return {
-      ...DEFAULT_READER_ASSET_PROFILE,
-      riwayah: riwayah?.value === 'qaloon' ? 'qaloon' : DEFAULT_READER_ASSET_PROFILE.riwayah,
-      quranTextStyleId:
-        typeof quranTextStyleId?.value === 'string'
-          ? quranTextStyleId.value
-          : DEFAULT_READER_ASSET_PROFILE.quranTextStyleId,
-      translationId: translationId?.value === 'bridges' ? 'bridges' : DEFAULT_READER_ASSET_PROFILE.translationId,
-      mushafEditionId:
-        typeof mushafEditionId?.value === 'string'
-          ? mushafEditionId.value
-          : DEFAULT_READER_ASSET_PROFILE.mushafEditionId,
-    }
+    const profile = await readActiveReaderProfile()
+    // The asset-contract view pins translationId to the contract default: the
+    // inventory shows the shipped contract, not the stored translation setting.
+    return { ...DEFAULT_READER_ASSET_PROFILE, ...profile, translationId: DEFAULT_TRANSLATION_ID }
   }
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey intentionally retriggers inventory resolution.

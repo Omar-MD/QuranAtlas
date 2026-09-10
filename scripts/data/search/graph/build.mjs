@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { stableJson } from '../abi-writer.mjs'
+import { featureForShard } from '../../lib/shard-features.mjs'
 import { assertGraphMaterializationBudgets, enumeratePhraseWindows } from './phrase-windows.mjs'
 import { buildGraphCounts } from './counts.mjs'
 
@@ -117,7 +118,7 @@ export function buildSearchGraphPayloads({
     const byteLength = Buffer.byteLength(stableJson(payload))
     return {
       filename,
-      residentGroupKey: graphFeatureForFilename(filename),
+      residentGroupKey: featureForShard(filename),
       byteLength,
       estimatedMemoryBytes: Math.min(byteLength * 2, maxDecodedShardBytes ?? byteLength * 2),
       maxDecodedBytes: maxDecodedShardBytes,
@@ -136,16 +137,6 @@ export function buildSearchGraphPayloads({
     policy,
     stats,
   }
-}
-
-function graphFeatureForFilename(filename) {
-  if (filename.startsWith('following-wording')) return 'following-wording'
-  if (filename.startsWith('shared-wording')) return 'shared-wording'
-  if (filename.startsWith('repeated-phrases')) return 'repeated-phrases'
-  if (filename.startsWith('occurs-once')) return 'occurs-once'
-  if (filename.startsWith('ayah-endings')) return 'ayah-endings'
-  if (filename.startsWith('counts-patterns')) return 'counts-patterns'
-  return 'provenance'
 }
 
 function buildFollowingRows(windows, policy) {
@@ -271,6 +262,9 @@ function sourcePolicyRows(policy) {
   ]
 }
 
+// Deliberately diverges from lib chunkRows (which returns [] for empty
+// input): the graph lane must always emit at least one shard per family so
+// GRAPH_REQUIRED_SHARDS stays satisfiable on empty corpora.
 function chunkRows(rows, chunkSize) {
   const chunks = []
   for (let index = 0; index < rows.length; index += chunkSize) {

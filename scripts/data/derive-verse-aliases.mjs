@@ -34,6 +34,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { AYAT_COUNTS, RIWAYAT, splitRiwayah } from './text/build.mjs'
+import { pad3 } from './lib/script.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..')
@@ -56,10 +57,6 @@ function normalise(s) {
   out = out.replace(/[\u200C-\u200F\uFEFF]/g, '') // strip zero-widths
   out = out.replace(/[^\u0620-\u064A\s]/g, '') // keep Arabic letter block + whitespace
   return out.replace(/\s+/g, ' ').trim()
-}
-
-function pad3(n) {
-  return String(n).padStart(3, '0')
 }
 
 async function loadRiwayahSplits() {
@@ -388,7 +385,9 @@ async function main() {
   console.log(`[verse-aliases] wrote ${Object.keys(aliases).length} divergent surah alias tables`)
 }
 
-main().catch((e) => {
-  console.error(e)
-  process.exit(1)
-})
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+}

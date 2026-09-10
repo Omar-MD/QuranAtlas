@@ -1,5 +1,6 @@
 import { assertRuntimeDatasetUrl } from '../../data/runtime-boundary'
-import type { MushafEditionIndexEntry } from '../../launch/mushaf-edition-setup'
+import type { MushafEditionIndexEntry } from '../../packs/mushaf-index'
+import { mushafPagesUrlPattern } from '../../packs/mushaf-paths'
 import type { OfflinePackFilePlan, OfflinePackKind, Riwayah } from '../../storage/types'
 
 export type OfflinePackPlan = {
@@ -27,6 +28,13 @@ export function readerCorePackId(profile: {
 
 export function mushafPackId(entry: { riwayah: string; mushafEditionId: string }): string {
   return `mushaf-pages--${entry.riwayah}--${entry.mushafEditionId}`
+}
+
+// Reverse of mushafPackId; reader-core ids carry no mushaf identity.
+export function identityFromPackId(packId: string): { riwayah: string; mushafEditionId?: string } | undefined {
+  const segments = packId.split('--')
+  if (segments[0] !== 'mushaf-pages' || segments.length < 3) return undefined
+  return { riwayah: segments[1], mushafEditionId: segments.slice(2).join('--') }
 }
 
 function readerCoreUrls(profile: { riwayah: string; quranTextStyleId: string; translationId: string }): string[] {
@@ -66,19 +74,6 @@ const readerCoreUrlPattern = new RegExp(
     `|surahs\\.json` +
     `|knowledge/(?:ayah|passages)/\\d{3}\\.json)$`,
 )
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function mushafPagesUrlPattern(identity: { riwayah: string; mushafEditionId: string }): RegExp {
-  // v1 editions ship one inline SVG per page; v2 editions ship a preview
-  // (1280px) and full (2136px) WebP pair per page.
-  return new RegExp(
-    `^/dataset/mushaf-pages/${escapeRegExp(identity.riwayah)}/${escapeRegExp(identity.mushafEditionId)}/` +
-      `(?:manifest\\.json|pages/\\d{3}\\.svg|pages/\\d{3}-(?:1280|2136)\\.webp)$`,
-  )
-}
 
 export function buildReaderCorePackPlan(
   profile: { riwayah: Riwayah; quranTextStyleId: string; translationId: string },

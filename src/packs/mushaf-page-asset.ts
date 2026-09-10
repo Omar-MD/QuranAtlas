@@ -1,7 +1,26 @@
+import { fetchJson, isAbortError } from '../data/fetch'
 import { assertRuntimeDatasetUrl } from '../data/runtime-boundary'
+import { MUSHAF_ASSET_INDEX_URL } from '../../shared/reader-assets/default-profile'
 import type { Riwayah } from '../storage/types'
-import type { MushafExternalImageDescriptor, MushafExternalImageSource, MushafPageFraming } from './mushaf-index'
-import { mushafManifestUrl, mushafPageUrl, resolveMushafEditionAssetUrl } from './mushaf-paths'
+import {
+  findMushafAssetIndexEntry,
+  isMushafPageFraming,
+  type MushafAssetIndex,
+  type MushafAssetIndexEntryRaw,
+  type MushafExternalImageDescriptor,
+  type MushafExternalImageSource,
+  type MushafPageFraming,
+} from './mushaf-index'
+import {
+  MUSHAF_FULL_RENDITION_WIDTH,
+  MUSHAF_PAGE_COUNT,
+  MUSHAF_PREVIEW_RENDITION_WIDTH,
+  mushafManifestUrl,
+  mushafPageUrl,
+  mushafSvgPageAssetPath,
+  mushafWebpPageAssetPath,
+  resolveMushafEditionAssetUrl,
+} from './mushaf-paths'
 
 export type { MushafExternalImageSource, MushafPageFraming } from './mushaf-index'
 
@@ -59,6 +78,11 @@ export class MushafAssetHttpError extends Error {
     super(`Failed to fetch ${url}: ${status}`)
   }
 }
+
+// All three Mushaf dataset fetches throw the typed HTTP error so
+// classifyMushafPageFailure can distinguish missing pages from failures.
+const mushafAssetHttpError = (url: string, status: number): MushafAssetHttpError =>
+  new MushafAssetHttpError(url, status)
 
 export type MushafPageFailureKind = 'transient' | 'confirmed-missing' | 'contract-error'
 
@@ -138,18 +162,6 @@ export type MushafFramingCapability = {
   representativeTextFrame?: MushafPageFraming['textFrame']
 }
 
-export type MushafAssetIndex = {
-  assets?: Array<{
-    files?: Array<{ url?: unknown }>
-    manifestUrl?: unknown
-    mushafEditionId?: unknown
-    pageCount?: unknown
-    riwayah?: unknown
-    version?: unknown
-    pageUrls?: unknown
-  }>
-}
-
 export type MushafPageProfileContext = {
   index: MushafAssetIndex
   manifest: MushafManifest
@@ -190,8 +202,11 @@ export async function loadMushafPageProfileContext({
 }: Omit<LoadMushafPageAssetOptions, 'context' | 'page'>): Promise<MushafPageProfileContext> {
   if (signal?.aborted) throw abortError()
   const [index, manifest] = await Promise.all([
-    fetchJson<MushafAssetIndex>(fetcher, '/dataset/indexes/mushaf-assets.json', signal),
-    fetchJson<MushafManifest>(fetcher, mushafManifestUrl({ mushafEditionId, riwayah }), signal),
+    fetchJson<MushafAssetIndex>(fetcher, MUSHAF_ASSET_INDEX_URL, { signal, httpError: mushafAssetHttpError }),
+    fetchJson<MushafManifest>(fetcher, mushafManifestUrl({ mushafEditionId, riwayah }), {
+      signal,
+      httpError: mushafAssetHttpError,
+    }),
   ])
   if (signal?.aborted) throw abortError()
   const context = { index, manifest, mushafEditionId, riwayah }
@@ -290,7 +305,7 @@ export async function prepareExternalMushafImage(
     if (signal?.aborted) return { status: 'aborted' }
     return { status: 'ready', image }
   } catch (error) {
-    if (isAbortError(error) || signal?.aborted) return { status: 'aborted' }
+    if (isAbortError(error, signal)) return { status: 'aborted' }
     return { status: 'error', error: error instanceof Error ? error : new Error('Mushaf image preparation failed') }
   }
 }
@@ -307,7 +322,7 @@ export async function loadMushafManifest({
   signal?: AbortSignal
 }): Promise<MushafManifest> {
   const manifestUrl = mushafManifestUrl({ riwayah, mushafEditionId })
-  const manifest = await fetchJson<MushafManifest>(fetcher, manifestUrl, signal)
+  const manifest = await fetchJson<MushafManifest>(fetcher, manifestUrl, { signal, httpError: mushafAssetHttpError })
   assertMushafManifest(manifest, { mushafEditionId, riwayah })
   return manifest
 }
@@ -341,20 +356,18 @@ function hasIndexedMushafAsset(
   index: MushafAssetIndex,
   expected: { riwayah: Riwayah; mushafEditionId: string; page: number },
 ): boolean {
-  const entry = index.assets?.find(
-    (asset) =>
-      asset.riwayah === expected.riwayah &&
-      asset.mushafEditionId === expected.mushafEditionId &&
-      asset.manifestUrl === mushafManifestUrl(expected) &&
-      asset.pageCount === 604,
-  )
+  const entry = findMushafAssetIndexEntry(index, {
+    riwayah: expected.riwayah,
+    mushafEditionId: expected.mushafEditionId,
+    pageCount: MUSHAF_PAGE_COUNT,
+  })
   if (!entry) return false
-  const page = Math.min(604, Math.max(1, Math.floor(expected.page)))
+  const page = Math.min(MUSHAF_PAGE_COUNT, Math.max(1, Math.floor(expected.page)))
   if (entry.version === 'v2') {
     return (
       Array.isArray(entry.pageUrls) &&
       entry.pageUrls[page - 1] ===
-        resolveMushafEditionAssetUrl(expected, `pages/${String(page).padStart(3, '0')}-2136.webp`)
+        resolveMushafEditionAssetUrl(expected, mushafWebpPageAssetPath(page, MUSHAF_FULL_RENDITION_WIDTH))
     )
   }
   const pageUrl = mushafPageUrl(expected, page)
@@ -367,13 +380,11 @@ function assertMushafPageProfileContext(
 ): void {
   assertMushafPageProfileIdentity(context, expected)
   assertMushafManifest(context.manifest, expected)
-  const indexed = context.index.assets?.find(
-    (asset) =>
-      asset.riwayah === expected.riwayah &&
-      asset.mushafEditionId === expected.mushafEditionId &&
-      asset.manifestUrl === mushafManifestUrl(expected) &&
-      asset.pageCount === context.manifest.pageCount,
-  )
+  const indexed = findMushafAssetIndexEntry(context.index, {
+    riwayah: expected.riwayah,
+    mushafEditionId: expected.mushafEditionId,
+    pageCount: context.manifest.pageCount,
+  })
   if (!indexed) throw new Error(`Mushaf page pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
   if (context.manifest.version === 2) {
     const external = findExternalMushafIndexEntry(context.index, expected)
@@ -501,7 +512,7 @@ function resolveMushafPage(
   const clampedPage = Math.min(manifest.pageCount, Math.max(1, Math.floor(expected.page)))
   const pageEntry = manifest.pages.find((entry) => entry.page === clampedPage)
   if (!pageEntry) throw new Error(`Mushaf manifest has no page ${clampedPage}`)
-  const expectedPath = `pages/${String(clampedPage).padStart(3, '0')}.svg`
+  const expectedPath = mushafSvgPageAssetPath(clampedPage)
   if (pageEntry.assetPath !== expectedPath) throw new Error(`Invalid Mushaf asset path at page ${clampedPage}`)
   if (!isQuranRef(pageEntry.firstVerse)) throw new Error(`Invalid Mushaf first verse at page ${clampedPage}`)
   parseViewBox(pageEntry.viewBox)
@@ -546,39 +557,27 @@ function assertMushafManifest(manifest: MushafManifest, expected: { riwayah: Riw
   for (const page of manifest.pages) validateExternalManifestPage(page)
 }
 
-type MushafExternalIndexEntry = {
-  riwayah?: unknown
-  mushafEditionId?: unknown
-  manifestUrl?: unknown
-  pageCount?: unknown
-  version?: unknown
-  pageUrls?: unknown
-  files?: Array<Record<string, unknown>>
-}
-
 function findExternalMushafIndexEntry(
   index: MushafAssetIndex,
   expected: { riwayah: Riwayah; mushafEditionId: string },
-): MushafExternalIndexEntry {
-  const entry = index.assets?.find(
-    (asset) =>
-      asset.riwayah === expected.riwayah &&
-      asset.mushafEditionId === expected.mushafEditionId &&
-      asset.manifestUrl === mushafManifestUrl(expected) &&
-      asset.pageCount === 604 &&
-      asset.version === 'v2',
-  )
+): MushafAssetIndexEntryRaw {
+  const entry = findMushafAssetIndexEntry(index, {
+    riwayah: expected.riwayah,
+    mushafEditionId: expected.mushafEditionId,
+    pageCount: MUSHAF_PAGE_COUNT,
+    version: 'v2',
+  })
   if (!entry)
     throw new Error(`Mushaf external-image pack is not indexed for ${expected.riwayah}/${expected.mushafEditionId}`)
-  return entry as MushafExternalIndexEntry
+  return entry
 }
 
 function validateExternalManifestIndexAgreement(
   manifest: MushafManifestV2,
-  indexEntry: MushafExternalIndexEntry,
+  indexEntry: MushafAssetIndexEntryRaw,
   identity: { riwayah: Riwayah; mushafEditionId: string },
 ): void {
-  if (manifest.pageCount !== 604 || manifest.pages.length !== manifest.pageCount) {
+  if (manifest.pageCount !== MUSHAF_PAGE_COUNT || manifest.pages.length !== manifest.pageCount) {
     throw new Error('External-image Mushaf manifest must contain every page')
   }
   if (
@@ -624,11 +623,11 @@ function validateExternalManifestIndexAgreement(
 
 function externalSourceForRole(
   page: MushafManifestPageV2,
-  indexEntry: MushafExternalIndexEntry,
+  indexEntry: MushafAssetIndexEntryRaw,
   identity: { riwayah: Riwayah; mushafEditionId: string },
   role: 'preview' | 'full',
 ): MushafExternalImageSource {
-  const width = role === 'preview' ? 1280 : 2136
+  const width = role === 'preview' ? MUSHAF_PREVIEW_RENDITION_WIDTH : MUSHAF_FULL_RENDITION_WIDTH
   const descriptor = page.media.sources.find((source) => source.width === width)
   if (!descriptor || (role === 'full' && !sameExternalDescriptor(page.media.fallback, descriptor))) {
     throw new Error(`External-image Mushaf ${role} descriptor is invalid at page ${page.page}`)
@@ -650,8 +649,8 @@ function validateExternalManifestPage(page: MushafManifestPageV2): void {
     throw new Error('Invalid V2 Mushaf media sources')
   for (const descriptor of page.media.sources) validateExternalDescriptor(descriptor, page.page)
   validateExternalDescriptor(page.media.fallback, page.page)
-  const preview = page.media.sources.find((source) => source.width === 1280)
-  const full = page.media.sources.find((source) => source.width === 2136)
+  const preview = page.media.sources.find((source) => source.width === MUSHAF_PREVIEW_RENDITION_WIDTH)
+  const full = page.media.sources.find((source) => source.width === MUSHAF_FULL_RENDITION_WIDTH)
   if (!preview || !full || !sameExternalDescriptor(page.media.fallback, full)) {
     throw new Error(`Invalid V2 Mushaf rendition roles at page ${page.page}`)
   }
@@ -660,7 +659,7 @@ function validateExternalManifestPage(page: MushafManifestPageV2): void {
 function validateExternalDescriptor(descriptor: MushafExternalImageDescriptor, page: number): void {
   if (
     !descriptor ||
-    descriptor.assetPath !== `pages/${String(page).padStart(3, '0')}-${descriptor.width}.webp` ||
+    descriptor.assetPath !== mushafWebpPageAssetPath(page, descriptor.width) ||
     !Number.isInteger(descriptor.bytes) ||
     descriptor.bytes <= 0 ||
     !/^[a-f0-9]{64}$/.test(descriptor.sha256) ||
@@ -672,21 +671,6 @@ function validateExternalDescriptor(descriptor: MushafExternalImageDescriptor, p
   ) {
     throw new Error(`Invalid V2 Mushaf external-image descriptor at page ${page}`)
   }
-}
-
-function isMushafPageFraming(value: MushafPageFraming): boolean {
-  const frame = value?.textFrame
-  return Boolean(
-    frame &&
-      ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(frame[key as keyof typeof frame])) &&
-      frame.x >= 0 &&
-      frame.y >= 0 &&
-      frame.width > 0 &&
-      frame.height > 0 &&
-      frame.x + frame.width <= 1 &&
-      frame.y + frame.height <= 1 &&
-      ['left', 'right', 'none'].includes(value.sideLane),
-  )
 }
 
 function sameExternalDescriptor(
@@ -748,13 +732,6 @@ function waitForExternalImageDecode(image: HTMLImageElement, signal?: AbortSigna
 
 function abortError(): DOMException {
   return new DOMException('Mushaf image preparation was aborted', 'AbortError')
-}
-
-async function fetchJson<T>(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<T> {
-  assertRuntimeDatasetUrl(url)
-  const response = await fetcher(url, { signal })
-  if (!response.ok) throw new MushafAssetHttpError(url, response.status)
-  return response.json() as Promise<T>
 }
 
 async function fetchText(fetcher: typeof fetch, url: string, signal?: AbortSignal): Promise<string> {
@@ -848,8 +825,4 @@ function normalizeColor(value: string): string {
   if (expanded === `#${'231f20'}`) return 'quranWsInk'
   if (expanded === `#${'ffffff'}`) return 'white'
   return lower
-}
-
-function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError'
 }

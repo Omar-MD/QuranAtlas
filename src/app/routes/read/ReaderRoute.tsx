@@ -6,6 +6,12 @@ import { loadKnowledgeForSurah } from '../../../metadata/knowledge'
 import type { VerseMetadata } from '../../../metadata/metadata-state'
 import type { Riwayah } from '../../../storage/types'
 import { nativeSettingsReader, readNativeSettings } from '../../../storage/native-reader-store'
+import {
+  DEFAULT_QURAN_TEXT_STYLE_ID,
+  DEFAULT_RIWAYAH,
+  DEFAULT_TRANSLATION_ID,
+  isRiwayah,
+} from '../../../storage/reader-settings'
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
 import { applyReactReaderTypography, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
@@ -44,18 +50,14 @@ type ReaderSpacingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 const DEFAULT_READER_SETTINGS: ReaderSettings = {
   fontSize: DEFAULT_REACT_READER_PREFERENCES.fontSize,
   lineSpacing: DEFAULT_REACT_READER_PREFERENCES.lineSpacing,
-  quranTextStyleId: 'uthmani-kfgqpc-v1',
+  quranTextStyleId: DEFAULT_QURAN_TEXT_STYLE_ID,
   readerMargin: DEFAULT_REACT_READER_PREFERENCES.readerMargin,
-  riwayah: 'qaloon',
-  translationId: 'bridges',
+  riwayah: DEFAULT_RIWAYAH,
+  translationId: DEFAULT_TRANSLATION_ID,
   translationVisible: DEFAULT_REACT_READER_PREFERENCES.translationVisible,
   verseSpacing: DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
   wordSpacing: DEFAULT_REACT_READER_PREFERENCES.wordSpacing,
   wirdReaderStatusVisible: DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
-}
-
-function asRiwayah(value: unknown): Riwayah | null {
-  return value === 'qaloon' ? value : null
 }
 
 async function readReaderSettings(): Promise<ReaderSettings> {
@@ -72,7 +74,7 @@ async function readReaderSettings(): Promise<ReaderSettings> {
       quranTextStyleId:
         typeof quranTextStyleId?.value === 'string' ? quranTextStyleId.value : DEFAULT_READER_SETTINGS.quranTextStyleId,
       readerMargin: preferences.readerMargin,
-      riwayah: asRiwayah(riwayah?.value) ?? DEFAULT_READER_SETTINGS.riwayah,
+      riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_READER_SETTINGS.riwayah,
       translationId:
         typeof translationId?.value === 'string' ? translationId.value : DEFAULT_READER_SETTINGS.translationId,
       translationVisible: preferences.translationVisible,

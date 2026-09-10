@@ -1,25 +1,11 @@
 import { readFileSync } from 'node:fs'
-import { readdir } from 'node:fs/promises'
 import { extname, join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const repoRoot = process.cwd()
+import { REPO_ROOT as repoRoot, walkFiles } from './data/lib/fs.mjs'
 const checkedExtensions = new Set(['.css', '.js', '.ts', '.tsx'])
 const importPattern = /(?:import|export)\s+(?:[^'"]+\s+from\s+)?['"]([^'"]+)['"]|import\(['"]([^'"]+)['"]\)/g
 const cssImportPattern = /@import\s+(?:url\()?['"]([^'")]+)['"]\)?/g
-
-async function walk(dir) {
-  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
-  const files = []
-  for (const entry of entries) {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      files.push(...(await walk(path)))
-    } else if (checkedExtensions.has(extname(entry.name))) {
-      files.push(path)
-    }
-  }
-  return files
-}
 
 function importsRetiredStyles(specifier) {
   return /(?:^|\/)src\/styles\//.test(specifier) || /(?:\.\.\/)+src\/styles\//.test(specifier)
@@ -69,8 +55,11 @@ export function checkReactBoundaryText(sourcePath, text) {
   return failures
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const files = [...(await walk(join(repoRoot, '.storybook'))), ...(await walk(join(repoRoot, 'src')))]
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const files = [
+    ...(await walkFiles(join(repoRoot, '.storybook'), checkedExtensions)),
+    ...(await walkFiles(join(repoRoot, 'src'), checkedExtensions)),
+  ]
 
   const failures = []
   for (const file of files) {

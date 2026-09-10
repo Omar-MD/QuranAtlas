@@ -1,4 +1,9 @@
 import type { SearchResultCursor } from './query'
+import { isValidQuranAyahRef } from '../../src/continuity/verse-key'
+
+// Canonical home for these is src/continuity/verse-key.ts; re-exported here to
+// keep this module's public API (and the shared/search barrel) stable.
+export { isValidQuranAyahRef, QURAN_AYAH_COUNTS } from '../../src/continuity/verse-key'
 
 export type SourceKindV1 = 'quran-text' | 'translation' | 'morphology' | 'reader-mapping'
 
@@ -155,22 +160,6 @@ export type EvidenceBasisLite = {
   translation: 'used' | 'available-not-used' | 'not-available'
   morphology: 'used' | 'available-not-used' | 'not-available'
   note: string
-}
-
-export const QURAN_AYAH_COUNTS = [
-  7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77,
-  227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55,
-  78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36,
-  25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6,
-] as const
-
-export function isValidQuranAyahRef(value: string): value is `${number}:${number}` {
-  const match = /^(\d+):(\d+)$/.exec(value)
-  if (!match) return false
-  const surah = Number(match[1])
-  const ayah = Number(match[2])
-  if (!Number.isInteger(surah) || !Number.isInteger(ayah) || surah < 1 || ayah < 1) return false
-  return ayah <= (QURAN_AYAH_COUNTS[surah - 1] ?? 0)
 }
 
 export type ReaderActionLite =

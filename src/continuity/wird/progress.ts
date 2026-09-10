@@ -1,3 +1,4 @@
+import { compareQuranRefs, refFromIndex, refToIndex } from '../verse-key'
 import type {
   QuranRef,
   SurahCount,
@@ -16,29 +17,8 @@ export function getLocalDayKey(date = new Date()): string {
   return `${year}-${month}-${day}`
 }
 
-export function compareRefs(a: QuranRef, b: QuranRef): number {
-  if (a.surah !== b.surah) return a.surah - b.surah
-  return a.verse - b.verse
-}
-
-export function refToIndex(ref: QuranRef, counts: ReadonlyArray<SurahCount>): number {
-  let total = 0
-  for (const row of counts) {
-    if (row.n === ref.surah) return total + ref.verse
-    total += row.count
-  }
-  return total + ref.verse
-}
-
-export function refFromIndex(index: number, counts: ReadonlyArray<SurahCount>): QuranRef {
-  let remaining = Math.max(1, Math.floor(index))
-  for (const row of counts) {
-    if (remaining <= row.count) return { surah: row.n, verse: remaining }
-    remaining -= row.count
-  }
-  const last = counts[counts.length - 1] ?? { n: 1, count: 1 }
-  return { surah: last.n, verse: last.count }
-}
+// Historical name kept for existing importers; canonical home is ../verse-key.
+export { compareQuranRefs as compareRefs } from '../verse-key'
 
 function clampIndex(index: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.floor(index)))
@@ -82,7 +62,7 @@ export function createWirdPlan(
   counts: ReadonlyArray<SurahCount>,
   dayKey = getLocalDayKey(),
 ): WirdPlan {
-  if (compareRefs(input.startRef, input.endRef) >= 0) {
+  if (compareQuranRefs(input.startRef, input.endRef) >= 0) {
     throw new Error('Start point must be before the plan end reference')
   }
 
@@ -144,7 +124,7 @@ export function advanceWirdProgress(
   dayKey = getLocalDayKey(),
 ): WirdPlan {
   const current = recomputeForDay(plan, counts, dayKey)
-  if (compareRefs(readRef, current.startRef) < 0 || compareRefs(readRef, current.endRef) > 0) return current
+  if (compareQuranRefs(readRef, current.startRef) < 0 || compareQuranRefs(readRef, current.endRef) > 0) return current
 
   const previousIndex = current.progress.completedThroughRef
     ? refToIndex(current.progress.completedThroughRef, counts)
@@ -179,9 +159,9 @@ export function advanceWirdProgressFromReaderPosition(
 }
 
 export function isWirdReaderProgressRefEligible(plan: WirdPlan, readRef: QuranRef): boolean {
-  if (compareRefs(readRef, plan.progress.nextRef) < 0) return false
-  if (compareRefs(readRef, plan.progress.todayEndRef) > 0) return false
-  if (compareRefs(readRef, plan.startRef) < 0 || compareRefs(readRef, plan.endRef) > 0) return false
+  if (compareQuranRefs(readRef, plan.progress.nextRef) < 0) return false
+  if (compareQuranRefs(readRef, plan.progress.todayEndRef) > 0) return false
+  if (compareQuranRefs(readRef, plan.startRef) < 0 || compareQuranRefs(readRef, plan.endRef) > 0) return false
   return true
 }
 

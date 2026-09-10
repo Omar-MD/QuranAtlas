@@ -37,6 +37,7 @@ import {
   writeNativeSetting,
 } from '../../../storage/native-reader-store'
 import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } from '../../../storage/settings-writer'
+import { DEFAULT_MUSHAF_EDITION_ID, DEFAULT_RIWAYAH, readActiveMushafProfile } from '../../../storage/reader-settings'
 import {
   emitReactReaderPreferencesChanged,
   isReactMushafViewMode,
@@ -71,8 +72,6 @@ export type RequestedMushafPageFailure = {
   visiblePage: number
 }
 
-const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
-const DEFAULT_MUSHAF_EDITION_ID = 'qalun-quran-ws-v1'
 const COMPACT_LANDSCAPE_QUERY = '(orientation: landscape) and (max-height: 600px)'
 const LANDSCAPE_FIT_WIDTH_DISABLED_KEY = 'quranatlas:mushaf-landscape-fit-width-disabled'
 
@@ -620,11 +619,11 @@ function openAssetSettings(): void {
 // can keep their current settings instead of swallowing a failure into the
 // shipped defaults (§3 preserve-on-failure).
 async function readActiveMushafSettings(): Promise<ActiveMushafSettings> {
-  const [riwayah, mushafEditionId] = await readNativeSettings(['riwayah', 'mushafEditionId'])
+  const { mushafEditionId, riwayah } = await readActiveMushafProfile()
   const preferences = await readNativeReactReaderPreferences()
   return {
-    riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
-    mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
+    riwayah,
+    mushafEditionId,
     mushafFitWidth: preferences.mushafFitWidth,
     mushafPageFraming: clampMushafPageFraming(preferences.mushafPageFraming),
     mushafViewMode: preferences.mushafViewMode,
@@ -660,10 +659,6 @@ async function advanceNativeWirdFromReaderPosition(
   await writeNativeSetting({ key: 'wirdPlan', value })
   notifyWirdPlanChanged(value)
   return value
-}
-
-function isRiwayah(value: unknown): value is Riwayah {
-  return value === 'qaloon'
 }
 
 function isLandscapeFitWidthDisabled(): boolean {

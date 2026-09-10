@@ -5,7 +5,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { buildManifestPayload } from '../manifest/inventory.mjs'
+import { argValue, ensure } from '../lib/script.mjs'
+import { jsonText, readJson } from '../lib/json.mjs'
+import { refreshDatasetManifest } from '../lib/manifest-refresh.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = join(__dirname, '..', '..', '..')
@@ -21,19 +23,6 @@ const RIWAYAT = [DEFAULT_PROFILE.riwayah]
 const SURAH_COUNT = 114
 const DEFAULT_MUSHAF_EDITIONS = {
   [DEFAULT_PROFILE.riwayah]: DEFAULT_PROFILE.mushafEditionId,
-}
-
-function argValue(argv, name, fallback = null) {
-  const flag = argv.find((arg) => arg.startsWith(`--${name}=`))
-  return flag ? flag.slice(name.length + 3) : fallback
-}
-
-function ensure(condition, message) {
-  if (!condition) throw new Error(message)
-}
-
-async function readJson(path) {
-  return JSON.parse(await readFile(path, 'utf8'))
 }
 
 function datasetUrl(path) {
@@ -131,34 +120,6 @@ async function packageFor(riwayah, catalog, textAssetIndex, mushafAssetIndex) {
   }
 }
 
-async function manifestTextSourcesFromCurrentManifest() {
-  const manifestPath = join(DATASET_DIR, 'manifest.json')
-  if (!existsSync(manifestPath)) return null
-  const manifest = await readJson(manifestPath)
-  if (!Array.isArray(manifest.files)) return null
-  const ids = new Set()
-  for (const file of manifest.files) {
-    if (typeof file?.path !== 'string') continue
-    const translation = file.path.match(/^translations\/([^/]+)\//)
-    const tafsir = file.path.match(/^tafsir\/([^/]+)\//)
-    if (translation) ids.add(translation[1])
-    if (tafsir) ids.add(tafsir[1])
-  }
-  return ids
-}
-
-async function refreshDatasetManifest(profileName) {
-  const provenance = await readJson(join(DATASET_DIR, 'provenance.json'))
-  const manifest = await buildManifestPayload({
-    datasetDir: DATASET_DIR,
-    provenance,
-    packageVersion: provenance.packageVersion,
-    profileName,
-    manifestTextSources: await manifestTextSourcesFromCurrentManifest(),
-  })
-  await writeFile(join(DATASET_DIR, 'manifest.json'), JSON.stringify(manifest), 'utf8')
-}
-
 export async function buildRiwayahPackageIndex({ profile = 'baseline', check = false } = {}) {
   const catalog = await loadCatalog()
   const textAssetIndex = await loadTextAssetIndex()
@@ -181,8 +142,8 @@ export async function buildRiwayahPackageIndex({ profile = 'baseline', check = f
 
   if (!check) {
     await mkdir(dirname(OUT_PATH), { recursive: true })
-    await writeFile(OUT_PATH, `${JSON.stringify(index, null, 2)}\n`, 'utf8')
-    await refreshDatasetManifest(profile)
+    await writeFile(OUT_PATH, jsonText(index), 'utf8')
+    await refreshDatasetManifest(profile, DATASET_DIR)
   }
 
   return index

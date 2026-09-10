@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { loadReaderSurahIndex } from '../../data/surah-index'
 import { nativeSettingsReader, readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
 import { deriveWirdSummary, getLocalDayKey } from './progress'
+import { compareQuranRefs } from '../verse-key'
 import {
   createWirdReminderNotification,
   getBrowserNotificationState,
@@ -34,7 +35,8 @@ export function useWirdReminderScheduler(): void {
       void syncWirdReminderBackgroundRegistration(plan?.reminder ?? null)
       if (!plan?.reminder.enabled) return
       if (getBrowserNotificationState() !== 'granted') return
-      if (plan.progress.completedThroughRef && compareRefs(plan.progress.completedThroughRef, plan.endRef) >= 0) return
+      if (plan.progress.completedThroughRef && compareQuranRefs(plan.progress.completedThroughRef, plan.endRef) >= 0)
+        return
       const delay = Math.min(getNextReminderDelay(plan.reminder.time), MAX_TIMEOUT_MS)
       reminderTimer = setTimeout(() => {
         void fireReminder()
@@ -94,9 +96,4 @@ async function loadSurahCounts(): Promise<SurahCount[]> {
     rows.map((row) => ({ count: row.counts.qaloon, n: row.n })),
   )
   return cachedCounts
-}
-
-function compareRefs(a: { surah: number; verse: number }, b: { surah: number; verse: number }): number {
-  if (a.surah !== b.surah) return a.surah - b.surah
-  return a.verse - b.verse
 }

@@ -2,6 +2,7 @@
 
 import { importQacMorphologySource, QAC_SOURCE_ID } from './import.mjs'
 import { tokenizeSearchText } from '../normalizer.mjs'
+import { chunkRows } from '../../lib/script.mjs'
 
 export const MORPHOLOGY_REQUIRED_SHARDS = [
   'morphology-root-dictionary',
@@ -168,12 +169,4 @@ function contextRows(countsMap) {
       total: [...counts.values()].reduce((sum, count) => sum + count, 0),
       surahs: [...counts.entries()].sort(([a], [b]) => a - b).map(([surah, count]) => ({ surah, count })),
     }))
-}
-
-function chunkRows(rows, chunkSize) {
-  const chunks = []
-  for (let index = 0; index < rows.length; index += chunkSize) {
-    chunks.push(rows.slice(index, index + chunkSize))
-  }
-  return chunks
 }

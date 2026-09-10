@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { abortableDelay, isAbortError } from '../../../data/fetch'
+
 import {
   classifyMushafPageFailure,
   describeMushafPage,
@@ -107,7 +109,7 @@ export function useMushafPageWindow(input: { enabled: boolean; page: number; ses
             updateEntry(page, generation, (current) => commitMushafPageFull(current, descriptor, asset))
             return
           } catch (error) {
-            if (isAbort(error, controller.signal)) return
+            if (isAbortError(error, controller.signal)) return
             const kind = classifyMushafPageFailure(error)
             if (kind !== 'transient' || attempt === MUSHAF_RETRY_DELAYS_MS.length) {
               updateEntry(page, generation, preserveMushafPageOnUpgradeFailure)
@@ -116,7 +118,7 @@ export function useMushafPageWindow(input: { enabled: boolean; page: number; ses
             try {
               await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt], controller.signal)
             } catch (delayError) {
-              if (isAbort(delayError, controller.signal)) return
+              if (isAbortError(delayError, controller.signal)) return
               throw delayError
             }
           }
@@ -162,13 +164,13 @@ export function useMushafPageWindow(input: { enabled: boolean; page: number; ses
             if (requestedPageRef.current === page) queueMicrotask(() => ensureFullRef.current(page))
             return
           } catch (error) {
-            if (isAbort(error, controller.signal)) return
+            if (isAbortError(error, controller.signal)) return
             const kind = classifyMushafPageFailure(error)
             if (kind === 'transient' && attempt < MUSHAF_RETRY_DELAYS_MS.length) {
               try {
                 await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt], controller.signal)
               } catch (delayError) {
-                if (isAbort(delayError, controller.signal)) return
+                if (isAbortError(delayError, controller.signal)) return
                 throw delayError
               }
               continue
@@ -313,22 +315,4 @@ function abortPage(requests: Map<string, Request>, page: number): void {
 function abortAll(requests: Map<string, Request>): void {
   for (const request of requests.values()) request.controller.abort()
   requests.clear()
-}
-
-function isAbort(error: unknown, signal: AbortSignal): boolean {
-  return signal.aborted || (error instanceof DOMException && error.name === 'AbortError')
-}
-
-function abortableDelay(delay: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onAbort = () => finish(() => reject(new DOMException('Mushaf retry was aborted', 'AbortError')))
-    const timer = window.setTimeout(() => finish(resolve), delay)
-    const finish = (complete: () => void) => {
-      window.clearTimeout(timer)
-      signal.removeEventListener('abort', onAbort)
-      complete()
-    }
-    if (signal.aborted) return onAbort()
-    signal.addEventListener('abort', onAbort, { once: true })
-  })
 }

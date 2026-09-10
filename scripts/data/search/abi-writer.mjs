@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto'
-
+export { sha256Hex } from '../lib/script.mjs'
 export const SEARCH_PACK_ABI_MAJOR = 1
 export const SEARCH_PACK_ABI_MINOR = 0
 export const SEARCH_SHARD_MAGIC_BYTES = [0x51, 0x41, 0x53, 0x31]
@@ -22,10 +21,6 @@ export const SEARCH_VALUE_WIDTHS = {
   u32: 4,
   u64: 8,
   utf8: 255,
-}
-
-export function sha256Hex(bytes) {
-  return createHash('sha256').update(bytes).digest('hex')
 }
 
 export function stableJson(value) {

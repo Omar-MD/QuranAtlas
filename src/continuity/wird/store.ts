@@ -2,6 +2,7 @@ import type { QuranAtlasReactDb } from '../../storage/db'
 import type { SettingRecord } from '../../storage/types'
 import { getLocalDayKey } from './progress'
 import type { BrowserNotificationState, QuranRef, WirdPlan, WirdUnit } from './types'
+import { isQuranRef } from '../verse-key'
 
 export const REACT_WIRD_PLAN_CHANGED_EVENT = 'quranatlas-react-wird-plan-changed'
 
@@ -14,12 +15,6 @@ export type WirdSettingsReader = {
   settings: {
     get: (key: string) => Promise<SettingRecord | undefined>
   }
-}
-
-function isQuranRef(value: unknown): value is QuranRef {
-  if (!value || typeof value !== 'object') return false
-  const ref = value as Partial<QuranRef>
-  return Number.isInteger(ref.surah) && Number.isInteger(ref.verse) && (ref.surah ?? 0) >= 1 && (ref.verse ?? 0) >= 1
 }
 
 function nextRef(ref: QuranRef): QuranRef {

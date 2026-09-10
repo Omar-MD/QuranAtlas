@@ -1,7 +1,8 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { extname, join, relative } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const repoRoot = process.cwd()
+import { REPO_ROOT as repoRoot, walkFiles } from './data/lib/fs.mjs'
 const registryPath = join(repoRoot, 'src/design-system/registry/component-registry.json')
 const schemaPath = join(repoRoot, 'src/design-system/registry/component-registry.schema.json')
 const packageJsonPath = join(repoRoot, 'package.json')
@@ -113,16 +114,6 @@ function fileHasNamedExport(filePath, namedExport) {
     new RegExp(`export\\s+(?:const|let|var|class)\\s+${escaped}\\b`),
     new RegExp(`export\\s*\\{[^}]*\\b${escaped}\\b[^}]*\\}`),
   ].some((pattern) => pattern.test(text))
-}
-
-function sourceFiles(dir) {
-  const files = []
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) files.push(...sourceFiles(path))
-    else if (['.ts', '.tsx'].includes(extname(path))) files.push(path)
-  }
-  return files
 }
 
 function matchesPattern(path, pattern) {
@@ -291,7 +282,7 @@ function checkReverseCoverage(components, files, failures) {
   }
 }
 
-export function validateRegistryData(data, options = {}) {
+export async function validateRegistryData(data, options = {}) {
   const checkFiles = options.checkFiles ?? true
   const failures = []
   const schema = getSchemaContract()
@@ -303,7 +294,8 @@ export function validateRegistryData(data, options = {}) {
 
   const seenIds = new Set()
   const ids = []
-  const files = checkFiles && existsSync(join(repoRoot, 'src')) ? sourceFiles(join(repoRoot, 'src')) : []
+  const files =
+    checkFiles && existsSync(join(repoRoot, 'src')) ? await walkFiles(join(repoRoot, 'src'), ['.ts', '.tsx']) : []
   data.components.forEach((component) => {
     if (component.id) {
       if (seenIds.has(component.id)) failures.push(`duplicate component id ${component.id}`)
@@ -380,8 +372,8 @@ export function validateRegistryData(data, options = {}) {
   return failures
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const failures = validateRegistryData(JSON.parse(readFileSync(registryPath, 'utf8')))
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const failures = await validateRegistryData(JSON.parse(readFileSync(registryPath, 'utf8')))
   if (failures.length > 0) {
     console.error(failures.join('\n'))
     process.exit(1)

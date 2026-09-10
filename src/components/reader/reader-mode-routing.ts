@@ -5,11 +5,9 @@ import {
   pageForVerseInMushafManifest,
   type QuranRef,
 } from '../../packs/mushaf-page-asset'
-import { readNativeSetting, readNativeSettings } from '../../storage/native-reader-store'
+import { readNativeSetting } from '../../storage/native-reader-store'
+import { DEFAULT_MUSHAF_EDITION_ID, DEFAULT_RIWAYAH, readActiveMushafProfile } from '../../storage/reader-settings'
 import type { Riwayah } from '../../storage/types'
-
-const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
-const DEFAULT_MUSHAF_EDITION_ID = 'qalun-quran-ws-v1'
 
 type ActiveMushafSettings = { riwayah: Riwayah; mushafEditionId: string }
 
@@ -77,16 +75,8 @@ async function readCurrentPosition(): Promise<QuranRef | null> {
 
 async function loadActiveMushafSettings(): Promise<ActiveMushafSettings> {
   try {
-    const [riwayah, mushafEditionId] = await readNativeSettings(['riwayah', 'mushafEditionId'])
-    return {
-      riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_RIWAYAH,
-      mushafEditionId: typeof mushafEditionId?.value === 'string' ? mushafEditionId.value : DEFAULT_MUSHAF_EDITION_ID,
-    }
+    return await readActiveMushafProfile()
   } catch {
     return { riwayah: DEFAULT_RIWAYAH, mushafEditionId: DEFAULT_MUSHAF_EDITION_ID }
   }
-}
-
-function isRiwayah(value: unknown): value is Riwayah {
-  return value === 'hafs' || value === 'warsh' || value === 'qaloon'
 }

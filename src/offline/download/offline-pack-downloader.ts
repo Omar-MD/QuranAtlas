@@ -1,7 +1,8 @@
+import { abortableDelay, isAbortError } from '../../data/fetch'
 import { openReactDb } from '../../storage/db'
 import type { OfflinePackFilePlan, OfflinePackKind, OfflinePackRecord, OfflinePackStatus } from '../../storage/types'
 import { verifyContentHash } from './content-hash'
-import { assertOfflinePackUrl, type OfflinePackPlan } from './offline-pack-plan'
+import { assertOfflinePackUrl, identityFromPackId, type OfflinePackPlan } from './offline-pack-plan'
 import { readStoragePersisted } from './storage-persistence'
 
 export const RUNTIME_DATASET_CACHE_NAME = 'quran-atlas-runtime-dataset-v1'
@@ -338,12 +339,6 @@ function registerOnlineListener(): void {
   })
 }
 
-function identityFromPackId(packId: string): { riwayah: string; mushafEditionId?: string } | undefined {
-  const segments = packId.split('--')
-  if (segments[0] !== 'mushaf-pages' || segments.length < 3) return undefined
-  return { riwayah: segments[1], mushafEditionId: segments.slice(2).join('--') }
-}
-
 async function applyPresenceProbe(record: OfflinePackRecord): Promise<void> {
   if (typeof caches === 'undefined') return
   const cache = await caches.open(RUNTIME_DATASET_CACHE_NAME)
@@ -514,7 +509,7 @@ async function downloadOneFile(
       await commitFileCompletion(run, packId, file, bytes.byteLength)
       return
     } catch (error) {
-      if (isAbort(error, run)) return
+      if (isAbortError(error, run.controller.signal)) return
       if (isQuotaExceeded(error)) {
         failRun(run, 'Browser storage quota was exceeded while downloading.')
         return
@@ -527,7 +522,7 @@ async function downloadOneFile(
         failRun(run, error instanceof Error ? error.message : String(error))
         return
       }
-      await abortableDelay(RETRY_DELAYS_MS[attempt], run.controller.signal)
+      await abortableDelay(RETRY_DELAYS_MS[attempt], run.controller.signal, { resolveOnAbort: true })
     }
   }
 }
@@ -592,29 +587,6 @@ function networkPauseRun(run: PackRun): void {
   run.controller.abort()
 }
 
-function isAbort(error: unknown, run: PackRun): boolean {
-  if (run.controller.signal.aborted) return true
-  return error instanceof DOMException && error.name === 'AbortError'
-}
-
 function isQuotaExceeded(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'QuotaExceededError'
-}
-
-function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    if (signal.aborted) {
-      resolve()
-      return
-    }
-    const timer = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort)
-      resolve()
-    }, ms)
-    function onAbort() {
-      clearTimeout(timer)
-      resolve()
-    }
-    signal.addEventListener('abort', onAbort, { once: true })
-  })
 }

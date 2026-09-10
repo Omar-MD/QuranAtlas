@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { assertAyahExists, compareAyahKeys, pad3 } from '../lib/ayah.mjs'
+import { ensure } from '../lib/script.mjs'
 import { readJson, writeJson } from '../lib/json.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -28,12 +29,6 @@ export const KNOWLEDGE_VERSION = 'knowledge-v1'
 
 function isRecord(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function ensure(condition, message) {
-  if (!condition) {
-    throw new Error(message)
-  }
 }
 
 export async function loadSurahAyahCounts() {
