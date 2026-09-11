@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { BookOpen, Check } from 'lucide-react'
+import { Check, ListChecks } from 'lucide-react'
 
 import { IconButton, Tooltip } from '../../ui'
 import type { WirdSummary } from '../../../continuity/wird/types'
@@ -21,7 +21,7 @@ export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => v
         >
           <span className="qar-reader-chrome-wird-ring" aria-hidden="true">
             <span className="qar-reader-chrome-wird-core">
-              {complete ? <Check size={15} strokeWidth={2.2} /> : <BookOpen size={15} strokeWidth={1.65} />}
+              {complete ? <Check size={15} strokeWidth={2.2} /> : <ListChecks size={15} strokeWidth={1.65} />}
             </span>
           </span>
         </IconButton>
