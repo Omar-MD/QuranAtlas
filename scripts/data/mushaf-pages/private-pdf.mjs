@@ -6,20 +6,21 @@ import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
+  MUSHAF_PAGE_COUNT,
   MUSHAF_PRIVATE_EDITION_ID as PRIVATE_EDITION_ID,
   MUSHAF_PRIVATE_MEDIA_KIND,
   MUSHAF_PRIVATE_MIME_TYPE,
   MUSHAF_PRIVATE_RENDER_DPI,
   isMushafMediaRenditionPolicy,
   isMushafPrivateEncoderPolicy,
+  mushafWebpPageAssetPath,
 } from '../lib/mushaf-contract.mjs'
+import { REPO_ROOT } from '../lib/fs.mjs'
 import { ensure, isInside, pad3, runChecked, sha256Hex as sha256 } from '../lib/script.mjs'
 import { jsonText, readJson } from '../lib/json.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const REPO_ROOT = join(__dirname, '..', '..', '..')
 const RIWAYAH = 'qaloon'
-const PAGE_COUNT = 604
 const PDFINFO_CROP_BOX_PRECISION = 0.01
 export const CURRENT_PRIVATE_EMISSION_CONTRACT_VERSION = 2
 const CONTRACT_DIR = join(REPO_ROOT, 'data', 'catalog', 'mushaf-editions', PRIVATE_EDITION_ID)
@@ -160,7 +161,7 @@ export async function loadPrivateMushafEditionContract(editionId) {
     source.documentPageCount === 630 &&
       source.readerPdfPageStart === 5 &&
       source.readerPdfPageEnd === 608 &&
-      source.logicalPageCount === PAGE_COUNT,
+      source.logicalPageCount === MUSHAF_PAGE_COUNT,
     'Private Mushaf source page range is invalid',
   )
   ensure(
@@ -203,8 +204,8 @@ export async function loadPrivateMushafEditionContract(editionId) {
 
   const pageStartReviews = review.pageStartReviews
   ensure(
-    Array.isArray(pageStartReviews) && pageStartReviews.length === PAGE_COUNT,
-    'Private Mushaf review must contain exactly 604 rows',
+    Array.isArray(pageStartReviews) && pageStartReviews.length === MUSHAF_PAGE_COUNT,
+    `Private Mushaf review must contain exactly ${MUSHAF_PAGE_COUNT} rows`,
   )
   for (let index = 0; index < pageStartReviews.length; index += 1) {
     const row = pageStartReviews[index]
@@ -226,8 +227,8 @@ export async function loadPrivateMushafEditionContract(editionId) {
   )
   const framingPages = framing.pages
   ensure(
-    Array.isArray(framingPages) && framingPages.length === PAGE_COUNT,
-    'Private Mushaf framing must contain exactly 604 rows',
+    Array.isArray(framingPages) && framingPages.length === MUSHAF_PAGE_COUNT,
+    `Private Mushaf framing must contain exactly ${MUSHAF_PAGE_COUNT} rows`,
   )
   for (let index = 0; index < framingPages.length; index += 1) {
     const row = framingPages[index]
@@ -302,9 +303,13 @@ function pngDimensions(bytes, filename) {
   return { width, height }
 }
 
-function parseWebpDimensions(output, filename) {
+// Keep the local import's strict `Canvas size:` spelling while the release
+// verifier opts into the historical optional-colon spelling.
+export function parseWebpDimensions(output, filename, { allowMissingCanvasColon = false } = {}) {
   const dimensions =
-    output.match(/Canvas size:\s*(\d+)\s*x\s*(\d+)/i) ??
+    (allowMissingCanvasColon
+      ? output.match(/Canvas size\s*:?\s*(\d+)\s*x\s*(\d+)/i)
+      : output.match(/Canvas size:\s*(\d+)\s*x\s*(\d+)/i)) ??
     output.match(/(?:width|canvas)\s*[:=]\s*(\d+)\D+(?:height)?\s*[:=]?\s*(\d+)/i)
   ensure(dimensions, `${filename} webpinfo did not report dimensions`)
   return { width: Number(dimensions[1]), height: Number(dimensions[2]) }
@@ -391,8 +396,7 @@ async function readExistingImportMetadata(normalizedDir) {
       metadata.mushafEditionId === PRIVATE_EDITION_ID &&
         metadata.riwayah === RIWAYAH &&
         Array.isArray(metadata.pages) &&
-        metadata.pages.length === PAGE_COUNT,
-      'Existing private Mushaf normalized output is incomplete',
+        metadata.pages.length === MUSHAF_PAGE_COUNT,
     )
     for (let index = 0; index < metadata.pages.length; index += 1) {
       const page = index + 1
@@ -402,7 +406,7 @@ async function readExistingImportMetadata(normalizedDir) {
         `Existing private Mushaf page ${page} is incomplete`,
       )
       for (const rendition of row.renditions) {
-        const expectedPath = `pages/${pad3(page)}-${rendition.width}.webp`
+        const expectedPath = mushafWebpPageAssetPath(page, rendition.width)
         ensure(
           rendition.assetPath === expectedPath &&
             rendition.mimeType === 'image/webp' &&
@@ -477,7 +481,7 @@ export async function importPrivatePdfEdition({ editionId, pdfPath, runCommand =
 
   try {
     const pages = []
-    for (let index = 0; index < PAGE_COUNT; index += 1) {
+    for (let index = 0; index < MUSHAF_PAGE_COUNT; index += 1) {
       const page = index + 1
       const review = contract.pageStartReviews[index]
       const frame = contract.framingPages[index]
