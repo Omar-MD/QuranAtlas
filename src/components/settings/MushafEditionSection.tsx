@@ -9,8 +9,9 @@ import { readNativeSettings } from '../../storage/native-reader-store'
 import { emitReactReaderPreferencesChanged } from '../../storage/reader-preferences'
 import { readNativeReactReaderPreferences } from '../../storage/settings-writer'
 import { DEFAULT_READER_ASSET_PROFILE } from '../../../shared/reader-assets/default-profile'
-import { Button, SegmentedControl } from '../ui'
+import { Button, SegmentedControl, Spinner } from '../ui'
 import { SettingsGroup } from './SettingsGroup'
+import { useQueuedSettingWrite } from './useQueuedSettingWrite'
 
 // ME-P1: the settings counterpart of onboarding's edition control. It writes
 // the same native setting through the same write path, owns its scoped
@@ -28,7 +29,7 @@ export function MushafEditionSection() {
   const persistedEditionIdRef = useRef(DEFAULT_READER_ASSET_PROFILE.mushafEditionId)
   const retryEditionIdRef = useRef<string | null>(null)
   const mountedRef = useRef(true)
-  const writeQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const enqueueSettingWrite = useQueuedSettingWrite()
 
   // ME-P4/ME-P7: options resolve once per mount and re-resolve on the window
   // `online` event (overlay reopen remounts the section). A failed
@@ -79,37 +80,39 @@ export function MushafEditionSection() {
       active = false
     }
   }, [])
-  // ME-P6: writes serialize through an in-component queue (the useSettingsForm
-  // writeQueueRef idiom) because every native write opens its own connection
-  // and transaction. Only the latest operation owns the optimistic value, the
-  // failure state, the retry target, and the post-commit wake-up emit;
-  // superseded operations commit (FIFO order puts the newest selection last)
-  // but resolve silently. The emit always fires after a commit — the detail
-  // read is best-effort and never classifies the write (ME-P6 separation),
-  // and the emit is never gated on this component's mount lifetime.
-  const selectEdition = useCallback((editionId: string) => {
-    const operationId = latestOperationRef.current + 1
-    latestOperationRef.current = operationId
-    retryEditionIdRef.current = null
-    setSaveFailed(false)
-    setValue(editionId)
-    const write = writeQueueRef.current.then(async () => {
-      await writeMushafEditionSelection(editionId)
-      persistedEditionIdRef.current = editionId
-      if (latestOperationRef.current !== operationId) return
-      const detail = await readNativeReactReaderPreferences().catch(() => ({}))
-      if (latestOperationRef.current !== operationId) return
-      emitReactReaderPreferencesChanged(detail)
-    })
-    writeQueueRef.current = write.catch(() => undefined)
-    void write.catch(() => {
-      // ME-P8: a stale failure never reverts a newer successful choice.
-      if (latestOperationRef.current !== operationId || !mountedRef.current) return
-      setValue(persistedEditionIdRef.current)
-      setSaveFailed(true)
-      retryEditionIdRef.current = editionId
-    })
-  }, [])
+  // ME-P6: writes serialize through the shared setting-write queue because every
+  // native write opens its own connection and transaction. Only the latest
+  // operation owns the optimistic value, the failure state, the retry target,
+  // and the post-commit wake-up emit; superseded operations commit (FIFO order
+  // puts the newest selection last) but resolve silently. The emit always fires
+  // after a commit — the detail read is best-effort and never classifies the
+  // write (ME-P6 separation), and the emit is never gated on this component's
+  // mount lifetime.
+  const selectEdition = useCallback(
+    (editionId: string) => {
+      const operationId = latestOperationRef.current + 1
+      latestOperationRef.current = operationId
+      retryEditionIdRef.current = null
+      setSaveFailed(false)
+      setValue(editionId)
+      const write = enqueueSettingWrite(async () => {
+        await writeMushafEditionSelection(editionId)
+        persistedEditionIdRef.current = editionId
+        if (latestOperationRef.current !== operationId) return
+        const detail = await readNativeReactReaderPreferences().catch(() => ({}))
+        if (latestOperationRef.current !== operationId) return
+        emitReactReaderPreferencesChanged(detail)
+      })
+      void write.catch(() => {
+        // ME-P8: a stale failure never reverts a newer successful choice.
+        if (latestOperationRef.current !== operationId || !mountedRef.current) return
+        setValue(persistedEditionIdRef.current)
+        setSaveFailed(true)
+        retryEditionIdRef.current = editionId
+      })
+    },
+    [enqueueSettingWrite],
+  )
 
   // ME-P8: retry re-attempts the FAILED edition id, not the reverted value.
   const retryFailedSave = useCallback(() => {
@@ -133,6 +136,7 @@ export function MushafEditionSection() {
         {options === null || unavailable || absent ? (
           <>
             <span className="qar-react-settings-row-label">Mushaf edition</span>
+            {options === null && !unavailable && !absent ? <Spinner label="Loading Mushaf editions" /> : null}
             {unavailable ? (
               <p className="qar:m-0 qar:text-sm qar:text-muted">Edition options unavailable right now</p>
             ) : null}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { matchReactRoute } from '../../router/routes'
 import { clearReactSettingsReaderAnchor, restoreReactSettingsReaderAnchor } from '../../settings-overlay-events'
 import { SettingsShell } from '../../../components/settings/SettingsShell'
 import { IncludedAssetsSection } from '../../../components/settings/IncludedAssetsSection'
@@ -126,6 +127,9 @@ export function SettingsRoute({
       subtitle=""
       title={mode === 'verse' ? 'Verse settings' : 'Mushaf settings'}
     >
+      {!settingsWriteError && settingsWriteStatus === 'saving' ? (
+        <Status description="Your change is being saved on this device." title="Saving settings…" tone="info" />
+      ) : null}
       {settingsWriteError ? (
         <Status
           action={
@@ -177,13 +181,35 @@ export function SettingsRoute({
       <MushafEditionSection />
       <OfflineDataSection />
       <IncludedAssetsSection onVisibleChange={setIncludedAssetsVisible} visible={includedAssetsVisible} />
-      <span className="qar:sr-only">Restores {previousHash} on close.</span>
+      <span className="qar:sr-only">
+        Settings are open. Close this panel to return to {settingsReturnDestination(previousHash)}.
+      </span>
     </SettingsShell>
   )
 }
 
 function shouldShowIncludedAssetsByDefault(): boolean {
   return !window.matchMedia?.('(max-width: 767px)').matches
+}
+
+function settingsReturnDestination(hash: string): string {
+  const route = matchReactRoute(hash)
+  switch (route.type) {
+    case 'reader':
+      return 'the reader'
+    case 'mushaf':
+      return `Mushaf page ${route.page}`
+    case 'surahs':
+      return 'the Surah list'
+    case 'bookmarks':
+      return 'your bookmarks'
+    case 'search':
+      return 'search'
+    case 'about':
+      return 'About'
+    default:
+      return 'the previous screen'
+  }
 }
 
 function scheduleReaderAnchorRestore(): void {
