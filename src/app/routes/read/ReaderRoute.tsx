@@ -117,7 +117,7 @@ export function ReaderRoute({
     [wirdCounts, wirdPageBoundaries],
   )
   const wirdSummary = useMemo(
-    () => deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries),
+    () => deriveWirdSummary(wirdPlan, wirdCounts, { boundaries: wirdBoundaries }),
     [wirdBoundaries, wirdCounts, wirdPlan],
   )
   const enableWirdProgress = hasWirdProgressIntent()
@@ -311,7 +311,7 @@ function useReaderScrollLock(enabled: boolean): void {
     }
     anchorRef.current ??= findCurrentReaderScrollAnchor()
     restoreReaderScrollAnchor(anchorRef.current)
-  })
+  }, [enabled])
 
   useEffect(() => {
     if (!enabled) return undefined
@@ -322,7 +322,7 @@ function useReaderScrollLock(enabled: boolean): void {
       window.cancelAnimationFrame(frame)
       window.clearTimeout(timeout)
     }
-  })
+  }, [enabled])
 }
 
 function findCurrentReaderScrollAnchor(): ReaderScrollAnchor | null {
