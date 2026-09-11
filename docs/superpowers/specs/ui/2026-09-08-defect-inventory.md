@@ -146,3 +146,12 @@ Iterations landed on `dev`, each green through the full loop (gates + K2.6 visua
 - Search ready-before-restore hash race: closed in `85ba1ca` (parking condition includes `!restoredHashStateRef.current`).
 - Bookmarks section count badge is a hand-rolled inline-flex pill rather than the Badge primitive — visually correct; composition preference only (R4 visual note).
 - About "Fetch latest app" sits at the 375×812 fold (top 766, bottom 810 ≤ 812) — acceptable per brief after A-P2/A-P4 tightening; destructive Clear-all stays below fold (R4 visual note).
+
+---
+
+## 10. Disposition records (2026-09-11)
+
+- **Item 7 — Surahs page filter: APPROVED + IMPLEMENTED.** Director addendum `2026-09-09-addendum-surahs-filter.md` (URL-driven `q`/`filter` hash params, `useSurahsRouteState`, Input + SegmentedControl composition); implemented per brief with two navigation stories.
+- **Item 8 — Reader chrome icon semantics: APPROVED + IMPLEMENTED.** Director addendum `2026-09-09-addendum-chrome-icons.md`: wird in-progress `BookOpen` → `ListChecks`; view-toggle custom SVGs deleted in favor of lucide `BookOpenText` (mushaf) / `ScrollText` (verse); bookmark glyphs unchanged; accessible names byte-identical.
+- **Item 9 — Verse-count tradition differences: DECLINED for UI; open data-side decision.** Qaloon-vs-Hafs counts originate in `data/normalized` generation; no UI work.
+- **B1 — Non-Qaloon → Hafs fallback: BLOCKED (carried as open product decision).** Live `Riwayah` type, Mushaf parser, default profile, catalogs, and assets are Qaloon-only; no validated Hafs assets exist in-tree; inventing editions would be a behavior regression. Requires product-supplied validated Hafs assets or a requirement revision.
