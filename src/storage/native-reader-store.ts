@@ -67,13 +67,11 @@ export async function writeNativeSettings(
 }
 
 export async function writeNativeMushafEditionSelection(editionId: string, setupVersion: number): Promise<void> {
-  await withNativeReaderDb(async (db) => {
-    const tx = db.transaction('settings', 'readwrite')
-    const store = tx.objectStore('settings')
-    store.put({ key: 'mushafEditionId', value: editionId } satisfies SettingRecord)
-    store.put({ key: 'mushafEditionSetupVersion', value: setupVersion } satisfies SettingRecord)
-    await transactionDone(tx)
-  })
+  // Both records commit in one settings transaction through the shared writer.
+  await writeNativeSettings([
+    { key: 'mushafEditionId', value: editionId } satisfies SettingRecord,
+    { key: 'mushafEditionSetupVersion', value: setupVersion } satisfies SettingRecord,
+  ])
 }
 
 export async function resetNativeReaderStores(settings: SettingRecord[]): Promise<void> {

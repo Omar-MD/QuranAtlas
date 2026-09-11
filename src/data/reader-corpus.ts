@@ -1,6 +1,7 @@
 import { fetchJson, isAbortError } from './fetch'
 import { loadVerseAliases, resolveTranslationFor } from './verse-aliases'
 import type { Riwayah } from '../storage/types'
+import { DEFAULT_QURAN_TEXT_STYLE_ID, DEFAULT_RIWAYAH, DEFAULT_TRANSLATION_ID } from '../storage/reader-settings'
 
 export type TranslationRole = 'identity' | 'merged' | 'primary' | 'continuation' | 'none'
 
@@ -63,13 +64,19 @@ type ReaderCorpusOptions = {
   translationVisible?: boolean
 }
 
-const DEFAULT_RIWAYAH: Riwayah = 'qaloon'
-const DEFAULT_QURAN_TEXT_STYLE_ID = 'uthmani-kfgqpc-v1'
-const DEFAULT_TRANSLATION_ID = 'bridges'
+// §7.3 — unavailability is decided by typed errors, never message regexes: a
+// missing Surah dataset (HTTP 404) and a contract-invalid Quran text payload
+// are the two unavailable outcomes; transport faults stay "error".
+class ReaderCorpusUnavailableError extends Error {}
+
+const readerCorpusHttpError = (url: string, status: number): Error =>
+  status === 404
+    ? new ReaderCorpusUnavailableError(`Failed to fetch ${url}: ${status}`)
+    : new Error(`Failed to fetch ${url}: ${status}`)
 
 function assertQuranTextPayload(payload: QuranTextPayload, surah: number): void {
   if (payload.sura_no !== surah || !Array.isArray(payload.ayat) || payload.ayat.length === 0) {
-    throw new Error(`Invalid reader Quran text payload for Surah ${surah}`)
+    throw new ReaderCorpusUnavailableError(`Invalid reader Quran text payload for Surah ${surah}`)
   }
   for (const ayah of payload.ayat) {
     if (!Number.isInteger(ayah.aya_no) || typeof ayah.aya_text !== 'string' || ayah.aya_text.length === 0) {
@@ -114,7 +121,7 @@ export async function loadReaderSurah(surah: number, options: ReaderCorpusOption
   try {
     const url = `/dataset/quran-text/${riwayah}/${quranTextStyleId}/${padded}.json`
     const [payload, translation, aliases] = await Promise.all([
-      fetchJson<QuranTextPayload>(fetcher, url, { signal: options.signal }),
+      fetchJson<QuranTextPayload>(fetcher, url, { signal: options.signal, httpError: readerCorpusHttpError }),
       loadTranslation(surah, translationId, fetcher, options.signal),
       loadVerseAliases(fetcher, options.signal),
     ])
@@ -156,7 +163,7 @@ export async function loadReaderSurah(surah: number, options: ReaderCorpusOption
     }
   } catch (error) {
     if (isAbortError(error)) return { status: 'aborted' }
-    if (error instanceof Error && /Failed to fetch .*: 404|Invalid reader Quran text payload/.test(error.message)) {
+    if (error instanceof ReaderCorpusUnavailableError) {
       return { status: 'unavailable', reason: error.message }
     }
     return { status: 'error', error: error instanceof Error ? error : new Error('Reader corpus unavailable') }

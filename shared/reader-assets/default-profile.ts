@@ -1,4 +1,5 @@
 import rawProfile from './default-profile.json'
+import { fetchJson } from '../../src/data/fetch'
 
 export type ReaderAssetProfile = {
   id: string
@@ -37,6 +38,8 @@ export const TEXT_ASSET_INDEX_URL = '/dataset/indexes/text-assets.json'
 export const MUSHAF_ASSET_INDEX_URL = '/dataset/indexes/mushaf-assets.json'
 const SOURCE_INDEX_URL = '/dataset/indexes/sources.json'
 const PROVENANCE_URL = '/dataset/provenance.json'
+const readerAssetMetadataHttpError = (_url: string, status: number): Error =>
+  new Error(`Unable to load reader asset metadata: ${status}`)
 
 export function readerAssetProfileRows(profile: ReaderAssetProfile): ReaderAssetInventoryRow[] {
   return [
@@ -66,11 +69,12 @@ export async function resolveReaderAssetProfileRows(
   profile: ReaderAssetProfile,
   { fetcher = fetch, signal }: ReaderAssetProfileRowResolverOptions = {},
 ): Promise<ReaderAssetInventoryDisplayRow[]> {
+  const fetchOptions = { signal, httpError: readerAssetMetadataHttpError }
   const [textIndex, provenance, mushafIndex, sourceIndex] = await Promise.all([
-    fetchRuntimeJson(TEXT_ASSET_INDEX_URL, fetcher, signal).catch(() => null),
-    fetchRuntimeJson(PROVENANCE_URL, fetcher, signal).catch(() => null),
-    fetchRuntimeJson(MUSHAF_ASSET_INDEX_URL, fetcher, signal).catch(() => null),
-    fetchRuntimeJson(SOURCE_INDEX_URL, fetcher, signal).catch(() => null),
+    fetchJson<unknown>(fetcher, TEXT_ASSET_INDEX_URL, fetchOptions).catch(() => null),
+    fetchJson<unknown>(fetcher, PROVENANCE_URL, fetchOptions).catch(() => null),
+    fetchJson<unknown>(fetcher, MUSHAF_ASSET_INDEX_URL, fetchOptions).catch(() => null),
+    fetchJson<unknown>(fetcher, SOURCE_INDEX_URL, fetchOptions).catch(() => null),
   ])
 
   const loadedLabels = {
@@ -84,19 +88,6 @@ export async function resolveReaderAssetProfileRows(
     ...row,
     label: resolvedLabelForRow(row, loadedLabels),
   }))
-}
-
-async function fetchRuntimeJson(url: string, fetcher: typeof fetch, signal?: AbortSignal): Promise<unknown> {
-  assertRuntimeDatasetPath(url)
-  const response = await fetcher(url, { signal })
-  if (!response.ok) throw new Error(`Unable to load reader asset metadata: ${response.status}`)
-  return response.json() as Promise<unknown>
-}
-
-function assertRuntimeDatasetPath(url: string): void {
-  if (!url.startsWith('/dataset/') || url.includes('://') || url.includes('..')) {
-    throw new Error(`Reader asset metadata URL must stay under /dataset/: ${url}`)
-  }
 }
 
 function resolvedLabelForRow(

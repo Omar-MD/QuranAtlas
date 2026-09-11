@@ -66,3 +66,38 @@ export function abortableDelay(ms: number, signal: AbortSignal, options: Abortab
     signal.addEventListener('abort', onAbort, { once: true })
   })
 }
+
+type RetryAction = 'retry' | 'stop' | 'throw'
+
+type RetryWithAbortOptions = {
+  signal: AbortSignal
+  delays: readonly number[]
+  shouldContinue?: () => boolean
+  onAttempt?: (attempt: number) => void
+  onError?: (error: unknown, attempt: number) => RetryAction
+}
+
+/**
+ * Runs an abort-aware operation once, then once more for each configured
+ * delay. Callers classify failures and can consume terminal state transitions
+ * through `onError`; returning `retry` waits before the next attempt, `stop`
+ * resolves without rethrowing, and `throw` preserves the original error.
+ */
+export async function retryWithAbort<T>(
+  operation: (attempt: number) => Promise<T>,
+  options: RetryWithAbortOptions,
+): Promise<T | undefined> {
+  for (let attempt = 0; attempt <= options.delays.length; attempt += 1) {
+    if (options.signal.aborted || (options.shouldContinue && !options.shouldContinue())) return
+    options.onAttempt?.(attempt)
+    try {
+      return await operation(attempt)
+    } catch (error) {
+      if (isAbortError(error, options.signal)) return
+      const action = options.onError?.(error, attempt) ?? (attempt < options.delays.length ? 'retry' : 'throw')
+      if (action === 'stop') return
+      if (action === 'throw' || attempt === options.delays.length) throw error
+      await abortableDelay(options.delays[attempt], options.signal, { resolveOnAbort: true })
+    }
+  }
+}

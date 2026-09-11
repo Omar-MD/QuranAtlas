@@ -9,20 +9,12 @@ import {
   QURAN_ATLAS_V9_STORES,
 } from './schema'
 import { closeNativeReaderDb } from './native-reader-store'
-import type {
-  BookmarkRecord,
-  OfflinePackRecord,
-  Riwayah,
-  SavedSearchRecord,
-  SearchPackActivationRecord,
-  SettingRecord,
-} from './types'
+import type { BookmarkRecord, OfflinePackRecord, Riwayah, SavedSearchRecord, SettingRecord } from './types'
 
 export class QuranAtlasReactDb extends Dexie {
   settings!: Table<SettingRecord, string>
   bookmarks!: Table<BookmarkRecord, [Riwayah, string]>
   savedSearches!: Table<SavedSearchRecord, string>
-  searchPackActivations!: Table<SearchPackActivationRecord, string>
   offlinePacks!: Table<OfflinePackRecord, string>
 
   constructor() {

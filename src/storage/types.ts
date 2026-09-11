@@ -22,6 +22,7 @@ export type SettingsKey =
   | 'lastSurface'
   | 'recentSurahs'
   | 'wirdPlan'
+  | 'wirdNotificationPermissionPrompted'
   | 'wirdReminderLastSentDay'
 
 export type SettingRecord = {
@@ -42,18 +43,6 @@ export type BookmarkRecord = {
   createdAt: number
 }
 
-export type SearchPackLifecycleStatus =
-  | 'not-available'
-  | 'available-online'
-  | 'installing'
-  | 'staged'
-  | 'verifying'
-  | 'active'
-  | 'update-available'
-  | 'incompatible'
-  | 'failed'
-  | 'offline-unavailable'
-
 export type SavedSearchRecord = {
   id: string
   schemaVersion: 1
@@ -63,23 +52,6 @@ export type SavedSearchRecord = {
   updatedAt: number
   lastOpenedAt: number | null
   lastRunAt: number | null
-}
-
-export type SearchPackActivationRecord = {
-  id: string
-  packId: string
-  packVersion: string
-  contentHash: string
-  generation: number
-  status: SearchPackLifecycleStatus
-  cacheName: string
-  totalBytes: number
-  estimatedMemoryBytes: number
-  activatedAt: number | null
-  verifiedAt: number | null
-  createdAt: number
-  updatedAt: number
-  error?: string
 }
 
 export type OfflinePackStatus = 'installing' | 'paused-user' | 'paused-network' | 'installed' | 'failed'

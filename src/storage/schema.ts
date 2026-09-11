@@ -26,5 +26,6 @@ export const QURAN_ATLAS_V10_STORES = {
   ...QURAN_ATLAS_V9_STORES,
   activationState: null,
   datasetMeta: null,
+  searchPackActivations: null,
   searchPackStaging: null,
 } as const
