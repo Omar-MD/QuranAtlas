@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { argValue, ensure, pad3, sha256Hex } from '../lib/script.mjs'
@@ -18,6 +18,9 @@ import {
   MUSHAF_PRIVATE_RENDER_DPI,
   isMushafMediaRenditionPolicy,
   isMushafPrivateEncoderPolicy,
+  mushafEditionAssetUrl,
+  mushafSvgPageAssetPath,
+  mushafWebpPageAssetPath,
   validateMushafRenditionDescriptor,
 } from '../lib/mushaf-contract.mjs'
 import { hasUnsafeCssUrlReference, isUnsafeReference, localName, normalizeCssEscapes } from '../lib/svg-safety.mjs'
@@ -168,9 +171,10 @@ export function viewBoxForThemedPage(text, filename) {
 }
 
 // Collects the per-page SVG source set in a single pass: one read and one
-// safety scan per page (audit §5: validateSvgPageSet + collectSvgPageSet
-// near-duplicates caused a double file read). Missing-page and
-// missing-directory failures keep their exact messages.
+// safety scan per page, with raw bytes retained for the input digest and the
+// theme transform. Preflight, build, and digest stages share this set, so
+// source-page reads are not repeated.
+// Missing-page and missing-directory failures keep their exact messages.
 async function collectSvgPageSet(pagesDir, pageCount, { missing = 'error' } = {}) {
   if (!existsSync(pagesDir)) {
     if (missing === 'skip') return []
@@ -179,14 +183,15 @@ async function collectSvgPageSet(pagesDir, pageCount, { missing = 'error' } = {}
 
   const pages = []
   for (let page = 1; page <= pageCount; page += 1) {
-    const filename = `${pad3(page)}.svg`
+    const filename = mushafSvgPageAssetPath(page).slice('pages/'.length)
     const fullPath = join(pagesDir, filename)
     if (!existsSync(fullPath)) {
       throw new Error(`Mushaf pages missing page ${filename}`)
     }
-    const text = await readFile(fullPath, 'utf8')
+    const bytes = await readFile(fullPath)
+    const text = bytes.toString('utf8')
     assertSafeSvg(filename, text)
-    pages.push({ page, filename, fullPath, text })
+    pages.push({ page, filename, text, bytes })
   }
   return pages
 }
@@ -207,7 +212,7 @@ export async function buildMushafManifestPayload({
 }) {
   const pages = []
   for (let page = 1; page <= pageCount; page += 1) {
-    const filename = `${pad3(page)}.svg`
+    const filename = mushafSvgPageAssetPath(page).slice('pages/'.length)
     const first = firstVerse.get(page)
     if (!first) throw new Error(`No first verse mapping for Mushaf page ${page}`)
     const viewBox = pageViewBoxes?.get(page)
@@ -217,7 +222,7 @@ export async function buildMushafManifestPayload({
     const bytes = pageBytes?.get(page) ?? (await stat(join(outDir, 'pages', filename))).size
     pages.push({
       page,
-      assetPath: `pages/${filename}`,
+      assetPath: mushafSvgPageAssetPath(page),
       viewBox,
       displayViewBox,
       bytes,
@@ -286,7 +291,7 @@ async function fileDigest(path) {
   return sha256Hex(await readFile(path))
 }
 
-async function buildInputDigest({ riwayah, sourceFiles, catalog, asset, sourceSlug, pageCount }) {
+async function buildInputDigest({ riwayah, sourcePages, catalog, asset, sourceSlug, pageCount }) {
   const hash = createHash('sha256')
   hashJson(hash, {
     version: BUILD_STAMP_VERSION,
@@ -299,12 +304,11 @@ async function buildInputDigest({ riwayah, sourceFiles, catalog, asset, sourceSl
     riwayahSourceDigest: await fileDigest(join(RIWAYAT_SOURCE_DIR, `${riwayah}.json`)),
   })
 
-  for (const sourceFile of sourceFiles) {
-    const stats = await stat(sourceFile)
+  for (const { filename, bytes } of sourcePages) {
     hashJson(hash, {
-      filename: basename(sourceFile),
-      bytes: stats.size,
-      sha256: await fileDigest(sourceFile),
+      filename,
+      bytes: bytes.byteLength,
+      sha256: sha256Hex(bytes),
     })
   }
 
@@ -364,19 +368,14 @@ async function readCurrentMushafOutput({
     return null
   }
 
-  const files = [
-    {
-      url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`,
-      bytes: editionManifestText.byteLength,
-    },
-  ]
-  const outputFiles = [
-    { path: `mushaf-pages/${riwayah}/${asset.mushafEditionId}/manifest.json`, bytes: editionManifestText.byteLength },
-  ]
+  const manifestUrl = mushafEditionAssetUrl({ riwayah, mushafEditionId: asset.mushafEditionId }, 'manifest.json')
+  const files = [{ url: manifestUrl, bytes: editionManifestText.byteLength }]
+  const outputFiles = [{ path: manifestUrl.slice('/dataset/'.length), bytes: editionManifestText.byteLength }]
   let totalBytes = files[0].bytes
 
   for (let page = 1; page <= pageCount; page += 1) {
-    const filename = `${pad3(page)}.svg`
+    const assetPath = mushafSvgPageAssetPath(page)
+    const filename = assetPath.slice('pages/'.length)
     const pageEntry = manifest.pages[page - 1]
     if (pageEntry?.page !== page) return null
     const editionPath = join(outDir, 'pages', filename)
@@ -388,18 +387,19 @@ async function readCurrentMushafOutput({
       return null
     }
     if (verifyOutputDigests) {
-      const editionLabel = `public/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`
+      const editionLabel = `public${mushafEditionAssetUrl(
+        { riwayah, mushafEditionId: asset.mushafEditionId },
+        assetPath,
+      )}`
       const editionDigest = outputDigests.get(editionLabel)
       if (!editionDigest) return null
       if (editionStats.size !== editionDigest.bytes) return null
       if (sha256Hex(await readFile(editionPath)) !== editionDigest.sha256) return null
     }
-    files.push({
-      url: `/dataset/mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`,
-      bytes: pageEntry.bytes,
-    })
+    const pageUrl = mushafEditionAssetUrl({ riwayah, mushafEditionId: asset.mushafEditionId }, assetPath)
+    files.push({ url: pageUrl, bytes: pageEntry.bytes })
     outputFiles.push({
-      path: `mushaf-pages/${riwayah}/${asset.mushafEditionId}/pages/${filename}`,
+      path: pageUrl.slice('/dataset/'.length),
       bytes: editionStats.size,
     })
     totalBytes += pageEntry.bytes
@@ -513,8 +513,8 @@ export async function pruneMushafOutput(resolvedAssets, { outRoot = OUT_ROOT } =
         asset.sourceKind === 'local-pdf'
           ? new Set(
               Array.from({ length: asset.pageCount }, (_, index) => [
-                `${pad3(index + 1)}-${MUSHAF_PREVIEW_RENDITION_WIDTH}.webp`,
-                `${pad3(index + 1)}-${MUSHAF_FULL_RENDITION_WIDTH}.webp`,
+                mushafWebpPageAssetPath(index + 1, MUSHAF_PREVIEW_RENDITION_WIDTH).slice('pages/'.length),
+                mushafWebpPageAssetPath(index + 1, MUSHAF_FULL_RENDITION_WIDTH).slice('pages/'.length),
               ]).flat(),
             )
           : new Set(pageFilenames(asset.pageCount, extension))
@@ -527,7 +527,7 @@ async function buildQuranWsEdition(
   asset,
   catalog,
   assetCatalog,
-  { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR } = {},
+  { check = false, missing = 'error', outRoot = OUT_ROOT, normalizedRoot = NORMALIZED_DIR, prepared = null } = {},
 ) {
   const riwayah = asset.riwayah
   validateRiwayahId(riwayah)
@@ -537,7 +537,7 @@ async function buildQuranWsEdition(
   const pageCount = catalog.pageCount
   const scopedPagesDir = join(normalizedRoot, riwayah, asset.mushafEditionId, 'pages')
   const sourcePagesDir = existsSync(scopedPagesDir) ? scopedPagesDir : join(normalizedRoot, riwayah, 'pages')
-  const sourcePages = await collectSvgPageSet(sourcePagesDir, pageCount, { missing })
+  const sourcePages = prepared?.sourcePages ?? (await collectSvgPageSet(sourcePagesDir, pageCount, { missing }))
 
   if (sourcePages.length === 0) {
     console.warn(`[mushaf-pages] skipping ${riwayah}: missing local page artifacts at ${sourcePagesDir}`)
@@ -546,7 +546,7 @@ async function buildQuranWsEdition(
 
   const sourceDigest = await buildInputDigest({
     riwayah,
-    sourceFiles: sourcePages.map((entry) => entry.fullPath),
+    sourcePages,
     catalog,
     asset,
     sourceSlug,
@@ -568,7 +568,7 @@ async function buildQuranWsEdition(
     return currentOutput
   }
 
-  const mappings = await deriveRiwayahMappings(riwayah, pageCount)
+  const mappings = prepared?.mappings ?? (await deriveRiwayahMappings(riwayah, pageCount))
   const outDir = join(outRoot, riwayah, asset.mushafEditionId)
   const pageViewBoxes = new Map()
   const pageDisplayViewBoxes = new Map()
@@ -682,9 +682,8 @@ async function preflightQuranWsEdition(
   const scopedPagesDir = join(normalizedRoot, riwayah, asset.mushafEditionId, 'pages')
   const sourcePagesDir = existsSync(scopedPagesDir) ? scopedPagesDir : join(normalizedRoot, riwayah, 'pages')
   const sourcePages = await collectSvgPageSet(sourcePagesDir, pageCount, { missing })
-  if (sourcePages.length === 0) return false
-  await deriveRiwayahMappings(riwayah, pageCount)
-  return true
+  if (sourcePages.length === 0) return { sourcePages, mappings: null }
+  return { sourcePages, mappings: await deriveRiwayahMappings(riwayah, pageCount) }
 }
 
 function assertUnitRect(rect, label) {
@@ -1094,14 +1093,14 @@ export async function main(argv = process.argv.slice(2)) {
     console.warn(`[mushaf-pages] skipping profile=${profile}: no Mushaf page body output`)
     return
   }
-
   const missingPolicy = profile === 'private' ? 'error' : 'skip'
+  const preparedQuranWs = new Map()
   for (const asset of selectedAssets) {
     const options = { missing: missingPolicy }
     if (asset.sourceKind === 'local-pdf') {
       await preflightPrivateEdition(asset, options)
     } else {
-      await preflightQuranWsEdition(asset, catalog, assetCatalog, options)
+      preparedQuranWs.set(asset.mushafEditionId, await preflightQuranWsEdition(asset, catalog, assetCatalog, options))
     }
   }
 
@@ -1110,7 +1109,11 @@ export async function main(argv = process.argv.slice(2)) {
     const model =
       asset.sourceKind === 'local-pdf'
         ? await buildPrivateEdition(asset, { check, missing: missingPolicy })
-        : await buildQuranWsEdition(asset, catalog, assetCatalog, { check, missing: missingPolicy })
+        : await buildQuranWsEdition(asset, catalog, assetCatalog, {
+            check,
+            missing: missingPolicy,
+            prepared: preparedQuranWs.get(asset.mushafEditionId),
+          })
     if (model && typeof model === 'object') models.push(model)
   }
 

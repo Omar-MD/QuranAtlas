@@ -1,5 +1,6 @@
 import { assertRuntimeDatasetUrl } from '../../data/runtime-boundary'
-import type { MushafEditionIndexEntry } from '../../packs/mushaf-index'
+import { SURAH_COUNT } from '../../continuity/verse-key'
+import { mushafPackId, type MushafEditionIndexEntry } from '../../packs/mushaf-index'
 import { mushafPagesUrlPattern } from '../../packs/mushaf-paths'
 import type { OfflinePackFilePlan, OfflinePackKind, Riwayah } from '../../storage/types'
 
@@ -13,7 +14,6 @@ export type OfflinePackPlan = {
 
 export const READER_CORE_PACK_LABEL = 'Reader texts'
 
-const SURAH_COUNT = 114
 const FALLBACK_TRANSLATION_ID = 'bridges'
 const DATASET_ORIGIN_PREFIX = '/dataset/'
 const SLUG_SOURCE = '[a-z0-9][a-z0-9-]*'
@@ -24,17 +24,6 @@ export function readerCorePackId(profile: {
   translationId: string
 }): string {
   return `reader-core--${profile.riwayah}--${profile.quranTextStyleId}--${profile.translationId}`
-}
-
-export function mushafPackId(entry: { riwayah: string; mushafEditionId: string }): string {
-  return `mushaf-pages--${entry.riwayah}--${entry.mushafEditionId}`
-}
-
-// Reverse of mushafPackId; reader-core ids carry no mushaf identity.
-export function identityFromPackId(packId: string): { riwayah: string; mushafEditionId?: string } | undefined {
-  const segments = packId.split('--')
-  if (segments[0] !== 'mushaf-pages' || segments.length < 3) return undefined
-  return { riwayah: segments[1], mushafEditionId: segments.slice(2).join('--') }
 }
 
 function readerCoreUrls(profile: { riwayah: string; quranTextStyleId: string; translationId: string }): string[] {

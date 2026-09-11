@@ -1,10 +1,71 @@
 // Mushaf edition rendition contract shared by the dataset scripts. Mirrors
 // src/packs/mushaf-paths.ts, the TS-side grammar owner.
+export const MUSHAF_PAGE_COUNT = 604
 export const MUSHAF_PREVIEW_RENDITION_WIDTH = 1280
 export const MUSHAF_FULL_RENDITION_WIDTH = 2136
 
+const MUSHAF_PAGE_NUMBER_PATTERN = '(?:00[1-9]|0[1-9]\\d|[1-5]\\d\\d|604)'
+const MUSHAF_RENDITION_WIDTH_PATTERN = `(?:${MUSHAF_PREVIEW_RENDITION_WIDTH}|${MUSHAF_FULL_RENDITION_WIDTH})`
+const MUSHAF_ASSET_PATH_PATTERN = new RegExp(
+  `^(?:manifest\\.json|pages/${MUSHAF_PAGE_NUMBER_PATTERN}\\.svg|pages/${MUSHAF_PAGE_NUMBER_PATTERN}-(?:${MUSHAF_RENDITION_WIDTH_PATTERN})\\.webp)$`,
+)
+
+export function isMushafIdentityPart(value) {
+  return typeof value === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(value)
+}
+
+export function isMushafUnitRect(value) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(value[key])) &&
+    value.x >= 0 &&
+    value.y >= 0 &&
+    value.width > 0 &&
+    value.height > 0 &&
+    value.x + value.width <= 1 &&
+    value.y + value.height <= 1
+  )
+}
+
+export function mushafSvgPageAssetPath(page) {
+  assertMushafPageNumber(page)
+  return `pages/${String(page).padStart(3, '0')}.svg`
+}
+
 export function mushafWebpPageAssetPath(page, width) {
+  assertMushafPageNumber(page)
+  if (width !== MUSHAF_PREVIEW_RENDITION_WIDTH && width !== MUSHAF_FULL_RENDITION_WIDTH) {
+    throw new Error(`Invalid Mushaf rendition width: ${width}`)
+  }
   return `pages/${String(page).padStart(3, '0')}-${width}.webp`
+}
+
+export function isMushafAssetPath(value) {
+  return typeof value === 'string' && MUSHAF_ASSET_PATH_PATTERN.test(value)
+}
+
+export function mushafEditionAssetUrl({ riwayah, mushafEditionId }, assetPath) {
+  if (!isMushafIdentityPart(riwayah) || !isMushafIdentityPart(mushafEditionId)) {
+    throw new Error('Invalid Mushaf edition identity')
+  }
+  if (!isMushafAssetPath(assetPath)) throw new Error(`Invalid Mushaf asset path: ${assetPath}`)
+  return `/dataset/mushaf-pages/${riwayah}/${mushafEditionId}/${assetPath}`
+}
+
+export function isMushafEditionAssetUrl(value) {
+  if (typeof value !== 'string' || !value.startsWith('/')) return false
+  const match = /^\/dataset\/mushaf-pages\/([^/]+)\/([^/]+)\/(.+)$/.exec(value)
+  return Boolean(
+    match && isMushafIdentityPart(match[1]) && isMushafIdentityPart(match[2]) && isMushafAssetPath(match[3]),
+  )
+}
+
+function assertMushafPageNumber(page) {
+  if (!Number.isInteger(page) || page < 1 || page > MUSHAF_PAGE_COUNT) {
+    throw new Error(`Invalid Mushaf page number: ${page}`)
+  }
 }
 
 // Private (local-PDF) edition media contract — the single source for the

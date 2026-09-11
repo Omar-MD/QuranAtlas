@@ -1,13 +1,22 @@
+import { isQuranRef, type QuranRef } from '../continuity/verse-key'
 import {
   MUSHAF_FULL_RENDITION_WIDTH,
   MUSHAF_PAGE_COUNT,
   MUSHAF_PREVIEW_RENDITION_WIDTH,
   isMushafIdentityPart,
+  isMushafRenditionWidth,
+  isMushafUnitRect,
   mushafEditionAssetUrl,
   mushafManifestUrl,
   mushafSvgPageAssetPath,
   mushafWebpPageAssetPath,
+  type MushafPackIdentity,
+  type MushafUnitRect,
 } from './mushaf-paths'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
 
 export type MushafExternalImageDescriptor = {
   assetPath: string
@@ -23,9 +32,48 @@ export type MushafExternalImageSource = MushafExternalImageDescriptor & {
 }
 
 export type MushafPageFraming = {
-  textFrame: { x: number; y: number; width: number; height: number }
+  textFrame: MushafUnitRect
   sideLane: 'left' | 'right' | 'none'
 }
+
+export type MushafManifestPageV1 = {
+  page: number
+  assetPath: string
+  viewBox: string
+  displayViewBox: string
+  firstVerse: QuranRef
+}
+
+export type MushafManifestPageV2 = {
+  page: number
+  firstVerse: QuranRef
+  framing: MushafPageFraming
+  media: {
+    kind: 'external-image'
+    fallback: MushafExternalImageDescriptor
+    sources: MushafExternalImageDescriptor[]
+  }
+}
+
+export type MushafManifestV1 = {
+  version: 1
+  riwayah: string
+  mushafEditionId: string
+  pageCount: number
+  pages: MushafManifestPageV1[]
+  verseToPage: Record<string, number>
+}
+
+export type MushafManifestV2 = {
+  version: 2
+  riwayah: string
+  mushafEditionId: string
+  pageCount: number
+  pages: MushafManifestPageV2[]
+  verseToPage: Record<string, number>
+}
+
+export type MushafManifest = MushafManifestV1 | MushafManifestV2
 
 // Raw (unvalidated) shape of /dataset/indexes/mushaf-assets.json as fetched at
 // runtime. Strict parsing of the entries lives in parseMushafAssetIndex below.
@@ -81,23 +129,107 @@ export function findMushafAssetIndexEntry(
   )
 }
 
-export function isMushafUnitRect(value: unknown): value is MushafPageFraming['textFrame'] {
-  if (!value || typeof value !== 'object') return false
-  const rect = value as MushafPageFraming['textFrame']
-  return (
-    [rect.x, rect.y, rect.width, rect.height].every(Number.isFinite) &&
-    rect.x >= 0 &&
-    rect.y >= 0 &&
-    rect.width > 0 &&
-    rect.height > 0 &&
-    rect.x + rect.width <= 1 &&
-    rect.y + rect.height <= 1
+export function mushafPackId(identity: MushafPackIdentity): string {
+  if (!isMushafIdentityPart(identity.riwayah) || !isMushafIdentityPart(identity.mushafEditionId)) {
+    throw new Error('Invalid Mushaf pack identity')
+  }
+  return `mushaf-pages--${identity.riwayah}--${identity.mushafEditionId}`
+}
+
+export function identityFromMushafPackId(packId: string): MushafPackIdentity | undefined {
+  const match = /^mushaf-pages--([a-z0-9][a-z0-9-]*)--([a-z0-9][a-z0-9-]*)$/.exec(packId)
+  return match ? { riwayah: match[1], mushafEditionId: match[2] } : undefined
+}
+
+export { isMushafUnitRect } from './mushaf-paths'
+
+export function isMushafPageFraming(value: unknown): value is MushafPageFraming {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const framing = value as Partial<MushafPageFraming>
+  return Boolean(
+    framing.textFrame &&
+      isMushafUnitRect(framing.textFrame) &&
+      (framing.sideLane === 'left' || framing.sideLane === 'right' || framing.sideLane === 'none'),
   )
 }
 
-export function isMushafPageFraming(value: MushafPageFraming): boolean {
-  const frame = value?.textFrame
-  return Boolean(frame && isMushafUnitRect(frame) && ['left', 'right', 'none'].includes(value.sideLane))
+export function assertMushafManifest(
+  value: unknown,
+  expected: { riwayah: string; mushafEditionId: string },
+): asserts value is MushafManifest {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Invalid Mushaf manifest')
+  }
+  const manifest = value as Partial<MushafManifest>
+  if (manifest.version !== 1 && manifest.version !== 2) throw new Error('Unsupported Mushaf manifest version')
+  if (manifest.riwayah !== expected.riwayah) throw new Error('Mushaf manifest riwayah mismatch')
+  if (manifest.mushafEditionId !== expected.mushafEditionId) throw new Error('Mushaf manifest edition mismatch')
+  if (!Number.isInteger(manifest.pageCount) || (manifest.pageCount ?? 0) < 1) {
+    throw new Error('Invalid Mushaf page count')
+  }
+  if (!isRecord(manifest.verseToPage)) throw new Error('Invalid Mushaf verse-to-page map')
+  if (manifest.version === 2) {
+    if (!Array.isArray(manifest.pages)) throw new Error('Invalid Mushaf manifest pages')
+    for (const page of manifest.pages) assertMushafManifestPage(page)
+  }
+}
+
+export function assertMushafManifestPage(value: unknown): asserts value is MushafManifestPageV2 {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid V2 Mushaf manifest page')
+  const page = value as Partial<MushafManifestPageV2>
+  if (typeof page.page !== 'number' || !Number.isInteger(page.page) || !isQuranRef(page.firstVerse)) {
+    throw new Error('Invalid V2 Mushaf manifest page')
+  }
+  if (!isMushafPageFraming(page.framing) || page.media?.kind !== 'external-image') {
+    throw new Error('Invalid V2 Mushaf manifest page')
+  }
+  const sources = page.media.sources
+  if (!Array.isArray(sources) || sources.length !== 2) throw new Error('Invalid V2 Mushaf media sources')
+  for (const descriptor of sources) assertMushafExternalImageDescriptor(descriptor, page.page)
+  assertMushafExternalImageDescriptor(page.media.fallback, page.page)
+  const preview = sources.find((source) => source.width === MUSHAF_PREVIEW_RENDITION_WIDTH)
+  const full = sources.find((source) => source.width === MUSHAF_FULL_RENDITION_WIDTH)
+  if (!preview || !full || !sameMushafExternalImageDescriptor(page.media.fallback, full)) {
+    throw new Error(`Invalid V2 Mushaf rendition roles at page ${page.page}`)
+  }
+}
+
+export function assertMushafExternalImageDescriptor(
+  value: unknown,
+  page: number,
+): asserts value is MushafExternalImageDescriptor {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`Invalid V2 Mushaf external-image descriptor at page ${page}`)
+  }
+  const descriptor = value as Partial<MushafExternalImageDescriptor>
+  const width = descriptor.width
+  if (
+    !isMushafRenditionWidth(width ?? 0) ||
+    descriptor.assetPath !== mushafWebpPageAssetPath(page, width ?? 0) ||
+    !Number.isInteger(descriptor.bytes) ||
+    (descriptor.bytes ?? 0) <= 0 ||
+    typeof descriptor.sha256 !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(descriptor.sha256) ||
+    !Number.isInteger(descriptor.height) ||
+    (descriptor.height ?? 0) <= 0 ||
+    descriptor.mimeType !== 'image/webp'
+  ) {
+    throw new Error(`Invalid V2 Mushaf external-image descriptor at page ${page}`)
+  }
+}
+
+export function sameMushafExternalImageDescriptor(
+  file: Record<string, unknown> | undefined,
+  descriptor: MushafExternalImageDescriptor,
+): boolean {
+  return Boolean(
+    file &&
+      file.bytes === descriptor.bytes &&
+      file.sha256 === descriptor.sha256 &&
+      file.width === descriptor.width &&
+      file.height === descriptor.height &&
+      file.mimeType === descriptor.mimeType,
+  )
 }
 
 function isMushafAssetIndex(value: unknown): value is MushafAssetIndex & { assets: MushafAssetIndexEntryRaw[] } {
@@ -213,6 +345,9 @@ function parseMushafEditionEntry(
       throw new Error(`Mushaf edition entry is invalid: unexpected file URL: ${file.url}`)
     }
     const sha256 = typeof file.sha256 === 'string' ? file.sha256.trim().toLowerCase() : undefined
+    if (version === 'v2' && sha256 == null) {
+      throw new Error(`Mushaf edition entry is invalid: missing file sha256: ${file.url}`)
+    }
     if (sha256 != null && !/^[a-f0-9]{64}$/.test(sha256)) {
       throw new Error(`Mushaf edition entry is invalid: bad file sha256: ${file.url}`)
     }

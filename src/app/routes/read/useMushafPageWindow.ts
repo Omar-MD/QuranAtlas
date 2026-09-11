@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { abortableDelay, isAbortError } from '../../../data/fetch'
+import { retryWithAbort } from '../../../data/fetch'
+import { MUSHAF_PAGE_COUNT } from '../../../packs/mushaf-paths'
 
 import {
   classifyMushafPageFailure,
@@ -36,8 +37,8 @@ export function useMushafPageWindow(input: { enabled: boolean; page: number; ses
   retry: (page: number) => void
 } {
   const context = input.session.status === 'ready' ? input.session.context : null
-  const profileKey = input.enabled ? input.session.key : null
-  const pageCount = context?.manifest.pageCount ?? 604
+  const profileKey = input.session.key
+  const pageCount = context?.manifest.pageCount ?? MUSHAF_PAGE_COUNT
   const requestedPage = Math.min(pageCount, Math.max(1, input.page))
   const pages = useMemo(
     () =>
@@ -98,32 +99,30 @@ export function useMushafPageWindow(input: { enabled: boolean; page: number; ses
       const key = requestKey(page, 'full')
       if (requestsRef.current.has(key)) return
       const controller = new AbortController()
-      const promise = (async () => {
-        for (let attempt = 0; attempt <= MUSHAF_RETRY_DELAYS_MS.length; attempt += 1) {
+      const promise = retryWithAbort(
+        async () => {
+          const media = await prepareMushafDescriptorMedia(descriptor, 'full', controller.signal)
+          const asset = await prepareReadyAsset(descriptor, media, controller.signal)
           if (controller.signal.aborted || requestedPageRef.current !== page) return
-          updateEntry(page, generation, (current) => setMushafPageUpgradeAttempt(current, attempt))
-          try {
-            const media = await prepareMushafDescriptorMedia(descriptor, 'full', controller.signal)
-            const asset = await prepareReadyAsset(descriptor, media, controller.signal)
-            if (controller.signal.aborted || requestedPageRef.current !== page) return
-            updateEntry(page, generation, (current) => commitMushafPageFull(current, descriptor, asset))
-            return
-          } catch (error) {
-            if (isAbortError(error, controller.signal)) return
+          updateEntry(page, generation, (current) => commitMushafPageFull(current, descriptor, asset))
+        },
+        {
+          delays: MUSHAF_RETRY_DELAYS_MS,
+          onAttempt: (attempt) => {
+            updateEntry(page, generation, (current) => setMushafPageUpgradeAttempt(current, attempt))
+          },
+          onError: (error, attempt) => {
             const kind = classifyMushafPageFailure(error)
             if (kind !== 'transient' || attempt === MUSHAF_RETRY_DELAYS_MS.length) {
               updateEntry(page, generation, preserveMushafPageOnUpgradeFailure)
-              return
+              return 'stop'
             }
-            try {
-              await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt], controller.signal)
-            } catch (delayError) {
-              if (isAbortError(delayError, controller.signal)) return
-              throw delayError
-            }
-          }
-        }
-      })().finally(() => {
+            return 'retry'
+          },
+          shouldContinue: () => requestedPageRef.current === page,
+          signal: controller.signal,
+        },
+      ).finally(() => {
         if (requestsRef.current.get(key)?.controller === controller) requestsRef.current.delete(key)
       })
       requestsRef.current.set(key, { controller, generation, promise })
@@ -152,29 +151,22 @@ export function useMushafPageWindow(input: { enabled: boolean; page: number; ses
       const key = requestKey(page, 'readable')
       if (requestsRef.current.has(key)) return
       const controller = new AbortController()
-      const promise = (async () => {
-        for (let attempt = 0; attempt <= MUSHAF_RETRY_DELAYS_MS.length; attempt += 1) {
+      const promise = retryWithAbort(
+        async () => {
+          const media = await prepareMushafDescriptorMedia(descriptor, 'readable', controller.signal)
+          const asset = await prepareReadyAsset(descriptor, media, controller.signal)
           if (controller.signal.aborted || !ownedPagesRef.current.has(page)) return
-          updateEntry(page, generation, () => setMushafPageAttempt(descriptor, attempt))
-          try {
-            const media = await prepareMushafDescriptorMedia(descriptor, 'readable', controller.signal)
-            const asset = await prepareReadyAsset(descriptor, media, controller.signal)
-            if (controller.signal.aborted || !ownedPagesRef.current.has(page)) return
-            updateEntry(page, generation, () => commitMushafPagePreview(descriptor, asset))
-            if (requestedPageRef.current === page) queueMicrotask(() => ensureFullRef.current(page))
-            return
-          } catch (error) {
-            if (isAbortError(error, controller.signal)) return
+          updateEntry(page, generation, () => commitMushafPagePreview(descriptor, asset))
+          if (requestedPageRef.current === page) queueMicrotask(() => ensureFullRef.current(page))
+        },
+        {
+          delays: MUSHAF_RETRY_DELAYS_MS,
+          onAttempt: (attempt) => {
+            updateEntry(page, generation, () => setMushafPageAttempt(descriptor, attempt))
+          },
+          onError: (error, attempt) => {
             const kind = classifyMushafPageFailure(error)
-            if (kind === 'transient' && attempt < MUSHAF_RETRY_DELAYS_MS.length) {
-              try {
-                await abortableDelay(MUSHAF_RETRY_DELAYS_MS[attempt], controller.signal)
-              } catch (delayError) {
-                if (isAbortError(delayError, controller.signal)) return
-                throw delayError
-              }
-              continue
-            }
+            if (kind === 'transient' && attempt < MUSHAF_RETRY_DELAYS_MS.length) return 'retry'
             const normalized = error instanceof Error ? error : new Error('Mushaf page preparation failed')
             updateEntry(page, generation, () =>
               kind === 'confirmed-missing'
@@ -186,10 +178,12 @@ export function useMushafPageWindow(input: { enabled: boolean; page: number; ses
                     status: kind === 'transient' ? 'transient-error' : 'contract-error',
                   },
             )
-            return
-          }
-        }
-      })().finally(() => {
+            return 'stop'
+          },
+          shouldContinue: () => ownedPagesRef.current.has(page),
+          signal: controller.signal,
+        },
+      ).finally(() => {
         if (requestsRef.current.get(key)?.controller === controller) requestsRef.current.delete(key)
       })
       requestsRef.current.set(key, { controller, generation, promise })
