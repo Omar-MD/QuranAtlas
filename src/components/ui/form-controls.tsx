@@ -9,7 +9,7 @@ import type { InputHTMLAttributes, ReactNode } from 'react'
 import { cn } from '../../design-system/utils/cn'
 
 const fieldClass =
-  'qar:min-h-11 qar:w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:px-3 qar:py-2 qar:font-ui qar:text-sm qar:text-text qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:opacity-55'
+  'qar:min-h-11 qar:w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:px-3 qar:py-2 qar:font-ui qar:text-sm qar:text-text qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-(--qa-react-focus) qar:disabled:opacity-55'
 const labelClass = 'qar:grid qar:gap-1 qar:text-sm qar:text-muted'
 
 export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> & {
@@ -141,7 +141,7 @@ export function Checkbox({ label, className, id, ...props }: CheckboxProps) {
     <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text" htmlFor={checkboxId}>
       <CheckboxPrimitive.Root
         className={cn(
-          'qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:text-surface qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus',
+          'qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:text-surface qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-(--qa-react-focus) qar:disabled:pointer-events-none qar:disabled:opacity-55',
           className,
         )}
         id={checkboxId}
@@ -172,7 +172,7 @@ export function Switch({ label, className, checked, defaultChecked, id, onChecke
     <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text" htmlFor={switchId}>
       <SwitchPrimitive.Root
         className={cn(
-          'qar:relative qar:inline-flex qar:min-h-11 qar:min-w-11 qar:items-center qar:justify-center qar:rounded-control qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus',
+          'qar:relative qar:inline-flex qar:min-h-11 qar:min-w-11 qar:items-center qar:justify-center qar:rounded-control qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-(--qa-react-focus) qar:disabled:pointer-events-none qar:disabled:opacity-55',
           className,
         )}
         id={switchId}
@@ -192,6 +192,9 @@ export function Switch({ label, className, checked, defaultChecked, id, onChecke
   )
 }
 
+const sliderThumbClass =
+  'qar:block qar:size-5 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:shadow-sm qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-(--qa-react-focus) qar:disabled:pointer-events-none qar:disabled:opacity-55'
+
 export type SliderProps = SliderPrimitive.SliderProps & { hideLabel?: boolean; label: string }
 export function Slider({ hideLabel = false, label, className, ...props }: SliderProps) {
   return (
@@ -205,10 +208,7 @@ export function Slider({ hideLabel = false, label, className, ...props }: Slider
         <SliderPrimitive.Track className="qar:relative qar:h-2 qar:grow qar:rounded-surface qar:bg-border">
           <SliderPrimitive.Range className="qar:absolute qar:h-full qar:rounded-surface qar:bg-accent" />
         </SliderPrimitive.Track>
-        <SliderPrimitive.Thumb
-          aria-label={label}
-          className="qar:block qar:size-5 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:shadow-sm qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus"
-        />
+        <SliderPrimitive.Thumb aria-label={label} className={sliderThumbClass} />
       </SliderPrimitive.Root>
     </div>
   )

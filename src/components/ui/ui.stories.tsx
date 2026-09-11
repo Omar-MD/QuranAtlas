@@ -67,6 +67,8 @@ export const Primitives: Story = {
       />
       <Checkbox label="Downloaded" />
       <Switch label="Night mode" />
+      <Checkbox disabled label="Downloaded (disabled)" />
+      <Switch disabled label="Night mode (disabled)" />
       <Slider label="Font size" defaultValue={[100]} min={70} max={130} />
     </div>
   ),
