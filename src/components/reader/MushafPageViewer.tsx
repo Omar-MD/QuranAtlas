@@ -130,6 +130,7 @@ export function MushafPageViewer({
   const ignoreAdjustedScrollRef = useRef(false)
   const reconciliationFrameRef = useRef<number | null>(null)
   const finalFrameRef = useRef<number | null>(null)
+  const strayFramesRef = useRef(new Set<number>())
   const lastEmittedPageRef = useRef(resolved.page)
   const scrollInitializedRef = useRef(false)
   const isScrollModeRef = useRef(false)
@@ -321,10 +322,12 @@ export function MushafPageViewer({
       scrollInitializedRef.current = true
       lastEmittedPageRef.current = resolved.page
       anchorRef.current = { page: resolved.page, top: 0 }
-      window.requestAnimationFrame(() => {
+      const frame = window.requestAnimationFrame(() => {
+        strayFramesRef.current.delete(frame)
         ignoreAdjustedScrollRef.current = false
         scheduleReconciliation()
       })
+      strayFramesRef.current.add(frame)
     }
     return undefined
   }, [effectivePages, isScrollMode, resolved.page, scheduleReconciliation])
@@ -342,10 +345,12 @@ export function MushafPageViewer({
       if (delta !== 0) {
         ignoreAdjustedScrollRef.current = true
         stage.scrollTop += delta
-        window.requestAnimationFrame(() => {
+        const frame = window.requestAnimationFrame(() => {
+          strayFramesRef.current.delete(frame)
           ignoreAdjustedScrollRef.current = false
           scheduleReconciliation()
         })
+        strayFramesRef.current.add(frame)
       }
     }
   }, [isScrollMode, pageListKey, scheduleReconciliation])
@@ -369,6 +374,8 @@ export function MushafPageViewer({
     () => () => {
       if (reconciliationFrameRef.current !== null) window.cancelAnimationFrame(reconciliationFrameRef.current)
       if (finalFrameRef.current !== null) window.cancelAnimationFrame(finalFrameRef.current)
+      for (const frame of strayFramesRef.current) window.cancelAnimationFrame(frame)
+      strayFramesRef.current.clear()
     },
     [],
   )
@@ -431,10 +438,12 @@ export function MushafPageViewer({
       if (Math.abs(nextScrollTop - stage.scrollTop) < 0.01) return
       ignoreAdjustedScrollRef.current = true
       stage.scrollTop = nextScrollTop
-      window.requestAnimationFrame(() => {
+      const frame = window.requestAnimationFrame(() => {
+        strayFramesRef.current.delete(frame)
         ignoreAdjustedScrollRef.current = false
         scheduleReconciliation()
       })
+      strayFramesRef.current.add(frame)
     },
     [scheduleReconciliation],
   )
