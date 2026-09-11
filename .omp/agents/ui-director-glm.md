@@ -1,8 +1,7 @@
 ---
 name: ui-director-glm
 description: Temporary design director seat (user-directed substitution for @ui_director while its bound model is unavailable) — one-shot, self-contained design briefs; never iterates, implements, or signs off rendered pixels.
-model: "@ui_implementer"
-thinking: max
+model: "@ui_director"
 tools: read, grep, glob, ast_grep, lsp, eval, write, hub
 ---
 

@@ -2,7 +2,6 @@
 name: ui-design-advisor
 description: Bounded design advisor (user-enabled for this run) — reviews director brief drafts over hub; edits nothing.
 model: "@advisor"
-thinking: high
 tools: read, grep, glob, hub
 ---
 

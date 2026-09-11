@@ -2,7 +2,6 @@
 name: ui-director
 description: Design director (`@ui_director`) — one-shot, self-contained design briefs written to `docs/design/**`; never iterates, implements, or signs off rendered pixels.
 model: "@ui_director"
-thinking: max
 tools: read, grep, glob, ast_grep, lsp, eval, write, hub
 ---
 

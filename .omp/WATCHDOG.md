@@ -24,10 +24,8 @@ without implementing. The `plan` role owns explicit general planning; the
 The `ui_director` role owns detailed UI direction; the `ui_visual` role
 owns rendered visual review and milestone sign-off. The `ui_correctness`
 role (and `advisor`, when explicitly enabled) reviews non-visual
-correctness. Advisors are disabled by default and may run only as a
-bounded independent review. OpenRouter serves only as the failover route
-for the OpenCode Go-backed design/visual seats; OpenCode Zen stays
-disabled.
+bounded independent review. Provider routing stays within the configured
+Kimi K3, Kimi Coding, Kimi K2.5, and Codex roles.
 
 ## Screenshots
 

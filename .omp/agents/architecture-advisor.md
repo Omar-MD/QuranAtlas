@@ -2,7 +2,6 @@
 name: architecture-advisor
 description: Bounded architecture advisor (user-enabled for this run) — reviews offline-first PWA architecture over hub; edits nothing.
 model: "@advisor"
-thinking: high
 tools: read, grep, glob, hub
 ---
 

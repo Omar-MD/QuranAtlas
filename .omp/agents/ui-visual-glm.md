@@ -1,8 +1,7 @@
 ---
 name: ui-visual-glm
 description: Temporary rendered-pixel reviewer seat (user-directed substitution for @ui_visual while its bound provider is out of credit) — judges rendered pixels against the written brief and returns approve or concrete deltas; never edits files.
-model: "@vision"
-thinking: high
+model: "@ui_visual"
 tools: read, grep, glob, eval, hub
 ---
 

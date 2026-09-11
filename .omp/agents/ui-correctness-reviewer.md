@@ -2,7 +2,6 @@
 name: ui-correctness-reviewer
 description: Non-visual correctness review (`@ui_correctness`) — checks interaction logic, state, focus, persistence, routing, a11y semantics, and TypeScript contracts; never styling.
 model: "@ui_correctness"
-thinking: high
 tools: read, grep, glob, ast_grep, lsp
 ---
 

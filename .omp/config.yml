@@ -1,25 +1,31 @@
 modelRoleStorage: project
-defaultThinkingLevel: max
+defaultThinkingLevel: high
 disabledProviders:
+  - opencode-go
   - opencode-zen
+  - openrouter
 modelRoles:
-  default: zai/glm-5.3:max
-  task: zai/glm-5.3:max
-  plan: zai/glm-5.3:max
-  advisor: openai-codex/gpt-5.6-luna:max
-  slow: openai-codex/gpt-5.6-luna:max
-  vision: zai/glm-5.3-flash:max
-  smol: zai/glm-5.3-flash:low
-  commit: zai/glm-5.3-flash:low
-  tiny: zai/glm-5.3-flash:low
-  ui_director: opencode-go/kimi-k3:max
-  ui_implementer: zai/glm-5.3-flash:max
-  ui_visual: opencode-go/kimi-k2.6:xhigh
-  ui_correctness: zai/glm-5.3-flash:high
+  default: kimi-code/k3-256k:high
+  task: kimi-code/kimi-for-coding:high
+  plan: kimi-code/k3-256k:max
+  implement_complex: kimi-code/k3-256k:max
+  advisor: openai-codex/gpt-5.6-luna:high
+  slow: kimi-code/k3-256k:max
+  vision: kimi-code/kimi-k2.5:high
+  smol: openai-codex/gpt-5.6-luna:low
+  commit: openai-codex/gpt-5.6-luna:low
+  tiny: openai-codex/gpt-5.6-luna:low
+  ui_director: kimi-code/k3-256k:high
+  ui_implementer: kimi-code/kimi-for-coding:high
+  ui_visual: kimi-code/k3-256k:high
+  ui_correctness: openai-codex/gpt-5.6-luna:high
+  review: kimi-code/k3-256k:high
+  test: openai-codex/gpt-5.6-luna:high
+  research: openai-codex/gpt-5.6-luna:low
 plan:
   defaultOnStartup: false
 advisor:
-  enabled: true
+  enabled: false
   syncBacklog: "off"
 prewalk:
   enabled: false
@@ -49,15 +55,15 @@ autolearn:
 task:
   enableLsp: true
   enableEffort: false
-  maxConcurrency: 4
+  maxConcurrency: 3
   maxRecursionDepth: 1
   prewalk: false
   showResolvedModelBadge: true
   agentModelOverrides:
     task: "@task"
-    scout: "@task"
-    reviewer: "@slow"
-    security-reviewer: "@slow"
+    scout: "@research"
+    reviewer: "@review"
+    security-reviewer: "@review"
     sonic: "@smol"
   agentAdvisor:
     task: "off"
@@ -71,17 +77,48 @@ task:
     ui-visual-reviewer: "off"
     ui-correctness-reviewer: "off"
 retry:
+  enabled: true
   maxRetries: 3
   modelFallback: true
+  fallbackRevertPolicy: cooldown-expiry
+  usageAwareFallback: true
+  usageReservePct: 10
+  usageReservePolicy: auto
   fallbackChains:
-    opencode-go/kimi-k3:
-      - openrouter/moonshotai/kimi-k3:max
-    opencode-go/kimi-k3:max:
-      - openrouter/moonshotai/kimi-k3:max
-    opencode-go/kimi-k2.6:
-      - openrouter/moonshotai/kimi-k2.6:xhigh
-    opencode-go/kimi-k2.6:xhigh:
-      - openrouter/moonshotai/kimi-k2.6:xhigh
+    default:
+      - kimi-code/k3-256k:high
+    plan:
+      - kimi-code/k3-256k:max
+    task:
+      - kimi-code/kimi-for-coding:high
+    implement_complex:
+      - kimi-code/k3-256k:max
+    advisor:
+      - kimi-code/k3-256k:high
+    slow:
+      - kimi-code/k3:max
+    vision:
+      - kimi-code/k3-256k:high
+    smol:
+      - kimi-code/kimi-for-coding:low
+    tiny:
+      - kimi-code/kimi-for-coding:low
+    commit:
+      - kimi-code/kimi-for-coding:low
+    ui_director:
+      - kimi-code/k3-256k:max
+    ui_implementer:
+      - kimi-code/k3-256k:high
+    ui_visual:
+      - kimi-code/kimi-k2.5:high
+    ui_correctness:
+      - kimi-code/k3-256k:high
+    review:
+      - openai-codex/gpt-5.6-luna:high
+    test:
+      - kimi-code/kimi-for-coding:high
+    research:
+      - kimi-code/kimi-for-coding:low
 providers:
   openai-codex:
     codeMode: "off"

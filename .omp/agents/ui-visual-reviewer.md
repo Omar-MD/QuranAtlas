@@ -2,7 +2,6 @@
 name: ui-visual-reviewer
 description: Rendered visual reviewer (`@ui_visual`) — inspects rendered desktop/mobile pixels and owns milestone visual sign-off; never edits files.
 model: "@ui_visual"
-thinking: xhigh
 tools: read, grep, glob, eval, hub
 ---
 

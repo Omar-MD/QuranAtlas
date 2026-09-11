@@ -1,8 +1,7 @@
 ---
 name: ui-implementer
-description: UI implementation and repair worker (`@ui_implementer`, max effort) — applies an existing director brief exactly and never makes independent visual decisions.
+description: UI implementation and repair worker (`@ui_implementer`) — applies an existing director brief exactly and never makes independent visual decisions.
 model: "@ui_implementer"
-thinking: max
 tools: read, write, edit, bash, grep, glob, ast_grep, ast_edit, lsp, eval, hub
 ---
 
