@@ -1,6 +1,6 @@
-import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Button, Dialog, Progress, Status } from '../ui'
+import { OfflineDownloadFailedStatus, OfflineDownloadProgress } from '../offline/OfflineDownloadProgress'
+import { Button, Dialog } from '../ui'
 import { SettingsGroup } from './SettingsGroup'
 import {
   getOfflineDownloadSnapshot,
@@ -16,10 +16,10 @@ import {
   buildMushafPackPlan,
   buildReaderCorePackPlan,
   loadDatasetByteSizes,
-  mushafPackId,
   readerCorePackId,
   type OfflinePackPlan,
 } from '../../offline/download/offline-pack-plan'
+import { mushafPackId } from '../../packs/mushaf-index'
 import { ensureStoragePersistence } from '../../offline/download/storage-persistence'
 import {
   formatOfflinePackSize,
@@ -377,22 +377,14 @@ function OfflineDataRow({
     return (
       <>
         <OfflineRowShell rowName={row.rowName} statusText={STATUS_TEXT.failed} />
-        <Status
-          action={
-            <Button
-              onClick={() => {
-                void onRetry(row.packId, row.record)
-              }}
-              size="sm"
-              variant="secondary"
-            >
-              Retry
-            </Button>
-          }
+        <OfflineDownloadFailedStatus
           description={row.item?.error ?? row.record?.error}
-          icon={<AlertTriangle aria-hidden="true" size={18} />}
+          onRetry={() => {
+            void onRetry(row.packId, row.record)
+          }}
+          retryLabel="Retry"
+          retrySize="sm"
           title="Failed"
-          tone="error"
         />
       </>
     )
@@ -407,19 +399,7 @@ function OfflineDataRow({
           {row.status === 'not-installed' ? `Not downloaded · ${row.sizeText}` : STATUS_TEXT[row.status]}
         </span>
         {installing && row.item ? (
-          <>
-            <Progress
-              label={`Downloading ${row.rowName}`}
-              value={
-                row.item.totalBytes != null && row.item.totalBytes > 0
-                  ? Math.min(100, Math.round((100 * row.item.bytesDone) / row.item.totalBytes))
-                  : 0
-              }
-            />
-            <span className="qar:text-sm qar:text-muted">
-              {row.item.filesDone} of {row.item.fileCount} files
-            </span>
-          </>
+          <OfflineDownloadProgress items={[row.item]} label={`Downloading ${row.rowName}`} />
         ) : null}
       </div>
       <div className="qar:flex qar:items-center">

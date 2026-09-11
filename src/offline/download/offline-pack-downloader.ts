@@ -1,8 +1,9 @@
-import { abortableDelay, isAbortError } from '../../data/fetch'
+import { retryWithAbort } from '../../data/fetch'
 import { openReactDb } from '../../storage/db'
 import type { OfflinePackFilePlan, OfflinePackKind, OfflinePackRecord, OfflinePackStatus } from '../../storage/types'
 import { verifyContentHash } from './content-hash'
-import { assertOfflinePackUrl, identityFromPackId, type OfflinePackPlan } from './offline-pack-plan'
+import { assertOfflinePackUrl, type OfflinePackPlan } from './offline-pack-plan'
+import { identityFromMushafPackId } from '../../packs/mushaf-index'
 import { readStoragePersisted } from './storage-persistence'
 
 export const RUNTIME_DATASET_CACHE_NAME = 'quran-atlas-runtime-dataset-v1'
@@ -43,6 +44,7 @@ const RETRY_DELAYS_MS = [500, 2000]
 const RECORD_WRITE_EVERY_FILES = 5
 const MUSHAF_PAGES_CONCURRENCY = 3
 const READER_CORE_CONCURRENCY = 6
+const PRESENCE_PROBE_CONCURRENCY = 8
 
 // Module-scope singleton state. Held in one const object (no top-level let/var)
 // so the repo feature-state guard keeps passing; all mutation goes through it.
@@ -182,7 +184,7 @@ export async function removeOfflinePack(packId: string): Promise<void> {
         if (other.packId === record.packId) continue
         for (const url of other.completedUrls) claimedByOthers.add(url)
       }
-      const identity = identityFromPackId(record.packId)
+      const identity = identityFromMushafPackId(record.packId)
       for (const url of record.completedUrls) {
         if (claimedByOthers.has(url)) continue
         assertOfflinePackUrl(url, record.kind, identity)
@@ -342,13 +344,21 @@ function registerOnlineListener(): void {
 async function applyPresenceProbe(record: OfflinePackRecord): Promise<void> {
   if (typeof caches === 'undefined') return
   const cache = await caches.open(RUNTIME_DATASET_CACHE_NAME)
-  const identity = identityFromPackId(record.packId)
-  const candidateUrls = new Set<string>([...record.completedUrls, ...record.files.map((file) => file.url)])
+  const candidateUrls = [...new Set<string>([...record.completedUrls, ...record.files.map((file) => file.url)])]
   const presentUrls = new Set<string>()
-  for (const url of candidateUrls) {
-    assertOfflinePackUrl(url, record.kind, identity)
-    if (await cache.match(url)) presentUrls.add(url)
-  }
+  // Independent cache lookups (~1200 URLs per page pack) run through a small
+  // worker pool so the launch path does not serialize them. URL validity has
+  // a single assertion path: downloadOneFile, before each fetch and write.
+  let cursor = 0
+  await Promise.all(
+    Array.from({ length: Math.min(PRESENCE_PROBE_CONCURRENCY, candidateUrls.length) }, async () => {
+      while (cursor < candidateUrls.length) {
+        const url = candidateUrls[cursor]
+        cursor += 1
+        if (await cache.match(url)) presentUrls.add(url)
+      }
+    }),
+  )
   const knownBytesByUrl = new Map<string, number>()
   for (const file of record.files) {
     if (file.bytes != null) knownBytesByUrl.set(file.url, file.bytes)
@@ -369,14 +379,33 @@ function pumpPending(): void {
         if (state.runs.has(packId)) continue
         try {
           await runPack(packId)
-        } catch {
-          // Worker failures live in record state only; never propagate.
+        } catch (error) {
+          // Expected run outcomes (pause/network/fail) are committed to record
+          // state by runPack itself. Anything reaching here is an unexpected
+          // downloader fault: log it and fail the record — never drop it
+          // silently, or the pack strands as "installing" forever.
+          console.error(`[offline-pack-downloader] unexpected runPack failure for ${packId}`, error)
+          await failRecordFromUnexpectedRunError(packId, error)
         }
       }
     } finally {
       state.pumping = false
     }
   })()
+}
+
+async function failRecordFromUnexpectedRunError(packId: string, error: unknown): Promise<void> {
+  await withLock(async () => {
+    await hydrate()
+    const record = state.records.get(packId)
+    if (record?.status !== 'installing') return
+    record.status = 'failed'
+    record.error = `Download manager error: ${error instanceof Error ? error.message : String(error)}`
+    record.updatedAt = Date.now()
+    await commitRecord(record)
+    notify()
+    broadcast()
+  })
 }
 
 async function runPack(packId: string): Promise<void> {
@@ -475,17 +504,16 @@ async function downloadOneFile(
   kind: OfflinePackKind,
   file: OfflinePackFilePlan,
 ): Promise<void> {
-  const identity = identityFromPackId(packId)
-  for (let attempt = 0; attempt <= 2; attempt += 1) {
-    if (run.cancel) return
-    try {
+  const identity = identityFromMushafPackId(packId)
+  await retryWithAbort(
+    async () => {
       assertOfflinePackUrl(file.url, kind, identity)
       const response = await fetch(file.url, {
         signal: run.controller.signal,
         redirect: 'error',
         headers: { [OFFLINE_DOWNLOAD_FETCH_HEADER]: '1' },
       })
-      if (response.status !== 200 || response.type === 'opaque') {
+      if (response.status !== 200) {
         throw new Error(`offline pack fetch rejected ${file.url} with status ${response.status}`)
       }
       assertMediaType(file.url, response.headers.get('content-type'))
@@ -499,7 +527,6 @@ async function downloadOneFile(
         throw new Error(`offline pack checksum mismatch for ${file.url}`)
       }
       if (run.cancel || run.controller.signal.aborted) return
-      assertOfflinePackUrl(file.url, kind, identity)
       const cache = await caches.open(RUNTIME_DATASET_CACHE_NAME)
       await cache.delete(file.url, { ignoreVary: true })
       const sanitizedHeaders = new Headers()
@@ -507,24 +534,28 @@ async function downloadOneFile(
       if (contentType) sanitizedHeaders.set('content-type', contentType)
       await cache.put(file.url, new Response(bytes, { status: 200, statusText: 'OK', headers: sanitizedHeaders }))
       await commitFileCompletion(run, packId, file, bytes.byteLength)
-      return
-    } catch (error) {
-      if (isAbortError(error, run.controller.signal)) return
-      if (isQuotaExceeded(error)) {
-        failRun(run, 'Browser storage quota was exceeded while downloading.')
-        return
-      }
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        networkPauseRun(run)
-        return
-      }
-      if (attempt === 2) {
-        failRun(run, error instanceof Error ? error.message : String(error))
-        return
-      }
-      await abortableDelay(RETRY_DELAYS_MS[attempt], run.controller.signal, { resolveOnAbort: true })
-    }
-  }
+    },
+    {
+      delays: RETRY_DELAYS_MS,
+      onError: (error, attempt) => {
+        if (isQuotaExceeded(error)) {
+          failRun(run, 'Browser storage quota was exceeded while downloading.')
+          return 'stop'
+        }
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+          networkPauseRun(run)
+          return 'stop'
+        }
+        if (attempt === RETRY_DELAYS_MS.length) {
+          failRun(run, error instanceof Error ? error.message : String(error))
+          return 'stop'
+        }
+        return 'retry'
+      },
+      shouldContinue: () => !run.cancel,
+      signal: run.controller.signal,
+    },
+  )
 }
 
 async function commitFileCompletion(

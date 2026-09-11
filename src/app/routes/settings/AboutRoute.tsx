@@ -192,6 +192,11 @@ export function AboutRoute() {
                 {clearData.state.error}
               </p>
             ) : null}
+            {clearData.state.blocked ? (
+              <p aria-live="assertive" className="qar:m-0 qar:text-sm qar:text-danger" role="alert">
+                The local database is still in use. Close other QuranAtlas tabs or windows, then try again.
+              </p>
+            ) : null}
             <div className="qar:flex qar:flex-wrap qar:justify-end qar:gap-2">
               <Button
                 ref={cancelClearDataRef}

@@ -7,10 +7,12 @@ type ClearDataState = {
   input: string
   open: boolean
   pending: boolean
+  blocked: boolean
 }
 
 type ClearDataAction =
   | { type: 'close' }
+  | { type: 'blocked' }
   | { type: 'error'; message: string }
   | { type: 'input'; value: string }
   | { type: 'open' }
@@ -21,20 +23,23 @@ const initialState: ClearDataState = {
   input: '',
   open: false,
   pending: false,
+  blocked: false,
 }
 
 function reducer(state: ClearDataState, action: ClearDataAction): ClearDataState {
   switch (action.type) {
     case 'close':
       return initialState
+    case 'blocked':
+      return { ...state, blocked: true, error: null, pending: false }
     case 'error':
-      return { ...state, error: action.message, pending: false }
+      return { ...state, blocked: false, error: action.message, pending: false }
     case 'input':
-      return { ...state, input: action.value, error: null }
+      return { ...state, blocked: false, input: action.value, error: null }
     case 'open':
       return { ...initialState, open: true }
     case 'pending':
-      return { ...state, pending: true, error: null }
+      return { ...state, blocked: false, pending: true, error: null }
   }
 }
 
@@ -46,7 +51,11 @@ export function useClearDataDialog() {
     if (!canConfirm) return
     dispatch({ type: 'pending' })
     try {
-      await clearReactApplicationData()
+      const result = await clearReactApplicationData()
+      if (result === 'blocked') {
+        dispatch({ type: 'blocked' })
+        return
+      }
       dispatch({ type: 'close' })
       window.location.href = `${window.location.origin}${window.location.pathname}`
     } catch {

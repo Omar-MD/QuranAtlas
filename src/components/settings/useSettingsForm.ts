@@ -18,6 +18,8 @@ import {
   emitReactReaderPreferencesChanged,
 } from '../../storage/reader-preferences'
 
+import { useQueuedSettingWrite } from './useQueuedSettingWrite'
+
 const COMPACT_LANDSCAPE_QUERY = '(orientation: landscape) and (max-height: 600px)'
 const LANDSCAPE_FIT_WIDTH_DISABLED_KEY = 'quranatlas:mushaf-landscape-fit-width-disabled'
 
@@ -55,7 +57,7 @@ export function useSettingsForm(): {
   const preferencesRef = useRef<ReactReaderPreferences>(DEFAULT_REACT_READER_PREFERENCES)
   const retryMushafPageFramingRef = useRef<number | null>(null)
   const retrySettingsWriteRef = useRef<(() => void) | null>(null)
-  const writeQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const enqueueSettingWrite = useQueuedSettingWrite()
   const [mushafFramingWriteStatus, setMushafFramingWriteStatus] = useState<MushafFramingWriteStatus>('idle')
   const [settingsWriteError, setSettingsWriteError] = useState<string | null>(null)
   const [settingsWriteStatus, setSettingsWriteStatus] = useState<SettingsWriteStatus>('idle')
@@ -94,7 +96,7 @@ export function useSettingsForm(): {
       // Retry re-enters here: flip error -> saving so Retry disables while the
       // write is in flight, and clear the banner only when the write lands.
       setSettingsWriteStatus('saving')
-      const write = writeQueueRef.current.then(async () => {
+      const write = enqueueSettingWrite(async () => {
         const db = await openReactDb()
         await writeReactReaderPreferences(db, {
           ...next,
@@ -102,7 +104,6 @@ export function useSettingsForm(): {
         })
         await afterWrite?.(next)
       })
-      writeQueueRef.current = write.catch(() => undefined)
       void write
         .then(() => {
           retrySettingsWriteRef.current = null
@@ -137,11 +138,10 @@ export function useSettingsForm(): {
     setMushafFramingWriteStatus('saving')
     updateVisiblePreferences(next)
 
-    const write = writeQueueRef.current.then(async () => {
+    const write = enqueueSettingWrite(async () => {
       const db = await openReactDb()
       await writeReactReaderPreferences(db, next)
     })
-    writeQueueRef.current = write.catch(() => undefined)
     void write
       .then(() => {
         persistedMushafPageFramingRef.current = mushafPageFraming

@@ -1,8 +1,12 @@
 import { AlertTriangle } from 'lucide-react'
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 
+import {
+  OfflineDownloadFailedStatus,
+  OfflineDownloadProgress,
+} from '../../../components/offline/OfflineDownloadProgress'
 import { LaunchSplash } from '../../../components/launch/LaunchSplash'
-import { Badge, Button, Progress, SegmentedControl, Spinner, Status } from '../../../components/ui'
+import { Badge, Button, SegmentedControl, Spinner, Status } from '../../../components/ui'
 import type { LaunchSetupState } from '../../../continuity/launch-restore'
 import { OnboardingPageRecipe } from '../../../design-system/recipes/onboarding-page'
 import { readerCorePackId } from '../../../offline/download/offline-pack-plan'
@@ -214,46 +218,27 @@ function OfflineDownloadRoute({
     )
   }
 
-  // Known-bytes bar (SD-6): sums cover only packs whose totalBytes is known;
-  // the count line carries progress for unknown-size packs.
-  const knownItems = [readerItem, mushafItem].filter(
-    (item): item is OfflineDownloadSnapshotItem => item != null && item.totalBytes != null,
-  )
-  const sumKnownBytes = knownItems.reduce((total, item) => total + (item.totalBytes ?? 0), 0)
-  const sumDoneBytes = knownItems.reduce((total, item) => total + item.bytesDone, 0)
-  const progressValue = sumKnownBytes > 0 ? Math.min(100, Math.round((100 * sumDoneBytes) / sumKnownBytes)) : 0
-  const filesDone = (readerItem?.filesDone ?? 0) + (mushafItem?.filesDone ?? 0)
-  const fileCount = (readerItem?.fileCount ?? 0) + (mushafItem?.fileCount ?? 0)
-
   return (
     <OnboardingPageRecipe kicker="QuranAtlas" title="Download for offline reading">
       {bothInstalled ? (
         <Badge tone="success">Downloaded</Badge>
       ) : anyFailed ? (
-        <Status
-          action={
-            <Button
-              onClick={() => {
-                void retryFailed()
-              }}
-              variant="secondary"
-            >
-              Retry download
-            </Button>
-          }
+        <OfflineDownloadFailedStatus
           description={failedError}
-          icon={<AlertTriangle aria-hidden="true" size={18} />}
+          onRetry={() => {
+            void retryFailed()
+          }}
+          retryLabel="Retry download"
           title="Download failed"
-          tone="error"
         />
       ) : (
         <>
-          <Progress label="Downloading offline reading data" value={progressValue} />
-          {bothTracked ? (
-            <p className="qar:m-0 qar:text-sm qar:text-muted">
-              {filesDone} of {fileCount} files
-            </p>
-          ) : null}
+          <OfflineDownloadProgress
+            fileCountClassName="qar:m-0 qar:text-sm qar:text-muted"
+            fileCountHidden={!bothTracked}
+            items={[readerItem, mushafItem]}
+            label="Downloading offline reading data"
+          />
           {persistenceDenied ? (
             <p className="qar:m-0 qar:text-sm qar:text-muted">
               Your browser may remove downloaded data under storage pressure.
