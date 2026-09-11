@@ -100,7 +100,9 @@ async function main(argv = process.argv.slice(2)) {
       process.exit(1)
     }
     const sharedProfile = datasetProfile(profile)
-    run('source-catalog.mjs')
+    // Source-catalog validation is single-point here: text/build.mjs loads and
+    // validates the catalog (this lane's first step), so a bad catalog still
+    // fails `check` with the catalog's error list.
     run('text/build.mjs', [`--profile=${sharedProfile}`])
     run('check-juz-hizb.mjs')
     run('check-search-packs.mjs')
@@ -131,7 +133,9 @@ async function main(argv = process.argv.slice(2)) {
   process.exit(1)
 }
 
-main().catch((error) => {
-  console.error(error)
-  process.exit(1)
-})
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}

@@ -9,6 +9,6 @@
     "visibility": "baseline",
     "default": true,
     "sourceUrl": "data/normalized/quran/riwayat/qaloon.json",
-    "outputPath": "riwayat/qaloon/{surah}.json"
+    "outputPath": "quran-text/qaloon/uthmani-kfgqpc-v1/{surah}.json"
   }
 ]

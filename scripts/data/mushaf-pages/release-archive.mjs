@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { defaultCommandRunner } from './private-pdf.mjs'
+import { defaultCommandRunner, parseWebpDimensions } from './private-pdf.mjs'
 import { ensure, isInside, runChecked, sha256Hex as sha256 } from '../lib/script.mjs'
 import { jsonText } from '../lib/json.mjs'
 import {
@@ -16,6 +16,7 @@ import {
   MUSHAF_PRIVATE_RELEASE_TAG as PRIVATE_RELEASE_TAG,
   isMushafMediaRenditionPolicy,
   isMushafPrivateEncoderPolicy,
+  isMushafUnitRect,
   validateMushafRenditionDescriptor,
 } from '../lib/mushaf-contract.mjs'
 
@@ -212,15 +213,7 @@ function validateNormalizedMetadata(bytes, distribution) {
     )
     const frame = row.framing?.textFrame
     ensure(
-      frame &&
-        ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(frame[key])) &&
-        frame.x >= 0 &&
-        frame.y >= 0 &&
-        frame.width > 0 &&
-        frame.height > 0 &&
-        frame.x + frame.width <= 1 &&
-        frame.y + frame.height <= 1 &&
-        ['left', 'right', 'none'].includes(row.framing?.sideLane),
+      isMushafUnitRect(frame) && ['left', 'right', 'none'].includes(row.framing?.sideLane),
       `Private Mushaf release page ${page} framing is invalid`,
     )
     for (let renditionIndex = 0; renditionIndex < row.renditions.length; renditionIndex += 1) {
@@ -301,14 +294,6 @@ export function inspectPrivateMushafTar(buffer, distribution) {
   }
 }
 
-function parseWebpDimensions(output, assetPath) {
-  const dimensions =
-    output.match(/Canvas size\s*:?\s*(\d+)\s*x\s*(\d+)/i) ??
-    output.match(/(?:width|canvas)\s*[:=]\s*(\d+)\D+(?:height)?\s*[:=]?\s*(\d+)/i)
-  ensure(dimensions, `${assetPath} webpinfo did not report dimensions`)
-  return { width: Number(dimensions[1]), height: Number(dimensions[2]) }
-}
-
 async function extractedInventory(root) {
   const files = new Set()
   const directories = new Set()
@@ -354,7 +339,9 @@ async function validateExtractedEdition(editionDir, inspected, runCommand) {
       bytes.byteLength === descriptor.bytes && sha256(bytes) === descriptor.sha256,
       `Private Mushaf restored rendition ${descriptor.assetPath} bytes are invalid`,
     )
-    const dimensions = parseWebpDimensions(await runChecked(runCommand, 'webpinfo', [path]), descriptor.assetPath)
+    const dimensions = parseWebpDimensions(await runChecked(runCommand, 'webpinfo', [path]), descriptor.assetPath, {
+      allowMissingCanvasColon: true,
+    })
     ensure(
       dimensions.width === descriptor.width && dimensions.height === descriptor.height,
       `Private Mushaf restored rendition ${descriptor.assetPath} dimensions are invalid`,

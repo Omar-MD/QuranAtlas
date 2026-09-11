@@ -20,7 +20,7 @@
  * build runs offline.
  */
 
-import { copyFile, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
+import { copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -35,7 +35,6 @@ const REPO_ROOT = join(__dirname, '..', '..', '..')
 const DATASET_DIR = join(REPO_ROOT, 'public', 'dataset')
 const RIWAYAT_SOURCE_DIR = join(REPO_ROOT, 'data', 'normalized', 'quran', 'riwayat')
 const NORMALIZED_TRANSLATIONS_DIR = join(REPO_ROOT, 'data', 'normalized', 'translations')
-const RIWAYAT_DIR = join(DATASET_DIR, 'riwayat') // cleaned each build; text ships via quran-text/
 const QURAN_TEXT_DIR = join(DATASET_DIR, 'quran-text')
 const TRANSLATIONS_DIR = join(DATASET_DIR, 'translations')
 const INDEXES_DIR = join(DATASET_DIR, 'indexes')
@@ -104,7 +103,6 @@ export const RUNTIME_RIWAYAT = [DEFAULT_PROFILE.riwayah]
 export const TRANSLATION_ALIGNMENT_RIWAYAT = ['hafs', DEFAULT_PROFILE.riwayah]
 export const DEFAULT_RIWAYAH = DEFAULT_PROFILE.riwayah
 export const DEFAULT_TRANSLATION = DEFAULT_PROFILE.translationId
-export const DEFAULT_TAFSIR = DEFAULT_PROFILE.tafsirId
 
 const DATASET_PROFILES = {
   baseline: {
@@ -210,7 +208,10 @@ const FONT_PATHS = {
   qaloon: { woff2: '/fonts/kfgqpc-qaloon/qaloon.10.woff2', ttf: '/fonts/kfgqpc-qaloon/qaloon.10.ttf' },
 }
 
-const PACKAGE_VERSION = '2.1.0'
+// Single source of truth: the package version in package.json (audit E6:
+// '2.1.0' hardcoded here had drifted from the package). provenance.json and
+// manifest.json carry this version; a bump re-epochs `builtAt`.
+const PACKAGE_VERSION = JSON.parse(await readFile(join(REPO_ROOT, 'package.json'), 'utf8')).version
 
 /**
  * Strip the trailing in-text Arabic-Indic verse number from `aya_text`.
@@ -630,10 +631,10 @@ function buildSourceIndex(catalog, profile) {
     ...RUNTIME_RIWAYAT.map((id) => `riwayah:${id}`),
     `translation:${DEFAULT_TRANSLATION}`,
   ])
-  const defaults = catalog.verificationRules?.defaults ?? {
-    riwayah: DEFAULT_RIWAYAH,
-    translation: DEFAULT_TRANSLATION,
-    tafsir: DEFAULT_TAFSIR,
+  const catalogDefaults = catalog.verificationRules?.defaults ?? {}
+  const defaults = {
+    riwayah: catalogDefaults.riwayah ?? DEFAULT_RIWAYAH,
+    translation: catalogDefaults.translation ?? DEFAULT_TRANSLATION,
   }
   return {
     version: 1,
@@ -697,7 +698,9 @@ export async function main() {
   // 2. Split each riwayah source; shipped text files come from
   // writeTextAssetIndex (quran-text/), the splits feed indexes and coverage.
   const splits = {}
-  await cleanPackDirs(RIWAYAT_DIR)
+  // Remove legacy per-Riwayah output left by older incremental builds without
+  // recreating the obsolete root or adding it to the manifest/release tree.
+  await rm(join(DATASET_DIR, 'riwayat'), { recursive: true, force: true })
   await cleanPackDirs(QURAN_TEXT_DIR)
   for (const r of RIWAYAT) {
     splits[r] = splitRiwayah(r, sources[r])

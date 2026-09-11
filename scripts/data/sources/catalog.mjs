@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -32,8 +30,18 @@ const RIWAYAH_SOURCE_SLUGS = {
   hafs: 'hafs',
   warsh: 'warsh',
 }
-
 const VERSIONED_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/
+
+// Parsed-JSON memo for the private-edition contract evidence reads. The five
+// contract files per local-pdf asset are stable within a process run, so
+// repeated loadSourceCatalog calls reuse one read + parse per path; the
+// missing/invalid classification of a failed read is memoized with it.
+const contractEvidenceCache = new Map()
+
+function readContractEvidenceJson(path) {
+  if (!contractEvidenceCache.has(path)) contractEvidenceCache.set(path, readJson(path))
+  return contractEvidenceCache.get(path)
+}
 
 function isRecord(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -98,7 +106,7 @@ async function loadMushafContractEvidence(mushafAssets, catalogDir) {
             continue
           }
           try {
-            record[filename] = { value: await readJson(path) }
+            record[filename] = { value: await readContractEvidenceJson(path) }
           } catch (error) {
             record[filename] = { error: error?.code === 'ENOENT' ? 'missing' : 'invalid' }
           }
@@ -653,18 +661,4 @@ function hasUnitRect(rect) {
     rect.x + rect.width <= 1 &&
     rect.y + rect.height <= 1
   )
-}
-
-export async function main() {
-  if (!existsSync(CATALOG_DIR)) {
-    throw new Error(`Missing catalog directory: ${CATALOG_DIR}`)
-  }
-  const catalog = await loadSourceCatalog()
-  const result = validateSourceCatalog(catalog)
-  if (!result.ok) {
-    for (const error of result.errors) console.error(`[source-catalog] ${error}`)
-    process.exitCode = 1
-    return
-  }
-  console.log(`[source-catalog] ok (${catalog.sources.length} sources)`)
 }

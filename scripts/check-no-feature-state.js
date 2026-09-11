@@ -15,8 +15,6 @@ const ALLOW_LIST = new Set([
   'src/continuity/wird/use-wird-reminder-scheduler.ts',
   'src/storage/db.ts',
 ])
-const SKIP_DIRS = new Set([])
-const SKIP_FILES = new Set([])
 
 const offenders = []
 
@@ -27,9 +25,8 @@ function walk(dir) {
     const name = entry.name
     const path = join(dir, name)
     if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(name)) continue
       walk(path)
-    } else if (/\.(js|ts|tsx)$/.test(name) && !SKIP_FILES.has(name) && !ALLOW_LIST.has(path)) {
+    } else if (/\.(js|ts|tsx)$/.test(name) && !ALLOW_LIST.has(path)) {
       const text = readFileSync(path, 'utf8')
       // Top-level let/var = declaration at column 0 (no leading whitespace)
       const matches = text.match(/^(let|var)\s+\w+/gm)

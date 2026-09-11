@@ -5,31 +5,18 @@ import { fileURLToPath } from 'node:url'
 import { REPO_ROOT as repoRoot } from './data/lib/fs.mjs'
 import {
   MUSHAF_FULL_RENDITION_WIDTH,
+  MUSHAF_PAGE_COUNT,
   MUSHAF_PREVIEW_RENDITION_WIDTH,
+  isMushafEditionAssetUrl,
+  isMushafUnitRect,
+  mushafEditionAssetUrl,
   mushafRenditionDescriptorFailure,
 } from './data/lib/mushaf-contract.mjs'
 
 const indexPath = join(repoRoot, 'public/dataset/indexes/mushaf-assets.json')
 
 function isEditionAwareMushafUrl(url) {
-  const pathname = new URL(url, 'https://quranatlas.local').pathname
-  return /^\/dataset\/mushaf-pages\/[^/]+\/[^/]+\/(?:manifest\.json|pages\/(?:\d{3}|\{page\})(?:\.svg|-\d+\.webp))$/.test(
-    pathname,
-  )
-}
-
-function isUnitRect(value) {
-  return (
-    value &&
-    typeof value === 'object' &&
-    ['x', 'y', 'width', 'height'].every((key) => Number.isFinite(value[key])) &&
-    value.x >= 0 &&
-    value.y >= 0 &&
-    value.width > 0 &&
-    value.height > 0 &&
-    value.x + value.width <= 1 &&
-    value.y + value.height <= 1
-  )
+  return isMushafEditionAssetUrl(url)
 }
 
 function descriptorFailure(descriptor, page, role) {
@@ -39,15 +26,19 @@ function descriptorFailure(descriptor, page, role) {
 export function validateMushafManifestData(manifest) {
   const failures = []
   if (manifest?.version !== 2) return failures
-  if (manifest.pageCount !== 604 || !Array.isArray(manifest.pages) || manifest.pages.length !== 604)
-    return ['V2 Mushaf manifest must contain 604 pages.']
+  if (
+    manifest.pageCount !== MUSHAF_PAGE_COUNT ||
+    !Array.isArray(manifest.pages) ||
+    manifest.pages.length !== MUSHAF_PAGE_COUNT
+  )
+    return [`V2 Mushaf manifest must contain ${MUSHAF_PAGE_COUNT} pages.`]
   for (let index = 0; index < manifest.pages.length; index += 1) {
     const page = index + 1
     const entry = manifest.pages[index]
     if (entry?.page !== page) failures.push(`page ${page} has an invalid page number`)
     if (!Number.isInteger(entry?.firstVerse?.surah) || !Number.isInteger(entry?.firstVerse?.verse))
       failures.push(`page ${page} firstVerse is invalid`)
-    if (!isUnitRect(entry?.framing?.textFrame))
+    if (!isMushafUnitRect(entry?.framing?.textFrame))
       failures.push(`page ${page} textFrame is not contained by the Full frame`)
     if (!['left', 'right', 'none'].includes(entry?.framing?.sideLane)) failures.push(`page ${page} sideLane is invalid`)
     if (entry?.media?.kind !== 'external-image') failures.push(`page ${page} media kind is invalid`)
@@ -72,24 +63,29 @@ export function validateMushafManifestData(manifest) {
 }
 
 export function validateMushafIndexManifestAgreement(indexData, manifestsByUrl = {}) {
-  const packs = indexData.packs ?? indexData.assets ?? indexData
   const failures = []
-  if (!Array.isArray(packs)) return ['Mushaf index must be an array or { packs: [] }.']
-  for (const pack of packs) {
+  if (!Array.isArray(indexData.assets)) return ['Mushaf index must be a version-1 { defaults, assets } payload.']
+  for (const pack of indexData.assets) {
     const manifest = manifestsByUrl[pack.manifestUrl]
     if (manifest?.version !== 2) continue
-    const packId = pack.packId ?? pack.mushafEditionId
+    const packId = pack.mushafEditionId
     if (manifest.riwayah !== pack.riwayah || manifest.mushafEditionId !== pack.mushafEditionId) {
       failures.push(`${packId}: manifest identity disagrees with its asset index`)
     }
     for (let index = 0; index < manifest.pages.length; index += 1) {
       const page = manifest.pages[index]
-      const expectedFallbackUrl = `/dataset/mushaf-pages/${pack.riwayah}/${pack.mushafEditionId}/${page.media?.fallback?.assetPath}`
-      if (pack.pageUrls?.[index] !== expectedFallbackUrl) {
+      const expectedFallbackUrl = mushafEditionAssetUrl(
+        { riwayah: pack.riwayah, mushafEditionId: pack.mushafEditionId },
+        page.media?.fallback?.assetPath,
+      )
+      if (!Array.isArray(pack.pageUrls) || pack.pageUrls[index] !== expectedFallbackUrl) {
         failures.push(`${packId}: page ${page.page} fallback URL disagrees with its asset index`)
       }
       for (const descriptor of page.media.sources) {
-        const url = `/dataset/mushaf-pages/${pack.riwayah}/${pack.mushafEditionId}/${descriptor.assetPath}`
+        const url = mushafEditionAssetUrl(
+          { riwayah: pack.riwayah, mushafEditionId: pack.mushafEditionId },
+          descriptor.assetPath,
+        )
         const file = pack.files?.find((entry) => entry.url === url)
         if (
           !file ||
@@ -108,14 +104,13 @@ export function validateMushafIndexManifestAgreement(indexData, manifestsByUrl =
 }
 
 export function validateMushafIndexData(data) {
-  const packs = data.packs ?? data.assets ?? data
   const failures = []
-  if (!Array.isArray(packs)) return ['Mushaf index must be an array or { packs: [] }.']
-  for (const pack of packs) {
-    const packId = pack.packId ?? `mushaf-pages:${pack.riwayah}:${pack.mushafEditionId}`
+  if (!Array.isArray(data.assets)) return ['Mushaf index must be a version-1 { defaults, assets } payload.']
+  for (const pack of data.assets) {
+    const packId = `mushaf-pages:${pack.riwayah}:${pack.mushafEditionId}`
     if ('deliveryMode' in pack && pack.deliveryMode !== 'on-demand-pack')
       failures.push(`${packId}: deliveryMode must be on-demand-pack`)
-    if (pack.pageCount !== 604) failures.push(`${packId}: pageCount must be 604`)
+    if (pack.pageCount !== MUSHAF_PAGE_COUNT) failures.push(`${packId}: pageCount must be ${MUSHAF_PAGE_COUNT}`)
     if (!isEditionAwareMushafUrl(pack.manifestUrl)) failures.push(`${packId}: manifestUrl must be edition-aware`)
     if (pack.pageUrlTemplate && !isEditionAwareMushafUrl(pack.pageUrlTemplate.replace('{page}', '001')))
       failures.push(`${packId}: pageUrlTemplate must be edition-aware`)
@@ -125,7 +120,7 @@ export function validateMushafIndexData(data) {
     for (const file of pack.files ?? []) {
       if (!isEditionAwareMushafUrl(file.url)) failures.push(`${packId}: file URL must be edition-aware: ${file.url}`)
     }
-    if (pack.version === 'v2' && (!Array.isArray(pack.pageUrls) || pack.pageUrls.length !== 604))
+    if (pack.version === 'v2' && (!Array.isArray(pack.pageUrls) || pack.pageUrls.length !== MUSHAF_PAGE_COUNT))
       failures.push(`${packId}: V2 requires one fallback URL per page`)
   }
   return failures
