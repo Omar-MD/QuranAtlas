@@ -101,6 +101,7 @@ const syntheticCustomManifestJson = JSON.stringify({
   }),
   verseToPage: { '1:1': 1 },
 })
+const SYNTHETIC_CUSTOM_MANIFEST_SHA256 = createHash('sha256').update(syntheticCustomManifestJson).digest('hex')
 
 function syntheticMushafAssetsJson(): string {
   const manifestUrl = `${SYNTHETIC_MUSHAF_PREFIX}/manifest.json`
@@ -114,7 +115,13 @@ function syntheticMushafAssetsJson(): string {
   }
 
   const customManifestUrl = `${SYNTHETIC_CUSTOM_PREFIX}/manifest.json`
-  const customFiles = [{ url: customManifestUrl, bytes: Buffer.byteLength(syntheticCustomManifestJson) }]
+  const customFiles = [
+    {
+      url: customManifestUrl,
+      bytes: Buffer.byteLength(syntheticCustomManifestJson),
+      sha256: SYNTHETIC_CUSTOM_MANIFEST_SHA256,
+    },
+  ]
   const customPageUrls: string[] = []
   for (let page = 1; page <= SYNTHETIC_PAGE_COUNT; page += 1) {
     for (const descriptor of [syntheticWebpDescriptor(page, 1280, 1806), syntheticWebpDescriptor(page, 2136, 3014)]) {

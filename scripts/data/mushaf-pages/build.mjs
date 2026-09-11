@@ -902,7 +902,7 @@ async function buildPrivateEdition(
     )
   }
   const manifestUrl = `/dataset/mushaf-pages/${asset.riwayah}/${asset.mushafEditionId}/manifest.json`
-  const files = [{ url: manifestUrl, bytes: Buffer.byteLength(manifestText) }]
+  const files = [{ url: manifestUrl, bytes: Buffer.byteLength(manifestText), sha256: sha256Hex(manifestText) }]
   for (const page of manifestPages) {
     for (const descriptor of page.media.sources) {
       files.push({
