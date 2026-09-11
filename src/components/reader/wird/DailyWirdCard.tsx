@@ -17,7 +17,7 @@ export function DailyWirdCard({
   onOpen?: () => void
   plan: WirdPlan | null
 }) {
-  const summary = deriveWirdSummary(plan, counts, boundaries ?? createWirdBoundaries(counts))
+  const summary = deriveWirdSummary(plan, counts, { boundaries: boundaries ?? createWirdBoundaries(counts) })
   const nextLabel = summary.nextRef ? `${summary.nextRef.surah}:${summary.nextRef.verse}` : ''
   const title =
     summary.state === 'no-plan'

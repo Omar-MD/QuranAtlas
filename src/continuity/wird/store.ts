@@ -5,6 +5,7 @@ import type { BrowserNotificationState, QuranRef, WirdPlan, WirdUnit } from './t
 import { isQuranRef } from '../verse-key'
 
 export const REACT_WIRD_PLAN_CHANGED_EVENT = 'quranatlas-react-wird-plan-changed'
+export const WIRD_NOTIFICATION_PERMISSION_PROMPTED_KEY = 'wirdNotificationPermissionPrompted'
 
 const DEFAULT_END_REF: QuranRef = { surah: 114, verse: 6 }
 const DEFAULT_REMINDER = { browserNotifications: 'default', enabled: false, time: '07:00' } as const
@@ -122,6 +123,23 @@ export async function writeWirdPlan(db: QuranAtlasReactDb, plan: WirdPlan | null
   const value = JSON.parse(JSON.stringify(plan)) as WirdPlan
   await db.settings.put({ key: 'wirdPlan', value })
   emitWirdPlanChanged(value)
+}
+
+export async function updateWirdPlanNotificationState(
+  db: QuranAtlasReactDb,
+  browserNotifications: BrowserNotificationState,
+): Promise<WirdPlan | null> {
+  const plan = await readWirdPlan(db)
+  if (!plan || plan.reminder.browserNotifications === browserNotifications) return plan
+  const nextPlan: WirdPlan = {
+    ...plan,
+    reminder: {
+      ...plan.reminder,
+      browserNotifications,
+    },
+  }
+  await writeWirdPlan(db, nextPlan)
+  return nextPlan
 }
 
 export function notifyWirdPlanChanged(plan: WirdPlan | null): void {

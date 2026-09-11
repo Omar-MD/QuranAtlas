@@ -4,6 +4,7 @@ import { MushafRoute } from '../../app/routes/read/MushafRoute'
 import type { ReaderCorpusState } from '../../data/reader-corpus'
 import type { WirdSummary } from '../../continuity/wird/types'
 import type { MushafResolvedPage, ReactInlineMushafSvg } from '../../packs/mushaf-page-asset'
+import { MUSHAF_PAGE_COUNT } from '../../packs/mushaf-paths'
 import { MushafPageViewer } from './MushafPageViewer'
 import { ReaderChrome } from './ReaderChrome'
 import { ReaderVerseSurface } from './ReaderVerseSurface'
@@ -79,7 +80,7 @@ const sampleMushafPage: MushafResolvedPage = {
   firstVerse: { surah: 1, verse: 1 },
   mushafEditionId: 'qalun-quran-ws-v1',
   page: 1,
-  pageCount: 604,
+  pageCount: MUSHAF_PAGE_COUNT,
   riwayah: 'qaloon',
   riwayahLabel: 'Qalun',
 }

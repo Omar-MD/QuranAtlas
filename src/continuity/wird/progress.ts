@@ -204,22 +204,11 @@ function countRemainingUnits(
   return countBoundaryUnits(boundaries.page, counts, start, end)
 }
 
-function parseSummaryArgs(
-  arg3?: WirdBoundaries | string,
-  arg4?: string,
-): { boundaries: WirdBoundaries | null; dayKey: string } {
-  if (typeof arg3 === 'string') return { boundaries: null, dayKey: arg3 }
-  return { boundaries: arg3 ?? null, dayKey: arg4 ?? getLocalDayKey() }
-}
-
 export function deriveWirdSummary(
   plan: WirdPlan | null,
   counts: ReadonlyArray<SurahCount>,
-  arg3?: WirdBoundaries | string,
-  arg4?: string,
+  { boundaries = null, dayKey = getLocalDayKey() }: { boundaries?: WirdBoundaries | null; dayKey?: string } = {},
 ): WirdSummary {
-  const { boundaries, dayKey } = parseSummaryArgs(arg3, arg4)
-
   if (!plan) {
     return {
       nextRef: null,

@@ -1,9 +1,9 @@
 import { REACT_ROUTES } from '../../app/router/routes'
+import { SURAH_COUNT, type QuranRef } from '../../continuity/verse-key'
 import {
   firstVerseForMushafPage,
   loadMushafManifest,
   pageForVerseInMushafManifest,
-  type QuranRef,
 } from '../../packs/mushaf-page-asset'
 import { readNativeSetting } from '../../storage/native-reader-store'
 import { DEFAULT_MUSHAF_EDITION_ID, DEFAULT_RIWAYAH, readActiveMushafProfile } from '../../storage/reader-settings'
@@ -57,7 +57,7 @@ function parseReaderHash(hash: string): QuranRef | null {
   if (!match) return null
   const surah = Number(match[1])
   const verse = match[2] ? Number(match[2]) : 1
-  if (!Number.isInteger(surah) || !Number.isInteger(verse) || surah < 1 || surah > 114 || verse < 1) return null
+  if (!Number.isInteger(surah) || !Number.isInteger(verse) || surah < 1 || surah > SURAH_COUNT || verse < 1) return null
   return { surah, verse }
 }
 
@@ -66,7 +66,7 @@ async function readCurrentPosition(): Promise<QuranRef | null> {
     const record = await readNativeSetting('currentPosition')
     const value = record?.value as Partial<QuranRef> | undefined
     if (!value || !Number.isInteger(value.surah) || !Number.isInteger(value.verse)) return null
-    if ((value.surah ?? 0) < 1 || (value.surah ?? 0) > 114 || (value.verse ?? 0) < 1) return null
+    if ((value.surah ?? 0) < 1 || (value.surah ?? 0) > SURAH_COUNT || (value.verse ?? 0) < 1) return null
     return { surah: value.surah as number, verse: value.verse as number }
   } catch {
     return null

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
+import { parseQuranRefKey } from '../../continuity/verse-key'
 import { normalizeRecentSurahs } from '../../continuity/recent-surahs'
 import { advanceWirdProgressFromReaderPosition, getLocalDayKey } from '../../continuity/wird/progress'
 import { normalizeWirdPlan, notifyWirdPlanChanged } from '../../continuity/wird/store'
@@ -52,14 +53,6 @@ async function persistPosition(
   return true
 }
 
-function parseVerseKey(verseKey: string): ReaderPosition | null {
-  const [surahPart, versePart] = verseKey.split(':')
-  const surah = Number.parseInt(surahPart ?? '', 10)
-  const verse = Number.parseInt(versePart ?? '', 10)
-  if (!Number.isInteger(surah) || !Number.isInteger(verse) || surah < 1 || verse < 1) return null
-  return { surah, verse }
-}
-
 function positionKey(position: ReaderPosition): string {
   return `${position.surah}:${position.verse}`
 }
@@ -86,7 +79,7 @@ function findCenteredVersePosition(surah: number): ReaderPosition | null {
   let closest: { distance: number; position: ReaderPosition } | null = null
 
   for (const element of document.querySelectorAll<HTMLElement>('.qar-reader-verse[data-token-key]')) {
-    const position = parseVerseKey(element.dataset.tokenKey ?? '')
+    const position = parseQuranRefKey(element.dataset.tokenKey ?? '')
     if (!position || position.surah !== surah) continue
     const rect = element.getBoundingClientRect()
     if (rect.height <= 0 || rect.bottom <= 0 || rect.top >= viewportHeight) continue
@@ -235,7 +228,7 @@ export function useReaderPositionSync(
 
   const syncPosition = useCallback(
     (verseKey: string) => {
-      const position = parseVerseKey(verseKey)
+      const position = parseQuranRefKey(verseKey)
       if (!position) return
       commitPosition(position, 'immediate')
     },

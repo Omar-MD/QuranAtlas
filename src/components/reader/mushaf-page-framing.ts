@@ -1,4 +1,6 @@
-export type NormalizedRect = { x: number; y: number; width: number; height: number }
+import { isMushafUnitRect, type MushafUnitRect } from '../../packs/mushaf-paths'
+
+export type NormalizedRect = MushafUnitRect
 
 export type MushafImagePlacement = {
   frame: NormalizedRect
@@ -49,17 +51,7 @@ export function mushafImagePlacement(
 }
 
 export function isNormalizedRect(value: unknown): value is NormalizedRect {
-  if (!value || typeof value !== 'object') return false
-  const rect = value as NormalizedRect
-  return (
-    [rect.x, rect.y, rect.width, rect.height].every(Number.isFinite) &&
-    rect.x >= 0 &&
-    rect.y >= 0 &&
-    rect.width > 0 &&
-    rect.height > 0 &&
-    rect.x + rect.width <= 1 &&
-    rect.y + rect.height <= 1
-  )
+  return isMushafUnitRect(value)
 }
 
 function unitFrame(): NormalizedRect {

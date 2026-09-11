@@ -87,30 +87,20 @@ export function useBookmarks(options: { enabled?: boolean } = {}): BookmarksCont
 
   const bookmarkedVerseKeys = useMemo(() => new Set(bookmarks.map((bookmark) => bookmark.verseKey)), [bookmarks])
 
-  return {
-    bookmarkedVerseKeys,
-    bookmarks,
-    deleteBookmark: async (bookmark: BookmarkIdentity) => {
-      const db = await openReactDb()
-      await deleteBookmark(db, bookmark)
-      // The local filtered rows are authoritative post-delete; mark ready so a
-      // pending reload invalidated by the generation bump cannot strand status.
-      generationRef.current += 1
-      setBookmarks((current) =>
-        current.filter((row) => row.riwayah !== bookmark.riwayah || row.verseKey !== bookmark.verseKey),
-      )
-      setStatus('ready')
-    },
-    riwayah,
-    retry,
-    status,
-    toggleBookmark: async (bookmark: {
-      kind?: BookmarkKind
-      page?: number
-      riwayah?: Riwayah
-      surah: number
-      verseKey: string
-    }) => {
+  const deleteBookmarkAction = useCallback(async (bookmark: BookmarkIdentity) => {
+    const db = await openReactDb()
+    await deleteBookmark(db, bookmark)
+    // The local filtered rows are authoritative post-delete; mark ready so a
+    // pending reload invalidated by the generation bump cannot strand status.
+    generationRef.current += 1
+    setBookmarks((current) =>
+      current.filter((row) => row.riwayah !== bookmark.riwayah || row.verseKey !== bookmark.verseKey),
+    )
+    setStatus('ready')
+  }, [])
+
+  const toggleBookmarkAction = useCallback(
+    async (bookmark: { kind?: BookmarkKind; page?: number; riwayah?: Riwayah; surah: number; verseKey: string }) => {
       const db = await openReactDb()
       await toggleStoredBookmark(db, {
         kind: bookmark.kind,
@@ -121,7 +111,21 @@ export function useBookmarks(options: { enabled?: boolean } = {}): BookmarksCont
       })
       await reload()
     },
-  }
+    [reload, riwayah],
+  )
+
+  return useMemo(
+    () => ({
+      bookmarkedVerseKeys,
+      bookmarks,
+      deleteBookmark: deleteBookmarkAction,
+      riwayah,
+      retry,
+      status,
+      toggleBookmark: toggleBookmarkAction,
+    }),
+    [bookmarkedVerseKeys, bookmarks, deleteBookmarkAction, riwayah, retry, status, toggleBookmarkAction],
+  )
 }
 
 const BookmarksContext = createContext<BookmarksController | null>(null)

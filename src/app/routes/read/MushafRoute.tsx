@@ -103,7 +103,7 @@ export function MushafRoute({
   )
   const wirdSummary = useMemo(() => {
     if (!wirdPlan || wirdCounts.length !== 114) return undefined
-    return deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries)
+    return deriveWirdSummary(wirdPlan, wirdCounts, { boundaries: wirdBoundaries })
   }, [wirdBoundaries, wirdCounts, wirdPlan])
   const enableWirdProgress = hasWirdProgressIntent()
   const profileSession = useMushafProfileSession({
