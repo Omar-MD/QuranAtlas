@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 
@@ -8,6 +8,7 @@ import { BookmarksList } from './BookmarksList'
 import { HizbList } from './HizbList'
 import { JuzList } from './JuzList'
 import { SurahList } from './SurahList'
+import { SurahsRoute } from '../../app/routes/navigation/SurahsRoute'
 
 const meta = {
   title: 'React Navigation/Navigation',
@@ -77,4 +78,25 @@ export const BookmarksPopulated: Story = {
 
 export const BookmarksEmpty: Story = {
   render: () => <BookmarksList />,
+}
+
+function WithHash({ hash, children }: { hash: string; children: ReactNode }) {
+  window.location.hash = hash // synchronous, before the story body mounts and reads the hash
+  return <>{children}</>
+}
+
+export const SurahsPage: Story = {
+  render: () => (
+    <WithHash hash="#/surahs">
+      <SurahsRoute />
+    </WithHash>
+  ),
+}
+
+export const SurahsPageFiltered: Story = {
+  render: () => (
+    <WithHash hash="#/surahs?q=ya&filter=recent">
+      <SurahsRoute />
+    </WithHash>
+  ),
 }
