@@ -103,6 +103,7 @@
     --qa-react-nav-current-bg: color-mix(in srgb, var(--qa-react-accent) 11%, var(--qa-react-surface));
     --qa-react-nav-control-selected-bg: color-mix(in srgb, var(--qa-react-accent) 10%, var(--qa-react-surface));
     --qa-react-nav-control-border: color-mix(in srgb, var(--qa-react-border) 76%, var(--qa-react-accent));
+    --qa-react-nav-control-selected-text: var(--qa-react-accent-strong);
     --qa-react-nav-badge-surface: color-mix(in srgb, var(--qa-react-accent) 15%, var(--qa-react-surface));
     --qa-react-nav-shadow-row: 0 4px 14px rgb(64 43 18 / 7%);
     --qa-react-nav-shadow-control: 0 8px 18px rgb(64 43 18 / 5%);

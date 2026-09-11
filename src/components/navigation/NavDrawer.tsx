@@ -5,6 +5,7 @@ import { REACT_ROUTES } from '../../app/router/routes'
 import type { JuzIndexEntry } from '../../data/juz-index'
 import { loadReaderSurahIndex } from '../../data/surah-index'
 import { openReactDb } from '../../storage/db'
+import { readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
 import { readRecentSurahs, type RecentSurahPosition } from '../../continuity/recent-surahs'
 import { resolveDrawerHrefForReaderMode } from '../reader/reader-mode-routing'
 import { Button, IconButton, Input, SegmentedControl, Sheet } from '../ui'
@@ -18,7 +19,12 @@ import { createWirdBoundaries } from '../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../continuity/wird/page-boundaries'
 import { getBrowserNotificationState } from '../../continuity/wird/reminders'
 import { withWirdProgressIntent } from '../../continuity/wird/session'
-import { readWirdPlan, writeWirdPlan } from '../../continuity/wird/store'
+import {
+  WIRD_NOTIFICATION_PERMISSION_PROMPTED_KEY,
+  readWirdPlan,
+  updateWirdPlanNotificationState,
+  writeWirdPlan,
+} from '../../continuity/wird/store'
 import type { SurahCount, WirdBoundary, WirdPlan } from '../../continuity/wird/types'
 import { WirdDetail, type WirdSetupPayload } from './wird/WirdDetail'
 
@@ -204,7 +210,9 @@ export function NavDrawer({
 
   function handleWirdContinue(): void {
     if (!showWird) return
-    const summary = deriveWirdSummary(wirdPlan, wirdCounts, createWirdBoundaries(wirdCounts, wirdPageBoundaries))
+    const summary = deriveWirdSummary(wirdPlan, wirdCounts, {
+      boundaries: createWirdBoundaries(wirdCounts, wirdPageBoundaries),
+    })
     if (!summary.nextRef) return
     const href = withWirdProgressIntent(REACT_ROUTES.surah(summary.nextRef.surah, summary.nextRef.verse))
     if (mode === 'mushaf') {
@@ -230,15 +238,37 @@ export function NavDrawer({
   async function requestWirdNotifications() {
     if (typeof Notification === 'undefined' || typeof Notification.requestPermission !== 'function')
       return 'unsupported' as const
+
+    const markerPromise = (async () => {
+      try {
+        const prompted = await readNativeSetting(WIRD_NOTIFICATION_PERMISSION_PROMPTED_KEY)
+        if (prompted?.value !== true) {
+          await writeNativeSetting({ key: WIRD_NOTIFICATION_PERMISSION_PROMPTED_KEY, value: true })
+        }
+      } catch {
+        // Permission requests remain available when the marker store is unavailable.
+      }
+    })()
+
     const permission = await Notification.requestPermission()
-    return getBrowserNotificationState(permission)
+    const state = getBrowserNotificationState(permission)
+    await markerPromise
+    try {
+      const db = await openReactDb()
+      const updatedPlan = await updateWirdPlanNotificationState(db, state)
+      if (updatedPlan) setWirdPlan(updatedPlan)
+    } catch {
+      // The detail view still reflects the browser result; persistence retries on the next plan save.
+    }
+
+    return state
   }
 
   const readModeActive = activeMode === 'read'
   const searchModeActive = activeMode === 'search'
   const drawerShowsWird = readModeActive && showWird
   const wirdBoundaries = createWirdBoundaries(wirdCounts, wirdPageBoundaries)
-  const wirdSummary = drawerShowsWird ? deriveWirdSummary(wirdPlan, wirdCounts, wirdBoundaries) : null
+  const wirdSummary = drawerShowsWird ? deriveWirdSummary(wirdPlan, wirdCounts, { boundaries: wirdBoundaries }) : null
   const fallbackReadHref = currentPosition
     ? REACT_ROUTES.surah(currentPosition.surah, currentPosition.verse)
     : REACT_ROUTES.home
