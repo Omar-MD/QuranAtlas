@@ -260,6 +260,7 @@ export class SearchClient {
     }
     this.activePackId = response.packId
     this.activePackVersion = response.packVersion
+    this.initializedEpoch = epoch
     return { packId: response.packId, packVersion: response.packVersion }
   }
 
