@@ -62,6 +62,13 @@ type EvidenceResultPair = {
   result: SearchResultDto
 }
 
+export class AskPreviewStaleError extends SearchPackReaderError {
+  constructor(message = 'Ask preview id no longer matches this query, lens, sort, or pack') {
+    super('stale-epoch', message, true)
+    this.name = 'AskPreviewStaleError'
+  }
+}
+
 export class AskSearchPreviewBuilder {
   private readonly reader: SearchPackReader
   private readonly executor: SearchQueryExecutor
@@ -76,6 +83,15 @@ export class AskSearchPreviewBuilder {
     const effectiveAst = input.queryAst ?? parsed?.ast ?? null
     const sourceFamilyStatuses = sourceFamilyStatusesFromManifest(this.reader.manifest)
     const sourceKinds = sourceKindsForLens(understanding.lens)
+
+    const previewId = previewIdFor({
+      query: input.query,
+      lens: understanding.lens,
+      queryAst: effectiveAst,
+      sort: input.sort,
+      manifest: this.reader.manifest,
+    })
+
     const basePlan = searchPlanForPreview({
       lens: understanding.lens,
       queryForm: effectiveAst?.normalizedText ?? understanding.normalizedQuery,
@@ -84,64 +100,38 @@ export class AskSearchPreviewBuilder {
     })
 
     if (!effectiveAst) {
-      return this.validatedPreview({
-        id: previewIdFor({
+      return this.validatedPreview(
+        evidenceOnlyPreview({
+          id: previewId,
           query: input.query,
-          lens: understanding.lens,
-          queryAst: effectiveAst,
-          sort: input.sort,
-          manifest: this.reader.manifest,
-        }),
-        query: input.query,
-        queryUnderstanding: understanding,
-        searchPlan: skippedSearchPlan(basePlan, 'The query could not be parsed into an executable Search intent.'),
-        mode: 'no-answer',
-        answerability: {
-          status: 'needs-clarification',
+          understanding,
+          searchPlan: skippedSearchPlan(basePlan, 'The query could not be parsed into an executable Search intent.'),
+          evidenceAtoms: [],
+          sourceFamilyStatuses,
+          mode: 'no-answer',
           reasons: ['ambiguous-query'],
-          renderPermission: 'no-answer-claims',
-        },
-        claims: [],
-        claimSupports: [],
-        evidenceAtoms: [],
-        evidenceBasis: evidenceBasisFor(sourceFamilyStatuses, []),
-        evidenceCards: [],
-        recovery: recoveryForAskBlockers(input.query, ['ambiguous-query']),
-        sourceFamilyStatuses,
-      })
+        }),
+      )
     }
 
     const blockers = blockersForAskQuery(input.query, understanding)
     if (blockers.length > 0) {
       const ambiguous = blockers.includes('ambiguous-query')
-      return this.validatedPreview({
-        id: previewIdFor({
+      return this.validatedPreview(
+        evidenceOnlyPreview({
+          id: previewId,
           query: input.query,
-          lens: understanding.lens,
-          queryAst: effectiveAst,
-          sort: input.sort,
-          manifest: this.reader.manifest,
-        }),
-        query: input.query,
-        queryUnderstanding: understanding,
-        searchPlan: skippedSearchPlan(
-          basePlan,
-          'The Ask preview boundary policy blocked prose claims before Search execution.',
-        ),
-        mode: ambiguous ? 'no-answer' : 'evidence-only',
-        answerability: {
-          status: ambiguous ? 'needs-clarification' : 'evidence-only',
+          understanding,
+          searchPlan: skippedSearchPlan(
+            basePlan,
+            'The Ask preview boundary policy blocked prose claims before Search execution.',
+          ),
+          evidenceAtoms: [],
+          sourceFamilyStatuses,
+          mode: ambiguous ? 'no-answer' : 'evidence-only',
           reasons: blockers,
-          renderPermission: 'no-answer-claims',
-        },
-        claims: [],
-        claimSupports: [],
-        evidenceAtoms: [],
-        evidenceBasis: evidenceBasisFor(sourceFamilyStatuses, []),
-        evidenceCards: [],
-        recovery: recoveryForAskBlockers(input.query, blockers),
-        sourceFamilyStatuses,
-      })
+        }),
+      )
     }
 
     let results: SearchResultDto[]
@@ -163,31 +153,17 @@ export class AskSearchPreviewBuilder {
         sourceKinds,
         failed: true,
       })
-      return this.validatedPreview({
-        id: previewIdFor({
+      return this.validatedPreview(
+        evidenceOnlyPreview({
+          id: previewId,
           query: input.query,
-          lens: understanding.lens,
-          queryAst: effectiveAst,
-          sort: input.sort,
-          manifest: this.reader.manifest,
-        }),
-        query: input.query,
-        queryUnderstanding: understanding,
-        searchPlan,
-        mode: 'evidence-only',
-        answerability: {
-          status: 'evidence-only',
+          understanding,
+          searchPlan,
+          evidenceAtoms: [],
+          sourceFamilyStatuses,
           reasons: blockersForFailure,
-          renderPermission: 'no-answer-claims',
-        },
-        claims: [],
-        claimSupports: [],
-        evidenceAtoms: [],
-        evidenceBasis: evidenceBasisFor(sourceFamilyStatuses, []),
-        evidenceCards: [],
-        recovery: recoveryForAskBlockers(input.query, blockersForFailure),
-        sourceFamilyStatuses,
-      })
+        }),
+      )
     }
 
     const evidencePairs = evidencePairsForResults(results, this.reader.manifest).slice(
@@ -200,11 +176,8 @@ export class AskSearchPreviewBuilder {
       const insufficient: AnswerBlockerLite[] = ['insufficient-evidence']
       return this.validatedPreview(
         evidenceOnlyPreview({
+          id: previewId,
           query: input.query,
-          lens: understanding.lens,
-          queryAst: effectiveAst,
-          sort: input.sort,
-          manifest: this.reader.manifest,
           understanding,
           searchPlan,
           evidenceAtoms,
@@ -224,11 +197,8 @@ export class AskSearchPreviewBuilder {
       const insufficient: AnswerBlockerLite[] = ['insufficient-evidence']
       return this.validatedPreview(
         evidenceOnlyPreview({
+          id: previewId,
           query: input.query,
-          lens: understanding.lens,
-          queryAst: effectiveAst,
-          sort: input.sort,
-          manifest: this.reader.manifest,
           understanding,
           searchPlan,
           evidenceAtoms,
@@ -244,13 +214,7 @@ export class AskSearchPreviewBuilder {
       verdict: 'supported',
     }
     const preview: AnswerPreview = {
-      id: previewIdFor({
-        query: input.query,
-        lens: understanding.lens,
-        queryAst: effectiveAst,
-        sort: input.sort,
-        manifest: this.reader.manifest,
-      }),
+      id: previewId,
       query: input.query,
       queryUnderstanding: understanding,
       searchPlan,
@@ -283,11 +247,7 @@ export class AskSearchPreviewBuilder {
       manifest: this.reader.manifest,
     })
     if (input.previewId !== expectedPreviewId) {
-      throw new SearchPackReaderError(
-        'stale-epoch',
-        'Ask preview id no longer matches this query, lens, sort, or pack',
-        true,
-      )
+      throw new AskPreviewStaleError()
     }
     if (!effectiveAst) return { previewId: expectedPreviewId, evidenceAtoms: [], matchCards: [] }
 
@@ -350,31 +310,24 @@ function claimForEvidence(input: {
 }
 
 function evidenceOnlyPreview(input: {
+  id: string
   query: string
-  lens: SearchLensLite
-  queryAst?: SearchQueryAstV1
-  sort: SearchSort
-  manifest: SearchPackManifestV1
   understanding: QueryUnderstandingLite
   searchPlan: SearchPlanLite
   evidenceAtoms: EvidenceAtom[]
   sourceFamilyStatuses: AnswerPreview['sourceFamilyStatuses']
+  mode?: 'evidence-only' | 'no-answer'
   reasons: AnswerBlockerLite[]
 }): AnswerPreview {
+  const mode = input.mode ?? 'evidence-only'
   return {
-    id: previewIdFor({
-      query: input.query,
-      lens: input.lens,
-      queryAst: input.queryAst,
-      sort: input.sort,
-      manifest: input.manifest,
-    }),
+    id: input.id,
     query: input.query,
     queryUnderstanding: input.understanding,
     searchPlan: input.searchPlan,
-    mode: 'evidence-only',
+    mode,
     answerability: {
-      status: 'evidence-only',
+      status: mode === 'no-answer' ? 'needs-clarification' : 'evidence-only',
       reasons: input.reasons,
       renderPermission: 'no-answer-claims',
     },

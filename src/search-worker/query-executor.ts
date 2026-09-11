@@ -5,6 +5,7 @@ import type {
   SearchResultWindow,
   SearchSort,
 } from '../../shared/search'
+import { SearchCursorInvalidError } from '../../shared/search'
 import { createSearchResultCursor, assertSearchCursorValid } from '../search/cursors'
 import { parseSearchReference } from '../search/reference-parser'
 import { mapSearchRefToSearchSource } from '../search/result-mapping'
@@ -30,10 +31,24 @@ interface Candidate {
 export class SearchQueryExecutor {
   private readonly reader: SearchPackReader
   private readonly morphology: SearchMorphologyExecutor
+  private ayahsById: Promise<Map<number, SearchAyahRow>> | null = null
 
   constructor(reader: SearchPackReader) {
     this.reader = reader
-    this.morphology = new SearchMorphologyExecutor(reader)
+    this.morphology = new SearchMorphologyExecutor(reader, () => this.loadAyahsById())
+  }
+
+  private loadAyahsById(): Promise<Map<number, SearchAyahRow>> {
+    if (!this.ayahsById) {
+      this.ayahsById = this.reader
+        .getReferences()
+        .then((references) => new Map(references.ayahs.map((ayah) => [ayah.ayahId, ayah])))
+        .catch((error) => {
+          this.ayahsById = null
+          throw error
+        })
+    }
+    return this.ayahsById
   }
 
   async execute({
@@ -50,12 +65,16 @@ export class SearchQueryExecutor {
     token: SearchCancellationToken
   }): Promise<SearchResultWindow> {
     const queryHash = stableQueryHash(query)
-    assertSearchCursorValid(cursor ?? undefined, {
-      packId: this.reader.manifest.packId,
-      packVersion: this.reader.manifest.packVersion,
-      queryHash,
-      sort,
-    })
+    try {
+      assertSearchCursorValid(cursor ?? undefined, {
+        packId: this.reader.manifest.packId,
+        packVersion: this.reader.manifest.packVersion,
+        queryHash,
+        sort,
+      })
+    } catch (error) {
+      throw new SearchCursorInvalidError(error instanceof Error ? error.message : String(error))
+    }
 
     const dtos = isMorphologyMode(query.mode)
       ? await this.morphology.execute(query, token)
@@ -107,33 +126,28 @@ export class SearchQueryExecutor {
       return this.collectPostingCandidates('arabic', 'arabic-text', query.tokens, token, { requireAllTerms: true })
 
     const lanes = query.filters.sourceLane ?? ['arabic-text', 'translation', 'context']
-    const all: Candidate[] = []
-    if (lanes.includes('arabic-text'))
-      all.push(
-        ...(await this.collectPostingCandidates('arabic', 'arabic-text', query.tokens, token, {
-          requireAllTerms: true,
-        })),
-      )
-    if (lanes.includes('translation') || lanes.includes('context')) {
-      all.push(
-        ...(await this.collectPostingCandidates(
-          'translation',
-          lanes.includes('translation') ? 'translation' : 'context',
-          query.tokens,
-          token,
-          { requireAllTerms: true },
-        )),
-      )
-    }
-    return all
+    const [arabicCandidates, translationCandidates] = await Promise.all([
+      lanes.includes('arabic-text')
+        ? this.collectPostingCandidates('arabic', 'arabic-text', query.tokens, token, { requireAllTerms: true })
+        : Promise.resolve([] as Candidate[]),
+      lanes.includes('translation') || lanes.includes('context')
+        ? this.collectPostingCandidates(
+            'translation',
+            lanes.includes('translation') ? 'translation' : 'context',
+            query.tokens,
+            token,
+            { requireAllTerms: true },
+          )
+        : Promise.resolve([] as Candidate[]),
+    ])
+    return [...arabicCandidates, ...translationCandidates]
   }
 
   private async collectPhraseCandidates(tokens: string[], token: SearchCancellationToken): Promise<Candidate[]> {
     if (tokens.length < 2) return []
     const term = tokens.join(' ')
     const shards = await this.reader.loadPhraseShards(tokens.length)
-    const references = await this.reader.getReferences()
-    const ayahsById = new Map(references.ayahs.map((ayah) => [ayah.ayahId, ayah]))
+    const ayahsById = await this.loadAyahsById()
     const candidates: Candidate[] = []
     for (const shard of shards) {
       const row = shard.payload.postings.find((posting) => posting.term === term)
@@ -156,44 +170,12 @@ export class SearchQueryExecutor {
     token: SearchCancellationToken,
     options: { requireAllTerms?: boolean } = {},
   ): Promise<Candidate[]> {
-    if (options.requireAllTerms && lane !== 'exact-word' && uniqueTermsForLane(terms, lane).length > 1) {
-      return this.collectAllTermPostingCandidates(lane, matchLane, terms, token)
-    }
-    const references = await this.reader.getReferences()
-    const ayahsById = new Map(references.ayahs.map((ayah) => [ayah.ayahId, ayah]))
+    const uniqueTerms = uniqueTermsForLane(terms, lane)
+    const requireAllTerms = options.requireAllTerms === true && lane !== 'exact-word' && uniqueTerms.length > 1
+    const ayahsById = await this.loadAyahsById()
     const payloads = await this.reader.getPostings(lane)
     const candidates: Candidate[] = []
     const seen = new Set<string>()
-    for (const term of terms) {
-      for (const payload of payloads) {
-        const rows = payload.postings.filter((posting) => postingMatchesTerm(posting.term, term, lane))
-        for (const row of rows)
-          for (const candidate of await this.rowToCandidates(row, ayahsById, matchLane, token, {
-            matchedQueryTokens: [term],
-            matchedSourceTokens: [row.term],
-          })) {
-            const key = `${candidate.ayah.ref}:${candidate.lane}:${candidate.position}:${row.term}`
-            if (seen.has(key)) continue
-            seen.add(key)
-            candidates.push(candidate)
-          }
-      }
-    }
-    return candidates
-  }
-
-  private async collectAllTermPostingCandidates(
-    lane: 'arabic' | 'translation',
-    matchLane: SearchResultDto['matchLanes'][number],
-    terms: string[],
-    token: SearchCancellationToken,
-  ): Promise<Candidate[]> {
-    const uniqueTerms = uniqueTermsForLane(terms, lane)
-    if (uniqueTerms.length === 0) return []
-
-    const references = await this.reader.getReferences()
-    const ayahsById = new Map(references.ayahs.map((ayah) => [ayah.ayahId, ayah]))
-    const payloads = await this.reader.getPostings(lane)
     const grouped = new Map<
       number,
       {
@@ -204,7 +186,7 @@ export class SearchQueryExecutor {
       }
     >()
 
-    for (const term of uniqueTerms) {
+    for (const term of requireAllTerms ? uniqueTerms : terms) {
       let termMatched = false
       const termKey = postingTermKey(term, lane)
       for (const payload of payloads) {
@@ -216,6 +198,13 @@ export class SearchQueryExecutor {
           })
           if (rowCandidates.length > 0) termMatched = true
           for (const candidate of rowCandidates) {
+            if (!requireAllTerms) {
+              const key = `${candidate.ayah.ref}:${candidate.lane}:${candidate.position}:${row.term}`
+              if (seen.has(key)) continue
+              seen.add(key)
+              candidates.push(candidate)
+              continue
+            }
             const current = grouped.get(candidate.ayah.ayahId) ?? {
               ayah: candidate.ayah,
               matchedTerms: new Set<string>(),
@@ -229,10 +218,10 @@ export class SearchQueryExecutor {
           }
         }
       }
-      if (!termMatched) return []
+      if (requireAllTerms && !termMatched) return []
     }
 
-    const candidates: Candidate[] = []
+    if (!requireAllTerms) return candidates
     for (const entry of grouped.values()) {
       if (entry.matchedTerms.size !== uniqueTerms.length) continue
       candidates.push({

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { isValidQuranAyahRef } from '../../../shared/search'
+import { isValidQuranAyahRef, SEARCH_NORMALIZER_VERSION } from '../../../shared/search'
 import { REACT_ROUTES } from '../../app/router/routes'
 import { ChromeFrame } from '../navigation/ChromeFrame'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
@@ -27,8 +27,8 @@ export function SearchShell() {
   const compatibilityKey = useMemo(
     () =>
       search.packVersion
-        ? `qa-search-core-hafs-v1:${search.packVersion}:abi1:normalizer1`
-        : 'search-pack-abi-1-normalizer-1',
+        ? `qa-search-core-hafs-v1:${search.packVersion}:abi1:normalizer${SEARCH_NORMALIZER_VERSION}`
+        : `search-pack-abi-1-normalizer-${SEARCH_NORMALIZER_VERSION}`,
     [search.packVersion],
   )
 
@@ -71,11 +71,17 @@ export function SearchShell() {
   }
 
   async function loadSavedSearch(record: SavedSearchRecord) {
-    const opened = await saved.openSearch(record.id)
+    let opened: SavedSearchRecord | null
+    try {
+      opened = await saved.openSearch(record.id)
+    } catch (caught) {
+      setSavedStatusMessage(caught instanceof Error ? caught.message : 'Saved search could not be opened')
+      return
+    }
     if (!opened) return
     search.setQuery(opened.intent.queryText)
     search.setMode('all')
-    search.submitSearch({ mode: 'all', query: opened.intent.queryText })
+    search.submitSearch({ query: opened.intent.queryText })
     drawer.dispatch({ type: 'route-transition' })
   }
 

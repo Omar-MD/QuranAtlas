@@ -194,22 +194,19 @@ function prioritizePhrase<TRow extends { term: string; count: number }>(rows: TR
     )
 }
 
+const SECTION_TITLES: Record<SearchGraphSectionId, string> = {
+  'following-wording': 'Attested following wording',
+  'shared-wording': 'Shared wording',
+  'repeated-phrases': 'Repeated phrases',
+  'occurs-once': 'Occurs once in this index',
+  'ayah-endings': 'Ayah endings',
+  'counts-patterns': 'Counts & patterns',
+}
+
 function unavailableSection(section: SearchGraphSectionId, reason: string, retryable: boolean): SearchGraphSection {
-  const title =
-    section === 'counts-patterns'
-      ? 'Counts & patterns'
-      : section === 'following-wording'
-        ? 'Attested following wording'
-        : section === 'shared-wording'
-          ? 'Shared wording'
-          : section === 'repeated-phrases'
-            ? 'Repeated phrases'
-            : section === 'occurs-once'
-              ? 'Occurs once in this index'
-              : 'Ayah endings'
   return {
     id: section,
-    title,
+    title: SECTION_TITLES[section],
     sourcePolicy: [],
     rows: [],
     summary: undefined,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { AnswerPreview, MatchCardLite, SearchLensLite, SearchQueryAstV1 } from '../../../shared/search'
+import type { AnswerPreview, MatchCardLite, SearchQueryAstV1 } from '../../../shared/search'
 import { REACT_ROUTES } from '../../app/router/routes'
 import { getSearchClient, type SearchClient } from '../../search/client'
 import { parseSearchQuery, SearchQueryParseError } from '../../search/query-parser'
@@ -77,27 +77,21 @@ export type SearchRouteState = {
   setMode: (mode: SearchQueryMode) => void
   setQuery: (query: string) => void
   setSelectedResult: (result: SearchResultDto | null) => void
-  submitSearch: (next?: {
-    mode?: SearchQueryMode
-    query?: string
-    selectedResultId?: string | null
-    tab?: SearchWorkspaceTab | null
-  }) => void
+  submitSearch: (next?: { query?: string; selectedResultId?: string | null; tab?: SearchWorkspaceTab | null }) => void
 }
 
 type SearchHashState = {
-  mode?: SearchQueryMode
   query?: string
   selectedResultId?: string
   tab?: SearchWorkspaceTab
 }
 
 export function useSearchRouteState(
-  options: { client?: SearchClient; initialMode?: SearchQueryMode; initialQuery?: string; sort?: SearchSort } = {},
+  options: { client?: SearchClient; initialQuery?: string; sort?: SearchSort } = {},
 ): SearchRouteState {
   const initialHashState = useMemo(() => readSearchHashState(), [])
   const [query, setQuery] = useState(options.initialQuery ?? initialHashState.query ?? '')
-  const [mode, setMode] = useState<SearchQueryMode>('all')
+  const [activeSearchQuery, setActiveSearchQuery] = useState<string | null>(null)
   const [packState, setPackState] = useState<SearchRoutePackState>('loading')
   const [packVersion, setPackVersion] = useState<string | undefined>()
   const [error, setError] = useState<string | null>(null)
@@ -133,34 +127,49 @@ export function useSearchRouteState(
   const loadingAllMatchesRef = useRef(false)
   const selectedResultRef = useRef<SearchResultDto | null>(null)
   const answerPreviewRef = useRef<AnswerPreview | null>(null)
-  const activeQueryRef = useRef<{ ast: SearchQueryAstV1; mode: SearchQueryMode; query: string } | null>(null)
+  const activeQueryRef = useRef<{ ast: SearchQueryAstV1; query: string } | null>(null)
   const sort = options.sort ?? 'relevance'
+  const mode: SearchQueryMode = 'all'
 
-  const resetEvidenceState = useCallback((status?: string) => {
-    setBrief(null)
-    setResults([])
-    answerPreviewRef.current = null
-    setAnswerPreview(null)
-    setAllMatches([])
-    setAllMatchesOpen(false)
-    setAllMatchesCursor(null)
-    setLoadingAllMatches(false)
-    loadingAllMatchesRef.current = false
-    selectedResultRef.current = null
-    setSelectedResult(null)
-    setSelectedPreviewMatch(null)
-    setResultCursor(null)
-    setResultCountMessage('')
-    setLoadingMoreResults(false)
-    loadingMoreRef.current = false
-    activeQueryRef.current = null
-    setActiveWorkspaceTab('overview')
-    setDefaultWorkspaceTab('overview')
-    setExploreSeedResult(null)
-    setFocusedExploreModule(null)
-    setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
-    if (status !== undefined) setSearchStatus(status)
-  }, [])
+  type ResetSearchStateOptions = {
+    clearActiveQuery?: boolean
+    resetWorkspace?: boolean
+    status?: string
+  }
+
+  const resetSearchState = useCallback(
+    ({ clearActiveQuery = true, resetWorkspace = true, status }: ResetSearchStateOptions = {}) => {
+      setBrief(null)
+      setResults([])
+      answerPreviewRef.current = null
+      setAnswerPreview(null)
+      setAllMatches([])
+      setAllMatchesOpen(false)
+      setAllMatchesCursor(null)
+      setLoadingAllMatches(false)
+      loadingAllMatchesRef.current = false
+      selectedResultRef.current = null
+      setSelectedResult(null)
+      setSelectedPreviewMatch(null)
+      setResultCursor(null)
+      setResultCountMessage('')
+      setLoadingMoreResults(false)
+      loadingMoreRef.current = false
+      if (clearActiveQuery) {
+        activeQueryRef.current = null
+        setActiveSearchQuery(null)
+      }
+      if (resetWorkspace) {
+        setActiveWorkspaceTab('overview')
+        setDefaultWorkspaceTab('overview')
+      }
+      setExploreSeedResult(null)
+      setFocusedExploreModule(null)
+      setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
+      if (status !== undefined) setSearchStatus(status)
+    },
+    [],
+  )
 
   useEffect(() => {
     let active = true
@@ -194,102 +203,61 @@ export function useSearchRouteState(
   }, [client])
 
   const submitSearch = useCallback(
-    (next?: {
-      mode?: SearchQueryMode
-      query?: string
-      selectedResultId?: string | null
-      tab?: SearchWorkspaceTab | null
-    }) => {
+    (next?: { query?: string; selectedResultId?: string | null; tab?: SearchWorkspaceTab | null }) => {
       const effectiveQuery = next?.query ?? query
-      const effectiveMode: SearchQueryMode = 'all'
       const trimmed = effectiveQuery.trim()
       requestSequence.current += 1
       const sequence = requestSequence.current
       setQuery(effectiveQuery)
-      setMode(effectiveMode)
       if (!trimmed) {
         setEmptyResultMessage(defaultEmptyResultMessage)
         setError(null)
-        resetEvidenceState(
-          packState === 'active' ? 'Search data is ready on this device.' : packMessageForState(packState),
-        )
+        resetSearchState({ status: packMessageForState(packState) })
         writeSearchHashState({})
         return
       }
       if (!readyRef.current) {
         setError('Search data is not available on this device.')
-        resetEvidenceState('Search data is not available on this device.')
+        resetSearchState({ status: 'Search data is not available on this device.' })
         return
       }
       let parsed: ParsedSearchQuery
       try {
-        parsed = parseSearchQuery(trimmed, { mode: effectiveMode })
+        parsed = parseSearchQuery(trimmed)
       } catch (caught) {
         const message = caught instanceof SearchQueryParseError ? caught.message : 'Search query is unsupported'
         setError(message)
-        resetEvidenceState(message)
+        resetSearchState({ status: message })
         return
       }
       const nextDefaultTab = 'overview'
       const nextActiveTab = next?.tab ?? nextDefaultTab
+      resetSearchState({ clearActiveQuery: false, resetWorkspace: false, status: 'Searching' })
       setDefaultWorkspaceTab(nextDefaultTab)
       setActiveWorkspaceTab(nextActiveTab)
-      setExploreSeedResult(null)
-      setFocusedExploreModule(null)
       setError(null)
-      setSearchStatus('Searching')
-      setBrief(null)
-      setResults([])
-      answerPreviewRef.current = null
-      setAnswerPreview(null)
-      setAllMatches([])
-      setAllMatchesOpen(false)
-      setAllMatchesCursor(null)
-      setLoadingAllMatches(false)
-      loadingAllMatchesRef.current = false
-      selectedResultRef.current = null
-      setSelectedResult(null)
-      setSelectedPreviewMatch(null)
-      setResultCursor(null)
-      setResultCountMessage('')
-      setLoadingMoreResults(false)
-      loadingMoreRef.current = false
-      setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
-      activeQueryRef.current = { ast: parsed.ast, mode: effectiveMode, query: trimmed }
+      setActiveSearchQuery(trimmed)
+      activeQueryRef.current = { ast: parsed.ast, query: trimmed }
       writeSearchHashState({
-        mode: effectiveMode,
         query: trimmed,
         tab: nextActiveTab,
       })
       void client
-        .askPreview({ query: trimmed, lens: lensForMode(effectiveMode), queryAst: parsed.ast, sort })
+        .askPreview({ query: trimmed, lens: 'mixed', queryAst: parsed.ast, sort })
         .then((preview) => {
           if (sequence !== requestSequence.current) return
           // Unmounted (route left) or pack torn down: a late preview must not
           // touch hash or state.
           if (!readyRef.current) return
+          resetSearchState({ clearActiveQuery: false, resetWorkspace: false })
           answerPreviewRef.current = preview
           setAnswerPreview(preview)
-          setBrief(null)
-          setResults([])
-          selectedResultRef.current = null
-          setSelectedResult(null)
-          setSelectedPreviewMatch(null)
-          setResultCursor(null)
-          setAllMatches([])
-          setAllMatchesCursor(null)
-          setAllMatchesOpen(false)
-          setLoadingAllMatches(false)
-          loadingAllMatchesRef.current = false
-          setExploreGraph({ error: null, loading: false, resultId: null, sections: [] })
           const surface = previewSurfaceForPreview(preview)
-          const laneMessage =
-            surface === 'no-results' ? emptyResultMessageForMode(effectiveMode) : statusForAnswerPreview(preview)
-          setEmptyResultMessage(emptyResultMessageForMode(effectiveMode))
+          const laneMessage = surface === 'no-results' ? noResultMessage : statusForAnswerPreview(preview)
+          setEmptyResultMessage(noResultMessage)
           setResultCountMessage(laneMessage)
           setSearchStatus(laneMessage)
           writeSearchHashState({
-            mode: effectiveMode,
             query: trimmed,
             tab: nextActiveTab,
           })
@@ -302,7 +270,7 @@ export function useSearchRouteState(
           setResultCursor(null)
         })
     },
-    [client, packState, query, resetEvidenceState, sort],
+    [client, packState, query, resetSearchState, sort],
   )
 
   const lastPackStateRef = useRef(packState)
@@ -329,7 +297,6 @@ export function useSearchRouteState(
         return
       }
       submitSearch({
-        mode: 'all',
         query: nextQuery,
         selectedResultId: next.selectedResultId ?? null,
         tab: next.tab ?? null,
@@ -351,7 +318,6 @@ export function useSearchRouteState(
     }
     if (!initialHashState.query?.trim()) return
     submitSearch({
-      mode: 'all',
       query: initialHashState.query,
       selectedResultId: initialHashState.selectedResultId ?? null,
       tab: initialHashState.tab ?? null,
@@ -448,7 +414,7 @@ export function useSearchRouteState(
       .getAskMatchesPage({
         previewId: activePreviewId,
         query: activeQuery.query,
-        lens: lensForMode(activeQuery.mode),
+        lens: 'mixed',
         queryAst: activeQuery.ast,
         limit: 10,
         sort,
@@ -493,7 +459,7 @@ export function useSearchRouteState(
       .getAskMatchesPage({
         previewId: activePreviewId,
         query: activeQuery.query,
-        lens: lensForMode(activeQuery.mode),
+        lens: 'mixed',
         queryAst: activeQuery.ast,
         cursor,
         limit: 10,
@@ -538,7 +504,7 @@ export function useSearchRouteState(
       }
       let parsed: ParsedSearchQuery
       try {
-        parsed = parseSearchQuery(query.trim() || result.snippet || result.sourceText, { mode })
+        parsed = parseSearchQuery(query.trim() || result.snippet || result.sourceText)
       } catch (caught) {
         const message = caught instanceof SearchQueryParseError ? caught.message : 'Explore query is unsupported'
         setExploreGraph({ error: message, loading: false, resultId: result.resultId, sections: [] })
@@ -572,7 +538,7 @@ export function useSearchRouteState(
           })
         })
     },
-    [client, mode, query],
+    [client, query],
   )
 
   const setSearchQuery = useCallback(
@@ -582,23 +548,21 @@ export function useSearchRouteState(
       requestSequence.current += 1
       setError(null)
       setEmptyResultMessage(defaultEmptyResultMessage)
-      resetEvidenceState(
-        packState === 'active' ? 'Search data is ready on this device.' : packMessageForState(packState),
-      )
+      resetSearchState({ status: packMessageForState(packState) })
       writeSearchHashState({})
     },
-    [packState, resetEvidenceState],
+    [packState, resetSearchState],
   )
 
-  const setSearchMode = useCallback(() => {
-    setMode('all')
+  // Search currently has one route mode; keep this action for existing callers.
+  const setSearchMode = useCallback((nextMode: SearchQueryMode) => {
+    if (nextMode !== 'all') return
   }, [])
 
   const setSearchActiveWorkspaceTab = useCallback((tab: SearchWorkspaceTab) => {
     setActiveWorkspaceTab(tab)
     if (!activeQueryRef.current) return
     writeSearchHashState({
-      mode: activeQueryRef.current.mode,
       query: activeQueryRef.current.query,
       selectedResultId: selectedResultRef.current?.resultId,
       tab,
@@ -611,7 +575,6 @@ export function useSearchRouteState(
       setSelectedResult(result)
       if (!activeQueryRef.current) return
       writeSearchHashState({
-        mode: activeQueryRef.current.mode,
         query: activeQueryRef.current.query,
         selectedResultId: result?.resultId,
         tab: activeWorkspaceTab,
@@ -628,19 +591,13 @@ export function useSearchRouteState(
     setActiveWorkspaceTab('explore')
     if (!activeQueryRef.current) return
     writeSearchHashState({
-      mode: activeQueryRef.current.mode,
       query: activeQueryRef.current.query,
       selectedResultId: result.resultId,
       tab: 'explore',
     })
   }, [])
 
-  const canSaveSearch = Boolean(
-    activeQueryRef.current &&
-      activeQueryRef.current.query === query.trim() &&
-      activeQueryRef.current.mode === mode &&
-      !error,
-  )
+  const canSaveSearch = Boolean(activeSearchQuery && activeSearchQuery === query.trim() && !error)
 
   return {
     error,
@@ -687,6 +644,7 @@ export function useSearchRouteState(
 }
 
 const defaultEmptyResultMessage = 'Enter a word, phrase, or ayah reference. Save only the searches you want to keep.'
+const noResultMessage = 'No results match this search.'
 
 function formatBriefResultCount(brief: SearchBriefDto, hasMore: boolean): string {
   const sourceAyahCount = brief.counts.matchedSourceAyahCount
@@ -722,15 +680,6 @@ function mergeMatchCards(current: MatchCardLite[], next: MatchCardLite[]): Match
   return merged
 }
 
-function lensForMode(mode: SearchQueryMode): SearchLensLite {
-  if (mode === 'arabic-text' || mode === 'exact-word-form') return 'quran-text'
-  if (mode === 'translation' || mode === 'context') return 'translation'
-  if (mode === 'phrase') return 'phrase'
-  if (mode === 'same-written-form' || mode === 'same-root' || mode === 'lemma' || mode === 'surah-context')
-    return 'morphology'
-  return 'mixed'
-}
-
 function statusForAnswerPreview(preview: AnswerPreview): string {
   const evidenceCardLabel = pluralizeEvidenceCards(preview.evidenceCards.length)
   if (preview.mode === 'answer') return `${preview.evidenceCards.length} best ${evidenceCardLabel}`
@@ -743,37 +692,30 @@ function pluralizeEvidenceCards(count: number): string {
   return count === 1 ? 'evidence card' : 'evidence cards'
 }
 
-function emptyResultMessageForMode(mode: SearchQueryMode): string {
-  if (mode === 'exact-word-form') {
-    return 'No exact word-form matches. Exact mode keeps Quranic marks and source spelling; try Arabic text mode for normalized matching.'
-  }
-  return 'No results match this search.'
-}
-
 function packMessageForState(state: SearchRoutePackState): string {
   if (state === 'active') return 'Search data is ready on this device.'
-  if (state === 'loading' || state === 'installing' || state === 'staged' || state === 'verifying')
+  if (
+    state === 'loading' ||
+    state === 'installing' ||
+    state === 'staged' ||
+    state === 'verifying' ||
+    state === 'update available'
+  )
     return 'Loading search index'
-  if (state === 'offline unavailable') return 'Search data is not available on this device.'
-  if (state === 'failed') return 'Search data is not available on this device.'
-  if (state === 'incompatible') return 'Search data is not available on this device.'
-  if (state === 'update available') return 'Loading search index'
   return 'Search data is not available on this device.'
 }
 
-function activeQueryIdentityFor(activeQuery: { mode: SearchQueryMode; query: string } | null): string | null {
-  return activeQuery ? `${activeQuery.mode}:${activeQuery.query}` : null
+function activeQueryIdentityFor(activeQuery: { query: string } | null): string | null {
+  return activeQuery?.query ?? null
 }
 
 function readSearchHashState(hash = typeof window === 'undefined' ? '' : window.location.hash): SearchHashState {
   const paramsText = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
-  if (!paramsText) return {}
   const params = new URLSearchParams(paramsText)
   const query = params.get('q')?.trim() || undefined
-  const mode = searchModeFromParam(params.get('mode'))
   const tab = searchTabFromParam(params.get('tab'))
   const selectedResultId = params.get('selected') || undefined
-  return { mode, query, selectedResultId, tab }
+  return { query, selectedResultId, tab }
 }
 
 function writeSearchHashState(state: SearchHashState): void {
@@ -791,11 +733,6 @@ function writeSearchHashState(state: SearchHashState): void {
   const nextHash = params.toString() ? `${REACT_ROUTES.search}?${params.toString()}` : REACT_ROUTES.search
   if (window.location.hash === nextHash) return
   window.history.replaceState(null, '', nextHash)
-}
-
-function searchModeFromParam(value: string | null): SearchQueryMode | undefined {
-  void value
-  return undefined
 }
 
 function searchTabFromParam(value: string | null): SearchWorkspaceTab | undefined {

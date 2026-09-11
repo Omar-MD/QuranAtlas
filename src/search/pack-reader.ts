@@ -16,7 +16,6 @@ import {
   type SearchPackShardManifest,
   type SearchShardTableDirectoryEntry,
 } from '../../shared/search'
-import { openReactDb } from '../storage/db'
 import type {
   SearchAyahRow,
   SearchDecodedShard,
@@ -66,7 +65,7 @@ export class SearchPackReader {
     assertSupportedSearchPackAbi(Number(majorText), Number(minorText))
     if (manifest.normalizerVersion !== SEARCH_NORMALIZER_VERSION) {
       throw new SearchPackReaderError(
-        'incompatible-version',
+        'normalizer-mismatch',
         `Search pack ${manifest.packId} normalizer version ${manifest.normalizerVersion} does not match app normalizer version ${SEARCH_NORMALIZER_VERSION}`,
       )
     }
@@ -319,8 +318,6 @@ export async function loadSearchPackManifestFromRegistry(
     return manifest
   } catch (caught) {
     if (caught instanceof SearchPackReaderError) throw caught
-    const active = await loadActiveSearchPackManifest(packId, options)
-    if (active) return active
     const cached = await loadCachedSearchPackManifest(packId)
     if (cached) return cached
     throw new SearchPackReaderError('unavailable-pack', 'Search pack registry is unavailable', true)
@@ -341,32 +338,6 @@ async function cacheSearchPackManifest(manifest: SearchPackManifestV1, manifestU
       }),
     )
     .catch(() => undefined)
-}
-
-async function loadActiveSearchPackManifest(
-  packId: string,
-  options: Pick<SearchPackReaderOptions, 'fetcher' | 'signal'>,
-): Promise<SearchPackManifestV1 | null> {
-  const active = await openReactDb()
-    .then((db) => db.searchPackActivations.get('current'))
-    .catch(() => null)
-  if (active?.status !== 'active' || active.packId !== packId) return null
-
-  const cached = await loadCachedSearchPackManifest(packId, active.contentHash)
-  if (cached) return cached
-
-  const manifestUrl = `/search-packs/packs/${active.contentHash}/manifest.json`
-  const fetcher = options.fetcher ?? globalThis.fetch
-  if (!fetcher) return null
-  try {
-    const response = await fetcher(manifestUrl, { signal: options.signal })
-    if (!response.ok) return null
-    const manifest = (await response.json()) as SearchPackManifestV1
-    assertSearchPackManifestUrls(manifest)
-    return manifest.packId === packId && manifest.contentHash === active.contentHash ? manifest : null
-  } catch {
-    return null
-  }
 }
 
 async function loadCachedSearchPackManifest(

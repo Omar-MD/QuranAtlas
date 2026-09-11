@@ -13,13 +13,14 @@ import { evidenceForMorphologyResult } from './search-brief'
 
 export class SearchMorphologyExecutor {
   private readonly reader: SearchPackReader
+  private readonly loadAyahsById: () => Promise<Map<number, SearchAyahRow>>
   private rowsByAyahIdPosition: Map<string, SearchMorphologyRow> | null = null
   private rowsBySourceToken: Map<string, SearchMorphologyRow[]> | null = null
-  private ayahsById: Map<number, SearchAyahRow> | null = null
   private postingCounts = new Map<string, Map<string, number>>()
 
-  constructor(reader: SearchPackReader) {
+  constructor(reader: SearchPackReader, loadAyahsById: () => Promise<Map<number, SearchAyahRow>>) {
     this.reader = reader
+    this.loadAyahsById = loadAyahsById
   }
 
   async execute(query: SearchQueryAstV1, token: SearchCancellationToken): Promise<SearchResultDto[]> {
@@ -44,7 +45,7 @@ export class SearchMorphologyExecutor {
     token: SearchCancellationToken,
   ): Promise<SearchResultDto[]> {
     const term = await this.resolveTerm(query, lane)
-    if (!term) return []
+    if (term === '') return []
     const payloads = await this.reader.getMorphologyPostings(lane)
     const postings: SearchMorphologyPostingRow['postings'] = []
     for (const payload of payloads) {
@@ -73,7 +74,7 @@ export class SearchMorphologyExecutor {
     token: SearchCancellationToken,
   ): Promise<SearchResultDto[]> {
     const root = await this.resolveTerm(query, 'same-root-postings')
-    if (!root) return []
+    if (root === '') return []
     const context = await this.reader.getSurahContext()
     const row = context.roots.find((entry) => entry.term === root)
     if (!row) return []
@@ -87,7 +88,7 @@ export class SearchMorphologyExecutor {
   private async resolveTerm(
     query: SearchQueryAstV1,
     lane: 'same-written-form-postings' | 'same-root-postings' | 'lemma-postings',
-  ): Promise<string | null> {
+  ): Promise<string> {
     const direct = query.normalizedText || query.rawText
     if (lane === 'same-written-form-postings') return direct
     const rowsBySourceToken = await this.loadRowsBySourceToken()
@@ -158,11 +159,7 @@ export class SearchMorphologyExecutor {
   }
 
   private async ayahFor(row: SearchMorphologyRow): Promise<SearchAyahRow | null> {
-    if (!this.ayahsById) {
-      const references = await this.reader.getReferences()
-      this.ayahsById = new Map(references.ayahs.map((ayah) => [ayah.ayahId, ayah]))
-    }
-    return this.ayahsById.get(row.ayahId) ?? null
+    return (await this.loadAyahsById()).get(row.ayahId) ?? null
   }
 
   private assertMorphologyFeature(): void {

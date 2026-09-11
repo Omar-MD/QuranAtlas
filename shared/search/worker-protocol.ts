@@ -50,17 +50,27 @@ export type SearchWorkerRequest =
 
 export const SEARCH_WORKER_ERROR_CODES = [
   'unavailable-pack',
-  'incompatible-version',
+  'normalizer-mismatch',
   'missing-feature',
   'corrupt-shard',
   'offline-miss',
   'cancelled',
   'unsupported-query',
   'stale-epoch',
-  'activation-changed',
 ] as const
 
 export type SearchWorkerErrorCode = (typeof SEARCH_WORKER_ERROR_CODES)[number]
+
+/**
+ * Thrown when a page cursor no longer matches the pack, query, rank, or sort it
+ * was minted for. Classified as the retryable `stale-epoch` worker error code.
+ */
+export class SearchCursorInvalidError extends Error {
+  constructor(message = 'Search result cursor is no longer valid for this pack, query, rank, or sort') {
+    super(message)
+    this.name = 'SearchCursorInvalidError'
+  }
+}
 
 export type SearchBriefSourceLane = 'arabic-text' | 'translation' | 'context'
 export type SearchBriefMorphologyMode = 'same-written-form' | 'same-root' | 'lemma' | 'surah-context'
