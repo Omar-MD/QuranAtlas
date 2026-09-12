@@ -12,6 +12,12 @@ export type MushafEditionOption = {
   id: string
   label: string
   shortLabel?: string
+  description: string
+}
+
+const EDITION_DESCRIPTIONS: Record<string, string> = {
+  'qalun-quran-ws-v1': 'Minimal monochrome pages from quran.ws.',
+  'qalun-furatiyyah-2023-v1': '2023 Furatiyyah print with coloured notation and marginal notes.',
 }
 
 export type MushafEditionSetupState =
@@ -37,6 +43,7 @@ export async function loadMushafEditionOptions(fetcher: typeof fetch = fetch): P
   return entries.map((entry) => ({
     id: entry.mushafEditionId,
     label: entry.label,
+    description: EDITION_DESCRIPTIONS[entry.mushafEditionId] ?? '',
     ...(entry.shortLabel ? { shortLabel: entry.shortLabel } : {}),
   }))
 }

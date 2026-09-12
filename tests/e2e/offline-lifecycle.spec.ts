@@ -324,6 +324,7 @@ test('downloads the complete Mushaf and reader texts from onboarding for offline
     await expect(group).toBeVisible()
     await expect(group.getByRole('radio', { name: SYNTHETIC_EDITION_LABEL })).toBeVisible()
     await expect(group.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toBeVisible()
+    await expect(page.getByText('Minimal monochrome pages from quran.ws.')).toBeVisible()
     // The radio input is visually hidden (sr-only) under its label span; a real
     // user clicks the visible label, so the test does too.
     await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
