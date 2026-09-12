@@ -20,7 +20,7 @@ export type SavedPosition = QuranRef
 export type LaunchSetupState = Exclude<MushafEditionSetupState, { status: 'complete' }> | OfflineDownloadOffer
 export type LaunchRestoreState =
   | { status: 'loading'; hash: string; sourceHash: string }
-  | { status: 'ready'; hash: string; sourceHash: string }
+  | { status: 'ready'; hash: string; sourceHash: string; offlineOffer?: OfflineDownloadOffer | null }
   | { status: 'setup'; hash: string; sourceHash: string; setup: LaunchSetupState }
 
 const EXCLUDED = new Set(['#/onboarding', '#/settings', '#/assets', '#/search'])
@@ -111,7 +111,14 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
       hasResolvedOnceRef.current && !setupPendingRef.current && !isLaunchHash(hash) && hash !== '#/onboarding'
 
     if (canKeepReady) {
-      setState({ status: 'ready', hash, sourceHash: hash })
+      // Preserve a pending offline offer across in-session navigation: the
+      // one-shot prompt stays up until the user decides or dismisses it.
+      setState((current) => ({
+        status: 'ready',
+        hash,
+        sourceHash: hash,
+        offlineOffer: current.status === 'ready' ? (current.offlineOffer ?? null) : null,
+      }))
       return () => {
         active = false
       }
@@ -140,13 +147,20 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
           const offer = await resolveOfflineDownloadOffer().catch(() => null)
           if (!active) return
           if (offer) {
-            // The offer step must block canKeepReady fast-paths until the
-            // user leaves onboarding.
-            setupPendingRef.current = true
-            setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup: offer })
+            if (hash === '#/onboarding') {
+              // The user explicitly opened onboarding from the offer prompt:
+              // show the full download screen with its progress/pause UI.
+              setupPendingRef.current = true
+              setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup: offer })
+            } else {
+              // The offer never blocks first launch: the reader resolves ready
+              // and App renders the one-shot prompt beside it.
+              setupPendingRef.current = false
+              setState({ status: 'ready', hash: resolvedHash, sourceHash: hash, offlineOffer: offer })
+            }
           } else {
             setupPendingRef.current = false
-            setState({ status: 'ready', hash: resolvedHash, sourceHash: hash })
+            setState({ status: 'ready', hash: resolvedHash, sourceHash: hash, offlineOffer: null })
           }
         } else {
           setupPendingRef.current = true
