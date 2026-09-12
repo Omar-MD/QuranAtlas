@@ -130,6 +130,29 @@ export function AboutRoute() {
           </p>
         </section>
 
+        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-numbering">
+          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-numbering">
+            Reference numbering
+          </h2>
+          <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
+            QuranAtlas reads in the Qalūn narration. Verse references follow the Qalūn numbering of the active edition;
+            Hafs-equivalent references are shown in Search under Sources. Furatiyyah page numbers are the edition's own
+            printed pagination.
+          </p>
+        </section>
+
+        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-editions">
+          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-editions">
+            Editions
+          </h2>
+          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
+            <li>Qalun Quran.ws — Qalūn narration, minimal monochrome pages from quran.ws.</li>
+            <li>
+              Qalun Furatiyyah 2023 — Qalūn narration, 2023 Furatiyyah print with coloured notation and marginal notes.
+            </li>
+          </ul>
+        </section>
+
         {installAvailable || installDone ? (
           <section aria-label="Install QuranAtlas">
             <Button

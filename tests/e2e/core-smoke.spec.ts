@@ -165,3 +165,13 @@ test('search defers tabs and save until a query returns results', async ({ page 
   await expect(page.getByRole('button', { name: 'Show all matches' })).toBeVisible()
   await expect(page.getByRole('radio', { name: 'Verses' })).toBeVisible()
 })
+
+test('about documents reference numbering and identifies editions', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/about')
+  await expect(page.getByRole('heading', { name: 'Reference numbering' })).toBeVisible()
+  await expect(page.getByText(/QuranAtlas reads in the Qalūn narration/)).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Editions' })).toBeVisible()
+  await expect(page.getByText('Qalun Quran.ws')).toBeVisible()
+  await expect(page.getByText('Qalun Furatiyyah 2023')).toBeVisible()
+})
