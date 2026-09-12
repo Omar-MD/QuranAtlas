@@ -85,3 +85,11 @@ test('settings use plain-language copy for controls and inventory', async ({ pag
   await expect(page.getByText(/% reviewed frame width/)).toHaveCount(0)
   await expect(page.getByText(/Text area \d+%/)).toBeVisible()
 })
+
+test('reader never shows internal Hafs-keyed continuation vocabulary', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1')
+  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  await expect(page.getByText(/Hafs-keyed/)).toHaveCount(0)
+  await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
+})
