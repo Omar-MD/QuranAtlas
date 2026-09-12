@@ -13,6 +13,100 @@ shell fast and the reader usable without a connection.
 - Keep `data/catalog/**`, non-generated `data/normalized/**`, and
   `data/taxonomy/**` as tracked source inputs.
 
+## Multi-Agent Work
+
+This project is built and iterated on by multiple agents working through
+different IDEs. The user owns the master plan, divides it into assignments,
+and manages most handovers between agents and IDEs.
+
+- Work only within the exact scope of the assignment provided by the user.
+  Do not expand the task, take ownership of adjacent work, or modify another
+  agent's assignment unless the user explicitly asks.
+- Treat each assignment as an independent unit of work. It must have the
+  inputs, constraints, expected outputs, file ownership, and acceptance
+  checks needed to complete it without depending on another agent's
+  unfinished work.
+- Do not create hidden dependencies between concurrent assignments. If a task
+  requires an output from another task, the required output must already
+  exist before work begins. Otherwise, stop and report the missing input.
+- Preserve unrelated changes from the user and other agents. Before editing,
+  inspect the working tree and the files within the assigned scope.
+
+## IDE-Local Skills
+
+Each IDE owns its skill discovery, skill registry, and IDE-specific
+configuration.
+
+- Use only the skills and invocation mechanisms available in the active IDE.
+- Do not assume that skills, aliases, plugins, commands, or agent roles from
+  one IDE exist in another IDE.
+- Do not copy, synchronize, redirect, or install skills across IDEs unless the
+  user explicitly assigns that work.
+- Shared assignments, plans, briefs, and handoffs must describe requirements
+  and capabilities in plain language. They must not require another IDE to
+  understand an IDE-specific skill name or invocation.
+
+## Shared Work Artifacts
+
+All agent-created coordination artifacts must live under the common
+`.scratch/agent-work/**` directory. This includes master plans, task plans,
+assignments, briefs, progress records, handoffs, reports, and supporting work
+artifacts. Production source files and explicitly requested permanent project
+documentation remain in their normal repository locations.
+
+Use this structure:
+
+```text
+.scratch/
+└── agent-work/
+    ├── README.md
+    └── <plan-id>/
+        ├── plan.md
+        ├── task-index.md
+        └── tasks/
+            └── <task-id>--<ide>--<agent>/
+                ├── assignment.md
+                ├── plan.md
+                ├── brief.md
+                ├── progress.md
+                ├── handoff.md
+                └── artifacts/
+```
+
+- Use short, stable, lowercase kebab-case identifiers for `<plan-id>`,
+  `<task-id>`, `<ide>`, and `<agent>`.
+- The user owns `<plan-id>/plan.md` and `<plan-id>/task-index.md`. Agents may
+  read them but must not modify them unless explicitly assigned to do so.
+- Each agent writes only inside its assigned task directory. Do not edit
+  another task's records.
+- `assignment.md` is the fixed task contract and records scope, inputs,
+  expected outputs, allowed files, and acceptance checks. Do not silently
+  reinterpret or rewrite it.
+- `plan.md` records the agent's execution plan. `brief.md` records any design
+  or implementation brief when one is needed. `progress.md` records concise,
+  timestamped progress, decisions, blockers, and verification attempts.
+- `handoff.md` records the final outcome, changed files, checks performed and
+  their results, unresolved issues, and any information needed for the user
+  to integrate or reassign the work.
+- Store supporting reports, logs, and other non-source deliverables in the
+  task's `artifacts/` directory.
+- Begin each Markdown artifact with this metadata, keeping it current:
+
+  ```yaml
+  plan_id:
+  task_id:
+  ide:
+  agent:
+  status: assigned | in-progress | blocked | completed
+  created:
+  updated:
+  ```
+
+- `.scratch/` is local and Git-ignored. This shared-artifact contract assumes
+  all participating IDEs and agents use the same repository checkout.
+- Never store credentials, browser state, secrets, or screenshots in work
+  artifacts.
+
 ## Command Front Door
 
 - Use mise for the project interface. Tool pins are Node `24.20.0` and
@@ -62,39 +156,5 @@ shell fast and the reader usable without a connection.
 - Inspect `git status`, `git diff`, and `git diff --check` before destructive
   operations or history changes.
 - Preserve unrelated user changes; never reset or overwrite them.
-- Put temporary notes and scratch files under `.scratch/` and keep secrets out
-  of the repository.
-
-## Orchestration (OMP)
-
-The main OMP session is a bounded orchestrator, not a production implementer;
-no bespoke orchestrator code runs in this repository.
-
-- Use OMP's built-in surfaces: `/vibe` for orchestrator-only sessions, the
-  `orchestrate` keyword for one-off multi-agent turns, and `task` + `hub` for
-  ordinary delegation. Delegation stays shallow.
-- Model bindings live only in `.omp/config.yml` (`modelRoles`); every
-  document in this repository refers to roles, never to model IDs.
-- Advisors are disabled by default; enable one only for a bounded,
-  independently useful review.
-
-## UI Roles (OMP)
-
-UI work follows the role seats configured in `.omp/config.yml`; the main
-session never switches into a UI specialist role. Per design scope:
-- The loop is opt-in only: it never starts automatically from a UI
-  request — the user must explicitly ask for it, and must first be
-  prompted to confirm or override each seat's model (defaults shown
-  concisely from `.omp/config.yml`).
-
-1. `ui_director` writes the complete brief under `docs/design/**` in a
-   single one-shot pass; later turns read the written brief instead of
-   re-engaging the director.
-2. `ui_implementer` implements or repairs strictly from the written brief,
-   with targeted runtime checks.
-3. `ui_visual` performs rendered review and sign-off against the brief.
-4. `ui_correctness` reviews when behavior or contracts changed — never
-   styling.
-
-Follow `skill://ui-design` and `skill://ui-verify` for the full loop; agent
-definitions live in `.omp/agents/**`.
+- Put all temporary coordination notes and work artifacts under the shared
+  `.scratch/agent-work/**` hierarchy and keep secrets out of the repository.
