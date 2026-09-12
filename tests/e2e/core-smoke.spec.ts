@@ -152,3 +152,16 @@ test('surah start offers no backward navigation and titles appear once', async (
   await page.goto('/#/s/2')
   await expect(page.getByRole('button', { name: /Previous surah/i })).toBeVisible()
 })
+
+test('search defers tabs and save until a query returns results', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/search')
+  await expect(page.getByText('Search the Quran')).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Overview' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Save search' })).toHaveCount(0)
+
+  await page.getByLabel('Search Quran text, translation, or context').fill('mercy')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('button', { name: 'Show all matches' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Verses' })).toBeVisible()
+})
