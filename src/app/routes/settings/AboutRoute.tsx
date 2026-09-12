@@ -80,7 +80,7 @@ export function AboutRoute() {
       ? 'Checking...'
       : updateCheck.status === 'reloading'
         ? 'Reloading...'
-        : 'Fetch latest app'
+        : 'Check for updates'
 
   return (
     <ChromeFrame

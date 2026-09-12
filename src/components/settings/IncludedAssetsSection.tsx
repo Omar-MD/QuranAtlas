@@ -93,7 +93,7 @@ export function IncludedAssetsSection({
   }, [])
 
   return (
-    <SettingsGroup description="Read-only inventory for the active reading profile." title="Included reading assets">
+    <SettingsGroup description="Texts included with your current Mushaf edition." title="Texts and editions">
       <div className="qar-react-settings-assets" aria-busy={rows === pendingRows ? 'true' : undefined}>
         <div className="qar-react-settings-section-heading">
           <Button
@@ -107,12 +107,12 @@ export function IncludedAssetsSection({
             {visible ? (
               <>
                 <ChevronUp aria-hidden="true" size={15} strokeWidth={1.8} />
-                Hide included reading assets
+                Hide texts and editions
               </>
             ) : (
               <>
                 <ChevronDown aria-hidden="true" size={15} strokeWidth={1.8} />
-                Show included reading assets
+                Show texts and editions
               </>
             )}
           </Button>

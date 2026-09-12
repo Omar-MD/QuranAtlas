@@ -51,7 +51,7 @@ export function MushafSettings({
           <div className="qar-react-settings-row">
             <span className="qar-react-settings-row-copy">
               <span className="qar-react-settings-row-label">Qur'an text size</span>
-              <span className="qar-react-settings-row-control">{frameWidth}% reviewed frame width</span>
+              <span className="qar-react-settings-row-control">{`Text area ${frameWidth}%`}</span>
             </span>
             <div className="qar-react-mushaf-framing-controls">
               <SegmentedControl
