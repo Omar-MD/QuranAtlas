@@ -434,7 +434,7 @@ function MushafEditionSetupRoute({
         }}
         variant="primary"
       >
-        Continue
+        Start reading
       </Button>
     </OnboardingPageRecipe>
   )

@@ -328,7 +328,7 @@ test('downloads the complete Mushaf and reader texts from onboarding for offline
     // The radio input is visually hidden (sr-only) under its label span; a real
     // user clicks the visible label, so the test does too.
     await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
   })
 
   await test.step('offer only the optional Mushaf pages after fresh onboarding', async () => {
@@ -407,7 +407,7 @@ test('rejects byte-mismatched pack files instead of caching them', async ({ page
     // The radio input is visually hidden (sr-only) under its label span; a real
     // user clicks the visible label, so the test does too.
     await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
     await page.getByRole('button', { name: 'Download for offline reading' }).click()
     await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
     await page.getByRole('button', { name: 'Continue reading' }).click()
@@ -440,7 +440,7 @@ test('auto-downloads the required reader texts without consent', async ({ page }
     // The radio input is visually hidden (sr-only) under its label span; a real
     // user clicks the visible label, so the test does too.
     await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
     await page.getByRole('button', { name: 'Skip for now' }).click()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   })
@@ -469,7 +469,7 @@ test('renders an uncached external-image page without waiting for decode', async
   await page.goto(`${ORIGIN}/#/s/1`)
   const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
   await group.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
-  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Start reading', exact: true }).click()
   await page.getByRole('button', { name: 'Skip for now' }).click()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   await expectControlledServiceWorker(page)
@@ -493,7 +493,7 @@ test('downloads the custom external-image edition and renders it offline', async
     await page.goto(`${ORIGIN}/#/s/1`)
     const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
     await group.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
     await expect(page.getByText('Complete Mushaf ·')).toContainText(/ MB$/)
     await page.getByRole('button', { name: 'Download for offline reading' }).click()
     await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
@@ -543,7 +543,7 @@ test('switches the Mushaf edition from settings and downloads the other edition 
     await page.goto(`${ORIGIN}/#/s/1`)
     const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
     await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
     await page.getByRole('button', { name: 'Download for offline reading' }).click()
     await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
     await page.getByRole('button', { name: 'Continue reading' }).click()
