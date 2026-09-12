@@ -412,7 +412,7 @@ function OfflineDataRow({
             size="sm"
             variant="secondary"
           >
-            Download
+            Download pages
           </Button>
         ) : null}
         {installing ? (
@@ -431,7 +431,7 @@ function OfflineDataRow({
             size="sm"
             variant="danger"
           >
-            Remove
+            Remove download
           </Button>
         ) : null}
       </div>

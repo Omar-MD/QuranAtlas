@@ -453,6 +453,8 @@ test('auto-downloads the required reader texts without consent', async ({ page }
       .poll(async () => region.getByText('Downloaded', { exact: true }).count(), { timeout: 120_000 })
       .toBeGreaterThanOrEqual(1)
     await expect(region.getByText('Not downloaded')).toBeVisible()
+    await expect(region.getByRole('button', { name: 'Remove download' })).toBeVisible()
+    await expect(region.getByRole('button', { name: 'Download pages' })).toBeVisible()
   })
 })
 
