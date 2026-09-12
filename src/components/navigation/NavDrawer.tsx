@@ -377,10 +377,18 @@ export function NavDrawer({
                   { label: 'Surah', value: 'surah' },
                   { label: 'Juz', value: 'juz' },
                   { label: 'Hizb', value: 'hizb' },
-                  { label: 'Bookmarks', value: 'bookmarks' },
                 ]}
                 value={readSource}
               />
+            </div>
+            <div className="qar-react-nav-drawer-source-bookmarks">
+              <Button
+                onClick={() => setReadSource('bookmarks')}
+                type="button"
+                variant={readSource === 'bookmarks' ? 'primary' : 'secondary'}
+              >
+                Bookmarks
+              </Button>
             </div>
             {readSource === 'surah' && (
               <div className="qar-react-nav-drawer-source-tools">

@@ -114,3 +114,23 @@ test('about separates sources from build credits and offers a report route', asy
   await expect(page.getByRole('heading', { name: 'Built with' })).toBeVisible()
   await expect(page.getByRole('link', { name: 'Report an issue' })).toBeVisible()
 })
+
+test('reader chrome exposes search and a surah selector without the drawer', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1')
+  await expect(page.getByRole('button', { name: 'Search Quran' })).toBeVisible()
+  await page.getByRole('button', { name: 'Search Quran' }).click()
+  await expect(page).toHaveURL(/#\/search/)
+  await page.goto('/#/s/2')
+  await page.getByRole('button', { name: 'Choose surah' }).click()
+  await expect(page.getByRole('dialog', { name: /navigation/i })).toBeVisible()
+})
+
+test('bookmarks is a standalone destination in the navigation drawer', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1')
+  await page.getByRole('button', { name: 'Open navigation' }).click()
+  await expect(page.getByRole('button', { name: 'Bookmarks', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Bookmarks', exact: true }).click()
+  await expect(page.getByRole('region', { name: /bookmarks/i })).toBeVisible()
+})
