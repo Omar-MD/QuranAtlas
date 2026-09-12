@@ -134,3 +134,11 @@ test('bookmarks is a standalone destination in the navigation drawer', async ({ 
   await page.getByRole('button', { name: 'Bookmarks', exact: true }).click()
   await expect(page.getByRole('region', { name: /bookmarks/i })).toBeVisible()
 })
+
+test('theme offers a system-following option and night dimming is named by effect', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/settings')
+  await expect(page.getByRole('radio', { name: 'Theme: System' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Theme: Auto' })).toHaveCount(0)
+  await expect(page.getByText('Dims Mushaf page images in low light.')).toBeVisible()
+})
