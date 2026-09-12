@@ -456,6 +456,32 @@ test('auto-downloads the required reader texts without consent', async ({ page }
   })
 })
 
+test('renders an uncached external-image page without waiting for decode', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.addInitScript(() => {
+    HTMLImageElement.prototype.decode = () => new Promise<void>(() => {})
+  })
+  await wipeApplicationData(page, ORIGIN)
+
+  await page.goto(`${ORIGIN}/#/s/1`)
+  const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
+  await group.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.getByRole('button', { name: 'Skip for now' }).click()
+  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  await expectControlledServiceWorker(page)
+  await expect(
+    cachedResources(page, {
+      preview: `${SYNTHETIC_CUSTOM_PREFIX}/pages/001-1280.webp`,
+      full: `${SYNTHETIC_CUSTOM_PREFIX}/pages/001-2136.webp`,
+    }),
+  ).resolves.toEqual({ preview: false, full: false })
+
+  await page.goto(`${ORIGIN}/#/m/1`)
+  await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
+  await expect(page.getByRole('img', { name: 'Mushaf page 1, Qaloon, beginning near 1:1' })).toBeVisible()
+})
+
 test('downloads the custom external-image edition and renders it offline', async ({ page }) => {
   test.setTimeout(240_000)
   await wipeApplicationData(page, ORIGIN)

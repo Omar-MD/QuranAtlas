@@ -297,8 +297,6 @@ export async function prepareExternalMushafImage(
     const image = imageFactory()
     await waitForExternalImageLoad(image, source.assetUrl, signal)
     if (signal?.aborted) return { status: 'aborted' }
-    await waitForExternalImageDecode(image, signal)
-    if (signal?.aborted) return { status: 'aborted' }
     return { status: 'ready', image }
   } catch (error) {
     if (isAbortError(error, signal)) return { status: 'aborted' }
@@ -632,26 +630,6 @@ function waitForExternalImageLoad(image: HTMLImageElement, assetUrl: string, sig
     image.onload = onLoad
     image.onerror = onError
     image.src = assetUrl
-  })
-}
-
-function waitForExternalImageDecode(image: HTMLImageElement, signal?: AbortSignal): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onAbort = () => done(() => reject(abortError()))
-    const done = (finish: () => void) => {
-      signal?.removeEventListener('abort', onAbort)
-      finish()
-    }
-    if (signal?.aborted) return onAbort()
-    signal?.addEventListener('abort', onAbort, { once: true })
-    try {
-      image.decode().then(
-        () => done(resolve),
-        (error) => done(() => reject(error)),
-      )
-    } catch (error) {
-      done(() => reject(error))
-    }
   })
 }
 
