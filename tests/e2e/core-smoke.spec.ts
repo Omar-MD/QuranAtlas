@@ -106,3 +106,11 @@ test('verse spacing offers three plain-language options', async ({ page }) => {
   await expect(page.getByRole('option', { name: 'Standard' })).toHaveCount(0)
   await expect(page.getByRole('option', { name: 'Wide' })).toHaveCount(0)
 })
+
+test('about separates sources from build credits and offers a report route', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/about')
+  await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Built with' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Report an issue' })).toBeVisible()
+})

@@ -109,11 +109,25 @@ export function AboutRoute() {
           <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-attribution">
             Attribution
           </h2>
+          <h3 className="qar:m-0 qar:text-lg qar:leading-tight">Sources</h3>
           <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
-            {credits.map((credit) => (
-              <li key={credit.id}>{credit.content}</li>
-            ))}
+            {credits
+              .filter((credit) => credit.id !== 'stack')
+              .map((credit) => (
+                <li key={credit.id}>{credit.content}</li>
+              ))}
           </ul>
+          <h3 className="qar:m-0 qar:text-lg qar:leading-tight">Built with</h3>
+          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
+            {credits
+              .filter((credit) => credit.id === 'stack')
+              .map((credit) => (
+                <li key={credit.id}>{credit.content}</li>
+              ))}
+          </ul>
+          <p>
+            <a href="https://github.com/Omar-MD/QuranAtlas/issues">Report an issue</a>
+          </p>
         </section>
 
         {installAvailable || installDone ? (
