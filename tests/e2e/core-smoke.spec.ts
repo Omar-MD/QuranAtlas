@@ -93,3 +93,16 @@ test('reader never shows internal Hafs-keyed continuation vocabulary', async ({ 
   await expect(page.getByText(/Hafs-keyed/)).toHaveCount(0)
   await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
 })
+
+test('verse spacing offers three plain-language options', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/settings')
+  await expect(page.getByRole('heading', { name: 'Verse settings' })).toBeVisible()
+  await page.getByRole('combobox', { name: 'Reading flow' }).click()
+  await expect(page.getByRole('option', { name: 'Compact' })).toBeVisible()
+  await expect(page.getByRole('option', { name: 'Comfortable' })).toBeVisible()
+  await expect(page.getByRole('option', { name: 'Spacious' })).toBeVisible()
+  await expect(page.getByRole('option', { name: 'Tight' })).toHaveCount(0)
+  await expect(page.getByRole('option', { name: 'Standard' })).toHaveCount(0)
+  await expect(page.getByRole('option', { name: 'Wide' })).toHaveCount(0)
+})

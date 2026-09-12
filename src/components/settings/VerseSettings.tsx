@@ -6,10 +6,8 @@ const STEP_VALUES: ReactPreferenceStep[] = ['xs', 'sm', 'md', 'lg', 'xl']
 
 const FLOW_STEPS: Array<{ label: string; value: ReactPreferenceStep }> = [
   { label: 'Compact', value: 'xs' },
-  { label: 'Tight', value: 'sm' },
-  { label: 'Standard', value: 'md' },
-  { label: 'Spacious', value: 'lg' },
-  { label: 'Wide', value: 'xl' },
+  { label: 'Comfortable', value: 'md' },
+  { label: 'Spacious', value: 'xl' },
 ]
 
 export function VerseSettings({
