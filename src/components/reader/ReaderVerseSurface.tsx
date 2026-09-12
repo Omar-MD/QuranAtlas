@@ -1,5 +1,5 @@
 import type { ReaderCorpusState } from '../../data/reader-corpus'
-import { findAdjacentSurah, type ReaderSurahIndexEntry } from '../../data/surah-index'
+import { findAdjacentSurah, FIRST_SURAH, type ReaderSurahIndexEntry } from '../../data/surah-index'
 import type { VerseMetadata } from '../../metadata/metadata-state'
 import { Button, Spinner, Status } from '../ui'
 import { SurahContinuityButton } from './SurahContinuityButton'
@@ -83,16 +83,12 @@ export function ReaderVerseSurface({
 
   return (
     <section className="qar-reader-verse-surface" data-reader-verse-surface="true">
-      {startsAtSurahBeginning && previousSurah && (
-        <SurahContinuityButton currentSurah={readyCorpus.surah.number} direction="previous" target={previousSurah} />
-      )}
       {startsAtSurahBeginning && !surahHeaderHidden && (
         <header className="qar-reader-surah-header" data-surah-header="true">
           <div className="qar-reader-surah-meta-col">
             <p className="qar-reader-surah-meta">
               Surah {readyCorpus.surah.number} · {readyCorpus.surah.verseCount} verses
             </p>
-            <p className="qar:m-0 qar:text-sm qar:text-muted">{readyCorpus.surah.nameEnglish}</p>
           </div>
           <h1 className="qar-reader-surah-name" dir="rtl" lang="ar">
             <span className="qar-reader-surah-ornament" aria-hidden="true">
@@ -123,6 +119,9 @@ export function ReaderVerseSurface({
         translationVisible={readyCorpus.translationVisible}
         verses={readyCorpus.verses}
       />
+      {previousSurah && readyCorpus.surah.number !== FIRST_SURAH ? (
+        <SurahContinuityButton currentSurah={readyCorpus.surah.number} direction="previous" target={previousSurah} />
+      ) : null}
       {nextSurah && (
         <SurahContinuityButton currentSurah={readyCorpus.surah.number} direction="next" target={nextSurah} />
       )}

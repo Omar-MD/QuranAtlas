@@ -142,3 +142,13 @@ test('theme offers a system-following option and night dimming is named by effec
   await expect(page.getByRole('radio', { name: 'Theme: Auto' })).toHaveCount(0)
   await expect(page.getByText('Dims Mushaf page images in low light.')).toBeVisible()
 })
+
+test('surah start offers no backward navigation and titles appear once', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1')
+  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Previous surah/i })).toHaveCount(0)
+  await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
+  await page.goto('/#/s/2')
+  await expect(page.getByRole('button', { name: /Previous surah/i })).toBeVisible()
+})
