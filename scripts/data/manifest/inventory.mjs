@@ -3,7 +3,7 @@ import { dirname, relative } from 'node:path'
 
 import { listFiles } from '../lib/fs.mjs'
 
-const LANE_KEYS = ['text', 'knowledge', 'reflection', 'search', 'pages']
+const LANE_KEYS = ['text', 'knowledge', 'reflection', 'pages']
 
 function classifyDatasetFile(path) {
   if (path.startsWith('quran-text/')) {
@@ -34,7 +34,7 @@ function classifyDatasetFile(path) {
     return { lane: 'knowledge', category: 'knowledge-passages' }
   }
   if (path.startsWith('knowledge/indexes/')) {
-    return { lane: 'knowledge', category: 'knowledge-index' }
+    throw new Error(`Retired knowledge reverse index must not ship in the dataset: ${path}`)
   }
   if (path.startsWith('mushaf-pages/')) {
     return { lane: 'pages', category: 'pages' }
@@ -46,7 +46,7 @@ function classifyDatasetFile(path) {
     return { lane: 'reflection', category: 'reflection-index' }
   }
   if (path === 'search-index.json' || path.startsWith('search/')) {
-    return { lane: 'search', category: 'search-index' }
+    throw new Error(`Retired Search dataset file must not ship in the dataset: ${path}`)
   }
   throw new Error(`Unclassified dataset file for manifest inventory: ${path}`)
 }

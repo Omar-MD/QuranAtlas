@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react'
+import { isReaderUpgradeBlocked, subscribeReaderUpgrade } from '../storage/db'
+import { Suspense, lazy, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 
 import type { SettingsRouteMode } from './routes/settings/SettingsRoute'
 import { Button, Status } from '../components/ui'
@@ -29,9 +30,6 @@ const OnboardingRoute = lazy(() =>
   import('./routes/onboarding/OnboardingRoute').then((module) => ({ default: module.OnboardingRoute })),
 )
 const ReaderRoute = lazy(() => import('./routes/read/ReaderRoute').then((module) => ({ default: module.ReaderRoute })))
-const SearchRoute = lazy(() =>
-  import('./routes/search/SearchRoute').then((module) => ({ default: module.SearchRoute })),
-)
 const SettingsRoute = lazy(() =>
   import('./routes/settings/SettingsRoute').then((module) => ({ default: module.SettingsRoute })),
 )
@@ -52,6 +50,7 @@ export function App() {
     previousHash: string
     returnFocusId?: string
   } | null>(null)
+  const upgradeBlocked = useSyncExternalStore(subscribeReaderUpgrade, isReaderUpgradeBlocked, () => false)
   const launchRestore = useLaunchRestore(hash, launchRefreshVersion)
   const activeHash =
     launchRestore.status === 'ready' ? launchRestore.hash : launchRestore.status === 'setup' ? '#/onboarding' : hash
@@ -184,7 +183,14 @@ export function App() {
       data-react-route={activeHash}
     >
       <div aria-hidden="true" className="qar-react-night-shift" data-testid="react-night-shift" />
-      {launchRestore.status === 'loading' && <LaunchSplash />}
+      {upgradeBlocked && (
+        <Status
+          title="Close other QuranAtlas tabs to finish updating."
+          description="Your saved reading data is safe. This tab will continue automatically when the other tabs close."
+          tone="info"
+        />
+      )}
+      {launchRestore.status === 'loading' && !upgradeBlocked && <LaunchSplash />}
       {launchRestore.status === 'setup' && (
         <Suspense fallback={<LaunchSplash />}>
           <OnboardingRoute
@@ -243,7 +249,6 @@ export function App() {
               {route.type === 'unsupported' && <UnsupportedRoute hash={activeHash} />}
             </NavigationRouteHost>
           )}
-          {route.type === 'search' && <SearchRoute />}
           {route.type === 'about' && <AboutRoute />}
           {settingsOverlay && (
             <Suspense fallback={null}>
@@ -291,7 +296,7 @@ function isReaderHash(hash: string): boolean {
 function isBaseHash(hash: string): boolean {
   if (isReaderHash(hash)) return true
   const route = matchReactRoute(hash)
-  return route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'search' || route.type === 'about'
+  return route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'about'
 }
 
 function UnsupportedRoute({ hash }: { hash: string }) {

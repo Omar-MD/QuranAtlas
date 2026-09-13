@@ -55,18 +55,14 @@ export function ChromeBar({
  * invoker focus restore so focus follows the destination route.
  */
 export function ChromeDrawer({
-  activeMode = 'read',
   controller,
   initialWirdView = 'card',
   mode = 'verse',
-  searchPanel,
   showWird = false,
 }: {
-  activeMode?: 'read' | 'search'
   controller: ChromeDrawerController
   initialWirdView?: 'card' | 'detail'
   mode?: 'verse' | 'mushaf'
-  searchPanel?: ReactNode
   showWird?: boolean
 }) {
   const { bookmarks, deleteBookmark } = useSharedBookmarks()
@@ -79,7 +75,6 @@ export function ChromeDrawer({
 
   return (
     <NavDrawer
-      activeMode={activeMode}
       bookmarks={bookmarks}
       initialWirdView={initialWirdView}
       mode={mode}
@@ -88,7 +83,6 @@ export function ChromeDrawer({
       onNavigate={navigate}
       open={state.open}
       returnFocusId={state.returnFocusId ?? undefined}
-      searchPanel={searchPanel}
       showWird={showWird}
       suppressFocusRestore={state.routeTransitioning}
     />
@@ -101,21 +95,17 @@ export function ChromeDrawer({
  * drawer host. Routes compose their bodies inside; the drawer overlays them.
  */
 export function ChromeFrame({
-  activeMode = 'read',
   children,
   controller,
   mode = 'verse',
   onOpenSettings,
-  searchPanel,
   showWird = false,
   statusMessage,
 }: {
-  activeMode?: 'read' | 'search'
   children: ReactNode
   controller: ChromeDrawerController
   mode?: 'verse' | 'mushaf'
   onOpenSettings: () => void
-  searchPanel?: ReactNode
   showWird?: boolean
   statusMessage?: string
 }) {
@@ -129,13 +119,7 @@ export function ChromeFrame({
         {statusMessage ?? ''}
       </div>
       {children}
-      <ChromeDrawer
-        activeMode={activeMode}
-        controller={controller}
-        mode={mode}
-        searchPanel={searchPanel}
-        showWird={showWird}
-      />
+      <ChromeDrawer controller={controller} mode={mode} showWird={showWird} />
     </>
   )
 }

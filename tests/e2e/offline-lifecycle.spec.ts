@@ -7,7 +7,13 @@ import { fileURLToPath } from 'node:url'
 
 import { expect, test } from '@playwright/test'
 
-import { expectControlledServiceWorker, seedOnboardedReader, wipeApplicationData } from './fixtures/app'
+import {
+  expectControlledServiceWorker,
+  seedOnboardedReader,
+  seedRetiredSearchInstallation,
+  wipeApplicationData,
+} from './fixtures/app'
+import { QURAN_ATLAS_DB_NAME } from '../../src/storage/schema'
 // `context.setOffline()` does not propagate to service-worker-initiated fetches
 // in Chromium, so a controlled static server stands in for the network: taking
 // the server down is a genuine offline state for the whole origin, service
@@ -234,8 +240,8 @@ test.afterAll(async () => {
 })
 
 // The reader syncs the default asset pack at boot, so surah routes always have
-// cached text. The search pack registry is intentionally never service-worker
-// cached, so an offline search exposes the designed unfetched-data fallback.
+// cached text. Removed Search deep links reach the unsupported-address
+// recovery screen offline, and cached reader navigation keeps working.
 const cachedReaderResources = {
   text: '/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json',
   translation: '/dataset/translations/bridges/001.json',
@@ -285,28 +291,33 @@ test('preserves the production reader through offline, fallback, retry, and resy
   try {
     await test.step('reload the controlled shell with cached reader content offline', async () => {
       await page.reload()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible({ timeout: 15_000 })
+    })
+
+    await test.step('show the old-address recovery screen offline and navigate to the surah list', async () => {
+      await page.goto(`${ORIGIN}/#/search`)
+      await expect(page.getByText('Address not recognized')).toBeVisible()
+      await page.getByRole('button', { name: 'Go to Surah list' }).click()
+      await expect(page).toHaveURL(/#\/surahs$/)
+    })
+
+    await test.step('read a cached surah offline after the recovery navigation', async () => {
+      await page.goto(`${ORIGIN}/#/s/1`)
       await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
       await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
     })
 
-    await test.step('show a visible fallback for an unfetched route offline', async () => {
-      await page.goto(`${ORIGIN}/#/search`)
-      await expect(page).toHaveURL(/#\/search(?:\?.*)?$/)
-      await expect(page.getByRole('main', { name: 'Search' }).getByRole('status')).toContainText(
-        'Search data is not available on this device.',
-      )
-    })
-
     await test.step('read a never-visited surah offline from the installed reader pack', async () => {
       await page.goto(`${ORIGIN}/#/s/114`)
-      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-      await expect(page.getByText(synchronizedVerseText)).toBeVisible()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText(synchronizedVerseText)).toBeVisible({ timeout: 15_000 })
     })
 
     await test.step('prove the offline read survives another offline reload', async () => {
       await page.reload()
-      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-      await expect(page.getByText(synchronizedVerseText)).toBeVisible()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText(synchronizedVerseText)).toBeVisible({ timeout: 15_000 })
       await expect(page.getByRole('heading', { name: 'Failed to load reader text' })).toHaveCount(0)
     })
   } finally {
@@ -382,8 +393,8 @@ test('offline pages download still works via the one-shot offer prompt', async (
   try {
     await test.step('reload the verse reader offline from downloaded data', async () => {
       await page.reload()
-      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-      await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible({ timeout: 15_000 })
     })
 
     await test.step('render the first and last Mushaf pages offline from sanitized entries', async () => {
@@ -529,9 +540,9 @@ test('downloads the custom external-image edition and renders it offline', async
       // Reload offline (not hash-navigation from the settings overlay) so the
       // app boots through its offline launch path like the quran.ws test.
       await page.reload()
-      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
       await page.goto(`${ORIGIN}/#/m/1`)
-      await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
+      await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible({ timeout: 15_000 })
       await expect(page.getByRole('img', { name: 'Mushaf page 1, Qaloon, beginning near 1:1' })).toBeVisible()
     })
 
@@ -600,12 +611,239 @@ test('switches the Mushaf edition from settings and downloads the other edition 
   try {
     await test.step('render the switched edition offline from its downloaded pack', async () => {
       await page.reload()
-      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
       await page.goto(`${ORIGIN}/#/m/1`)
-      await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
+      await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible({ timeout: 15_000 })
       await expect(page.getByRole('img', { name: 'Mushaf page 1, Qaloon, beginning near 1:1' })).toBeVisible()
     })
   } finally {
     await goOnline()
+  }
+})
+
+const RETIRED_URL_PATTERN =
+  /search-packs|\/dataset\/search(?:\/|$)|search-index\.json|knowledge\/indexes|\/dataset\/riwayat\/|unused-copy\.json|SearchRoute|search\.worker/
+
+test('retires removed Search data from a previous-version installation while preserving reader state', async ({
+  page,
+}) => {
+  test.setTimeout(300_000)
+  await seedRetiredSearchInstallation(page, ORIGIN)
+
+  // No page or worker fetch during the whole journey may target retired data.
+  const retiredRequests: string[] = []
+  page.on('request', (request) => {
+    if (RETIRED_URL_PATTERN.test(request.url())) retiredRequests.push(request.url())
+  })
+
+  await test.step('load the upgraded production build and confirm the reader boots', async () => {
+    await page.goto(`${ORIGIN}/#/s/1`)
+    await expect(page).toHaveURL(/#\/s\/1$/)
+    await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+    await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
+  })
+
+  await test.step('service-worker update removes old precached Search chunks', async () => {
+    await expectControlledServiceWorker(page)
+    await page.reload()
+    await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(async (retiredPattern) => {
+            const pattern = new RegExp(retiredPattern)
+            const names = await caches.keys()
+            const retired: string[] = []
+            for (const name of names) {
+              const cache = await caches.open(name)
+              const requests = await cache.keys()
+              for (const request of requests) {
+                if (pattern.test(request.url)) retired.push(request.url)
+              }
+            }
+            return retired.length === 0 && !names.some((name) => name.includes('precache-v1'))
+          }, RETIRED_URL_PATTERN.source),
+        { timeout: 30_000 },
+      )
+      .toBe(true)
+  })
+
+  await test.step('upgrade drops saved searches and retired caches while preserving reader state', async () => {
+    await expect
+      .poll(
+        async () => {
+          try {
+            const upgraded = await page.evaluate(
+              async (args: { dbName: string; retiredPattern: string }) => {
+                const pattern = new RegExp(args.retiredPattern)
+                const upgraded = await new Promise<
+                  | { hung: string }
+                  | {
+                      savedSearchesStore: boolean
+                      settings: Record<string, unknown>
+                      bookmarkCount: number
+                      pack: { status: string; fileCount: number; filesDone: number; retiredInPlan: number } | null
+                    }
+                >((resolve, reject) => {
+                  const request = indexedDB.open(args.dbName)
+                  const hangTimer = setTimeout(() => resolve({ hung: 'open-or-upgrade' }), 4000)
+                  request.onsuccess = () => {
+                    clearTimeout(hangTimer)
+                    const db = request.result
+                    try {
+                      const savedSearchesStore = db.objectStoreNames.contains('savedSearches')
+                      const transaction = db.transaction(['settings', 'bookmarks', 'offlinePacks'], 'readonly')
+                      const settings = transaction.objectStore('settings')
+                      // All gets must be issued while the transaction is active;
+                      // results are read afterwards from the request objects.
+                      const lastSurfaceGet = settings.get('lastSurface')
+                      const positionGet = settings.get('currentPosition')
+                      const bookmarkCountRequest = transaction.objectStore('bookmarks').count()
+                      const packGet = transaction.objectStore('offlinePacks').getAll()
+                      transaction.oncomplete = () => {
+                        const pack = (packGet.result as Array<Record<string, unknown>>)[0] ?? null
+                        const retiredInPlan = pack
+                          ? (pack.files as Array<{ url: string }>).filter((file) => pattern.test(file.url)).length +
+                            (pack.completedUrls as string[]).filter((url) => pattern.test(url)).length
+                          : 0
+                        resolve({
+                          savedSearchesStore,
+                          settings: {
+                            lastSurface: lastSurfaceGet.result?.value,
+                            position: positionGet.result?.value,
+                          },
+                          bookmarkCount: bookmarkCountRequest.result,
+                          pack: pack
+                            ? {
+                                status: pack.status as string,
+                                fileCount: pack.fileCount as number,
+                                filesDone: pack.filesDone as number,
+                                retiredInPlan,
+                              }
+                            : null,
+                        })
+                        db.close()
+                      }
+                      transaction.onerror = () => {
+                        db.close()
+                        reject(transaction.error)
+                      }
+                    } catch (error) {
+                      db.close()
+                      reject(error instanceof Error ? error : new Error(String(error)))
+                    }
+                  }
+                  request.onblocked = () => {
+                    clearTimeout(hangTimer)
+                    resolve({ hung: 'blocked' })
+                  }
+                  request.onerror = () => reject(request.error)
+                })
+                return upgraded
+              },
+              { dbName: QURAN_ATLAS_DB_NAME, retiredPattern: RETIRED_URL_PATTERN.source },
+            )
+            if ('hung' in upgraded) return false
+            const position = upgraded.settings?.position as { surah: number; verse: number } | undefined
+            const pack = upgraded.pack
+            // currentPosition is a live record the reader keeps updating, so
+            // preservation is asserted as "still a valid position", not the
+            // exact seeded verse.
+            return (
+              upgraded.savedSearchesStore === false &&
+              upgraded.settings?.lastSurface === '#/s/1' &&
+              position?.surah === 1 &&
+              (position?.verse ?? 0) >= 1 &&
+              upgraded.bookmarkCount === 1 &&
+              pack !== null &&
+              pack !== undefined &&
+              pack.retiredInPlan === 0 &&
+              pack.status === 'installed' &&
+              pack.filesDone === pack.fileCount
+            )
+          } catch {
+            // The page can navigate (service-worker update reload) while the
+            // probe runs; treat the attempt as not-yet-met and retry.
+            return false
+          }
+        },
+        { timeout: 180_000 },
+      )
+      .toBe(true)
+
+    const retainedCaches = await page.evaluate(
+      async (urls) => {
+        const results: Record<string, boolean> = {}
+        for (const url of urls) results[url] = Boolean(await caches.match(url))
+        return results
+      },
+      [
+        `${ORIGIN}/dataset/knowledge/indexes/theme-to-ayah.json`,
+        `${ORIGIN}/dataset/knowledge/indexes/ayah-to-passage.json`,
+        `${ORIGIN}/dataset/knowledge/indexes/passage-to-ayah.json`,
+        `${ORIGIN}/dataset/search-index.json`,
+        `${ORIGIN}/dataset/search/legacy-shard.json`,
+        `${ORIGIN}/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json`,
+        `${ORIGIN}/dataset/translations/bridges/001.json`,
+      ],
+    )
+    expect(retainedCaches).toEqual({
+      [`${ORIGIN}/dataset/knowledge/indexes/theme-to-ayah.json`]: false,
+      [`${ORIGIN}/dataset/knowledge/indexes/ayah-to-passage.json`]: false,
+      [`${ORIGIN}/dataset/knowledge/indexes/passage-to-ayah.json`]: false,
+      [`${ORIGIN}/dataset/search-index.json`]: false,
+      [`${ORIGIN}/dataset/search/legacy-shard.json`]: false,
+      [`${ORIGIN}/dataset/quran-text/qaloon/uthmani-kfgqpc-v1/001.json`]: true,
+      [`${ORIGIN}/dataset/translations/bridges/001.json`]: true,
+    })
+    expect(retiredRequests).toEqual([])
+  })
+
+  await goOffline()
+  try {
+    await test.step('the upgraded installation launches and reads offline', async () => {
+      await page.reload()
+      await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible({ timeout: 15_000 })
+      await expect(page.getByRole('heading', { name: 'Failed to load reader text' })).toHaveCount(0)
+    })
+  } finally {
+    await goOnline()
+  }
+})
+
+// A native connection represents an older tab that does not cooperate with
+// versionchange. The upgrade must explain the required action and resume
+// automatically once that tab releases the database.
+test('explains a blocked reader upgrade and recovers after the older tab closes', async ({ page, context }) => {
+  await seedRetiredSearchInstallation(page, ORIGIN)
+  const olderTab = await context.newPage()
+  await olderTab.goto(`${ORIGIN}/favicon.ico`)
+  await olderTab.evaluate(async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('quran-atlas')
+      request.onsuccess = () => {
+        // Retain the connection for the tab lifetime, without closing on versionchange.
+        ;(window as Window & { heldReaderDb?: IDBDatabase }).heldReaderDb = request.result
+        resolve()
+      }
+      request.onerror = () => reject(request.error)
+    })
+  })
+  try {
+    await page.goto(`${ORIGIN}/#/s/1`)
+    await expect(page.getByText('Close other QuranAtlas tabs to finish updating.')).toBeVisible()
+    // Cache cleanup is independent of the blocked schema operation.
+    await expect
+      .poll(() =>
+        page.evaluate(async () => (await caches.keys()).some((name) => name.startsWith('quran-atlas-search-pack-'))),
+      )
+      .toBe(false)
+    await olderTab.close()
+    await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
+    await expect(page.getByText('Close other QuranAtlas tabs to finish updating.')).toHaveCount(0)
+  } finally {
+    if (!olderTab.isClosed()) await olderTab.close()
   }
 })

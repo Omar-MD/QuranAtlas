@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, type MouseEvent, type RefObject } from 'react'
 
 /**
- * Focus continuity across row deletions (bookmarks, saved searches): records
- * the deleted row's control index, then — once the re-render triggered by the
- * delete lands — restores focus to the next remaining row's delete control,
- * else the previous one, else the persistent list container.
+ * Focus continuity across row deletions (bookmarks): records the deleted row's
+ * control index, then — once the re-render triggered by the delete lands —
+ * restores focus to the next remaining row's delete control, else the previous
+ * one, else the persistent list container.
  */
 export function useDeleteFocusRestore(
   listRef: RefObject<HTMLElement | null>,

@@ -11,7 +11,7 @@ export type SurahCount = { n: number; count: number }
 export const SURAH_COUNT = 114
 
 // Hafs ayah counts per surah (114 entries, 6236 ayat) — mirrored in
-// scripts/data/lib/ayah.mjs; kept equal by scripts/data/check-search-packs.mjs
+// scripts/data/lib/ayah.mjs; kept equal by scripts/data/check-ayah-counts.mjs
 // (data -- check).
 export const QURAN_AYAH_COUNTS = [
   7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77,

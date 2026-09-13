@@ -203,8 +203,6 @@ function settingsReturnDestination(hash: string): string {
       return 'the Surah list'
     case 'bookmarks':
       return 'your bookmarks'
-    case 'search':
-      return 'search'
     case 'about':
       return 'About'
     default:

@@ -15,12 +15,6 @@
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 
-/search-packs/registry.json
-  Cache-Control: public, max-age=0, must-revalidate
-
-/search-packs/packs/*
-  Cache-Control: public, max-age=31536000, immutable
-
 /dataset/manifest.json
   Cache-Control: public, max-age=0, must-revalidate
 

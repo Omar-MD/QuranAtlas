@@ -1,5 +1,3 @@
-import type { SavedSearchIntentV1 } from '../../shared/search'
-
 export type SettingsKey =
   | 'theme'
   | 'fontSize'
@@ -41,17 +39,6 @@ export type BookmarkRecord = {
   kind?: BookmarkKind
   page?: number
   createdAt: number
-}
-
-export type SavedSearchRecord = {
-  id: string
-  schemaVersion: 1
-  intent: SavedSearchIntentV1
-  packCompatibilityKey: string
-  createdAt: number
-  updatedAt: number
-  lastOpenedAt: number | null
-  lastRunAt: number | null
 }
 
 export type OfflinePackStatus = 'installing' | 'paused-user' | 'paused-network' | 'installed' | 'failed'

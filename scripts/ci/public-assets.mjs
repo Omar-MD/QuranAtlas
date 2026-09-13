@@ -1,9 +1,35 @@
+import { isReaderDatasetPath } from '../../shared/reader-assets/dataset-policy.mjs'
 import { cp, mkdir, readdir, readFile, rm, stat } from 'node:fs/promises'
 import path from 'node:path'
 
 export const publicShellAssetEntries = ['_headers', 'favicon.ico', 'wird-notification-sw.js', 'icons', 'fonts']
 
-export const releaseRuntimeAssetEntries = ['dataset', 'search-packs']
+export const releaseRuntimeAssetEntries = ['dataset']
+
+// Validate every file against both its reader URL grammar and the generated
+// inventory. Family-only checks permit obsolete copies under valid folders.
+async function assertReaderDatasetInventory(datasetDir) {
+  const manifest = JSON.parse(await readFile(path.join(datasetDir, 'manifest.json'), 'utf8'))
+  if (!Array.isArray(manifest.files)) throw new Error('Reader dataset manifest has no file inventory')
+  const allowed = new Set([
+    'manifest.json',
+    'translations/_verse-aliases.json', // Required reader file omitted by manifest's underscore rule.
+    ...manifest.files.map((file) => file.path),
+  ])
+  const stack = ['']
+  while (stack.length > 0) {
+    const prefix = stack.pop()
+    const children = await readdir(path.join(datasetDir, prefix), { withFileTypes: true })
+    for (const child of children) {
+      const relativePath = prefix ? `${prefix}/${child.name}` : child.name
+      if (child.isDirectory()) {
+        stack.push(relativePath)
+      } else if (!child.isFile() || !allowed.has(relativePath) || !isReaderDatasetPath(`/dataset/${relativePath}`)) {
+        throw new Error(`Retired or unexpected dataset file rejected by the reader inventory: ${relativePath}`)
+      }
+    }
+  }
+}
 
 function displayList(entries) {
   return entries.map((entry) => `public/${entry}`).join(', ')
@@ -78,6 +104,10 @@ export async function copyPublicAssetEntries({
   for (const entry of entries) {
     await assertPublicEntry(publicDir, entry)
     const source = path.join(publicDir, entry)
+    if (entry === 'dataset') {
+      await assertReaderDatasetInventory(source)
+      console.log(`[${logPrefix}] reader-only dataset inventory verified`)
+    }
     const target = path.join(outputDir, entry)
     await rm(target, { recursive: true, force: true })
     await cp(source, target, { recursive: true })

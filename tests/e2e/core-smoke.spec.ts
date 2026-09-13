@@ -100,43 +100,48 @@ async function fulfillFramedMushafEdition(page: Page): Promise<void> {
   )
 }
 
-test('boots the reader and reaches primary reader, search, and settings surfaces', async ({ page }) => {
+test('boots the reader and reaches primary reader, surah list, and settings surfaces', async ({ page }) => {
   await seedOnboardedReader(page)
+  // No page fetch during the journey may target retired Search data.
+  const removedFeatureRequests: string[] = []
+  page.on('request', (request) => {
+    if (/search-packs|\/dataset\/search(?:\/|$)|search-index\.json|knowledge\/indexes/.test(request.url())) {
+      removedFeatureRequests.push(request.url())
+    }
+  })
 
   await page.goto('/#/s/1')
   await expect(page).toHaveURL(/#\/s\/1$/)
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
 
-  await page.goto('/#/search')
-  await expect(page).toHaveURL(/#\/search(?:\?.*)?$/)
-  await expect(page.getByRole('main', { name: 'Search' })).toBeVisible()
-  await expect(page.getByLabel('Search Quran text, translation, or context')).toBeVisible()
+  await page.goto('/#/surahs')
+  await expect(page).toHaveURL(/#\/surahs$/)
+  await expect(page.getByRole('heading', { name: 'Surahs' })).toBeVisible()
 
   await page.goto('/#/settings')
-  // S-P4: opening settings from a ChromeFrame base (search) preserves that base
+  // S-P4: opening settings from a ChromeFrame base (surahs) preserves that base
   // instead of teleporting to the reader.
-  await expect(page).toHaveURL(/#\/search(?:\?.*)?$/)
+  await expect(page).toHaveURL(/#\/surahs$/)
   await expect(page.getByRole('heading', { name: 'Verse settings' })).toBeVisible()
   await expect(page.getByRole('region', { name: 'Texts and editions' })).toBeVisible()
   await page.getByRole('button', { name: 'Close settings', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Verse settings' })).toHaveCount(0)
 
-  // Defect-inventory §9: after leaving #/search the URL must stay on the
-  // destination — a stale async search write may never reclaim it. The settle
-  // window re-assertion is the durable tripwire; the race itself is verified
-  // by a manual probe (browser-timing-dependent).
+  // Removed Search deep links land on the existing unsupported-address
+  // recovery screen, with or without a query string, and recovery navigates
+  // to a supported destination.
   await page.goto('/#/search')
-  await expect(page.getByRole('status').filter({ hasText: 'Search data is ready' })).toBeVisible()
-  await page.getByLabel('Search Quran text, translation, or context').fill('mercy')
-  await page.keyboard.press('Enter')
-  await expect(page).toHaveURL(/#\/search\?q=mercy$/)
-  await page.getByRole('button', { name: 'Show all matches' }).click()
-  await page.getByRole('button', { name: 'Open 1:3 in Reader' }).first().click()
-  await expect(page).toHaveURL(/#\/s\/1\/2$/)
-  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-  await page.waitForTimeout(1_200)
-  await expect(page).toHaveURL(/#\/s\/1\/2$/)
+  await expect(page.getByText('Address not recognized')).toBeVisible()
+  await page.getByRole('button', { name: 'Go to Surah list' }).click()
+  await expect(page).toHaveURL(/#\/surahs$/)
+
+  await page.goto('/#/search?q=mercy')
+  await expect(page.getByText('Address not recognized')).toBeVisible()
+  await page.getByRole('button', { name: 'Go to Surah list' }).click()
+  await expect(page).toHaveURL(/#\/surahs$/)
+
+  await expect(removedFeatureRequests).toEqual([])
 })
 
 test('settings use plain-language copy for controls and inventory', async ({ page }) => {
@@ -187,15 +192,17 @@ test('about separates sources from build credits and offers a report route', asy
   await expect(page.getByRole('link', { name: 'Report an issue' })).toBeVisible()
 })
 
-test('reader chrome exposes search and a surah selector without the drawer', async ({ page }) => {
+test('reader chrome offers a surah selector and no Search action', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/s/1')
-  await expect(page.getByRole('button', { name: 'Search Quran' })).toBeVisible()
-  await page.getByRole('button', { name: 'Search Quran' }).click()
-  await expect(page).toHaveURL(/#\/search/)
+  await expect(page.getByRole('button', { name: 'Search Quran' })).toHaveCount(0)
   await page.goto('/#/s/2')
   await page.getByRole('button', { name: 'Choose surah' }).click()
   await expect(page.getByRole('dialog', { name: /navigation/i })).toBeVisible()
+  // The drawer has no Read/Search destination switch and no saved searches.
+  await expect(page.getByRole('radiogroup', { name: 'Destination' })).toHaveCount(0)
+  await expect(page.getByRole('radio', { name: 'Search' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Save search' })).toHaveCount(0)
 })
 
 test('bookmarks is a standalone destination in the navigation drawer', async ({ page }) => {
@@ -225,17 +232,29 @@ test('surah start offers no backward navigation and titles appear once', async (
   await expect(page.getByRole('button', { name: /Previous surah/i })).toBeVisible()
 })
 
-test('search defers tabs and save until a query returns results', async ({ page }) => {
+test('surah filter navigates by name, number, and verse reference', async ({ page }) => {
   await seedOnboardedReader(page)
-  await page.goto('/#/search')
-  await expect(page.getByText('Search the Quran')).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Overview' })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Save search' })).toHaveCount(0)
+  await page.goto('/#/s/1')
+  await page.getByRole('button', { name: 'Open navigation' }).click()
+  await expect(page.getByRole('dialog', { name: /navigation/i })).toBeVisible()
+  const filter = page.getByRole('searchbox', { name: 'Search surah by name, number, or verse reference' })
+  await expect(filter).toBeVisible()
+  const surahList = page.getByRole('list', { name: 'Surah list' })
 
-  await page.getByLabel('Search Quran text, translation, or context').fill('mercy')
-  await page.keyboard.press('Enter')
-  await expect(page.getByRole('button', { name: 'Show all matches' })).toBeVisible()
-  await expect(page.getByRole('tab', { name: 'Verses' })).toBeVisible()
+  // By name: only Al-Baqarah matches.
+  await filter.fill('Baqarah')
+  await expect(surahList.getByRole('listitem')).toHaveCount(1)
+  await expect(surahList.getByText('Al-Baqarah')).toBeVisible()
+
+  // By number: surah 114.
+  await filter.fill('114')
+  await expect(surahList.getByRole('listitem')).toHaveCount(1)
+
+  // By verse reference with Enter-to-jump.
+  await filter.fill('2:255')
+  await filter.press('Enter')
+  await expect(page).toHaveURL(/#\/s\/2\/255$/)
+  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
 })
 
 test('about documents reference numbering and identifies editions', async ({ page }) => {

@@ -135,9 +135,8 @@ export function AboutRoute() {
             Reference numbering
           </h2>
           <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-            QuranAtlas reads in the Qalūn narration. Verse references follow the Qalūn numbering of the active edition;
-            Hafs-equivalent references are shown in Search under Sources. Furatiyyah page numbers are the edition's own
-            printed pagination.
+            QuranAtlas reads in the Qalūn narration. Verse references follow the Qalūn numbering of the active edition.
+            Furatiyyah page numbers are the edition's own printed pagination.
           </p>
         </section>
 

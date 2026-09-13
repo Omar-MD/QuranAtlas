@@ -48,7 +48,7 @@ export const Primitives: Story = {
         <Spinner label="Loading" />
       </div>
       <Progress label="Download progress" value={64} />
-      <Input label="Search" />
+      <Input label="Filter surahs" />
       <Select
         label="Riwayah"
         defaultValue="qaloon"
@@ -129,8 +129,8 @@ export const StatusStates: Story = {
       <Status
         icon={<Info aria-hidden="true" size={18} />}
         tone="info"
-        title="Search index is loading"
-        description="Verses become searchable once the index finishes loading."
+        title="Reader text is loading"
+        description="Verses become available once the reader text finishes loading."
       />
       <Status
         description="All installed packs are available offline."

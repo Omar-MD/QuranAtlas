@@ -12,6 +12,21 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 // next run rebuilds instead of trusting partial outputs.
 const BUILD_STAMP = join(__dirname, '..', '..', '.data-build-complete')
 
+// Warm checkouts contain the previous release's outputs. Remove only retired
+// generated paths before text/build inventories the tree (knowledge rebuilds
+// happen later and therefore cannot clean these before the first manifest).
+async function removeRetiredGeneratedData() {
+  const root = join(__dirname, '..', '..')
+  for (const relativePath of [
+    'public/search-packs',
+    'public/dataset/search',
+    'public/dataset/search-index.json',
+    'public/dataset/knowledge/indexes',
+    'public/dataset/riwayat',
+  ])
+    await rm(join(root, relativePath), { recursive: true, force: true })
+}
+
 function run(script, args = []) {
   const result = spawnSync(process.execPath, [join(__dirname, script), ...args], {
     stdio: 'inherit',
@@ -85,11 +100,6 @@ async function main(argv = process.argv.slice(2)) {
     return
   }
 
-  if (command === 'search-tanzil-import') {
-    run('search/tanzil/import.mjs')
-    return
-  }
-
   if (command === 'check') {
     const args = normalizedArgv.slice(1)
     const profile = parseProfile(args)
@@ -103,9 +113,10 @@ async function main(argv = process.argv.slice(2)) {
     // Source-catalog validation is single-point here: text/build.mjs loads and
     // validates the catalog (this lane's first step), so a bad catalog still
     // fails `check` with the catalog's error list.
+    await removeRetiredGeneratedData()
     run('text/build.mjs', [`--profile=${sharedProfile}`])
     run('check-juz-hizb.mjs')
-    run('check-search-packs.mjs')
+    run('check-ayah-counts.mjs')
     run('knowledge/build.mjs', ['--check'])
     run('mushaf-pages/build.mjs', [`--profile=${profile}`, '--check'])
     run('riwayah-packages/build.mjs', [`--profile=${profile}`, '--check'])
@@ -118,8 +129,8 @@ async function main(argv = process.argv.slice(2)) {
     const sharedProfile = datasetProfile(profile)
     const skipped = skipSet(args)
     await rm(BUILD_STAMP, { force: true })
+    await removeRetiredGeneratedData()
     run('text/build.mjs', [`--profile=${sharedProfile}`])
-    run('search/build.mjs', [`--profile=${sharedProfile}`])
     run('knowledge/build.mjs')
     if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
     run('riwayah-packages/build.mjs', [`--profile=${profile}`])
@@ -128,7 +139,7 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   console.error(
-    'Usage: pnpm run data -- build [--profile=baseline|private] | check [--profile=baseline|private] | aliases | search-tanzil-import | mushaf-pages',
+    'Usage: pnpm run data -- build [--profile=baseline|private] | check [--profile=baseline|private] | aliases | mushaf-pages',
   )
   process.exit(1)
 }

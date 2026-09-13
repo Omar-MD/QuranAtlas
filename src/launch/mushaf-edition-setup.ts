@@ -70,9 +70,12 @@ export async function resolveMushafEditionSetup({
   try {
     editions = await loadMushafEditionOptions(fetcher)
   } catch {
-    return setupComplete
-      ? { status: 'availability-error', mushafEditionId: selectedEditionId }
-      : { status: 'availability-error' }
+    // The availability index is an online re-validation, not required data: a
+    // completed setup keeps reading from its stored edition instead of being
+    // stranded on an error screen when the index cannot be fetched (offline,
+    // or a cold service worker that has not cached it yet).
+    if (setupComplete) return { status: 'complete', mushafEditionId: selectedEditionId }
+    return { status: 'availability-error' }
   }
 
   if (setupComplete) {

@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { assertAyahExists, compareAyahKeys, pad3 } from '../lib/ayah.mjs'
+import { assertAyahExists, pad3 } from '../lib/ayah.mjs'
 import { ensure } from '../lib/script.mjs'
 import { readJson, writeJson } from '../lib/json.mjs'
 
@@ -278,26 +278,16 @@ export function buildKnowledgeArtifacts({ themes, passages, ayahThemes, surahAya
     .filter((passage) => passage.source.reviewStatus === 'approved')
     .sort((a, b) => a.surah - b.surah || a.startAyah - b.startAyah || a.endAyah - b.endAyah || a.id.localeCompare(b.id))
 
+  // Internal ayah->passage mapping: required to stamp the reader-facing
+  // passageId into each ayah row below. No reverse indexes are generated; the
+  // retired theme-to-ayah / ayah-to-passage / passage-to-ayah reverse indexes
+  // had no runtime consumer.
   const ayahToPassageMap = new Map()
-  const passageToAyahMap = new Map()
   for (const passage of approvedPassages) {
-    const keys = []
     for (let ayah = passage.startAyah; ayah <= passage.endAyah; ayah++) {
       const key = `${passage.surah}:${ayah}`
       ensure(!ayahToPassageMap.has(key), `approved passages overlap at ${key}`)
       ayahToPassageMap.set(key, passage.id)
-      keys.push(key)
-    }
-    passageToAyahMap.set(passage.id, keys)
-  }
-
-  const themeToAyahMap = new Map()
-  for (const themeId of themeById.keys()) {
-    themeToAyahMap.set(themeId, new Set())
-  }
-  for (const [ayahKey, themeRows] of ayahThemesMap.entries()) {
-    for (const theme of themeRows) {
-      themeToAyahMap.get(theme.id).add(ayahKey)
     }
   }
 
@@ -340,30 +330,10 @@ export function buildKnowledgeArtifacts({ themes, passages, ayahThemes, surahAya
     }
   }
 
-  const themeToAyah = {}
-  for (const [themeId, ayahKeys] of [...themeToAyahMap.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    themeToAyah[themeId] = [...ayahKeys].sort(compareAyahKeys)
-  }
-
-  const ayahToPassage = {}
-  for (const [ayahKey, passageId] of [...ayahToPassageMap.entries()].sort(([a], [b]) => compareAyahKeys(a, b))) {
-    ayahToPassage[ayahKey] = passageId
-  }
-
-  const passageToAyah = {}
-  for (const passage of approvedPassages) {
-    passageToAyah[passage.id] = [...(passageToAyahMap.get(passage.id) ?? [])].sort(compareAyahKeys)
-  }
-
   return {
     version: KNOWLEDGE_VERSION,
     ayahBySurah: sortObjectKeys(ayahBySurah),
     passagesBySurah: sortObjectKeys(passagesBySurah),
-    indexes: {
-      themeToAyah,
-      ayahToPassage: sortObjectKeys(ayahToPassage, compareAyahKeys),
-      passageToAyah: sortObjectKeys(passageToAyah),
-    },
     stats: {
       themeCount: themeById.size,
       passageCount: approvedPassages.length,
@@ -375,12 +345,10 @@ export function buildKnowledgeArtifacts({ themes, passages, ayahThemes, surahAya
 export async function writeKnowledgeArtifacts(artifacts, outputDir = KNOWLEDGE_OUTPUT_DIR) {
   const ayahDir = join(outputDir, 'ayah')
   const passagesDir = join(outputDir, 'passages')
-  const indexesDir = join(outputDir, 'indexes')
 
   await rm(outputDir, { recursive: true, force: true })
   await mkdir(ayahDir, { recursive: true })
   await mkdir(passagesDir, { recursive: true })
-  await mkdir(indexesDir, { recursive: true })
 
   for (let surah = 1; surah <= 114; surah++) {
     const key = pad3(surah)
@@ -389,12 +357,6 @@ export async function writeKnowledgeArtifacts(artifacts, outputDir = KNOWLEDGE_O
       writeJson(join(passagesDir, `${key}.json`), artifacts.passagesBySurah[key]),
     ])
   }
-
-  await Promise.all([
-    writeJson(join(indexesDir, 'theme-to-ayah.json'), artifacts.indexes.themeToAyah),
-    writeJson(join(indexesDir, 'ayah-to-passage.json'), artifacts.indexes.ayahToPassage),
-    writeJson(join(indexesDir, 'passage-to-ayah.json'), artifacts.indexes.passageToAyah),
-  ])
 }
 
 function parseCliArgs(argv = process.argv.slice(2)) {

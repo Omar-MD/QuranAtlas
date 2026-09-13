@@ -1,5 +1,5 @@
 import type { FocusEventHandler, ReactNode } from 'react'
-import { Menu, Search, Settings } from 'lucide-react'
+import { Menu, Settings } from 'lucide-react'
 
 import { cn } from '../../design-system/utils/cn'
 import { Button, IconButton } from '../ui'
@@ -14,7 +14,6 @@ export function ReaderChrome({
   onFocusCapture,
   onModeChange,
   onOpenNavigation,
-  onOpenSearch,
   onOpenSettings,
   title,
   visible = true,
@@ -25,7 +24,6 @@ export function ReaderChrome({
   onBlurCapture?: FocusEventHandler<HTMLElement>
   onFocusCapture?: FocusEventHandler<HTMLElement>
   onOpenNavigation?: () => void
-  onOpenSearch?: () => void
   onOpenSettings?: () => void
   onModeChange?: (mode: ReaderMode) => void
   title?: ReactNode
@@ -80,16 +78,6 @@ export function ReaderChrome({
       <div className="qar-reader-chrome-right">
         {wirdStatus}
         {onModeChange ? <ReadingViewToggle mode={mode} onModeChange={onModeChange} /> : null}
-        {onOpenSearch ? (
-          <IconButton
-            className="qar-reader-chrome-icon"
-            id="reader-search-trigger"
-            label="Search Quran"
-            onClick={onOpenSearch}
-          >
-            <Search aria-hidden="true" size={26} strokeWidth={1.6} />
-          </IconButton>
-        ) : null}
         {!hideSettings ? (
           <IconButton
             className="qar-reader-chrome-icon"

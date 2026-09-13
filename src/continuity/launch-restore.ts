@@ -15,6 +15,7 @@ import {
   type OfflineDownloadOffer,
 } from '../launch/offline-download-setup'
 import { nativeSettingsReader, readNativeSetting } from '../storage/native-reader-store'
+import { retireSearchData } from '../launch/search-retirement'
 
 export type SavedPosition = QuranRef
 export type LaunchSetupState = Exclude<MushafEditionSetupState, { status: 'complete' }> | OfflineDownloadOffer
@@ -23,7 +24,11 @@ export type LaunchRestoreState =
   | { status: 'ready'; hash: string; sourceHash: string; offlineOffer?: OfflineDownloadOffer | null }
   | { status: 'setup'; hash: string; sourceHash: string; setup: LaunchSetupState }
 
-const EXCLUDED = new Set(['#/onboarding', '#/settings', '#/assets', '#/search'])
+// Only app-internal non-reader screens are excluded by exact hash. Unknown
+// addresses (e.g. retired '#/search?...' deep links) already fail the
+// isValidReaderHash allowlist below, so stale surfaces fall back to the saved
+// reader position without persisting the unsupported hash.
+const EXCLUDED = new Set(['#/onboarding', '#/settings', '#/assets'])
 
 export function isValidReaderHash(hash: string): boolean {
   return (
@@ -136,13 +141,23 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
       const assetContract = await ensureReactMvpAssetContractReset()
       const resolvedHash = await resolveHashWithLaunchState(nativeSettingsReader(), hash)
       const setup = await resolveMushafEditionSetup({ contractWasValid: assetContract.hadValidContract })
+      // Search retirement runs once per launch resolution after the short-lived
+      // native reads complete and before reader-core downloads start. It is
+      // fire-and-forget by contract: a blocked upgrade (older tab) or cache
+      // failure must never block or fail launch resolution; cleanup retries on
+      // later launches.
+      void retireSearchData()
       if (active) {
         hasResolvedOnceRef.current = true
         if (setup.status === 'complete') {
           // The verse/reader-text pack is required offline data: it enqueues
           // automatically for every launch-resolved reader, onboarded or not.
+          // The enqueue must not block launch resolution — its Dexie open can
+          // wait behind a schema upgrade on upgrade launches — so it is
+          // fire-and-forget; reconcileOfflinePacks resumes pending packs at
+          // ready regardless.
           const profile = await readActiveReaderProfile().catch(() => null)
-          if (profile) await beginRequiredReaderCoreDownload(profile).catch(() => undefined)
+          if (profile) void beginRequiredReaderCoreDownload(profile).catch(() => undefined)
           if (!active) return
           const offer = await resolveOfflineDownloadOffer().catch(() => null)
           if (!active) return

@@ -1,5 +1,5 @@
 export const QURAN_ATLAS_DB_NAME = 'quran-atlas'
-export const QURAN_ATLAS_DB_VERSION = 10
+export const QURAN_ATLAS_DB_VERSION = 11
 
 export const QURAN_ATLAS_V7_STORES = {
   settings: 'key',
@@ -28,4 +28,12 @@ export const QURAN_ATLAS_V10_STORES = {
   datasetMeta: null,
   searchPackActivations: null,
   searchPackStaging: null,
+} as const
+
+// Version 11 retires the last Search store (saved searches). The historical
+// v7–v10 declarations above must stay registered so installations skipping
+// releases still upgrade through the full chain.
+export const QURAN_ATLAS_V11_STORES = {
+  ...QURAN_ATLAS_V10_STORES,
+  savedSearches: null,
 } as const

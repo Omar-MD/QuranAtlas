@@ -32,13 +32,12 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
-      - name: Cache deterministic dataset + search-pack output
+      - name: Cache deterministic dataset output
         id: dataset-cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             public/dataset
-            public/search-packs
             .data-build-complete
           key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml', '.github/workflows/ci.yml') }}
       # The key already hashes every data:build source; restoring outputs with
@@ -46,7 +45,7 @@ jobs:
       # re-stamp them to skip the rebuild. data:check remains the real gate.
       - name: Restamp restored dataset outputs for mise freshness
         if: steps.dataset-cache.outputs.cache-hit == 'true'
-        run: find public/dataset public/search-packs -exec touch {} + && touch .data-build-complete
+        run: find public/dataset -exec touch {} + && touch .data-build-complete
       - name: Fetch Mushaf page media from release artifacts (cache miss)
         if: steps.dataset-cache.outputs.cache-hit != 'true'
         run: mise run data:media
@@ -68,18 +67,17 @@ jobs:
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
       # build:release depends on data:build; share the data job's cache so the
       # datasets are not rebuilt a second time on this runner.
-      - name: Cache deterministic dataset + search-pack output
+      - name: Cache deterministic dataset output
         id: dataset-cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             public/dataset
-            public/search-packs
             .data-build-complete
           key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml', '.github/workflows/ci.yml') }}
       - name: Restamp restored dataset outputs for mise freshness
         if: steps.dataset-cache.outputs.cache-hit == 'true'
-        run: find public/dataset public/search-packs -exec touch {} + && touch .data-build-complete
+        run: find public/dataset -exec touch {} + && touch .data-build-complete
       # On a cache miss this job must materialize the same private-profile
       # dataset the data job builds, or the baseline data:build dependency
       # inside build:release would emit a media-less dataset into dist.

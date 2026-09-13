@@ -226,7 +226,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "runtime consumers: DailyWirdCard in the navigation drawer; SearchOverview, SearchAnswerPreview, SearchExplorePanel, and SearchResultDetail on #/search. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
+            "runtime consumers: DailyWirdCard in the navigation drawer. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
           ]
         }
       ],
@@ -307,7 +307,9 @@
       "tests": [
         {
           "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["search journey renders through the shared chrome frame and drawer host"]
+          "behaviors": [
+            "reader, surah-list, bookmarks, and About journeys render through the shared chrome frame and drawer host"
+          ]
         }
       ],
       "accessibility": [
@@ -505,7 +507,7 @@
       "tests": [
         {
           "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["search query field renders in the core search journey"]
+          "behaviors": ["drawer and SurahsRoute surah-filter fields operate in the core reader journey"]
         }
       ],
       "accessibility": ["visible label", "native input semantics"],
@@ -586,7 +588,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "runtime consumers: SurahsRoute surah list; NavDrawer read-tab surah list; BookmarksList rows; HizbList and JuzList rows; SavedSearchesNavPanel saved-search rows in the nav-drawer search tab; SearchResultCard and SearchAnswerPreview evidence rows and SearchExplorePanel module rows on #/search. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
+            "runtime consumers: SurahsRoute surah list; NavDrawer read-tab surah list; BookmarksList rows; HizbList and JuzList rows. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
           ]
         }
       ],
@@ -632,7 +634,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "runtime consumers: SearchResultCard and SearchAnswerPreview action clusters (Open in Reader IconButton with Tooltip) and the ListRow action slot itself. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
+            "reusable action cluster primitive retained for composing consumers; current product consumers are none, so durable e2e coverage is bounded by the smoke charter and storybook states remain the per-state matrix."
           ]
         }
       ],
@@ -752,9 +754,9 @@
       "maturity": "product",
       "exportPath": "src/components/navigation/NavDrawer.tsx",
       "namedExport": "NavDrawer",
-      "allowedVariants": ["read", "search"],
+      "allowedVariants": ["read"],
       "allowedSizes": [],
-      "slots": ["root", "header", "destinationRail", "wirdSlot", "readPanel", "searchPanel"],
+      "slots": ["root", "header", "wirdSlot", "readPanel"],
       "dependencies": {
         "radix": [],
         "components": ["button", "icon-button", "input", "segmented-control", "sheet"],
@@ -776,7 +778,6 @@
       "accessibility": [
         "Sheet navigation-drawer dialog: focus trap on mobile, Escape/backdrop close, focus restore to invoker",
         "desktop 360px rail is non-modal with keyboard containment",
-        "Read/Search destination radiogroup carries an accessible name; active destination conveyed by aria-checked",
         "visible focus through owned primitives"
       ],
       "visualProof": {
@@ -1113,85 +1114,6 @@
         "Do not duplicate the reading-view action outside ReaderChrome.",
         "Do not present the destination action as selected state."
       ]
-    },
-    {
-      "id": "search-page",
-      "name": "SearchPage",
-      "maturity": "product",
-      "exportPath": "src/components/search/SearchPage.tsx",
-      "namedExport": "SearchPage",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": [
-        "root",
-        "mobileChrome",
-        "navDrawer",
-        "queryControls",
-        "workspaceTabs",
-        "overview",
-        "answerPreview",
-        "allMatches",
-        "verses",
-        "explore",
-        "sources",
-        "details",
-        "mobileDetails"
-      ],
-      "dependencies": {
-        "radix": [],
-        "icons": ["lucide-react"]
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/search/search.stories.tsx",
-          "states": [
-            "default",
-            "loading",
-            "overview-broad",
-            "overview-morphology",
-            "answer-preview-default",
-            "evidence-only-boundary",
-            "all-matches-open",
-            "verses-reference",
-            "verses-phrase",
-            "explore-missing-packs",
-            "sources",
-            "details-no-mapping",
-            "mobile-details",
-            "saved-searches",
-            "no-mapping",
-            "offline-unavailable"
-          ]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["search main landmark and query field render in the core search journey"]
-        },
-        {
-          "path": "tests/e2e/offline-lifecycle.spec.ts",
-          "behaviors": ["offline search shows the designed unfetched-data fallback status"]
-        }
-      ],
-      "accessibility": [
-        "semantic landmarks",
-        "polite result and saved-search status",
-        "controlled workspace tabs",
-        "Details close restores focus to the originating trigger",
-        "visible focus through owned primitives"
-      ],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/search/search.stories.tsx"]
-      },
-      "owner": {
-        "surface": "search",
-        "package": "src/components/search"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
     },
     {
       "id": "segmented-control",
@@ -1586,7 +1508,7 @@
         {
           "path": "tests/e2e/core-smoke.spec.ts",
           "behaviors": [
-            "runtime consumers app-wide: reader/Mushaf asset gates and corpus states, bookmarks route error, search index gate, onboarding edition-unavailable, unsupported-hash fallback. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
+            "runtime consumers app-wide: reader/Mushaf asset gates and corpus states, bookmarks route error, onboarding edition-unavailable, unsupported-hash fallback. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
           ]
         }
       ],
@@ -1709,7 +1631,9 @@
       "tests": [
         {
           "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["search workspace tabs operate in the core search journey"]
+          "behaviors": [
+            "reusable tabbed-content primitive retained for composing consumers; current product consumers are none, so durable e2e coverage is bounded by the smoke charter and storybook states remain the per-state matrix."
+          ]
         }
       ],
       "accessibility": ["labelled tablist", "tabpanel content"],

@@ -1,3 +1,4 @@
+import { readerDatasetCacheMatch } from './shared/reader-assets/dataset-policy.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
@@ -18,10 +19,8 @@ export const offlineDownloadRuntimeCaching = {
 }
 
 export const datasetRuntimeCaching = {
-  urlPattern: ({ url }) =>
-    url.pathname.startsWith('/dataset/') &&
-    !url.pathname.startsWith('/dataset/search/') &&
-    url.pathname !== '/dataset/indexes/mushaf-assets.json',
+  // Shared callback is self-contained for Workbox's function serialization.
+  urlPattern: readerDatasetCacheMatch,
   handler: 'CacheFirst',
   options: {
     cacheName: 'quran-atlas-runtime-dataset-v1',

@@ -94,7 +94,7 @@ depends = [
 run = "echo 'static checks passed'"
 
 [tasks."data:build"]
-description = "Build deterministic baseline datasets and search packs"
+description = "Build deterministic reader datasets"
 run = "pnpm run data -- build"
 sources = ["data/catalog/**", "data/taxonomy/**", "data/normalized/**", "shared/**", "scripts/data/**"]
 outputs = [".data-build-complete"]
@@ -109,7 +109,7 @@ description = "Vite production build (shell only, no dataset copy)"
 run = "pnpm exec vite build"
 
 [tasks."build:release"]
-description = "Assemble the release dist (vite build + dataset/search-pack copy + chunk budget)"
+description = "Assemble the release dist (vite build + reader dataset copy + chunk budget)"
 depends = ["data:build", "check:mushaf-assets"]
 run = ["pnpm run ci:build", "node scripts/check-chunks.js", "node scripts/check-react-mushaf-assets.mjs"]
 
