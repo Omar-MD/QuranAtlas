@@ -1448,6 +1448,12 @@
     justify-self: center;
     max-width: min(100%, 24rem);
     overflow: hidden;
+    appearance: none;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
     color: var(--qa-react-accent);
     font-family: "Scheherazade New", "Noto Naskh Arabic", var(--qa-react-font-arabic);
     font-size: clamp(1.28rem, 2.75vw, 1.75rem);

@@ -80,7 +80,7 @@ export function AboutRoute() {
       ? 'Checking...'
       : updateCheck.status === 'reloading'
         ? 'Reloading...'
-        : 'Fetch latest app'
+        : 'Check for updates'
 
   return (
     <ChromeFrame
@@ -109,10 +109,47 @@ export function AboutRoute() {
           <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-attribution">
             Attribution
           </h2>
+          <h3 className="qar:m-0 qar:text-lg qar:leading-tight">Sources</h3>
           <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
-            {credits.map((credit) => (
-              <li key={credit.id}>{credit.content}</li>
-            ))}
+            {credits
+              .filter((credit) => credit.id !== 'stack')
+              .map((credit) => (
+                <li key={credit.id}>{credit.content}</li>
+              ))}
+          </ul>
+          <h3 className="qar:m-0 qar:text-lg qar:leading-tight">Built with</h3>
+          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
+            {credits
+              .filter((credit) => credit.id === 'stack')
+              .map((credit) => (
+                <li key={credit.id}>{credit.content}</li>
+              ))}
+          </ul>
+          <p>
+            <a href="https://github.com/Omar-MD/QuranAtlas/issues">Report an issue</a>
+          </p>
+        </section>
+
+        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-numbering">
+          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-numbering">
+            Reference numbering
+          </h2>
+          <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
+            QuranAtlas reads in the Qalūn narration. Verse references follow the Qalūn numbering of the active edition;
+            Hafs-equivalent references are shown in Search under Sources. Furatiyyah page numbers are the edition's own
+            printed pagination.
+          </p>
+        </section>
+
+        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-editions">
+          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-editions">
+            Editions
+          </h2>
+          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
+            <li>Qalun Quran.ws — Qalūn narration, minimal monochrome pages from quran.ws.</li>
+            <li>
+              Qalun Furatiyyah 2023 — Qalūn narration, 2023 Furatiyyah print with coloured notation and marginal notes.
+            </li>
           </ul>
         </section>
 

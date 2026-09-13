@@ -69,6 +69,7 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
     [props.answerPreview, props.brief, props.defaultTab, props.hasMore, props.results, props.selectedResult],
   )
   const previewLane = props.answerPreview !== null && viewModel.previewSurface === 'preview'
+  const hasQuerySurface = props.answerPreview != null || viewModel.overview != null
 
   function openTab(tab: SearchWorkspaceTab, focusModule?: SearchExploreModuleId) {
     props.onActiveTabChange(tab)
@@ -101,154 +102,158 @@ export function SearchWorkspace(props: SearchWorkspaceProps) {
 
   return (
     <section aria-label="Search result workspace" className="qar-react-search-workspace">
-      <Tabs
-        defaultValue={viewModel.defaultTab}
-        items={[
-          {
-            label: 'Overview',
-            value: 'overview',
-            content:
-              props.answerPreview && viewModel.previewSurface === 'no-results' ? (
-                <Status description={props.emptyMessage} title="No results" tone="info" />
-              ) : props.answerPreview || !viewModel.overview ? (
-                <SearchAnswerPreview
-                  ref={previewDetailPanelRef}
-                  allMatches={props.allMatches}
-                  allMatchesOpen={props.allMatchesOpen}
-                  canLoadAllMatches={props.canLoadAllMatches}
-                  loadingAllMatches={props.loadingAllMatches}
-                  onLoadMoreAllMatches={props.onLoadMoreAllMatches}
-                  onOpenAllMatches={props.onOpenAllMatches}
-                  onOpenInRead={props.onOpenPreviewInRead}
-                  onSelectMatch={(match, trigger) => {
-                    if (window.matchMedia('(max-width: 767px)').matches)
-                      mobileResultsScrollTopRef.current = window.scrollY
-                    previewDetailsTriggerRef.current = trigger
-                    props.onSelectPreviewMatch(match)
-                  }}
-                  onCloseMatch={() => {
-                    props.onSelectPreviewMatch(null)
-                    const scrollTop = mobileResultsScrollTopRef.current
-                    mobileResultsScrollTopRef.current = null
-                    if (scrollTop !== null) window.scrollTo({ behavior: 'auto', top: scrollTop })
-                    const pendingTrigger = previewDetailsTriggerRef.current
-                    previewDetailsTriggerRef.current = null
-                    // The list is still hidden while React re-renders; focus
-                    // lands on the trigger once it is visible again.
-                    window.setTimeout(() => pendingTrigger?.focus(), 0)
-                  }}
-                  selectedMatch={props.selectedPreviewMatch}
-                  preview={props.answerPreview}
-                />
-              ) : (
-                <SearchOverview
-                  onAction={(action) => openTab(action.target, action.focusModule)}
-                  overview={viewModel.overview}
-                />
-              ),
-          },
-          {
-            label: 'Verses',
-            value: 'verses',
-            content:
-              previewLane && props.answerPreview ? (
-                <PreviewOnlyTabPanel
-                  allMatchesOpen={props.allMatchesOpen}
-                  loadingAllMatches={props.loadingAllMatches}
-                  onOpenAllMatches={props.onOpenAllMatches}
-                  onOpenOverview={() => openTab('overview')}
-                  preview={props.answerPreview}
-                  tab="verses"
-                />
-              ) : (
-                <div
-                  className="qar-react-search-verses-panel"
-                  data-mobile-details={props.selectedResult ? 'true' : 'false'}
-                >
-                  {props.resultCountMessage ? (
-                    <p className="qar-react-search-result-count">{props.resultCountMessage}</p>
-                  ) : null}
-                  <SearchResultList
-                    canLoadMore={props.canLoadMore}
-                    cards={viewModel.verseCards}
-                    emptyMessage={props.emptyMessage}
-                    hasMore={props.hasMore}
-                    onDetailsTrigger={(node) => {
-                      detailsTriggerRef.current = node
-                      if (node && window.matchMedia('(max-width: 767px)').matches) {
+      {!hasQuerySurface ? (
+        <Status description="Enter a word, phrase, or ayah reference." title="Search the Quran" tone="info" />
+      ) : (
+        <Tabs
+          defaultValue={viewModel.defaultTab}
+          items={[
+            {
+              label: 'Overview',
+              value: 'overview',
+              content:
+                props.answerPreview && viewModel.previewSurface === 'no-results' ? (
+                  <Status description={props.emptyMessage} title="No results" tone="info" />
+                ) : props.answerPreview || !viewModel.overview ? (
+                  <SearchAnswerPreview
+                    ref={previewDetailPanelRef}
+                    allMatches={props.allMatches}
+                    allMatchesOpen={props.allMatchesOpen}
+                    canLoadAllMatches={props.canLoadAllMatches}
+                    loadingAllMatches={props.loadingAllMatches}
+                    onLoadMoreAllMatches={props.onLoadMoreAllMatches}
+                    onOpenAllMatches={props.onOpenAllMatches}
+                    onOpenInRead={props.onOpenPreviewInRead}
+                    onSelectMatch={(match, trigger) => {
+                      if (window.matchMedia('(max-width: 767px)').matches)
                         mobileResultsScrollTopRef.current = window.scrollY
-                      }
-                      if (node) setDetailsRequestId((current) => current + 1)
+                      previewDetailsTriggerRef.current = trigger
+                      props.onSelectPreviewMatch(match)
                     }}
-                    onLoadMore={props.onLoadMore}
-                    onOpenInRead={props.onOpenInRead}
-                    onSelect={props.onSelectResult}
-                    selectedResultId={props.selectedResult?.resultId}
-                  />
-                  <SearchResultDetail
-                    details={viewModel.details}
-                    onClose={() => {
-                      props.onSelectResult(null)
+                    onCloseMatch={() => {
+                      props.onSelectPreviewMatch(null)
                       const scrollTop = mobileResultsScrollTopRef.current
                       mobileResultsScrollTopRef.current = null
-                      if (scrollTop !== null && window.matchMedia('(max-width: 767px)').matches) {
-                        window.scrollTo({ behavior: 'auto', top: scrollTop })
-                      }
-                      const trigger = detailsTriggerRef.current
-                      window.setTimeout(() => trigger?.focus(), 0)
+                      if (scrollTop !== null) window.scrollTo({ behavior: 'auto', top: scrollTop })
+                      const pendingTrigger = previewDetailsTriggerRef.current
+                      previewDetailsTriggerRef.current = null
+                      // The list is still hidden while React re-renders; focus
+                      // lands on the trigger once it is visible again.
+                      window.setTimeout(() => pendingTrigger?.focus(), 0)
                     }}
-                    onOpenExplore={props.onOpenResultExplore}
-                    ref={detailPanelRef}
+                    selectedMatch={props.selectedPreviewMatch}
+                    preview={props.answerPreview}
                   />
-                </div>
-              ),
-          },
-          {
-            label: 'Explore',
-            value: 'explore',
-            content:
-              previewLane && props.answerPreview ? (
-                <PreviewOnlyTabPanel
-                  allMatchesOpen={props.allMatchesOpen}
-                  loadingAllMatches={props.loadingAllMatches}
-                  onOpenAllMatches={props.onOpenAllMatches}
-                  onOpenOverview={() => openTab('overview')}
-                  preview={props.answerPreview}
-                  tab="explore"
-                />
-              ) : (
-                <SearchExplorePanel
-                  focusedModule={props.focusedExploreModule}
-                  graph={props.exploreGraph}
-                  modules={viewModel.exploreModules}
-                  onLoadGraph={props.onLoadExploreGraph}
-                  seedResult={props.exploreSeedResult}
-                  summaries={viewModel.exploreSummaries}
-                />
-              ),
-          },
-          {
-            label: 'Sources',
-            value: 'sources',
-            content:
-              previewLane && props.answerPreview ? (
-                <PreviewOnlyTabPanel
-                  allMatchesOpen={props.allMatchesOpen}
-                  loadingAllMatches={props.loadingAllMatches}
-                  onOpenAllMatches={props.onOpenAllMatches}
-                  onOpenOverview={() => openTab('overview')}
-                  preview={props.answerPreview}
-                  tab="sources"
-                />
-              ) : (
-                <SearchSourcePanel packVersion={props.packVersion} sources={viewModel.sources} />
-              ),
-          },
-        ]}
-        label="Search result views"
-        onValueChange={(value) => openTab(value as SearchWorkspaceTab)}
-        value={props.activeTab}
-      />
+                ) : (
+                  <SearchOverview
+                    onAction={(action) => openTab(action.target, action.focusModule)}
+                    overview={viewModel.overview}
+                  />
+                ),
+            },
+            {
+              label: 'Verses',
+              value: 'verses',
+              content:
+                previewLane && props.answerPreview ? (
+                  <PreviewOnlyTabPanel
+                    allMatchesOpen={props.allMatchesOpen}
+                    loadingAllMatches={props.loadingAllMatches}
+                    onOpenAllMatches={props.onOpenAllMatches}
+                    onOpenOverview={() => openTab('overview')}
+                    preview={props.answerPreview}
+                    tab="verses"
+                  />
+                ) : (
+                  <div
+                    className="qar-react-search-verses-panel"
+                    data-mobile-details={props.selectedResult ? 'true' : 'false'}
+                  >
+                    {props.resultCountMessage ? (
+                      <p className="qar-react-search-result-count">{props.resultCountMessage}</p>
+                    ) : null}
+                    <SearchResultList
+                      canLoadMore={props.canLoadMore}
+                      cards={viewModel.verseCards}
+                      emptyMessage={props.emptyMessage}
+                      hasMore={props.hasMore}
+                      onDetailsTrigger={(node) => {
+                        detailsTriggerRef.current = node
+                        if (node && window.matchMedia('(max-width: 767px)').matches) {
+                          mobileResultsScrollTopRef.current = window.scrollY
+                        }
+                        if (node) setDetailsRequestId((current) => current + 1)
+                      }}
+                      onLoadMore={props.onLoadMore}
+                      onOpenInRead={props.onOpenInRead}
+                      onSelect={props.onSelectResult}
+                      selectedResultId={props.selectedResult?.resultId}
+                    />
+                    <SearchResultDetail
+                      details={viewModel.details}
+                      onClose={() => {
+                        props.onSelectResult(null)
+                        const scrollTop = mobileResultsScrollTopRef.current
+                        mobileResultsScrollTopRef.current = null
+                        if (scrollTop !== null && window.matchMedia('(max-width: 767px)').matches) {
+                          window.scrollTo({ behavior: 'auto', top: scrollTop })
+                        }
+                        const trigger = detailsTriggerRef.current
+                        window.setTimeout(() => trigger?.focus(), 0)
+                      }}
+                      onOpenExplore={props.onOpenResultExplore}
+                      ref={detailPanelRef}
+                    />
+                  </div>
+                ),
+            },
+            {
+              label: 'Explore',
+              value: 'explore',
+              content:
+                previewLane && props.answerPreview ? (
+                  <PreviewOnlyTabPanel
+                    allMatchesOpen={props.allMatchesOpen}
+                    loadingAllMatches={props.loadingAllMatches}
+                    onOpenAllMatches={props.onOpenAllMatches}
+                    onOpenOverview={() => openTab('overview')}
+                    preview={props.answerPreview}
+                    tab="explore"
+                  />
+                ) : (
+                  <SearchExplorePanel
+                    focusedModule={props.focusedExploreModule}
+                    graph={props.exploreGraph}
+                    modules={viewModel.exploreModules}
+                    onLoadGraph={props.onLoadExploreGraph}
+                    seedResult={props.exploreSeedResult}
+                    summaries={viewModel.exploreSummaries}
+                  />
+                ),
+            },
+            {
+              label: 'Sources',
+              value: 'sources',
+              content:
+                previewLane && props.answerPreview ? (
+                  <PreviewOnlyTabPanel
+                    allMatchesOpen={props.allMatchesOpen}
+                    loadingAllMatches={props.loadingAllMatches}
+                    onOpenAllMatches={props.onOpenAllMatches}
+                    onOpenOverview={() => openTab('overview')}
+                    preview={props.answerPreview}
+                    tab="sources"
+                  />
+                ) : (
+                  <SearchSourcePanel packVersion={props.packVersion} sources={viewModel.sources} />
+                ),
+            },
+          ]}
+          label="Search result views"
+          onValueChange={(value) => openTab(value as SearchWorkspaceTab)}
+          value={props.activeTab}
+        />
+      )}
     </section>
   )
 }

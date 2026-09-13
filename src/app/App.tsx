@@ -14,6 +14,8 @@ import { readNativeReactReaderPreferences } from '../storage/settings-writer'
 import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
 import { BookmarksProvider } from '../continuity/bookmarks/use-bookmarks'
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
+import { OfflineOfferPrompt } from '../components/offline/OfflineOfferPrompt'
+import { writeOfflineDownloadSetupComplete } from '../launch/offline-download-setup'
 
 const AboutRoute = lazy(() => import('./routes/settings/AboutRoute').then((module) => ({ default: module.AboutRoute })))
 const NavigationRouteHost = lazy(() =>
@@ -39,6 +41,7 @@ const SurahsRoute = lazy(() =>
 
 export function App() {
   useWirdReminderScheduler()
+  const [offerDismissed, setOfferDismissed] = useState(false)
   const initialRoute = useMemo(() => getInitialReactHash(), [])
   const [hash, setHash] = useState(initialRoute)
   const [launchRefreshVersion, setLaunchRefreshVersion] = useState(0)
@@ -200,6 +203,21 @@ export function App() {
       )}
       {launchRestore.status === 'ready' && (
         <Suspense fallback={<LaunchSplash />}>
+          {launchRestore.offlineOffer != null && !offerDismissed ? (
+            <OfflineOfferPrompt
+              offer={launchRestore.offlineOffer}
+              onDownload={() => {
+                window.location.hash = '#/onboarding'
+              }}
+              onLater={() => {
+                // Dismiss only after the completion marker commits, so a quick
+                // reload never resurrects the offer for the decided session.
+                void writeOfflineDownloadSetupComplete()
+                  .catch(() => undefined)
+                  .then(() => setOfferDismissed(true))
+              }}
+            />
+          ) : null}
           {route.type === 'reader' && (
             <BookmarksProvider>
               <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />

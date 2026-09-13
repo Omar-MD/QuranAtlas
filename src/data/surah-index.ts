@@ -11,7 +11,7 @@ export type ReaderSurahIndexEntry = {
 
 export type ReaderSurahDirection = 'next' | 'previous'
 
-const FIRST_SURAH = 1
+export const FIRST_SURAH = 1
 
 function isReaderSurahIndexEntry(value: unknown): value is ReaderSurahIndexEntry {
   if (!value || typeof value !== 'object') return false

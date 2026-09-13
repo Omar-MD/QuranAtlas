@@ -387,6 +387,7 @@ function MushafEditionSetupRoute({
   const canContinue = canContinueMushafEditionSetup(state, setup.editions)
   const writing = state.persistenceStatus === 'saving'
   const persistenceFailed = state.persistenceStatus === 'error'
+  const selectedEdition = setup.editions.find((edition) => edition.id === state.selectedEditionId)
   return (
     <OnboardingPageRecipe kicker="QuranAtlas" title="Choose your Mushaf edition">
       <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
@@ -402,6 +403,9 @@ function MushafEditionSetupRoute({
         }))}
         value={state.selectedEditionId ?? undefined}
       />
+      {selectedEdition?.description ? (
+        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">{selectedEdition.description}</p>
+      ) : null}
       {writing && <Spinner label="Saving Mushaf setup" />}
       {persistenceFailed && (
         <Status
@@ -430,7 +434,7 @@ function MushafEditionSetupRoute({
         }}
         variant="primary"
       >
-        Continue
+        Start reading
       </Button>
     </OnboardingPageRecipe>
   )

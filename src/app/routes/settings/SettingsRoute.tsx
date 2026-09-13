@@ -228,7 +228,7 @@ function WirdSettingsSection({
   onEnabledChange: (value: boolean) => void
 }) {
   return (
-    <SettingsGroup title="Reading continuity">
+    <SettingsGroup description="A daily reading portion to continue each day." title="Reading continuity">
       <div className="qar-react-settings-panel-controls">
         <div className="qar-react-settings-row qar-react-settings-row--switch">
           <span className="qar-react-settings-row-copy">

@@ -22,7 +22,7 @@ const THEMES: Array<AppearanceOption<ReactThemePreference>> = [
   { id: 'light', icon: Sun, iconId: 'theme-light', label: 'Light', swatch: 'light' },
   { id: 'sepia', iconId: 'theme-sepia', label: 'Sepia', swatch: 'sepia' },
   { id: 'dark', icon: MoonStar, iconId: 'theme-dark', label: 'Dark', swatch: 'dark' },
-  { id: 'auto', icon: CircleSlash, iconId: 'theme-auto', label: 'Auto' },
+  { id: 'auto', icon: CircleSlash, iconId: 'theme-auto', label: 'System' },
 ]
 
 const NIGHT_MODES = [
@@ -65,8 +65,9 @@ export function ThemeNightControls({
       </section>
       <section className="qar-react-settings-appearance-panel" aria-labelledby="qar-react-settings-night">
         <h4 className="qar-react-settings-appearance-title" id="qar-react-settings-night">
-          Night mode
+          Mushaf night dimming
         </h4>
+        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">Dims Mushaf page images in low light.</p>
         <div className="qar-react-settings-night-strip" aria-label="Night mode" role="radiogroup">
           {NIGHT_MODES.map((option) => {
             const Icon = option.icon

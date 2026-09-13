@@ -1,6 +1,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ReaderPageRecipe } from '../../design-system/recipes/reader-page'
+import { REACT_ROUTES } from '../../app/router/routes'
 import { ReaderChrome, type ReaderMode } from './ReaderChrome'
 import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
 import { ChromeDrawer } from '../navigation/ChromeFrame'
@@ -118,6 +119,9 @@ export function ReaderPageShell({
                   setChromeVisible(true)
                   setDrawerWirdInitialView('card')
                   dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })
+                }}
+                onOpenSearch={() => {
+                  window.location.hash = REACT_ROUTES.search
                 }}
                 onOpenSettings={() => {
                   setChromeVisible(true)

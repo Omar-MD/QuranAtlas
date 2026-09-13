@@ -95,15 +95,6 @@ export function VerseBlock({
         <p className="qar-reader-verse-arabic" data-reader-arabic-line="true" dir="rtl" lang="ar">
           {arabic}
         </p>
-        {hasTranslation && translationRole === 'continuation' && (
-          <p
-            className="qar-reader-verse-translation qar-reader-verse-continuation"
-            data-reader-translation="true"
-            dir="ltr"
-          >
-            ↑ continued from the previous Hafs-keyed verse
-          </p>
-        )}
         {hasTranslation && translationRole !== 'continuation' && (
           <p className="qar-reader-verse-translation" data-reader-translation="true" dir="ltr">
             {tokens.map((token, index) =>
