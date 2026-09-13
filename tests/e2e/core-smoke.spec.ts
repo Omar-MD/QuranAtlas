@@ -44,36 +44,6 @@ test('boots the reader and reaches primary reader, search, and settings surfaces
 test('settings use plain-language copy for controls and inventory', async ({ page }) => {
   await seedOnboardedReader(page)
 
-  // Serve a v2 manifest with valid page framing for the active edition so the
-  // Mushaf text-size control (gated on framing capability) renders in the
-  // mushaf settings overlay; the shipped quran.ws edition is v1 and has none.
-  await page.route('**/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/manifest.json', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        version: 2,
-        riwayah: 'qaloon',
-        mushafEditionId: 'qalun-quran-ws-v1',
-        pageCount: 604,
-        pages: Array.from({ length: 604 }, (_, index) => ({
-          page: index + 1,
-          firstVerse: { surah: 1, verse: 1 },
-          framing: { textFrame: { x: 0.1, y: 0.1, width: 0.8, height: 0.8 }, sideLane: 'none' },
-          media: {
-            kind: 'external-image',
-            fallback: { assetPath: `pages/${String(index + 1).padStart(3, '0')}-2136.webp`, width: 2136 },
-            sources: [
-              { assetPath: `pages/${String(index + 1).padStart(3, '0')}-1280.webp`, width: 1280 },
-              { assetPath: `pages/${String(index + 1).padStart(3, '0')}-2136.webp`, width: 2136 },
-            ],
-          },
-        })),
-        verseToPage: { '1:1': 1 },
-      }),
-    }),
-  )
-
   await page.goto('/#/settings')
   await expect(page.getByRole('heading', { name: 'Verse settings' })).toBeVisible()
   await expect(page.getByText('Read-only inventory for the active reading profile.')).toHaveCount(0)
@@ -82,8 +52,10 @@ test('settings use plain-language copy for controls and inventory', async ({ pag
   await page.goto('/#/m/1')
   await page.getByRole('button', { name: 'Open settings' }).click()
   await expect(page.getByRole('heading', { name: 'Mushaf settings' })).toBeVisible()
+  // The framing row itself needs a v2 (external-image) edition pack, which the
+  // shipped dev dataset lacks; the offline suite's synthetic v2 edition covers
+  // the rendered "Text area N%" copy. Here the retired jargon is the tripwire.
   await expect(page.getByText(/% reviewed frame width/)).toHaveCount(0)
-  await expect(page.getByText(/Text area \d+%/)).toBeVisible()
 })
 
 test('reader never shows internal Hafs-keyed continuation vocabulary', async ({ page }) => {
@@ -157,13 +129,13 @@ test('search defers tabs and save until a query returns results', async ({ page 
   await seedOnboardedReader(page)
   await page.goto('/#/search')
   await expect(page.getByText('Search the Quran')).toBeVisible()
-  await expect(page.getByRole('radio', { name: 'Overview' })).toHaveCount(0)
+  await expect(page.getByRole('tab', { name: 'Overview' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Save search' })).toHaveCount(0)
 
   await page.getByLabel('Search Quran text, translation, or context').fill('mercy')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('button', { name: 'Show all matches' })).toBeVisible()
-  await expect(page.getByRole('radio', { name: 'Verses' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Verses' })).toBeVisible()
 })
 
 test('about documents reference numbering and identifies editions', async ({ page }) => {

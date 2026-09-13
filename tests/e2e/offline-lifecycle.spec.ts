@@ -484,6 +484,13 @@ test('renders an uncached external-image page without waiting for decode', async
   await page.goto(`${ORIGIN}/#/m/1`)
   await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
   await expect(page.getByRole('img', { name: 'Mushaf page 1, Qaloon, beginning near 1:1' })).toBeVisible()
+
+  await test.step('the v2 edition pack exposes the plain-language text-area control', async () => {
+    await page.getByRole('button', { name: 'Open settings' }).click()
+    await expect(page.getByRole('heading', { name: 'Mushaf settings' })).toBeVisible()
+    await expect(page.getByText(/% reviewed frame width/)).toHaveCount(0)
+    await expect(page.getByText(/Text area \d+%/)).toBeVisible()
+  })
 })
 
 test('downloads the custom external-image edition and renders it offline', async ({ page }) => {
