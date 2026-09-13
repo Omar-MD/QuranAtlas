@@ -37,7 +37,7 @@
 **Interfaces:**
 - Produces: settings region renamed to `Texts and editions` (consumed by Task 1's own test update and nothing else).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `tests/e2e/core-smoke.spec.ts`, update the existing settings assertion and add a Mushaf-settings copy assertion. Change:
 
@@ -68,29 +68,29 @@ test('settings use plain-language copy for controls and inventory', async ({ pag
 
 (If `#/mushaf/settings` is not the Mushaf settings hash, use the same hash the app navigates to when switching the settings mode toggle — check `REACT_ROUTES` in `src/app/routes`.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke`
 Expected: FAIL — region `Texts and editions` not found; `% reviewed frame width` still visible.
 
-- [ ] **Step 3: Implement the copy changes**
+- [x] **Step 3: Implement the copy changes**
 
 1. `MushafSettings.tsx`: change the Slider description from `` `${frameWidth}% reviewed frame width` `` to `` `Text area ${frameWidth}%` `` (keep the slider label `Qur'an text size` — it already distinguishes image magnification from the Verse-view `Font size` slider).
 2. `IncludedAssetsSection.tsx`: `title="Included reading assets"` → `title="Texts and editions"`; `description="Read-only inventory for the active reading profile."` → `description="Texts included with your current Mushaf edition."`; toggle strings `Hide included reading assets` → `Hide texts and editions` and `Show included reading assets` → `Show texts and editions`.
 3. `AboutRoute.tsx`: replace the button label `Fetch latest app` with `Check for updates` (keep the dynamic `Checking...`/`Reloading...` states).
 4. The `SettingsGroup` with `title="Reading continuity"`: add `description="A daily reading portion to continue each day."` (`SettingsGroup` accepts `description`, evidenced at `IncludedAssetsSection.tsx:102-105`).
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS (registry/design/ui-pattern guardrails included)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/settings/MushafSettings.tsx src/components/settings/IncludedAssetsSection.tsx src/app/routes/settings/AboutRoute.tsx tests/e2e/core-smoke.spec.ts <wird/settings file from step 3.4>
@@ -103,7 +103,7 @@ git commit -m "fix(settings): replace implementation copy with plain language"
 - Modify: `src/components/reader/VerseBlock.tsx:99-106`
 - Test: `tests/e2e/core-smoke.spec.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -117,26 +117,26 @@ test('reader never shows internal Hafs-keyed continuation vocabulary', async ({ 
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "Hafs-keyed"`
 Expected: FAIL — `Hafs-keyed` text present (the continuation marker appears on translation continuations; if Al-Fātiḥah alone does not render one, the test as written passes vacuously on this page — in that case also run the assertion against `/#/s/2` after confirming via the app that a continuation exists; do not weaken the assertion).
 
-- [ ] **Step 3: Implement the removal**
+- [x] **Step 3: Implement the removal**
 
 In `VerseBlock.tsx:99-106`, delete the block gated by `hasTranslation && translationRole === 'continuation'` that renders `↑ continued from the previous Hafs-keyed verse`. Keep the translation rendering itself untouched — only the marker line goes. If deleting the block leaves `translationRole` unused, remove the now-dead prop/variable; if it is still used elsewhere in the file, leave it.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "Hafs-keyed"`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/reader/VerseBlock.tsx tests/e2e/core-smoke.spec.ts
@@ -152,7 +152,7 @@ git commit -m "fix(reader): drop internal continuation vocabulary from translati
 **Interfaces:**
 - Produces: `FLOW_STEPS` values `xs`/`md`/`xl` retained — the `ReactPreferenceStep` type and all stored-preference values stay valid; only the offered labels change. No migration needed.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -169,12 +169,12 @@ test('verse spacing offers three plain-language options', async ({ page }) => {
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "verse spacing"`
 Expected: FAIL — `Tight`/`Standard`/`Spacious`/`Wide` still visible.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 In `VerseSettings.tsx:7-13`, replace the FLOW_STEPS array with:
 
@@ -188,17 +188,17 @@ const FLOW_STEPS: Array<{ label: string; value: ReactPreferenceStep }> = [
 
 Do not change the `ReactPreferenceStep` type — stored preferences at `sm`/`lg` keep working because the CSS is keyed by the value, not the label.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "verse spacing"`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/settings/VerseSettings.tsx tests/e2e/core-smoke.spec.ts
@@ -211,7 +211,7 @@ git commit -m "fix(settings): reduce reading flow to three plain-language option
 - Modify: `src/components/settings/OfflineDataSection.tsx:293-353` (row action buttons)
 - Test: `tests/e2e/offline-lifecycle.spec.ts` (grep the spec for `Remove`/`Download` button-name assertions and update them)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Grep `tests/e2e/offline-lifecycle.spec.ts` for `getByRole('button', { name: 'Remove'` and `name: 'Download'` and update those assertions to `Remove download` / `Download pages`. If none exist, add to the spec's offline-settings test (whichever test opens the offline data group and performs a removal — it already exists around the removal-dialog flow):
 
@@ -219,26 +219,26 @@ Grep `tests/e2e/offline-lifecycle.spec.ts` for `getByRole('button', { name: 'Rem
 await expect(page.getByRole('button', { name: 'Remove download' })).toBeVisible()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke -g "<the updated test title>"`
 Expected: FAIL — button still named `Remove`/`Download`.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 In `OfflineDataSection.tsx`: the not-installed row button text `Download` → `Download pages`; the installed row button text `Remove` → `Remove download`. Keep the removal dialog exactly as is (title `Remove ${removeTarget.rowName}?`, body `This removes the downloaded files from this device. You can download them again.`) — the dialog is already explicit.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/settings/OfflineDataSection.tsx tests/e2e/offline-lifecycle.spec.ts
@@ -251,7 +251,7 @@ git commit -m "fix(settings): label offline actions Download pages and Remove do
 - Modify: `src/app/routes/settings/AboutRoute.tsx:85-174`
 - Test: `tests/e2e/core-smoke.spec.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -265,12 +265,12 @@ test('about separates sources from build credits and offers a report route', asy
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "about separates"`
 Expected: FAIL — `Sources` heading not found.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 In `AboutRoute.tsx`: the Attribution section (~lines 90-112) currently holds one credits `<ul>` mixing text/translation/edition credits with framework credits (React/Vite/Workbox appear in it). Split into two headed groups:
 
@@ -289,17 +289,17 @@ Keep every existing `<li>` — move, don't rewrite. Then add to the end of the A
 </p>
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "about separates"`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/app/routes/settings/AboutRoute.tsx tests/e2e/core-smoke.spec.ts
@@ -316,7 +316,7 @@ git commit -m "fix(about): split source attribution from build credits, add issu
 **Interfaces:**
 - Produces: `MushafEditionOption.description: string` on every element of `setup.editions` (consumed by Task 7's chooser rendering and asserted by Task 6's test).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In the spec that boots a fresh (non-seeded) app — `tests/e2e/offline-lifecycle.spec.ts` around line 317 — after the `Choose your Mushaf edition` heading assertion, add:
 
@@ -324,12 +324,12 @@ In the spec that boots a fresh (non-seeded) app — `tests/e2e/offline-lifecycle
 await expect(page.getByText('Minimal monochrome pages from quran.ws.')).toBeVisible()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke -g "<the onboarding test>"`
 Expected: FAIL — description not rendered.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 1. `src/launch/mushaf-edition-setup.ts`: add a local description table and thread it through the option mapping:
 
@@ -353,17 +353,17 @@ In `loadMushafEditionOptions` (~lines 28-36), add `description: EDITION_DESCRIPT
 })()}
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke -g "<the onboarding test>"`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/launch/mushaf-edition-setup.ts src/app/routes/onboarding/OnboardingRoute.tsx tests/e2e/offline-lifecycle.spec.ts
@@ -376,30 +376,30 @@ git commit -m "feat(onboarding): describe each Mushaf edition in the chooser"
 - Modify: `src/app/routes/onboarding/OnboardingRoute.tsx:391-435` (the chooser's Continue button)
 - Test: `tests/e2e/offline-lifecycle.spec.ts` (grep for `'Continue'` button-name usage in onboarding tests)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In the onboarding test(s), replace `page.getByRole('button', { name: 'Continue' })` with `page.getByRole('button', { name: 'Start reading' })`. If the click is inside the same test touched in Task 6, extend that test; otherwise update every occurrence.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke -g "<the onboarding test>"`
 Expected: FAIL — button still named `Continue`.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 In the chooser JSX, change the primary button text `Continue` → `Start reading`. Leave the `Retry save` button and the `disabled` logic untouched. Do not change the heading — the hero marketing copy is deferred with the homepage (see Spec note).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke -g "<the onboarding test>"`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/app/routes/onboarding/OnboardingRoute.tsx tests/e2e/offline-lifecycle.spec.ts
@@ -424,7 +424,7 @@ git commit -m "feat(onboarding): name the chooser outcome Start reading"
 
 **Approach note:** navigating to `#/onboarding` re-runs `useLaunchRestore`'s resolver (its fast path excludes `#/onboarding`); the marker is still unwritten there, so the resolver reproduces the existing blocking offer screen with the full progress/pause UI. No download logic is duplicated.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Rewrite the blocking-flow test at `tests/e2e/offline-lifecycle.spec.ts:317-346` into two tests:
 
@@ -460,12 +460,12 @@ test('offline pages download still works via the one-shot offer prompt', async (
 
 Keep any existing assertions about installed state/downloaded packs from the old test that still apply after `Continue reading` (e.g., service-worker/offline expectations) — port, don't delete.
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke -g "first run reaches|offline pages download"`
 Expected: FAIL — the offer screen still blocks before the reader (`main` never becomes visible), or the prompt buttons don't exist.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 1. `launch-restore.ts`: extend the state type (find the exported `LaunchRestoreState` — it has `status`, `hash`, `sourceHash`, optional `setup`) with `offlineOffer?: OfflineDownloadOffer | null`, importing the type from `./launch/offline-download-setup` (adjust the relative path to the module's actual location — it is `src/launch/offline-download-setup.ts`, so `../launch/offline-download-setup` from `src/continuity/`). In the offer branch (~lines 141-146) replace:
 
@@ -540,17 +540,17 @@ Match the actual `Dialog` primitive's prop surface from `src/components/ui` (the
 
 (Use the actual launch-state variable name in App; if App's ready branch is a separate component, place the prompt inside it and thread `offlineOffer` through.) Dismissal is session-scoped; persistence comes from the marker write, so a reload after `Not now` stays quiet — which is what Step 1's reload assertion verifies.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm exec playwright test tests/e2e/offline-lifecycle.spec.ts --project=desktop-smoke`
 Expected: PASS (both new tests plus the rest of the offline suite — run the whole spec, not just the new tests)
 
-- [ ] **Step 5: Full smoke**
+- [x] **Step 5: Full smoke**
 
 Run: `mise run smoke`
 Expected: PASS — the core smoke journey's search/settings paths are unaffected, and mobile-smoke must pass with the prompt present (the prompt renders on both viewports; that is intended — the offer is not desktop-only).
 
-- [ ] **Step 6: Static checks and commit**
+- [x] **Step 6: Static checks and commit**
 
 Run: `mise run check`
 Expected: PASS
@@ -571,7 +571,7 @@ git commit -m "feat(launch): make the offline download offer a one-shot prompt i
 **Interfaces:**
 - Produces: `ReaderChrome` gains optional `onOpenSearch?: () => void` (rendered as an IconButton labelled `Search Quran`, id `reader-search-trigger`, placed before the settings button); the title becomes a `<button type="button" aria-label="Choose surah">` invoking `onOpenNavigation`. NavDrawer `Read source` segmented control keeps values `surah`/`juz`/`hizb`; `bookmarks` moves to a standalone button.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -599,12 +599,12 @@ test('bookmarks is a standalone destination in the navigation drawer', async ({ 
 
 (Adjust the drawer assertions to the drawer's actual landmark/name — grep `NavDrawer.tsx` for its `role`/`aria-label` and the Bookmarks list landmark; the bookmark list component is `BookmarksList` at `NavDrawer.tsx:402-408`.)
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "reader chrome exposes|bookmarks is a standalone"`
 Expected: FAIL — no `Search Quran`/`Choose surah` buttons.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 1. `ReaderChrome.tsx`: add the prop and import the `Search` icon from `lucide-react` (same import block as `Menu`, `Settings`). Render inside `qar-reader-chrome-right`, before the settings `IconButton`:
 
@@ -656,17 +656,17 @@ Expected: FAIL — no `Search Quran`/`Choose surah` buttons.
 
 The `readSource` state type already includes `'bookmarks'` — no state changes needed. Grep `tests/e2e` for assertions on the four-option segmented control (`Read source`) and update them to the standalone button.
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke`
 Expected: PASS (whole spec — the title change and drawer change can affect existing assertions)
 
-- [ ] **Step 5: Full smoke and static checks**
+- [x] **Step 5: Full smoke and static checks**
 
 Run: `mise run smoke && mise run check`
 Expected: PASS — registry guardrails must accept the ReaderChrome/NavDrawer edits (owned primitives only)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/reader/ReaderChrome.tsx src/components/reader/ReaderPageShell.tsx src/components/navigation/NavDrawer.tsx tests/e2e/core-smoke.spec.ts
@@ -679,7 +679,7 @@ git commit -m "feat(navigation): expose search in reader chrome, title selector,
 - Modify: `src/components/settings/ThemeNightControls.tsx:21-86`
 - Test: `tests/e2e/core-smoke.spec.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -693,12 +693,12 @@ test('theme offers a system-following option and night dimming is named by effec
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "theme offers"`
 Expected: FAIL — `Theme: Auto` present, no dimming description.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 In `ThemeNightControls.tsx`:
 1. THEMES (~lines 21-32): change `{ label: 'Auto', value: 'auto' }` to `{ label: 'System', value: 'auto' }` (value unchanged — stored preferences keep working; the aria-label is built as `${prefix}: ${label}` so the radio becomes `Theme: System` automatically).
@@ -712,17 +712,17 @@ In `ThemeNightControls.tsx`:
 
 Keep the Night `Off`/`On`/`Auto` options and their values untouched. Grep `tests/e2e` and `src` for other `Theme: Auto` / `Night mode` references (storybook stories under `src/**` may assert these names — update them in this commit).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "theme offers"`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check` (includes the storybook-facing guardrails)
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/settings/ThemeNightControls.tsx tests/e2e/core-smoke.spec.ts <any storybook files>
@@ -736,7 +736,7 @@ git commit -m "fix(settings): name theme System option and clarify night dimming
 - Modify: `src/data/surah-index.ts:40-43` (only if `FIRST_SURAH` is not already exported — check first)
 - Test: `tests/e2e/core-smoke.spec.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -752,12 +752,12 @@ test('surah start offers no backward navigation and titles appear once', async (
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "surah start offers"`
 Expected: FAIL — `Previous surah` (An-Nās) visible at surah 1.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 In `ReaderVerseSurface.tsx`:
 1. Remove the pre-header previous-button block (~lines 79-90): the `{startsAtSurahBeginning && previousSurah && (<SurahContinuityButton ... direction="previous" ... />)}` JSX above the header deletes entirely.
@@ -778,17 +778,17 @@ Import `FIRST_SURAH` from `../../data/surah-index` (check the actual export name
 
 Do NOT change the wrap logic in `surah-index.ts` — it serves other callers (e.g., the drawer); suppression is a presentation concern at this callsite.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "surah start offers"`
 Expected: PASS
 
-- [ ] **Step 5: Full smoke and static checks**
+- [x] **Step 5: Full smoke and static checks**
 
 Run: `mise run smoke && mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/reader/ReaderVerseSurface.tsx src/data/surah-index.ts tests/e2e/core-smoke.spec.ts
@@ -805,7 +805,7 @@ git commit -m "fix(reader): move previous-surah nav below the passage, suppress 
 **Interfaces:**
 - Produces: workspace tabs (`Overview`/`Verses`/`Explore`/`Sources`) render only when a query has produced an answer preview or overview; the no-query surface is exactly the existing Status (`title="Search the Quran"`, `description="Enter a word, phrase, or ayah reference."`); `Save search` renders only when `canSave`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -826,12 +826,12 @@ test('search defers tabs and save until a query returns results', async ({ page 
 
 (If the tab role in the owned Tabs primitive is `tab` with the label as accessible name, this holds; verify against `SearchWorkspace.tsx` tab markup and adjust the role/name pair to match — keep asserting roles/names, never classes.)
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "search defers"`
 Expected: FAIL — tabs render without a query.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 1. `SearchWorkspace.tsx`: derive `const hasQuerySurface = props.answerPreview != null || viewModel.overview != null` (use the actual prop/state names present at lines 104-146 — `props.answerPreview` and `viewModel.overview` are the two existing condition inputs). Render the `<Tabs>` (the items array defining Overview/Verses/Explore/Sources at ~lines 105-248) only when `hasQuerySurface` is true; when false, render in its place:
 
@@ -842,17 +842,17 @@ Expected: FAIL — tabs render without a query.
 (`Status` is already imported in the search components — check `SearchOverview.tsx:9-12` for the exact invocation.) Do not delete the tab definitions; gate their rendering.
 2. `SearchHeader.tsx:45-56`: replace `disabled={!canSave}` rendering with conditional rendering — `{canSave ? (<Button className="qar-react-search-save" onClick={onSaveSearch} type="button" variant="secondary">Save search</Button>) : null}`. Keep the button unchanged when it renders.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "search defers"`
 Expected: PASS
 
-- [ ] **Step 5: Full smoke and static checks**
+- [x] **Step 5: Full smoke and static checks**
 
 Run: `mise run smoke && mise run check`
 Expected: PASS — the existing core-smoke search journey (fill mercy → Show all matches → Open in Reader → URL settle) must still pass with tabs now gated
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/components/search/SearchWorkspace.tsx src/components/search/SearchHeader.tsx tests/e2e/core-smoke.spec.ts
@@ -865,7 +865,7 @@ git commit -m "fix(search): defer tabs and save action until results exist"
 - Modify: `src/app/routes/settings/AboutRoute.tsx` (after the Task 5 split)
 - Test: `tests/e2e/core-smoke.spec.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/e2e/core-smoke.spec.ts`:
 
@@ -881,12 +881,12 @@ test('about documents reference numbering and identifies editions', async ({ pag
 })
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "about documents"`
 Expected: FAIL — sections don't exist.
 
-- [ ] **Step 3: Implement the change**
+- [x] **Step 3: Implement the change**
 
 In `AboutRoute.tsx`, after the Attribution section (post-Task-5 split), add two sections using the page's existing section/heading markup pattern:
 
@@ -906,17 +906,17 @@ In `AboutRoute.tsx`, after the Attribution section (post-Task-5 split), add two 
 
 Do not name the English translation here — translation attribution stays in the existing Sources credits (Task 5); inventing an unidentified translation name would be a factual error. If the About copy already identifies the translation in the credits, add `(see Sources)` to the Reference numbering paragraph instead of duplicating it.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pnpm exec playwright test tests/e2e/core-smoke.spec.ts --project=desktop-smoke -g "about documents"`
 Expected: PASS
 
-- [ ] **Step 5: Static checks**
+- [x] **Step 5: Static checks**
 
 Run: `mise run check`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/app/routes/settings/AboutRoute.tsx tests/e2e/core-smoke.spec.ts
