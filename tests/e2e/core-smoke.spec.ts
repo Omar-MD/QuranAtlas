@@ -53,7 +53,13 @@ function framedMushafManifestJson(): string {
 
 function framedMushafAssetsJson(manifestJson: string): string {
   const manifestUrl = `${FRAMED_EDITION_PREFIX}/manifest.json`
-  const files = [{ url: manifestUrl, bytes: Buffer.byteLength(manifestJson), sha256: createHash('sha256').update(manifestJson).digest('hex') }]
+  const files = [
+    {
+      url: manifestUrl,
+      bytes: Buffer.byteLength(manifestJson),
+      sha256: createHash('sha256').update(manifestJson).digest('hex'),
+    },
+  ]
   const pageUrls: string[] = []
   for (let page = 1; page <= FRAMED_PAGE_COUNT; page += 1) {
     for (const descriptor of [framedWebpDescriptor(page, 1280, 1806), framedWebpDescriptor(page, 2136, 3014)]) {
