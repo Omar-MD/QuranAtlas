@@ -210,8 +210,11 @@ export function App() {
                 window.location.hash = '#/onboarding'
               }}
               onLater={() => {
-                void writeOfflineDownloadSetupComplete().catch(() => undefined)
-                setOfferDismissed(true)
+                // Dismiss only after the completion marker commits, so a quick
+                // reload never resurrects the offer for the decided session.
+                void writeOfflineDownloadSetupComplete()
+                  .catch(() => undefined)
+                  .then(() => setOfferDismissed(true))
               }}
             />
           ) : null}
