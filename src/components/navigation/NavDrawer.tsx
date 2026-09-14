@@ -1,18 +1,12 @@
-import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from 'react'
-import { Search as SearchIcon, Info, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Info, X } from 'lucide-react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
 import type { JuzIndexEntry } from '../../data/juz-index'
-import { loadReaderSurahIndex } from '../../data/surah-index'
 import { openReactDb } from '../../storage/db'
 import { readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
-import { readRecentSurahs, type RecentSurahPosition } from '../../continuity/recent-surahs'
 import { resolveDrawerHrefForReaderMode } from '../reader/reader-mode-routing'
-import { Button, IconButton, Input, SegmentedControl, Sheet } from '../ui'
-import { BookmarksList, type BookmarkListItem } from './BookmarksList'
-import { HizbList } from './HizbList'
-import { JuzList } from './JuzList'
-import { SurahList } from './SurahList'
+import { Badge, ChoiceButton, IconButton, ListRow, Sheet } from '../ui'
 import { DailyWirdCard } from '../reader/wird/DailyWirdCard'
 import { createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../../continuity/wird/progress'
 import { createWirdBoundaries } from '../../continuity/wird/metadata'
@@ -29,42 +23,44 @@ import type { SurahCount, WirdBoundary, WirdPlan } from '../../continuity/wird/t
 import { WirdDetail, type WirdSetupPayload } from './wird/WirdDetail'
 
 type SavedPosition = { surah: number; verse: number }
-type SurahFilter = 'all' | 'recent'
 const FALLBACK_WIRD_COUNTS: SurahCount[] = [
   { n: 1, count: 7 },
   { n: 2, count: 286 },
   { n: 114, count: 6 },
 ]
 
+// S6 navigation drawer: reader destinations only — header, Surahs (opens the
+// S5 selector), Bookmarks (its own full row with count badge), Daily wird
+// (existing feature, inherits the system), then Downloads / Settings / About.
+// No destination rail, no search panel, no inline surah filter or lists
+// (§8 items 2/7/11). Active destination uses the selection treatment.
 export function NavDrawer({
-  bookmarks,
+  currentRoute,
   initialWirdView = 'card',
-  juzRows,
+  juzRows: _juzRows,
   mode,
   onClose,
-  onDeleteBookmark,
   onNavigate,
+  onOpenSurahs,
   open,
   returnFocusId,
   showWird = true,
   suppressFocusRestore = false,
 }: {
-  bookmarks?: BookmarkListItem[]
+  currentRoute?: 'bookmarks' | 'downloads' | 'settings' | 'about' | null
   initialWirdView?: 'card' | 'detail'
+  /** Unused since §8 item 11 removed the inline juz list; kept for call compatibility. */
   juzRows?: JuzIndexEntry[]
   mode: 'verse' | 'mushaf'
   onClose: () => void
   onNavigate: (hash: string) => void
-  onDeleteBookmark?: (bookmark: Pick<BookmarkListItem, 'riwayah' | 'verseKey'>) => void
+  onOpenSurahs?: () => void
   open: boolean
   returnFocusId?: string
   showWird?: boolean
   suppressFocusRestore?: boolean
 }) {
-  const [readSource, setReadSource] = useState<'surah' | 'juz' | 'hizb' | 'bookmarks'>('surah')
-  const [surahFilter, setSurahFilter] = useState<SurahFilter>('all')
-  const [surahQuery, setSurahQuery] = useState('')
-  const [recentSurahs, setRecentSurahs] = useState<RecentSurahPosition[]>([])
+  const [bookmarkCount, setBookmarkCount] = useState(0)
   const [currentPosition, setCurrentPosition] = useState<SavedPosition | null>(null)
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
   const [wirdCounts, setWirdCounts] = useState<SurahCount[]>(FALLBACK_WIRD_COUNTS)
@@ -78,44 +74,24 @@ export function NavDrawer({
 
     void openReactDb()
       .then(async (db) => {
-        const [recent, position, plan] = await Promise.all([
-          readRecentSurahs(db),
+        const [position, plan, bookmarks] = await Promise.all([
           db.settings.get('currentPosition'),
           showWird ? readWirdPlan(db) : Promise.resolve(null),
+          db.bookmarks.count(),
         ])
         if (cancelled) return
-        setRecentSurahs(recent)
         setCurrentPosition(asSavedPosition(position?.value))
         setWirdPlan(showWird ? plan : null)
+        setBookmarkCount(bookmarks)
       })
       .catch(() => {
         if (!cancelled) {
-          setRecentSurahs([])
           setCurrentPosition(null)
           setWirdPlan(null)
         }
       })
 
     if (showWird) {
-      const controller = new AbortController()
-      void loadReaderSurahIndex(fetch, controller.signal)
-        .then((rows) => {
-          const counts = rows.map((row) => ({ count: row.counts.qaloon, n: row.n }))
-          if (!cancelled) {
-            setWirdCounts(counts)
-          }
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setWirdCounts(FALLBACK_WIRD_COUNTS)
-            setWirdPageBoundaries([])
-          }
-        })
-      return () => {
-        cancelled = true
-        controller.abort()
-      }
-    } else {
       setWirdCounts(FALLBACK_WIRD_COUNTS)
       setWirdPageBoundaries([])
     }
@@ -142,18 +118,6 @@ export function NavDrawer({
       controller.abort()
     }
   }, [open, showWird, wirdCounts, wirdPlan?.unit])
-
-  function handleSurahSearchChange(event: ChangeEvent<HTMLInputElement>) {
-    setSurahQuery(event.currentTarget.value)
-  }
-
-  function handleSurahSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter') return
-    const ref = parseQueryRef(surahQuery)
-    if (!ref) return
-    event.preventDefault()
-    void navigateForReaderMode(`#/s/${ref.surah}/${ref.verse}`)
-  }
 
   function navigateForReaderMode(hash: string) {
     if (mode === 'verse') {
@@ -266,6 +230,11 @@ export function NavDrawer({
   const fallbackReadHref = currentPosition
     ? REACT_ROUTES.surah(currentPosition.surah, currentPosition.verse)
     : REACT_ROUTES.home
+
+  function openDestination(hash: string): () => void {
+    return () => navigateForReaderMode(hash)
+  }
+
   return (
     <Sheet
       closeLabel="Close navigation"
@@ -279,147 +248,89 @@ export function NavDrawer({
       variant="navigation-drawer"
     >
       <div className="qar-react-nav-drawer-header">
-        <div className="qar-react-nav-drawer-product-row">
-          <Button
-            className="qar-react-nav-drawer-wordmark"
-            onClick={() => onNavigate(fallbackReadHref)}
-            variant="ghost"
-          >
-            <span className="qar-react-nav-drawer-logo" aria-hidden="true">
-              <svg
-                aria-hidden="true"
-                className="qar-react-nav-drawer-logo-svg"
-                data-icon="brand-rosette"
-                viewBox="0 0 48 48"
-                fill="none"
-              >
-                <path d="M24 4.5l4.1 5.2 6.6-1.1 1.6 6.4 6.2 2.6-2.9 6 2.9 6-6.2 2.6-1.6 6.4-6.6-1.1L24 43.5l-4.1-5.2-6.6 1.1-1.6-6.4-6.2-2.6 2.9-6-2.9-6 6.2-2.6 1.6-6.4 6.6 1.1L24 4.5Z" />
-                <circle cx="24" cy="24" r="12.2" />
-                <circle cx="24" cy="24" r="6.2" />
-                <path d="M24 16.8v14.4M20.4 21.2c2.4-1.2 4.8-1.2 7.2 0" />
-              </svg>
-            </span>
-            <span className="qar-react-nav-drawer-wordmark-text">QuranAtlas</span>
-          </Button>
-          <IconButton
-            className="qar-react-nav-drawer-about"
-            label="About QuranAtlas"
-            onClick={() => onNavigate('#/about')}
-          >
-            <span aria-hidden="true">
-              <Info size={20} strokeWidth={1.65} />
-            </span>
-          </IconButton>
-          <IconButton className="qar-react-nav-drawer-close" label="Close" onClick={onClose}>
-            <X aria-hidden="true" size={24} strokeWidth={1.7} />
-          </IconButton>
-        </div>
+        <ChoiceButton className="qar-react-nav-drawer-wordmark" onClick={() => onNavigate(fallbackReadHref)}>
+          <span aria-hidden="true" className="qar-react-nav-drawer-logo">
+            <svg
+              aria-hidden="true"
+              className="qar-react-nav-drawer-logo-svg"
+              data-icon="brand-rosette"
+              fill="none"
+              viewBox="0 0 48 48"
+            >
+              <path d="M24 4.5l4.1 5.2 6.6-1.1 1.6 6.4 6.2 2.6-2.9 6 2.9 6-6.2 2.6-1.6 6.4-6.6-1.1L24 43.5l-4.1-5.2-6.6 1.1-1.6-6.4-6.2-2.6 2.9-6-2.9-6 6.2-2.6 1.6-6.4 6.6 1.1L24 4.5Z" />
+              <circle cx="24" cy="24" r="12.2" />
+              <circle cx="24" cy="24" r="6.2" />
+              <path d="M24 16.8v14.4M20.4 21.2c2.4-1.2 4.8-1.2 7.2 0" />
+            </svg>
+          </span>
+          <span className="qar-react-nav-drawer-wordmark-text">QuranAtlas</span>
+        </ChoiceButton>
+        <IconButton label="Close" onClick={onClose}>
+          <X aria-hidden="true" size={22} strokeWidth={1.7} />
+        </IconButton>
       </div>
-      {drawerShowsWird && wirdView === 'card' ? (
-        <div className="qar-react-drawer-wird-slot">
-          <DailyWirdCard
-            boundaries={wirdBoundaries}
-            counts={wirdCounts}
-            onOpen={() => setWirdView('detail')}
-            plan={wirdPlan}
-          />
-        </div>
-      ) : drawerShowsWird && wirdSummary ? (
-        <div className="qar-react-drawer-wird-slot">
-          <WirdDetail
-            counts={wirdCounts}
-            currentPosition={currentPosition}
-            onBack={() => setWirdView('card')}
-            onContinue={handleWirdContinue}
-            onCreate={handleWirdCreate}
-            onRequestBrowserNotifications={requestWirdNotifications}
-            onReset={handleWirdReset}
-            summary={wirdSummary}
-          />
-        </div>
-      ) : null}
-      <div
-        className={
-          drawerShowsWird && wirdView === 'detail'
-            ? 'qar-react-nav-drawer-read qar-react-nav-drawer-read--hidden'
-            : 'qar-react-nav-drawer-read'
-        }
-      >
-        <div className="qar-react-nav-drawer-source-panel">
-          <div className="qar-react-nav-drawer-source-tabs">
-            <SegmentedControl
-              label="Read source"
-              onValueChange={(next) => setReadSource(next as 'surah' | 'juz' | 'hizb' | 'bookmarks')}
-              options={[
-                { label: 'Surah', value: 'surah' },
-                { label: 'Juz', value: 'juz' },
-                { label: 'Hizb', value: 'hizb' },
-              ]}
-              value={readSource}
+      <div className="qar-react-drawer-section" data-drawer-destinations="true">
+        <ListRow
+          onSelect={
+            onOpenSurahs
+              ? () => {
+                  onClose()
+                  onOpenSurahs()
+                }
+              : openDestination(REACT_ROUTES.surahs)
+          }
+          title="Surahs"
+        />
+        <ListRow
+          action={bookmarkCount > 0 ? <Badge tone="neutral">{bookmarkCount}</Badge> : undefined}
+          current={currentRoute === 'bookmarks'}
+          onSelect={openDestination(REACT_ROUTES.bookmarks)}
+          title="Bookmarks"
+        />
+        {drawerShowsWird && wirdView === 'card' ? (
+          <div className="qar-react-drawer-wird-slot">
+            <DailyWirdCard
+              boundaries={wirdBoundaries}
+              counts={wirdCounts}
+              onOpen={() => setWirdView('detail')}
+              plan={wirdPlan}
             />
           </div>
-          <div className="qar-react-nav-drawer-source-bookmarks">
-            <Button
-              onClick={() => setReadSource('bookmarks')}
-              type="button"
-              variant={readSource === 'bookmarks' ? 'primary' : 'secondary'}
-            >
-              Bookmarks
-            </Button>
+        ) : drawerShowsWird && wirdSummary ? (
+          <div className="qar-react-drawer-wird-slot">
+            <WirdDetail
+              counts={wirdCounts}
+              currentPosition={currentPosition}
+              onBack={() => setWirdView('card')}
+              onContinue={handleWirdContinue}
+              onCreate={handleWirdCreate}
+              onRequestBrowserNotifications={requestWirdNotifications}
+              onReset={handleWirdReset}
+              summary={wirdSummary}
+            />
           </div>
-          {readSource === 'surah' && (
-            <div className="qar-react-nav-drawer-source-tools">
-              <Input
-                autoComplete="off"
-                className="qar-react-nav-drawer-search-input"
-                hideLabel
-                label="Search surah by name, number, or verse reference"
-                labelClassName="qar-react-nav-drawer-source-search"
-                maxLength={20}
-                onChange={handleSurahSearchChange}
-                onKeyDown={handleSurahSearchKeyDown}
-                placeholder="Search..."
-                prefix={
-                  <SearchIcon
-                    aria-hidden="true"
-                    className="qar-react-nav-drawer-search-icon"
-                    size={15}
-                    strokeWidth={1.7}
-                  />
-                }
-                type="search"
-                value={surahQuery}
-              />
-              <div className="qar-react-nav-drawer-source-filter">
-                <SegmentedControl
-                  label="Surah filter"
-                  onValueChange={(next) => setSurahFilter(next as SurahFilter)}
-                  options={[
-                    { label: 'All', value: 'all' },
-                    { label: 'Recent', value: 'recent' },
-                  ]}
-                  value={surahFilter}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-        {readSource === 'surah' && (
-          <SurahList
-            currentSurah={currentPosition?.surah ?? null}
-            filter={surahFilter}
-            onNavigate={navigateForReaderMode}
-            query={surahQuery}
-            recentSurahs={recentSurahs}
-          />
-        )}
-        {readSource === 'juz' && (
-          <JuzList currentRef={currentPosition} onNavigate={navigateForReaderMode} rows={juzRows} />
-        )}
-        {readSource === 'hizb' && <HizbList currentRef={currentPosition} onNavigate={navigateForReaderMode} />}
-        {readSource === 'bookmarks' && (
-          <BookmarksList bookmarks={bookmarks} onDeleteBookmark={onDeleteBookmark} onNavigate={navigateForReaderMode} />
-        )}
+        ) : null}
+        <div aria-hidden="true" className="qar:my-2 qar:border-t qar:border-border" />
+        <ListRow
+          current={currentRoute === 'downloads'}
+          onSelect={openDestination(REACT_ROUTES.assets)}
+          title="Downloads"
+        />
+        <ListRow
+          current={currentRoute === 'settings'}
+          onSelect={openDestination(REACT_ROUTES.settings)}
+          title="Settings"
+        />
+        <ListRow
+          action={
+            <span aria-hidden="true" className="qar-react-list-row-chevron">
+              <Info size={18} strokeWidth={1.7} />
+            </span>
+          }
+          current={currentRoute === 'about'}
+          onSelect={openDestination(REACT_ROUTES.about)}
+          title="About"
+        />
       </div>
     </Sheet>
   )
@@ -431,13 +342,4 @@ function asSavedPosition(value: unknown): SavedPosition | null {
   if (!Number.isInteger(position.surah) || !Number.isInteger(position.verse)) return null
   if ((position.surah ?? 0) < 1 || (position.surah ?? 0) > 114 || (position.verse ?? 0) < 1) return null
   return { surah: position.surah as number, verse: position.verse as number }
-}
-
-function parseQueryRef(query: string): SavedPosition | null {
-  const match = query.trim().match(/^(\d{1,3})\s*:\s*(\d{1,3})$/)
-  if (!match) return null
-  const surah = Number(match[1])
-  const verse = Number(match[2])
-  if (!Number.isInteger(surah) || !Number.isInteger(verse) || surah < 1 || surah > 114 || verse < 1) return null
-  return { surah, verse }
 }

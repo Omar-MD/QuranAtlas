@@ -6,31 +6,78 @@ import { REACT_ROUTES } from '../../router/routes'
 import { ChromeFrame } from '../../../components/navigation/ChromeFrame'
 import { useNavDrawerController } from '../../../components/navigation/nav-drawer-controller'
 import { Button, Dialog, Input } from '../../../components/ui'
+import { SettingsGroup } from '../../../components/settings/SettingsGroup'
 import { SettingsPageRecipe } from '../../../design-system/recipes/settings-page'
 import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInstall } from './pwa-install'
 import { fetchLatestAppChanges, type AppUpdateCheckResult } from './pwa-updates'
 import { useClearDataDialog } from './useClearDataDialog'
 
-const credits: Array<{ content: ReactNode; id: string }> = [
+// S10 About & Sources — fixed structure: Sources used (no framework names) /
+// Numbering and references (shared with the S2 passage-group explainer) /
+// Report an issue / App (version, updates, technical credits last and
+// visually secondary).
+const sources: Array<{ content: ReactNode; id: string }> = [
   {
     content: (
       <>
-        Qur’an text (Hafs, Warsh, Qalun riwayat): King Fahd Glorious Qur’an Printing Complex (
+        Qur’an text (Qalūn riwayah):{' '}
+        <a href="https://qurancomplex.gov.sa/en/techquran/dev/" rel="noreferrer" target="_blank">
+          King Fahd Complex source
+        </a>{' '}
+        (
         <span dir="rtl" lang="ar" className="qar:whitespace-nowrap">
           مجمع الملك فهد لطباعة المصحف الشريف
         </span>
-        ), Madinah
+        ), Madinah. KFGQPC Quran text source; restricted terms apply.
       </>
     ),
     id: 'quran-text',
   },
-  { content: 'English translation: Bridges (Quran DB upstream translation source)', id: 'translation' },
   {
-    content:
-      'Arabic typography: KFGQPC Uthmanic Hafs / Warsh / Qalun (King Fahd Complex). Latin: Newsreader; UI: system. Mono: Geist Mono (SIL OFL).',
+    content: (
+      <>
+        English translation: Bridges — Fadel Soliman ({' '}
+        <a href="https://qul.tarteel.ai/resources/translation/179" rel="noreferrer" target="_blank">
+          Bridges translation source
+        </a>
+        ). QUL downloadable resource.
+      </>
+    ),
+    id: 'translation',
+  },
+  {
+    content: (
+      <>
+        Mushaf editions: <span>Qalun Quran.ws (minimal monochrome pages)</span> —{' '}
+        <a href="https://quran.ws" rel="noreferrer" target="_blank">
+          Quran.ws page source
+        </a>
+        . Quran.ws page assets free use. Qalun Furatiyyah 2023 uses coloured notation and marginal notes; its
+        private-source redistribution is limited to the user-authorized QuranAtlas noncommercial deployment.{' '}
+        <a
+          href="https://github.com/Omar-MD/QuranAtlas/blob/dev/data/catalog/mushaf-assets.json"
+          rel="noreferrer"
+          target="_blank"
+        >
+          Furatiyyah source record
+        </a>
+        .
+      </>
+    ),
+    id: 'editions',
+  },
+  {
+    content: (
+      <>
+        Arabic typography: KFGQPC Uthmanic Qaloon ({' '}
+        <a href="https://qurancomplex.gov.sa/en/techquran/dev/" rel="noreferrer" target="_blank">
+          King Fahd Complex typography source
+        </a>
+        ). Latin: Newsreader (SIL Open Font License).
+      </>
+    ),
     id: 'typography',
   },
-  { content: 'Built with React, Vite, and Workbox', id: 'stack' },
 ]
 
 type UpdateCheckState =
@@ -45,6 +92,7 @@ export function AboutRoute() {
   const drawer = useNavDrawerController()
   const [installAvailable, setInstallAvailable] = useState(false)
   const [installDone, setInstallDone] = useState(false)
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine)
   const [updateCheck, setUpdateCheck] = useState<UpdateCheckState>({
     message: 'Check for the latest app files.',
     status: 'idle',
@@ -53,6 +101,15 @@ export function AboutRoute() {
   useEffect(() => {
     initReactInstallPromptListener()
     setInstallAvailable(hasReactInstallPrompt())
+    function syncOnlineState() {
+      setOnline(typeof navigator === 'undefined' || navigator.onLine)
+    }
+    window.addEventListener('online', syncOnlineState)
+    window.addEventListener('offline', syncOnlineState)
+    return () => {
+      window.removeEventListener('online', syncOnlineState)
+      window.removeEventListener('offline', syncOnlineState)
+    }
   }, [])
 
   async function handleInstall() {
@@ -62,6 +119,7 @@ export function AboutRoute() {
   }
 
   async function handleFetchLatestChanges() {
+    if (!online) return
     setUpdateCheck({ status: 'checking', message: 'Checking for latest app files...' })
 
     try {
@@ -75,12 +133,6 @@ export function AboutRoute() {
   }
 
   const updateCheckPending = updateCheck.status === 'checking' || updateCheck.status === 'reloading'
-  const updateButtonLabel =
-    updateCheck.status === 'checking'
-      ? 'Checking...'
-      : updateCheck.status === 'reloading'
-        ? 'Reloading...'
-        : 'Check for updates'
 
   return (
     <ChromeFrame
@@ -92,115 +144,69 @@ export function AboutRoute() {
       <SettingsPageRecipe title="About">
         <p className="qar:m-0 qar:text-base qar:font-medium">Read, reflect, remember.</p>
 
-        <section
-          className="qar:grid qar:gap-2 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-4"
-          aria-label="Quran remembrance"
-        >
-          <p className="qar:m-0 qar:text-right qar:text-2xl qar:leading-relaxed" dir="rtl" lang="ar">
-            وَلَقَدۡ يَسَّرۡنَا ٱلۡقُرۡءَانَ لِلذِّكۡرِ فَهَلۡ مِن مُّدَّكِرٍ
-          </p>
-          <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-            “And We have certainly made the Qur’an easy for remembrance, so is there any who will remember?” — Qur’an
-            54:17
-          </p>
-        </section>
-
-        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-attribution">
-          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-attribution">
-            Attribution
-          </h2>
-          <h3 className="qar:m-0 qar:text-lg qar:leading-tight">Sources</h3>
+        <SettingsGroup title="Sources used">
           <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
-            {credits
-              .filter((credit) => credit.id !== 'stack')
-              .map((credit) => (
-                <li key={credit.id}>{credit.content}</li>
-              ))}
+            {sources.map((source) => (
+              <li key={source.id}>{source.content}</li>
+            ))}
           </ul>
-          <h3 className="qar:m-0 qar:text-lg qar:leading-tight">Built with</h3>
-          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
-            {credits
-              .filter((credit) => credit.id === 'stack')
-              .map((credit) => (
-                <li key={credit.id}>{credit.content}</li>
-              ))}
-          </ul>
-          <p>
-            <a href="https://github.com/Omar-MD/QuranAtlas/issues">Report an issue</a>
+        </SettingsGroup>
+
+        <SettingsGroup title="Numbering and references">
+          <p className="qar:m-0 qar:text-sm qar:leading-6">
+            This translation renders one passage across several verses. Verse references follow the Hafs counting; the
+            printed Qalūn edition may number these verses differently. Nothing is missing or repeated — the words are
+            the same. Furatiyyah page numbers are the edition's own printed pagination, and page-start references are
+            mapped to the nearest printed page.
           </p>
-        </section>
+        </SettingsGroup>
 
-        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-numbering">
-          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-numbering">
-            Reference numbering
-          </h2>
-          <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-            QuranAtlas reads in the Qalūn narration. Verse references follow the Qalūn numbering of the active edition.
-            Furatiyyah page numbers are the edition's own printed pagination.
+        <SettingsGroup title="Report an issue">
+          <p className="qar:m-0">
+            <a href="https://github.com/Omar-MD/QuranAtlas/issues" rel="noreferrer" target="_blank">
+              Report an issue
+            </a>
           </p>
-        </section>
+        </SettingsGroup>
 
-        <section className="qar:grid qar:gap-3" aria-labelledby="react-about-editions">
-          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-editions">
-            Editions
-          </h2>
-          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
-            <li>Qalun Quran.ws — Qalūn narration, minimal monochrome pages from quran.ws.</li>
-            <li>
-              Qalun Furatiyyah 2023 — Qalūn narration, 2023 Furatiyyah print with coloured notation and marginal notes.
-            </li>
-          </ul>
-        </section>
-
-        {installAvailable || installDone ? (
-          <section aria-label="Install QuranAtlas">
-            <Button
-              aria-label="Install QuranAtlas to your home screen"
-              disabled={installDone}
-              onClick={() => {
-                void handleInstall()
-              }}
-              variant="primary"
-            >
-              {installDone ? 'Installed!' : 'Install App'}
-            </Button>
-          </section>
-        ) : null}
-
-        <p className="qar:m-0 qar:text-sm qar:text-muted" data-testid="about-version">
-          v{pkg.version} · dev
-        </p>
-
-        <section
-          className="qar:grid qar:gap-2 qar:border-t qar:border-border qar:pt-4"
-          aria-labelledby="react-about-app-updates"
-        >
-          <h2 className="qar:m-0 qar:text-lg qar:leading-tight" id="react-about-app-updates">
-            App updates
-          </h2>
+        <SettingsGroup title="App">
+          <p className="qar:m-0 qar:text-sm qar:text-muted" data-testid="about-version">
+            Version {pkg.version}
+          </p>
+          {installAvailable || installDone ? (
+            <div>
+              <Button
+                aria-label="Install QuranAtlas to your home screen"
+                disabled={installDone}
+                onClick={() => {
+                  void handleInstall()
+                }}
+                variant="primary"
+              >
+                {installDone ? 'Installed!' : 'Install App'}
+              </Button>
+            </div>
+          ) : null}
           <p
+            aria-live="polite"
             className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted"
             id="react-about-app-updates-status"
-            aria-live="polite"
           >
-            {updateCheck.message}
+            {online ? updateCheck.message : 'Connect to the internet to check for updates.'}
           </p>
           <div>
             <Button
               aria-describedby="react-about-app-updates-status"
-              disabled={updateCheckPending}
+              disabled={updateCheckPending || !online}
               onClick={() => {
                 void handleFetchLatestChanges()
               }}
               variant="secondary"
             >
               <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
-              {updateButtonLabel}
+              {updateCheckPending ? 'Checking...' : 'Check for updates'}
             </Button>
           </div>
-        </section>
-
-        <section className="qar:border-t qar:border-border qar:pt-4" aria-label="Clear local data">
           <Dialog
             initialFocusRef={cancelClearDataRef}
             onOpenChange={(open) => {
@@ -209,7 +215,11 @@ export function AboutRoute() {
             }}
             open={clearData.state.open}
             title="Clear All Data?"
-            trigger={<Button variant="danger">Clear all data</Button>}
+            trigger={
+              <Button size="sm" variant="secondary">
+                Clear all data
+              </Button>
+            }
           >
             <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
               This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any
@@ -253,7 +263,11 @@ export function AboutRoute() {
               </Button>
             </div>
           </Dialog>
-        </section>
+          {/* Technical credits: last and visually secondary (S10 item 4). */}
+          <p className="qar:m-0 qar:pt-2 qar:text-xs qar:leading-5 qar:text-muted">
+            Built with React, Vite, and Workbox.
+          </p>
+        </SettingsGroup>
       </SettingsPageRecipe>
     </ChromeFrame>
   )

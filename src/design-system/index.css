@@ -73,9 +73,12 @@
   }
 
   :root {
-    --qa-react-verse-pad-x: 24px;
-    --qa-react-verse-pad-y: 1.125rem;
-    --qa-react-font-size-base: 1;
+    /* Verse reading rhythm (brief §1.2): 40 px between groups on desktop,
+       28 px under 640 px; the verse-spacing preset rewrites --qa-react-verse-gap. */
+    --qa-react-verse-gap: 40px;
+    --qa-react-verse-translation-gap: 16px;
+    --qa-react-arabic-size: 34px;
+    --qa-react-translation-size: 18px;
     font-family: var(--qa-react-font-ui);
     color: var(--qa-react-text);
     background: var(--qa-react-canvas);
@@ -96,6 +99,12 @@
   * {
     box-sizing: border-box;
   }
+
+  /* Universal focus ring (brief §2.3): 2 px accent outline, 2 px offset. */
+  :focus-visible {
+    outline: 2px solid var(--qa-react-accent);
+    outline-offset: 2px;
+  }
 }
 
 @layer qa-react-tokens {
@@ -108,181 +117,64 @@
 }
 
 @layer qa-react-components {
-  [data-font-size="xs"] {
-    --qa-react-font-size-base: 0.75;
-  }
-  [data-font-size="sm"] {
-    --qa-react-font-size-base: 0.875;
-  }
-  [data-font-size="md"] {
-    --qa-react-font-size-base: 1;
-  }
-  [data-font-size="lg"] {
-    --qa-react-font-size-base: 1.15;
-  }
-  [data-font-size="xl"] {
-    --qa-react-font-size-base: 1.3;
-  }
+  /* ---------------------------------- Type roles (brief §1.3) -------------- */
 
-  .qar-reader-verse-arabic {
-    flex: 1;
-    margin: 0;
-    font-family: var(--qa-react-font-arabic);
-    font-size: calc(1.875rem * var(--qa-react-font-size-base, 1));
-    line-height: 2.12;
-    text-align: right;
-    text-rendering: optimizelegibility;
-  }
-
-  .qar-reader-verse-translation {
-    width: 100%;
+  .qar-eyebrow {
     margin: 0;
     color: var(--qa-react-text-muted);
-    direction: ltr;
-    font-family: var(--qa-react-font-translation);
-    font-size: calc(1rem * var(--qa-react-font-size-base, 1));
-    line-height: 1.625;
-    text-align: left;
-    text-wrap: pretty;
-  }
-  [data-line-spacing="xs"] .qar-reader-verse-arabic {
-    line-height: 1.92;
-  }
-  [data-line-spacing="sm"] .qar-reader-verse-arabic {
-    line-height: 2.02;
-  }
-  [data-line-spacing="md"] .qar-reader-verse-arabic {
-    line-height: 2.12;
-  }
-  [data-line-spacing="lg"] .qar-reader-verse-arabic {
-    line-height: 2.22;
-  }
-  [data-line-spacing="xl"] .qar-reader-verse-arabic {
-    line-height: 2.32;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+    text-transform: uppercase;
   }
 
-  [data-line-spacing="xs"] .qar-reader-verse-translation {
-    line-height: 1.35;
-  }
-  [data-line-spacing="sm"] .qar-reader-verse-translation {
-    line-height: 1.5;
-  }
-  [data-line-spacing="md"] .qar-reader-verse-translation {
-    line-height: 1.65;
-  }
-  [data-line-spacing="lg"] .qar-reader-verse-translation {
-    line-height: 1.85;
-  }
-  [data-line-spacing="xl"] .qar-reader-verse-translation {
-    line-height: 2.05;
-  }
-
-  [data-word-spacing="xs"] .qar-reader-verse-arabic,
-  [data-word-spacing="xs"] .qar-reader-verse-translation {
-    word-spacing: 0;
-  }
-
-  [data-word-spacing="sm"] .qar-reader-verse-arabic,
-  [data-word-spacing="sm"] .qar-reader-verse-translation {
-    word-spacing: 0.025em;
-  }
-
-  [data-word-spacing="md"] .qar-reader-verse-arabic,
-  [data-word-spacing="md"] .qar-reader-verse-translation {
-    word-spacing: 0.05em;
-  }
-
-  [data-word-spacing="lg"] .qar-reader-verse-arabic,
-  [data-word-spacing="lg"] .qar-reader-verse-translation {
-    word-spacing: 0.1em;
-  }
-
-  [data-word-spacing="xl"] .qar-reader-verse-arabic,
-  [data-word-spacing="xl"] .qar-reader-verse-translation {
-    word-spacing: 0.18em;
-  }
-
-  [data-verse-spacing="xs"] {
-    --qa-react-verse-pad-y: 0.5rem;
-  }
-  [data-verse-spacing="sm"] {
-    --qa-react-verse-pad-y: 0.875rem;
-  }
-  [data-verse-spacing="md"] {
-    --qa-react-verse-pad-y: 1.125rem;
-  }
-  [data-verse-spacing="lg"] {
-    --qa-react-verse-pad-y: 1.625rem;
-  }
-  [data-verse-spacing="xl"] {
-    --qa-react-verse-pad-y: 2.25rem;
-  }
-
-  .qar-react-select-content {
-    z-index: 130;
-  }
-
-  .qar-reader-verse-surface {
-    width: 100%;
-    max-width: 1080px;
-    margin-inline: auto;
-  }
-
-  .qar-reader-continue {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 44px;
-    margin: 2px auto;
-    padding: 6px 12px;
-    border: 0;
-    background: transparent;
-    color: var(--qa-react-text-muted);
-    font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 400;
-    line-height: 1.2;
-    transition: none;
-  }
-
-  .qar-reader-continue:hover,
-  .qar-reader-continue:focus-visible {
-    background: transparent;
+  .qar-eyebrow--accent {
     color: var(--qa-react-accent);
   }
 
-  .qar-reader-continue-arrow {
-    font-size: 16px;
+  .qar-ui-small {
+    color: var(--qa-react-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  /* ------------------------------- Motif: ۞ rationed (brief §1.6) ---------- */
+
+  /* Hairline with the eight-point star centred: surah header + end-of-surah
+     and empty states only. One accent colour, one size per placement. */
+  .qar-ornament-rule {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    color: var(--qa-react-accent);
+  }
+
+  .qar-ornament-rule::before,
+  .qar-ornament-rule::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--qa-react-border);
+  }
+
+  .qar-ornament-rule-star {
+    font-size: 14px;
     line-height: 1;
   }
 
-  .qar-reader-continue-label {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-
-  .qar-reader-continue-kicker {
-    color: var(--qa-react-text-muted);
-    font-size: 0.72rem;
-    line-height: 1.2;
-  }
-  .qar-reader-continue-title {
-    color: var(--qa-react-text);
-    font-size: 0.85rem;
-    font-style: italic;
-    line-height: 1.2;
-  }
-
-  .qar-reader-continue:hover .qar-reader-continue-title,
-  .qar-reader-continue:focus-visible .qar-reader-continue-title {
-    color: var(--qa-react-accent);
-  }
+  /* ---------------------------- Reader shell and chrome bars (S2–S4) ------- */
 
   .qar-react-reader-shell {
-    padding-top: calc(env(safe-area-inset-top) + 56px);
+    --qa-react-chrome-height: 56px;
+    padding-top: calc(env(safe-area-inset-top) + var(--qa-react-chrome-height));
+  }
+
+  @media (max-width: 639px) {
+    .qar-react-reader-shell {
+      --qa-react-chrome-height: 48px;
+    }
   }
 
   .qar-react-reader-shell[data-reader-mode="mushaf"] {
@@ -292,523 +184,32 @@
     overflow: hidden;
   }
 
-  .qar-react-mushaf-page-surface {
-    --qa-react-mushaf-safe-left: max(0.25rem, env(safe-area-inset-left));
-    --qa-react-mushaf-safe-right: max(0.25rem, env(safe-area-inset-right));
-    --qa-react-mushaf-safe-bottom: max(0.5rem, env(safe-area-inset-bottom));
-    --qa-react-mushaf-stage-width: min(100%, calc(100dvh * var(--qa-react-mushaf-page-ratio)));
-    position: relative;
-    display: grid;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding-inline: var(--qa-react-mushaf-safe-left) var(--qa-react-mushaf-safe-right);
-  }
-  .qar-react-reader-shell[data-reader-mode="mushaf"] > .qar-react-mushaf-page-surface {
-    height: 100%;
-    min-height: 0;
-  }
-
-  .qar-react-night-shift {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0;
-    background:
-      linear-gradient(var(--qa-react-night-wash), var(--qa-react-night-wash)),
-      color-mix(in srgb, var(--qa-react-accent) 5%, transparent);
-    mix-blend-mode: multiply;
-    transition: opacity var(--qa-react-transition-fast);
-  }
-
-  html[data-night-mode="on"] .qar-react-night-shift {
-    opacity: 0.78;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    html[data-night-mode="auto"] .qar-react-night-shift {
-      opacity: 0.78;
-    }
-  }
-
-  .qar-react-sheet-drawer {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-    background: var(--qa-react-canvas);
-    color: var(--qa-react-text);
-    animation: qar-react-drawer-in var(--qa-react-transition-settle);
-  }
-
-  .qar-react-sheet-drawer > div:first-child {
-    padding-inline: var(--qa-react-space-control-x);
-  }
-
-  @media (min-width: 768px) {
-    .qar-react-sheet-drawer {
-      inset: 0 auto 0 0;
-      width: var(--qa-react-drawer-width);
-      border-inline-end: 1px solid var(--qa-react-border);
-    }
-  }
-
-  @keyframes qar-react-drawer-in {
-    from {
-      transform: translateX(-100%);
-    }
-  }
-
-  /* Shared modal scrim: every overlay paints var(--qa-react-scrim); z-index stays caller-owned. */
-  .qar-react-scrim {
-    background: var(--qa-react-scrim);
-  }
-
-  .qar-react-sheet-scrim {
-    z-index: 100;
-  }
-
-  .qar-react-sheet-drawer[data-sheet-variant="navigation-drawer"] {
-    z-index: 101;
-  }
-
-  .qar-react-chrome-bar {
-    padding-top: env(safe-area-inset-top);
-  }
-
-  [data-state="open"]:has(+ [data-sheet-variant="adaptive-settings"]) {
-    z-index: 110;
-  }
-
-  [data-sheet-variant="adaptive-settings"] {
-    position: fixed;
-    inset: 0;
-    z-index: 120;
-    display: flex;
-    width: 100vw;
-    max-width: none;
-    height: 100dvh;
-    max-height: none;
-    flex-direction: column;
-    gap: 0;
-    padding: 0;
-    overflow: hidden;
-    border: 0;
-    border-radius: 0;
-    background: var(--qa-react-settings-sheet);
-    color: var(--qa-react-text);
-    box-shadow: var(--qa-react-settings-shadow);
-  }
-
-  [data-sheet-variant="adaptive-settings"] > div:first-child {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    flex: 0 0 auto;
-    min-height: calc(env(safe-area-inset-top) + var(--qa-react-control-touch-target));
-    padding: calc(env(safe-area-inset-top) + 0.5rem) 1rem 0.5rem;
-    border-bottom: 1px solid var(--qa-react-settings-divider);
-    background: var(--qa-react-settings-header);
-  }
-
-  [data-sheet-variant="adaptive-settings"] > div:first-child > button {
-    min-width: var(--qa-react-control-touch-target);
-    min-height: var(--qa-react-control-touch-target);
-  }
-
-  [data-sheet-variant="adaptive-settings"] .qar-react-sheet-body {
-    display: flex;
-    min-height: 0;
-    flex: 1 1 auto;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .qar-react-settings-subtitle {
-    margin: 0;
-    padding: 0.75rem 1rem 0;
-    color: var(--qa-react-settings-muted);
-  }
-
-  .qar-react-settings-body {
-    display: grid;
-    align-content: start;
-    grid-auto-rows: max-content;
-    gap: 1rem;
-    min-height: 0;
-    padding: 1rem 1rem calc(env(safe-area-inset-bottom) + 1rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    background: var(--qa-react-settings-sheet);
-  }
-
-  .qar-react-settings-group {
-    min-width: 0;
-    overflow: hidden;
-    border: 1px solid var(--qa-react-settings-group-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-settings-group);
-  }
-
-  .qar-react-settings-group-heading {
-    display: grid;
-    gap: 0.25rem;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--qa-react-settings-divider);
-  }
-
-  .qar-react-settings-group-heading h3,
-  .qar-react-settings-group-heading p,
-  .qar-react-settings-appearance-title {
-    margin: 0;
-  }
-
-  .qar-react-settings-group-heading h3 {
-    color: var(--qa-react-text);
-    font-size: 0.875rem;
-    font-weight: 700;
-    line-height: 1.35;
-  }
-
-  .qar-react-settings-group-heading p {
-    color: var(--qa-react-settings-muted);
-    font-size: 0.75rem;
-    line-height: 1.45;
-  }
-
-  .qar-react-settings-group-content {
-    min-width: 0;
-  }
-
-  .qar-react-settings-panel-controls {
-    display: grid;
-  }
-
-  .qar-react-settings-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 1rem;
-    min-height: var(--qa-react-control-touch-target);
-    padding: 0.75rem 1rem;
-  }
-
-  .qar-react-settings-row + .qar-react-settings-row {
-    border-top: 1px solid var(--qa-react-settings-divider);
-  }
-
-  .qar-react-settings-row-copy {
-    display: grid;
-    gap: 0.25rem;
-    min-width: 0;
-  }
-
-  .qar-react-settings-row-label {
-    color: var(--qa-react-text);
-    font-size: 0.875rem;
-    font-weight: 650;
-    line-height: 1.35;
-  }
-
-  .qar-react-settings-row-control {
-    color: var(--qa-react-settings-muted);
-    font-size: 0.75rem;
-    line-height: 1.4;
-  }
-
-  .qar-react-settings-row--font-size {
-    grid-template-columns: minmax(8rem, 0.8fr) minmax(10rem, 1.2fr);
-  }
-
-  .qar-react-settings-font-slider {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
-  .qar-react-settings-font-slider .qar-react-settings-font-size-slider > [data-orientation="horizontal"] {
-    min-block-size: var(--qa-react-control-touch-target);
-  }
-
-  .qar-react-settings-font-size-mark {
-    color: var(--qa-react-settings-muted);
-    font-family: var(--qa-react-font-translation);
-    line-height: 1;
-  }
-
-  .qar-react-settings-font-size-mark--small {
-    font-size: 0.875rem;
-  }
-
-  .qar-react-settings-font-size-mark--large {
-    font-size: 1.5rem;
-  }
-
-  .qar-react-settings-row--select [aria-label="Reading flow"] {
-    min-width: 10rem;
-  }
-
-  .qar-react-settings-row [role="radiogroup"] {
-    min-width: min(100%, 13rem);
-  }
-
-  .qar-react-settings-row [role="radio"],
-  .qar-react-settings-row [role="switch"],
-  .qar-react-settings-row [role="combobox"] {
-    min-height: var(--qa-react-control-touch-target);
-  }
-
-  .qar-react-settings-row [role="radio"][aria-checked="true"] {
-    background: var(--qa-react-settings-selected);
-    color: var(--qa-react-settings-selected-text);
-  }
-
-  .qar-react-settings-assets {
-    min-width: 0;
-  }
-
-  .qar-react-settings-section-heading {
-    display: flex;
-    justify-content: flex-end;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .qar-react-settings-assets-toggle {
-    min-height: var(--qa-react-control-touch-target);
-    color: var(--qa-react-settings-muted);
-  }
-
-  .qar-react-settings-asset-list {
-    border-top: 1px solid var(--qa-react-settings-divider);
-  }
-
-  .qar-react-settings-asset-row {
-    display: grid;
-    grid-template-columns: var(--qa-react-control-touch-target) minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem;
-    min-height: calc(var(--qa-react-control-touch-target) + 0.75rem);
-    padding: 0.5rem 1rem;
-  }
-
-  .qar-react-settings-asset-row + .qar-react-settings-asset-row {
-    border-top: 1px solid var(--qa-react-settings-divider);
-  }
-
-  .qar-react-settings-asset-icon {
-    display: grid;
-    width: var(--qa-react-control-touch-target);
-    height: var(--qa-react-control-touch-target);
-    place-items: center;
-    border: 1px solid var(--qa-react-settings-group-border);
-    border-radius: var(--qa-react-radius-control);
-    color: var(--qa-react-settings-muted);
-  }
-
-  .qar-react-settings-asset-main,
-  .qar-react-settings-asset-label {
-    min-width: 0;
-  }
-
-  .qar-react-settings-asset-label {
-    display: block;
-    line-height: 1.4;
-  }
-
-  .qar-react-settings-asset-prefix {
-    color: var(--qa-react-settings-muted);
-    font-size: 0.75rem;
-  }
-
-  .qar-react-settings-asset-status {
-    color: var(--qa-react-settings-selected-text);
-    font-size: 0.75rem;
-    font-weight: 700;
-  }
-
-  .qar-react-settings-shell .qar-react-settings-theme-night {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .qar-react-settings-shell .qar-react-settings-appearance-panel {
-    display: grid;
-    align-content: start;
-    gap: 0.75rem;
-    min-width: 0;
-    padding: 0.75rem 1rem 1rem;
-  }
-
-  .qar-react-settings-shell .qar-react-settings-appearance-panel + .qar-react-settings-appearance-panel {
-    border-inline-start: 1px solid var(--qa-react-settings-divider);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-appearance-title {
-    color: var(--qa-react-settings-muted);
-    font-size: 0.75rem;
-    font-weight: 700;
-    line-height: 1.35;
-  }
-
-  .qar-react-settings-shell .qar-react-settings-theme-strip,
-  .qar-react-settings-shell .qar-react-settings-night-strip {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(var(--qa-react-control-touch-target), 1fr));
-    gap: 0.5rem;
-    min-width: 0;
-  }
-
-  .qar-react-settings-shell .qar-react-settings-appearance-choice {
-    display: grid;
-    grid-template-rows: 1.5rem 1.25rem auto;
-    min-width: var(--qa-react-control-touch-target);
-    min-height: var(--qa-react-control-touch-target);
-    height: auto;
-    place-items: center;
-    gap: 0.25rem;
-    padding: 0.5rem;
-    border: 1px solid var(--qa-react-settings-group-border);
-    border-radius: var(--qa-react-radius-control);
-    background: transparent;
-    color: var(--qa-react-text);
-    transition: var(--qa-react-transition-fast);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-appearance-choice[aria-checked="true"] {
-    border-color: var(--qa-react-accent-strong);
-    background: var(--qa-react-settings-selected);
-    color: var(--qa-react-settings-selected-text);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-theme-swatch {
-    display: block;
-    grid-row: 2;
-    width: 1.25rem;
-    height: 1.25rem;
-    border: 1px solid var(--qa-react-settings-group-border);
-    border-radius: var(--qa-react-radius-pill);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-theme-swatch[data-swatch="light"] {
-    background: var(--qa-react-theme-swatch-light);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-theme-swatch[data-swatch="sepia"] {
-    background: var(--qa-react-theme-swatch-sepia);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-theme-swatch[data-swatch="dark"] {
-    background: var(--qa-react-theme-swatch-dark);
-  }
-
-  .qar-react-settings-shell .qar-react-settings-choice-label {
-    grid-row: 3;
-    font-size: 0.6875rem;
-    line-height: 1.2;
-  }
-
-  @media (min-width: 768px) and (min-height: 560px) {
-    [data-sheet-variant="adaptive-settings"] {
-      inset: 0 0 0 auto;
-      width: min(28rem, calc(100vw - 1.5rem));
-      border-inline-start: 1px solid var(--qa-react-settings-group-border);
-    }
-  }
-
-  @media (max-width: 767px), (max-height: 559px) and (orientation: landscape) {
-    .qar-react-settings-body {
-      gap: 0.75rem;
-      padding: 0.75rem 0.75rem calc(env(safe-area-inset-bottom) + 0.75rem);
-    }
-
-    .qar-react-settings-row,
-    .qar-react-settings-row--font-size {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 0.5rem;
-    }
-
-    .qar-react-settings-row--switch {
-      grid-template-columns: minmax(0, 1fr) auto;
-    }
-
-    .qar-react-settings-row--select [aria-label="Reading flow"],
-    .qar-react-settings-row [role="radiogroup"] {
-      width: 100%;
-      min-width: 0;
-    }
-
-    .qar-react-settings-shell .qar-react-settings-theme-night {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .qar-react-settings-shell .qar-react-settings-appearance-panel + .qar-react-settings-appearance-panel {
-      border-top: 1px solid var(--qa-react-settings-divider);
-      border-inline-start: 0;
-    }
-  }
-
-  /* Scroll cue is a narrow-viewport affordance (S-P7); the compact-landscape
-     layout above stays combined, but the cue must not leak to wide viewports. */
-  @media (max-width: 767px) {
-    .qar-react-settings-body {
-      box-shadow: inset 0 -1px 0 var(--qa-react-settings-divider);
-    }
-  }
   .qar-reader-chrome {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 95;
-    height: calc(env(safe-area-inset-top) + 56px);
-    padding: env(safe-area-inset-top) 8px 0;
-    background: var(--qa-react-chrome-surface);
-    backdrop-filter: blur(14px);
+    height: calc(env(safe-area-inset-top) + var(--qa-react-chrome-height, 56px));
+    padding: env(safe-area-inset-top) 12px 0;
+    border-bottom: 1px solid var(--qa-react-border);
+    background: var(--qa-react-surface);
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
     align-items: center;
-    box-sizing: border-box;
-    gap: 0;
-    transform: translate3d(0, 0, 0);
-    transition: transform var(--qa-react-transition-fast);
-    will-change: transform;
+    gap: 8px;
   }
 
   .qar-reader-chrome--hidden {
-    transform: translate3d(0, calc(-100% - 8px), 0);
-    pointer-events: none;
-  }
-
-  .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
-    align-items: center;
-    box-sizing: border-box;
-    gap: 0;
-    padding: env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
-    opacity: 1;
-    transition:
-      opacity var(--qa-react-transition-fast),
-      transform var(--qa-react-transition-fast);
-    will-change: opacity, transform;
-  }
-
-  .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome--hidden {
-    opacity: 0;
+    display: none;
   }
 
   .qar-reader-chrome-left {
     grid-column: 1;
     justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .qar-reader-chrome-right {
@@ -819,73 +220,84 @@
     gap: 8px;
   }
 
+  /* Surah selector trigger (S5/D2): visible Latin label; accessible name is
+     extended with "— Choose surah" by the component. */
   .qar-reader-chrome-title {
     grid-column: 2;
     justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     max-width: min(100%, 24rem);
+    min-height: 44px;
     overflow: hidden;
     appearance: none;
-    min-height: 0;
-    padding: 0;
+    margin: 0;
+    padding: 0 8px;
     border: 0;
     background: none;
     cursor: pointer;
-    color: var(--qa-react-accent);
-    font-family: "Scheherazade New", "Noto Naskh Arabic", var(--qa-react-font-arabic);
-    font-size: clamp(1.28rem, 2.75vw, 1.75rem);
-    font-weight: 500;
-    line-height: 1.22;
+    color: var(--qa-react-text);
+    font-family: var(--qa-react-font-ui);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.2;
     text-align: center;
     text-overflow: ellipsis;
-    text-rendering: optimizelegibility;
     white-space: nowrap;
+  }
+
+  .qar-reader-chrome-title:hover {
+    color: var(--qa-react-accent);
+  }
+
+  .qar-reader-chrome-title-range {
+    color: var(--qa-react-text-muted);
+    font-weight: 500;
   }
 
   .qar-reader-chrome .qar-reader-chrome-icon {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
     border: 0;
     background: transparent;
-    box-shadow: none;
-    color: var(--qa-react-text);
-    -webkit-touch-callout: none;
-    user-select: none;
-    touch-action: manipulation;
+    color: var(--qa-react-text-muted);
   }
 
-  .qar-reader-chrome .qar-reader-chrome-icon:hover,
-  .qar-reader-chrome .qar-reader-chrome-icon:focus-visible {
-    color: var(--qa-react-accent);
+  .qar-reader-chrome .qar-reader-chrome-icon:hover {
+    color: var(--qa-react-text);
     background: transparent;
   }
 
-  .qar-reader-chrome-pill {
-    padding: 0;
-    border-color: var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-pill);
-    background: var(--qa-react-chrome-surface);
-    color: var(--qa-react-accent);
-    box-shadow: var(--qa-react-nav-shadow-control);
-    -webkit-touch-callout: none;
-    user-select: none;
-    touch-action: manipulation;
+  /* The view toggle renders in the top bar on desktop; on phones it lives in
+     the bottom strip (S3). */
+  .qar-reader-chrome-view-toggle {
+    display: none;
   }
 
-  .qar-reader-chrome-pill:hover,
-  .qar-reader-chrome-pill:focus-visible {
-    border-color: color-mix(in srgb, var(--qa-react-accent) 62%, var(--qa-react-nav-control-border));
-    color: var(--qa-react-accent-strong);
+  @media (min-width: 640px) {
+    .qar-reader-chrome-view-toggle {
+      display: inline-flex;
+    }
   }
 
   .qar-reader-chrome-wird-anchor {
-    display: inline-flex;
+    display: none;
     flex: 0 0 var(--qa-react-control-touch-target);
     inline-size: var(--qa-react-control-touch-target);
     block-size: var(--qa-react-control-touch-target);
+  }
+
+  /* The wird ring is a desktop chrome utility; the phone header stays
+     menu · title + range · overflow (S3). */
+  @media (min-width: 640px) {
+    .qar-reader-chrome-wird-anchor {
+      display: inline-flex;
+    }
   }
 
   .qar-reader-chrome-wird-status {
@@ -903,7 +315,7 @@
         var(--qa-react-accent) var(--qa-react-wird-status-progress),
         color-mix(in srgb, var(--qa-react-accent) 15%, transparent) 0
       ),
-      color-mix(in srgb, var(--qa-react-surface) 72%, transparent);
+      var(--qa-react-surface);
   }
 
   .qar-reader-chrome-wird-core {
@@ -922,57 +334,624 @@
     color: var(--qa-react-text-on-accent);
   }
 
-  @media (max-width: 520px) and (orientation: portrait) {
-    .qar-react-reader-shell[data-reader-mode] .qar-reader-chrome {
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-rows: 48px auto;
-      height: calc(env(safe-area-inset-top) + 88px);
-    }
+  /* Bottom strip (S3/S4): 56 px above the safe area; hides on scroll down. */
+  .qar-reader-bottom-strip {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 95;
+    min-height: calc(env(safe-area-inset-bottom) + 56px);
+    padding: 0 12px env(safe-area-inset-bottom);
+    border-top: 1px solid var(--qa-react-border);
+    background: var(--qa-react-surface);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    transform: translate3d(0, 0, 0);
+    transition: transform var(--qa-react-transition-fast);
+  }
 
-    .qar-react-reader-shell[data-reader-mode="verse"] {
-      padding-top: calc(env(safe-area-inset-top) + 88px);
-    }
+  .qar-reader-bottom-strip--hidden {
+    transform: translate3d(0, calc(100% + env(safe-area-inset-bottom)), 0);
+    pointer-events: none;
+  }
 
-    .qar-react-reader-shell[data-reader-mode] .qar-reader-chrome-left {
-      grid-column: 1;
-      grid-row: 1;
-    }
+  /* Floating confirmation toast (S2 "Reference copied"): sits above the bottom
+     strip and the safe area, centred, below overlays (z 125/130). */
+  .qar-react-copy-toast {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 68px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    width: min(92vw, 26rem);
+  }
 
-    .qar-react-reader-shell[data-reader-mode] .qar-reader-chrome-right {
-      grid-column: 2;
-      grid-row: 1;
-    }
+  .qar-react-copy-toast .qar-react-status {
+    box-shadow: var(--qa-react-overlay-shadow);
+    border: 1px solid var(--qa-react-border);
+    background: var(--qa-react-surface);
+  }
 
-    .qar-react-reader-shell[data-reader-mode] .qar-reader-chrome-title {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      max-width: min(80vw, 20rem);
-      font-size: clamp(1.2rem, 6vw, 1.48rem);
+  .qar-reader-bottom-strip-left {
+    grid-column: 1;
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .qar-reader-bottom-strip-center {
+    grid-column: 2;
+    justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .qar-reader-bottom-strip-right {
+    grid-column: 3;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Mushaf page identity (criterion 4): always-visible eyebrow line. */
+  .qar-mushaf-page-identity {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  /* ------------------------------ Reading column (S2) ---------------------- */
+
+  /* ~68 ch measure capped in relative units; 24 px side padding desktop,
+     16 px phones; text resize reflows, never overflows. */
+  .qar-reader-column {
+    width: 100%;
+    max-width: 68ch;
+    margin-inline: auto;
+    padding-inline: 24px;
+  }
+
+  @media (max-width: 639px) {
+    .qar-reader-column {
+      padding-inline: 16px;
     }
   }
-  .qar-react-nav-drawer-header {
+
+  .qar-reader-verse-surface {
+    width: 100%;
+    max-width: 68ch;
+    margin-inline: auto;
+    padding-block: 8px 32px;
+  }
+
+  /* Surah header block (S2): eyebrow, Arabic display (desktop only), Latin
+     name, one metadata line, basmala at verse size, ۞ hairline, 32 px after. */
+  .qar-reader-surah-header {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    margin: 0 0 32px;
+    padding-top: 8px;
+    text-align: center;
+  }
+
+  .qar-reader-surah-name {
+    margin: 0;
+    color: var(--qa-react-text);
+    font-size: 1.375rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .qar-reader-surah-display {
+    margin: 0;
+    color: var(--qa-react-text);
+    font-family: var(--qa-react-font-arabic);
+    font-size: 40px;
+    font-weight: 400;
+    line-height: 1.8;
+    text-align: center;
+    text-rendering: optimizelegibility;
+  }
+
+  @media (max-width: 639px) {
+    .qar-reader-surah-display {
+      display: none;
+    }
+  }
+
+  .qar-reader-surah-header .qar-ornament-rule {
+    margin-top: 12px;
+  }
+
+  .qar-reader-basmala {
+    margin: 0 0 40px;
+    text-align: center;
+  }
+
+  .qar-reader-basmala-text {
+    display: block;
+    max-width: 100%;
+    color: var(--qa-react-text);
+    direction: rtl;
+    font-family: var(--qa-react-font-arabic);
+    font-size: var(--qa-react-arabic-size);
+    line-height: 2;
+    text-rendering: optimizelegibility;
+  }
+
+  @media (max-width: 639px) {
+    .qar-reader-basmala {
+      margin-bottom: 28px;
+    }
+  }
+
+  /* ---------------------------- Verse groups (S2/S3) ----------------------- */
+
+  .qar-reader-verse {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 8px;
+    margin-top: var(--qa-react-verse-gap);
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: var(--qa-react-radius-control);
+    transition: background-color var(--qa-react-transition-fast);
+  }
+
+  .qar-reader-verse:first-child {
+    margin-top: 0;
+  }
+
+  @media (max-width: 639px) {
+    .qar-reader-verse {
+      margin-top: 28px;
+    }
+
+    [data-verse-spacing] .qar-reader-verse {
+      margin-top: var(--qa-react-verse-gap);
+    }
+  }
+
+  [data-verse-spacing="xs"] {
+    --qa-react-verse-gap: 32px;
+  }
+  [data-verse-spacing="md"] {
+    --qa-react-verse-gap: 40px;
+  }
+  [data-verse-spacing="xl"] {
+    --qa-react-verse-gap: 48px;
+  }
+
+  @media (max-width: 639px) {
+    [data-verse-spacing="xs"] {
+      --qa-react-verse-gap: 24px;
+    }
+    [data-verse-spacing="md"] {
+      --qa-react-verse-gap: 28px;
+    }
+    [data-verse-spacing="xl"] {
+      --qa-react-verse-gap: 36px;
+    }
+  }
+
+  @media (hover: hover) {
+    .qar-reader-verse:hover {
+      background: color-mix(in srgb, var(--qa-react-accent-tint) 55%, transparent);
+    }
+  }
+
+  /* Selection triple (brief §1.1): tint wash + 1 px accent border + check. */
+  .qar-reader-verse[data-selected="true"] {
+    border-color: var(--qa-react-accent);
+    background: var(--qa-react-accent-tint);
+  }
+
+  .qar-reader-verse-selection-check {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: var(--qa-react-accent);
+    pointer-events: none;
+  }
+
+  .qar-reader-verse[data-selected="true"] .qar-reader-verse-selection-check {
+    display: block;
+  }
+
+  /* Left gutter: medallion (stable reference, never a button) above a separate
+     bookmark control (S2). */
+  .qar-reader-verse-gutter {
+    grid-column: 1;
     display: flex;
     flex-direction: column;
-    min-height: 98px;
-    padding: 0;
-    border-bottom: 1px solid var(--qa-react-nav-row-separator);
-    background: var(--qa-react-nav-header-surface);
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--qa-react-surface) 62%, transparent);
+    align-items: center;
+    gap: 4px;
+    padding-top: 4px;
   }
 
-  .qar-react-nav-drawer-product-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px 44px;
-    gap: 6px;
+  .qar-reader-verse-medallion {
+    display: inline-flex;
     align-items: center;
-    min-height: 62px;
-    padding: 8px 12px 6px;
+    justify-content: center;
+    inline-size: 28px;
+    block-size: 28px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-pill);
+    color: var(--qa-react-text);
+    font-size: 14px;
+    font-variant-numeric: normal;
+    line-height: 1;
+    user-select: none;
+  }
+
+  .qar-reader-verse-bookmark {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: -6px 0 0 -8px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--qa-react-radius-pill);
+    background: transparent;
+    color: var(--qa-react-text-muted);
+  }
+
+  .qar-reader-verse-bookmark:hover {
+    color: var(--qa-react-text);
+    background: transparent;
+  }
+
+  .qar-reader-verse-bookmark[aria-pressed="true"] {
+    color: var(--qa-react-accent);
+  }
+
+  .qar-reader-verse-body {
+    grid-column: 2;
+    display: block;
+    min-width: 0;
+  }
+
+  .qar-reader-verse-arabic {
+    margin: 0;
+    font-family: var(--qa-react-font-arabic);
+    font-size: var(--qa-react-arabic-size);
+    line-height: 2;
+    text-align: right;
+    text-rendering: optimizelegibility;
+  }
+
+  .qar-reader-verse-translation {
+    width: 100%;
+    margin: var(--qa-react-verse-translation-gap) 0 0;
+    color: var(--qa-react-text);
+    direction: ltr;
+    font-family: var(--qa-react-font-translation);
+    font-size: var(--qa-react-translation-size);
+    line-height: 1.6;
+    text-align: left;
+    text-wrap: pretty;
+  }
+
+  /* Arabic size steps 28/31/34/38/42 and translation steps 16/18/20/22/24 are
+     separate user controls (brief §1.3). */
+  [data-arabic-size="xs"] {
+    --qa-react-arabic-size: 28px;
+  }
+  [data-arabic-size="sm"] {
+    --qa-react-arabic-size: 31px;
+  }
+  [data-arabic-size="md"] {
+    --qa-react-arabic-size: 34px;
+  }
+  [data-arabic-size="lg"] {
+    --qa-react-arabic-size: 38px;
+  }
+  [data-arabic-size="xl"] {
+    --qa-react-arabic-size: 42px;
+  }
+
+  [data-translation-size="xs"] {
+    --qa-react-translation-size: 16px;
+  }
+  [data-translation-size="sm"] {
+    --qa-react-translation-size: 18px;
+  }
+  [data-translation-size="md"] {
+    --qa-react-translation-size: 20px;
+  }
+  [data-translation-size="lg"] {
+    --qa-react-translation-size: 22px;
+  }
+  [data-translation-size="xl"] {
+    --qa-react-translation-size: 24px;
+  }
+
+  /* Passage groups (S2): one group per multi-verse translation with a 2 px
+     accent left bracket and a labelled eyebrow. */
+  .qar-reader-passage-bracket {
+    position: relative;
+    padding-inline-start: 12px;
+  }
+
+  .qar-reader-passage-bracket::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--qa-react-accent);
+  }
+
+  .qar-reader-passage-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    appearance: none;
+    margin: 0 0 8px;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--qa-react-text-muted);
+    font-family: var(--qa-react-font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .qar-reader-passage-label:hover {
+    color: var(--qa-react-accent);
+  }
+
+  /* Quiet action row revealed on selection (S2): Bookmark · Copy reference. */
+  .qar-reader-verse-actions {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  /* End of surah (S2): ۞ hairline + eyebrow; no page-level prev/next. */
+  .qar-reader-surah-end {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    margin-top: 48px;
+  }
+
+  .qar-reader-surah-end .qar-ornament-rule {
+    max-width: 320px;
+    width: 100%;
+  }
+
+  /* Loading skeleton (S2): medallion ring + two bars per group, 3 groups. */
+  .qar-reader-verse-skeleton {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 8px;
+    margin-top: var(--qa-react-verse-gap);
+  }
+
+  .qar-reader-verse-skeleton:first-child {
+    margin-top: 0;
+  }
+
+  .qar-reader-skeleton-ring {
+    inline-size: 28px;
+    block-size: 28px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-pill);
+    animation: qar-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  .qar-reader-skeleton-bar {
+    height: 16px;
+    border-radius: var(--qa-react-radius-control);
+    background: color-mix(in srgb, var(--qa-react-text-muted) 16%, transparent);
+    animation: qar-skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  .qar-reader-skeleton-bar + .qar-reader-skeleton-bar {
+    margin-top: 12px;
+  }
+
+  @keyframes qar-skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qar-reader-skeleton-ring,
+    .qar-reader-skeleton-bar {
+      animation: none;
+    }
+  }
+
+  /* ------------------------------ Footnotes (S2) --------------------------- */
+
+  .qar-reader-fn-marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
+    margin: -12px -9px;
+    padding: 0 0.1em;
+    border: 0;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--qa-react-accent);
+    font-family: var(--qa-react-font-translation);
+    font-size: 0.7em;
+    font-weight: 400;
+    line-height: 1;
+    text-decoration: underline dotted;
+    text-underline-offset: 0.15em;
+    vertical-align: super;
+  }
+
+  .qar-reader-fn-marker:hover,
+  .qar-reader-fn-marker:focus-visible,
+  .qar-reader-fn-marker[aria-expanded="true"] {
+    color: var(--qa-react-accent-strong);
+  }
+
+  .qar-reader-fn-panel {
+    position: relative;
+    margin: 0.25rem 0 0.25rem 0.5rem;
+    padding: 0.55rem 2.5rem 0.55rem 0.75rem;
+    border-left: 2px solid var(--qa-react-accent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--qa-react-accent) 6%, transparent);
+    color: var(--qa-react-text);
+    font-family: var(--qa-react-font-translation);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  .qar-reader-fn-panel-number {
+    margin-right: 0.4em;
+    color: var(--qa-react-accent);
+    font-weight: 600;
+  }
+
+  .qar-reader-fn-close {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.3rem;
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
+    padding: 0.15rem 0.4rem;
+    border: 0;
+    background: transparent;
+    color: var(--qa-react-text-muted);
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .qar-reader-fn-close:hover,
+  .qar-reader-fn-close:focus-visible {
+    color: var(--qa-react-text);
+  }
+
+  /* ------------------------------ Edition banner (S1) ---------------------- */
+
+  .qar-edition-banner {
+    display: grid;
+    gap: 4px;
+    margin: 0 auto 16px;
+    max-width: 68ch;
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 35%, var(--qa-react-border));
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-accent-tint);
+  }
+
+  .qar-edition-banner-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  /* ------------------------------- Overlays (S5/S6/S8) --------------------- */
+
+  /* Shared modal scrim: every overlay paints var(--qa-react-scrim). */
+  .qar-react-scrim {
+    background: var(--qa-react-scrim);
+  }
+
+  /* The single overlay shadow (brief §1.5) as a composable class. */
+  .qar-react-overlay-shadow {
+    box-shadow: var(--qa-react-overlay-shadow);
+  }
+
+  .qar-react-sheet-scrim {
+    z-index: 100;
+  }
+
+  .qar-react-select-content {
+    z-index: 130;
+  }
+
+  .qar-react-sheet-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    background: var(--qa-react-sheet);
+    color: var(--qa-react-text);
+    box-shadow: var(--qa-react-overlay-shadow);
+    animation: qar-react-drawer-in var(--qa-react-transition-settle);
+  }
+
+  @media (max-width: 767px) {
+    .qar-react-sheet-drawer {
+      inset: 0 auto 0 0;
+      width: min(85%, 360px);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .qar-react-sheet-drawer {
+      inset: 0 auto 0 0;
+      width: var(--qa-react-drawer-width);
+      border-inline-end: 1px solid var(--qa-react-border);
+    }
+  }
+
+  /* The navigation drawer rides above its own z-100 sheet scrim. */
+  .qar-react-sheet-drawer[data-sheet-variant="navigation-drawer"] {
+    z-index: 101;
+  }
+
+  @keyframes qar-react-drawer-in {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* Navigation drawer content (S6): reader destinations only. */
+  .qar-react-nav-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 64px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--qa-react-border);
   }
 
   .qar-react-nav-drawer-wordmark {
     display: inline-flex;
     align-items: center;
-    justify-content: flex-start;
     gap: 9px;
     min-width: 0;
     min-height: 44px;
@@ -980,285 +959,39 @@
     border: 0;
     background: transparent;
     color: var(--qa-react-text);
-    font-family: georgia, "Times New Roman", serif;
-    font-size: 1.36rem;
+    font-family: var(--qa-react-font-translation);
+    font-size: 1.25rem;
     font-weight: 500;
-    letter-spacing: 0;
   }
 
   .qar-react-nav-drawer-logo {
     display: grid;
     place-items: center;
-    flex: 0 0 40px;
-    inline-size: 40px;
-    block-size: 40px;
+    flex: 0 0 32px;
+    inline-size: 32px;
+    block-size: 32px;
     color: var(--qa-react-accent);
-    filter: drop-shadow(0 2px 4px rgb(0 0 0 / 6%));
   }
 
   .qar-react-nav-drawer-logo-svg {
-    inline-size: 40px;
-    block-size: 40px;
+    inline-size: 32px;
+    block-size: 32px;
     stroke: currentcolor;
     stroke-width: 1.45;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
 
-  .qar-react-nav-drawer-wordmark-text {
-    min-width: 0;
-    overflow: hidden;
-    font-family: georgia, "Times New Roman", serif;
-    font-size: 1.36rem;
-    font-weight: 500;
-    line-height: 1.35;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .qar-react-nav-drawer-about,
-  .qar-react-nav-drawer-close {
-    inline-size: 44px;
-    block-size: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--qa-react-text);
-  }
-
-  .qar-react-nav-drawer-about > span,
-  .qar-react-nav-drawer-close > svg {
-    display: grid;
-    place-items: center;
-    padding: 6px;
-    inline-size: 34px;
-    block-size: 34px;
-    border: 1px solid var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-pill);
-    background: color-mix(in srgb, var(--qa-react-surface) 88%, transparent);
-    box-shadow: var(--qa-react-nav-shadow-control);
-  }
-
-  .qar-react-nav-drawer-about > span {
-    color: var(--qa-react-accent);
-  }
-
-  .qar-react-nav-drawer-about svg {
-    inline-size: 20px;
-    block-size: 20px;
-  }
-
-  .qar-react-nav-drawer-read {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    flex-direction: column;
-    gap: 0;
-  }
-
   .qar-react-drawer-wird-slot {
-    padding: 10px 14px 12px;
+    padding: 12px;
   }
 
-  .qar-react-nav-drawer-source-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin: 0 14px 12px;
-  }
-
-  .qar-react-nav-drawer-source-tabs {
+  .qar-react-drawer-section {
     display: grid;
-    margin: 0;
+    padding: 8px 12px 12px;
   }
 
-  .qar-react-nav-drawer-source-tabs > fieldset {
-    display: flex;
-    width: 100%;
-  }
-
-  .qar-react-nav-drawer-source-tabs .qar-react-segmented-option {
-    flex: 1;
-    justify-content: center;
-    font-size: 0.78rem;
-    font-weight: 600;
-  }
-
-  .qar-react-nav-drawer-source-tools {
-    display: grid;
-    gap: 8px;
-    padding: 8px 0;
-  }
-
-  .qar-react-nav-drawer-source-search {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-    gap: 8px;
-  }
-
-  .qar-react-nav-drawer-search-icon {
-    flex: 0 0 auto;
-    color: var(--qa-react-text-muted);
-  }
-
-  .qar-react-nav-drawer-search-input {
-    min-width: 0;
-    flex: 1;
-    min-height: var(--qa-react-control-touch-target);
-  }
-
-  .qar-react-nav-drawer-search-input::placeholder {
-    color: color-mix(in srgb, var(--qa-react-text-muted) 72%, transparent);
-  }
-
-  .qar-react-nav-drawer-source-filter {
-    display: grid;
-  }
-
-  .qar-react-nav-drawer-source-filter > fieldset {
-    display: flex;
-    width: 100%;
-  }
-
-  .qar-react-nav-drawer-source-filter .qar-react-segmented-option {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .qar-react-nav-drawer-search-hint {
-    margin: 0;
-    padding: 0 16px 7px;
-    color: var(--qa-react-text-muted);
-    font-size: 11px;
-    font-style: italic;
-  }
-
-  .qar-react-nav-drawer-surah-list,
-  .qar-react-juz-list,
-  .qar-react-hizb-list {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 0;
-    min-height: 0;
-    margin: 0;
-    padding: 0 14px 14px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    list-style: none;
-  }
-
-  .qar-react-hizb-group-ar {
-    color: color-mix(in srgb, var(--qa-react-text) 84%, var(--qa-react-accent) 16%);
-    font-family: var(--qa-react-font-arabic);
-    font-size: 1.22rem;
-    font-weight: 500;
-    line-height: 1.28;
-  }
-
-  .qar-react-hizb-group {
-    display: flex;
-    flex: 0 0 auto;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .qar-react-hizb-group + .qar-react-hizb-group {
-    margin-top: 2px;
-  }
-
-  .qar-react-hizb-group-head {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(68px, auto) auto;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 9px 3px;
-    color: var(--qa-react-text-muted);
-  }
-
-  .qar-react-hizb-group-name {
-    min-width: 0;
-    overflow: hidden;
-    color: var(--qa-react-text-muted);
-    font-size: 0.8rem;
-    font-weight: 650;
-    line-height: 1.1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .qar-react-hizb-group-ar {
-    min-width: 0;
-    overflow: hidden;
-    text-align: start;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .qar-react-hizb-group-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .qar-react-bookmarks-list {
-    flex: 1;
-    padding: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  .qar-react-bookmarks-section + .qar-react-bookmarks-section {
-    border-top: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-bookmarks-section-hdr {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 9px 14px 6px;
-    color: var(--qa-react-text-muted);
-    background: transparent;
-    font-size: 0.82rem;
-    letter-spacing: 0;
-    text-transform: none;
-  }
-
-  .qar-react-bookmarks-section-name {
-    font-weight: 600;
-  }
-
-  .qar-react-bookmarks-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin: 0;
-    padding: 0 14px 14px;
-    list-style: none;
-  }
-
-  .qar-react-nav-drawer-list-state {
-    display: grid;
-    align-content: center;
-    gap: 9px;
-    min-height: 132px;
-    margin: 0 14px 14px;
-    padding: 16px;
-    border: 1px solid var(--qa-react-nav-row-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-nav-row-surface);
-    color: var(--qa-react-text-muted);
-    font-size: 0.9rem;
-    line-height: 1.45;
-    text-align: center;
-  }
-
+  /* Daily wird card (existing feature; flat treatment per the tier rules). */
   .qar-react-wird-card {
     position: relative;
     display: block;
@@ -1266,15 +999,12 @@
     min-height: 88px;
     padding: 0;
     overflow: hidden;
-    border: 1px solid var(--qa-react-nav-row-border);
+    border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-surface);
-    background:
-      linear-gradient(90deg, color-mix(in srgb, var(--qa-react-accent) 6%, transparent), transparent 52%),
-      var(--qa-react-nav-row-surface);
+    background: var(--qa-react-surface);
     color: var(--qa-react-text);
     cursor: pointer;
     text-align: start;
-    box-shadow: var(--qa-react-nav-shadow-row);
   }
 
   .qar-react-wird-card-hit {
@@ -1306,18 +1036,15 @@
     place-items: center;
     inline-size: 40px;
     block-size: 40px;
-    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 44%, transparent);
+    border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-pill);
-    background:
-      radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--qa-react-accent) 18%, transparent), transparent 58%),
-      var(--qa-react-nav-badge-surface);
+    background: var(--qa-react-accent-tint);
     color: var(--qa-react-accent);
-    box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--qa-react-surface) 58%, transparent);
   }
 
   .qar-react-wird-card--complete .qar-react-wird-card-status-badge {
-    border-color: color-mix(in srgb, var(--qa-react-accent) 48%, transparent);
-    background: color-mix(in srgb, var(--qa-react-accent) 18%, var(--qa-react-nav-badge-surface));
+    border-color: var(--qa-react-accent);
+    background: var(--qa-react-accent-tint);
   }
 
   .qar-react-wird-card--setup .qar-react-wird-card-status-badge::after {
@@ -1329,9 +1056,9 @@
     place-items: center;
     inline-size: 14px;
     block-size: 14px;
-    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 42%, var(--qa-react-surface));
+    border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-pill);
-    background: var(--qa-react-nav-row-surface);
+    background: var(--qa-react-surface);
     color: var(--qa-react-accent);
     font: 700 0.65rem / 1 var(--qa-react-font-ui);
   }
@@ -1427,10 +1154,6 @@
       var(--qa-react-surface);
   }
 
-  .qar-react-wird-card-meter::before {
-    content: none;
-  }
-
   .qar-react-wird-card-meter::after {
     content: "";
     position: absolute;
@@ -1464,19 +1187,14 @@
     font-size: 0.75rem;
   }
 
-  .qar-react-nav-drawer-read--hidden {
-    display: none;
-  }
-
   .qar-react-wird-detail {
     display: grid;
     gap: 14px;
     padding: 12px;
-    border: 1px solid var(--qa-react-nav-row-border);
+    border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-nav-row-surface);
+    background: var(--qa-react-surface);
     color: var(--qa-react-text);
-    box-shadow: var(--qa-react-nav-shadow-row);
   }
 
   .qar-react-wird-detail-head,
@@ -1502,7 +1220,7 @@
 
   .qar-react-wird-field {
     padding-block: 2px 8px;
-    border-bottom: 1px solid var(--qa-react-nav-row-separator);
+    border-bottom: 1px solid var(--qa-react-border);
   }
 
   .qar-react-wird-field:last-of-type {
@@ -1538,45 +1256,307 @@
     line-height: 1.35;
   }
 
+  /* ------------------------------ Settings (S8) ---------------------------- */
+
+  [data-state="open"]:has(+ [data-sheet-variant="adaptive-settings"]) {
+    z-index: 110;
+  }
+
+  [data-sheet-variant="adaptive-settings"] {
+    position: fixed;
+    inset: 0;
+    z-index: 120;
+    display: flex;
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: var(--qa-react-sheet);
+    color: var(--qa-react-text);
+  }
+
+  @media (min-width: 768px) {
+    [data-sheet-variant="adaptive-settings"] {
+      inset: 0;
+      width: min(640px, calc(100vw - 32px));
+      height: min(85dvh, 100%);
+      margin: auto;
+      border: 1px solid var(--qa-react-border);
+      border-radius: var(--qa-react-radius-surface);
+      box-shadow: var(--qa-react-overlay-shadow);
+    }
+  }
+
+  [data-sheet-variant="adaptive-settings"] > div:first-child {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex: 0 0 auto;
+    min-height: calc(env(safe-area-inset-top) + var(--qa-react-control-touch-target));
+    padding: calc(env(safe-area-inset-top) + 0.5rem) 1rem 0.5rem;
+    border-bottom: 1px solid var(--qa-react-border);
+    background: var(--qa-react-sheet);
+  }
+
+  [data-sheet-variant="adaptive-settings"] > div:first-child > button {
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
+  }
+
+  .qar-react-sheet-body {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .qar-react-settings-body {
+    display: grid;
+    align-content: start;
+    grid-auto-rows: max-content;
+    gap: 24px;
+    min-height: 0;
+    padding: 16px 16px calc(env(safe-area-inset-bottom) + 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--qa-react-sheet);
+  }
+
+  /* Quiet section heading (brief §2.2): eyebrow + hairline, never a nested
+     bordered card. */
+  .qar-react-settings-section {
+    display: grid;
+    gap: 4px;
+  }
+
+  .qar-react-settings-section > .qar-eyebrow {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--qa-react-border);
+  }
+
+  .qar-react-settings-panel-controls {
+    display: grid;
+  }
+
+  .qar-react-settings-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    min-height: var(--qa-react-control-touch-target);
+    padding: 16px 0;
+  }
+
+  .qar-react-settings-row + .qar-react-settings-row {
+    border-top: 1px solid var(--qa-react-border);
+  }
+
+  .qar-react-settings-row-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .qar-react-settings-row-label {
+    color: var(--qa-react-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  .qar-react-settings-row-control {
+    color: var(--qa-react-text-muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .qar-react-settings-row--stack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qar-react-settings-row [role="radiogroup"] {
+    min-width: min(100%, 13rem);
+  }
+
+  .qar-react-settings-row [role="radio"],
+  .qar-react-settings-row [role="switch"],
+  .qar-react-settings-row [role="combobox"] {
+    min-height: var(--qa-react-control-touch-target);
+  }
+
+  /* Phone settings rows stack label above control (S8 mobile shell). */
+  @media (max-width: 639px) {
+    .qar-react-settings-row,
+    .qar-react-settings-row--font-size {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .qar-react-settings-row--switch {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+
+  /* Theme swatch row (S8 Appearance): one selector, swatches share one layout,
+     selected = tint + border + check. */
+  .qar-theme-choice {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    min-width: 64px;
+    min-height: var(--qa-react-control-touch-target);
+    padding: 8px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: transparent;
+    color: var(--qa-react-text);
+    cursor: pointer;
+    transition: var(--qa-react-transition-fast);
+  }
+
+  .qar-theme-choice:hover {
+    background: var(--qa-react-accent-tint);
+  }
+
+  .qar-theme-choice[aria-checked="true"] {
+    border-color: var(--qa-react-accent);
+    background: var(--qa-react-accent-tint);
+    color: var(--qa-react-accent);
+  }
+
+  .qar-theme-swatch {
+    display: block;
+    inline-size: 20px;
+    block-size: 20px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-pill);
+  }
+
+  .qar-theme-choice-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  /* Dim page images preview thumbnail (S8): the only image treatment. */
+  .qar-dim-preview {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 44px;
+    block-size: 56px;
+    overflow: hidden;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0 6px,
+        color-mix(in srgb, var(--qa-react-text-muted) 18%, transparent) 6px 7px
+      ),
+      var(--qa-react-paper);
+  }
+
+  html[data-dim-page-images="on"][data-theme="dark"] .qar-dim-preview {
+    filter: brightness(0.72);
+  }
+
+  /* Mushaf edition rows (S8): one row per edition, selected treatment. */
+  .qar-edition-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: var(--qa-react-control-touch-target);
+    margin: 0;
+    padding: 16px 12px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-surface);
+    color: var(--qa-react-text);
+    cursor: pointer;
+    font: inherit;
+    text-align: start;
+  }
+
+  .qar-edition-row:hover {
+    background: var(--qa-react-accent-tint);
+  }
+
+  .qar-edition-row[aria-checked="true"] {
+    border-color: var(--qa-react-accent);
+    background: var(--qa-react-accent-tint);
+  }
+
+  /* Link rows (Downloads / About). */
+  .qar-react-settings-linkrow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    min-height: var(--qa-react-control-touch-target);
+    margin: 0;
+    padding: 16px 0;
+    border: 0;
+    border-top: 1px solid var(--qa-react-border);
+    background: none;
+    color: var(--qa-react-text);
+    cursor: pointer;
+    font: inherit;
+    text-align: start;
+  }
+
+  .qar-react-settings-linkrow:hover {
+    color: var(--qa-react-accent);
+  }
+
+  /* Segmented + tabs selected treatment: tint + 1 px accent border (+ check
+     rendered by the primitive unless compact). */
+  .qar-react-segmented-option--selected {
+    background: var(--qa-react-accent-tint);
+    box-shadow: inset 0 0 0 1px var(--qa-react-accent);
+  }
+
   .qar-react-segmented-option:has(input:focus-visible) {
     outline: 2px solid var(--qa-react-accent);
     outline-offset: 2px;
   }
 
-  .qar-react-segmented-option--selected {
-    background: var(--qa-react-nav-control-selected-bg);
-    color: var(--qa-react-nav-control-selected-text);
-  }
-
-  /* D-T1: shared Tabs selected variant — commonality §3.2 selected language. */
   .qar-react-tab-trigger[data-state="active"] {
-    background: var(--qa-react-nav-control-selected-bg);
-    color: var(--qa-react-nav-control-selected-text);
+    background: var(--qa-react-accent-tint);
+    box-shadow: inset 0 0 0 1px var(--qa-react-accent);
+    color: var(--qa-react-accent);
   }
 
-  .qar-react-status {
-    border: 1px solid transparent;
+  /* Theme swatches (S8): fixed previews of each theme's canvas. */
+  .qar-theme-swatch[data-swatch="light"] {
+    background: var(--qa-react-theme-swatch-light);
   }
 
-  .qar-react-status[data-tone="info"] {
-    border-color: var(--qa-react-status-info-border);
-    background: var(--qa-react-status-info-bg);
+  .qar-theme-swatch[data-swatch="sepia"] {
+    background: var(--qa-react-theme-swatch-sepia);
   }
 
-  .qar-react-status[data-tone="success"] {
-    border-color: var(--qa-react-status-success-border);
-    background: var(--qa-react-status-success-bg);
+  .qar-theme-swatch[data-swatch="dark"] {
+    background: var(--qa-react-theme-swatch-dark);
   }
 
-  .qar-react-status[data-tone="warning"] {
-    border-color: var(--qa-react-status-warning-border);
-    background: var(--qa-react-status-warning-bg);
+  .qar-theme-swatch[data-swatch="system"] {
+    background: linear-gradient(90deg, var(--qa-react-theme-swatch-light) 50%, var(--qa-react-theme-swatch-dark) 50%);
   }
 
-  .qar-react-status[data-tone="error"] {
-    border-color: var(--qa-react-status-error-border);
-    background: var(--qa-react-status-error-bg);
-  }
+  /* ------------------------------ List rows (S5/S7) ------------------------ */
 
   .qar-react-list-row {
     display: grid;
@@ -1584,23 +1564,22 @@
     align-items: center;
     width: 100%;
     margin: 0;
-    border: 0;
+    /* Bottom separators only: a selected row's accent border then never
+       needs to absorb an adjoining hairline. */
+    border: 1px solid transparent;
+    border-block-end-color: var(--qa-react-border);
     background: none;
     color: inherit;
     font: inherit;
     text-align: left;
   }
 
+  .qar-react-list-row:last-child {
+    border-block-end-color: transparent;
+  }
+
   .qar-react-list-row:has(> .qar-react-list-row-num) {
     grid-template-columns: auto minmax(0, 1fr) auto auto;
-  }
-
-  li + li > .qar-react-list-row {
-    border-block-start: 1px solid var(--qa-react-nav-row-separator);
-  }
-
-  .qar-react-list-row + .qar-react-list-row {
-    border-block-start: 1px solid var(--qa-react-nav-row-separator);
   }
 
   .qar-react-list-row-select {
@@ -1625,7 +1604,7 @@
   }
 
   button.qar-react-list-row-select:hover {
-    background: var(--qa-react-nav-row-surface-hover);
+    background: var(--qa-react-accent-tint);
   }
 
   .qar-react-list-row:focus-visible,
@@ -1634,18 +1613,28 @@
     outline-offset: 2px;
   }
 
-  .qar-react-list-row[data-selected="true"] {
-    background: var(--qa-react-nav-current-bg);
-    box-shadow: inset 3px 0 0 0 var(--qa-react-accent);
+  /* Selected treatment (brief §1.1): tint + 1 px accent border + check — never
+     a tier swap, never colour alone (repairs D4/B5). */
+  .qar-react-list-row[data-selected="true"],
+  .qar-react-list-row[data-current="true"] {
+    border-color: var(--qa-react-accent);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-accent-tint);
   }
 
-  .qar-react-list-row[data-current="true"] {
-    background: var(--qa-react-nav-current-bg);
-    box-shadow: inset 3px 0 0 0 var(--qa-react-accent);
+  .qar-react-list-row-check {
+    display: none;
+    color: var(--qa-react-accent);
+  }
+
+  .qar-react-list-row[data-selected="true"] .qar-react-list-row-check,
+  .qar-react-list-row[data-current="true"] .qar-react-list-row-check {
+    display: inline-flex;
   }
 
   .qar-react-list-row-num {
     min-width: 3ch;
+    color: var(--qa-react-text-muted);
   }
 
   .qar-react-list-row-title {
@@ -1669,27 +1658,161 @@
     color: var(--qa-react-text-danger);
   }
 
-  .qar-react-list-row[data-current="true"] .qar-react-list-row-num,
-  .qar-react-list-row[data-current="true"] .qar-react-list-row-title {
-    color: var(--qa-react-accent);
-  }
-
   .qar-react-list-row-chevron {
     color: var(--qa-react-text-muted);
     font-size: 1.15rem;
     line-height: 1;
   }
-  .qar-react-wird-reminder {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--qa-react-text);
-    font-size: 0.875rem;
+
+  /* Surah selector (S5). */
+  .qar-react-selector-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
   }
 
+  .qar-react-juz-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0 0 8px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    list-style: none;
+  }
+
+  .qar-react-selector-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--qa-react-border);
+  }
+
+  .qar-react-selector-footer:has(> :only-child) {
+    grid-template-columns: 1fr;
+  }
+
+  .qar-react-selector-empty {
+    margin: 0;
+    padding: 16px;
+    color: var(--qa-react-text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  /* Empty state with the rationed ۞ placement (S7). */
+  .qar-empty-state {
+    display: grid;
+    justify-items: center;
+    gap: 12px;
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .qar-empty-state .qar-ornament-rule-star {
+    font-size: 20px;
+  }
+
+  /* Bookmarks route (S7). */
+  .qar-bookmark-row-ref {
+    color: var(--qa-react-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  /* ------------------------------ Mushaf (S4) ------------------------------ */
+
+  .qa-react-mushaf-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    color: var(--qa-react-mushaf-ink);
+  }
+
+  .qar-react-mushaf-page-surface {
+    --qa-react-mushaf-safe-left: max(0.25rem, env(safe-area-inset-left));
+    --qa-react-mushaf-safe-right: max(0.25rem, env(safe-area-inset-right));
+    --qa-react-mushaf-safe-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    /* Chrome reserves its bars so printed content is never covered; Focus
+       releases the reserve and the page refits (transition below). */
+    --qa-react-mushaf-reserve-top: 0px;
+    --qa-react-mushaf-reserve-bottom: 0px;
+    --qa-react-mushaf-stage-width: min(
+      100%,
+      calc(
+        (100dvh - var(--qa-react-mushaf-reserve-top) - var(--qa-react-mushaf-reserve-bottom)) *
+        var(--qa-react-mushaf-page-ratio)
+      )
+    );
+    position: relative;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: calc(env(safe-area-inset-top) + var(--qa-react-mushaf-reserve-top)) var(--qa-react-mushaf-safe-left)
+      calc(env(safe-area-inset-bottom) + var(--qa-react-mushaf-reserve-bottom)) var(--qa-react-mushaf-safe-right);
+    padding-inline: max(var(--qa-react-mushaf-safe-left), 12px) max(var(--qa-react-mushaf-safe-right), 12px);
+    transition:
+      --qa-react-mushaf-reserve-top var(--qa-react-transition-settle),
+      --qa-react-mushaf-reserve-bottom var(--qa-react-transition-settle);
+  }
+
+  @property --qa-react-mushaf-reserve-top {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @property --qa-react-mushaf-reserve-bottom {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 0px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .qar-react-mushaf-page-surface {
+      transition: none;
+    }
+  }
+
+  /* Chrome by default reserves its bars so printed content is never covered
+     (S4); Focus releases the reserve and the page refits (registered-property
+     transition above). */
+  .qar-react-mushaf-page-surface[data-mushaf-chrome-visible="true"] {
+    --qa-react-mushaf-reserve-top: var(--qa-react-chrome-height, 56px);
+    --qa-react-mushaf-reserve-bottom: 56px;
+  }
+
+  /* The surface fills the locked viewport; its paddings carry the safe areas
+     and the chrome reserve. Percentage heights do not resolve through the
+     flex column here, so the viewport unit is used directly. */
+  .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-react-mushaf-page-surface {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  /* Margin canvas: page boundary margins are 32 px sides / 24 px top-bottom on
+     desktop, 12 px sides on phones (brief §1.2 / Step 10). */
   .qar-react-mushaf-page-stage {
     position: relative;
     align-self: center;
+    justify-self: center;
     min-height: 0;
     margin: 0 auto;
     overflow-x: clip;
@@ -1702,7 +1825,14 @@
 
   [data-mushaf-layout-mode="single"][data-mushaf-fit-width="false"] .qar-react-mushaf-page-stage {
     align-self: center;
-    width: min(100%, calc(100dvh * var(--qa-react-mushaf-page-ratio)));
+    justify-self: center;
+    width: min(
+      100%,
+      calc(
+        (100dvh - var(--qa-react-mushaf-reserve-top) - var(--qa-react-mushaf-reserve-bottom)) *
+        var(--qa-react-mushaf-page-ratio)
+      )
+    );
     max-height: 100%;
     aspect-ratio: var(--qa-react-mushaf-page-ratio);
     overflow: hidden;
@@ -1741,18 +1871,24 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  [data-mushaf-layout-mode="single"][data-mushaf-fit-width="true"] .qar-react-mushaf-page-strip {
-    align-items: stretch;
-    height: auto;
-  }
-
   .qar-react-mushaf-page-cell {
+    /* "Paper on a desk" (Step 10-A): panel surface, 12 px corners, 1 px
+       hairline; margins are live canvas; no shadow. */
     display: grid;
     place-items: stretch;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    background: var(--qa-react-mushaf-ground);
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-surface);
+    padding: 24px 32px;
+  }
+
+  @media (max-width: 639px) {
+    .qar-react-mushaf-page-cell {
+      padding: 24px 12px;
+    }
   }
 
   .qar-react-mushaf-page-strip > .qar-react-mushaf-page-cell {
@@ -1769,12 +1905,24 @@
 
   [data-mushaf-layout-mode="scroll"][data-mushaf-fit-width="false"] .qar-react-mushaf-page-cell {
     justify-self: center;
-    width: min(100%, calc(100dvh * var(--qa-react-mushaf-page-ratio)));
+    width: min(
+      100%,
+      calc(
+        (100dvh - var(--qa-react-mushaf-reserve-top) - var(--qa-react-mushaf-reserve-bottom)) *
+        var(--qa-react-mushaf-page-ratio)
+      )
+    );
   }
 
   .qar-react-mushaf-continuous-stack {
     display: grid;
-    gap: clamp(0.75rem, 2.5vw, 1.25rem);
+    gap: 24px;
+  }
+
+  @media (max-width: 639px) {
+    .qar-react-mushaf-continuous-stack {
+      gap: 16px;
+    }
   }
 
   .qar-react-mushaf-page-fit {
@@ -1796,10 +1944,34 @@
     user-select: none;
   }
 
+  /* Dim page images (S8): the only image treatment; Dark theme only. */
+  html[data-dim-page-images="on"][data-theme="dark"] .qar-react-mushaf-page-image,
+  html[data-dim-page-images="on"][data-theme="dark"] .qa-react-mushaf-svg {
+    filter: brightness(0.82);
+  }
+
   .qar-react-mushaf-framing-controls {
     display: grid;
-    gap: var(--qa-space-2);
+    gap: 12px;
     min-inline-size: min(18rem, 100%);
+  }
+
+  /* Live fit thumbnails (Step 8-A): the current page rendered in each fit. */
+  .qar-fit-thumbnail {
+    display: block;
+    inline-size: 44px;
+    block-size: 60px;
+    overflow: hidden;
+    border: 1px solid var(--qa-react-border);
+    border-radius: 2px;
+    background: var(--qa-react-paper);
+  }
+
+  .qar-fit-thumbnail > img {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
   }
 
   .qar-react-mushaf-page-status {
@@ -1807,7 +1979,7 @@
     place-items: center;
     min-height: 100%;
     padding: var(--qa-react-space-control-x);
-    background: var(--qa-react-mushaf-boundary-surface);
+    background: var(--qa-react-surface);
     color: var(--qa-react-text-muted);
     text-align: center;
   }
@@ -1824,558 +1996,275 @@
     margin-inline: auto;
   }
 
-  @media (max-width: 520px) and (orientation: portrait) {
-    .qar-react-mushaf-page-status--gate {
-      padding-top: calc(env(safe-area-inset-top) + 88px);
-    }
-  }
-
-  .qar-react-mushaf-page-actions {
-    position: absolute;
-    bottom: var(--qa-react-mushaf-safe-bottom);
+  /* Focus reveal handle (S4): the only pill affordance, 44 px above the safe
+     area, bottom-centre. */
+  .qar-react-mushaf-focus-handle {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
     left: 50%;
-    z-index: 6;
-    display: flex;
+    z-index: 96;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    width: max-content;
-    max-width: var(--qa-react-mushaf-stage-width);
-    min-height: 48px;
-    padding: 4px;
-    border: 1px solid color-mix(in srgb, var(--qa-react-border) 78%, transparent);
-    border-radius: calc(var(--qa-react-radius-surface) + 4px);
-    background: color-mix(in srgb, var(--qa-react-surface) 88%, transparent);
-    box-shadow: var(--qa-react-nav-shadow-control);
+    inline-size: 44px;
+    block-size: 44px;
+    padding: 0;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-pill);
+    background: var(--qa-react-surface);
+    color: var(--qa-react-text);
+    box-shadow: var(--qa-react-overlay-shadow);
     transform: translateX(-50%);
-    backdrop-filter: blur(14px);
   }
 
-  /* biome-ignore lint/style/noDescendingSpecificity: relocated here from the settings block (S-P8); the earlier settings-header `> button` rule styles a disjoint element tree, so the order is cosmetic only */
-  .qar-react-mushaf-page-actions > button {
-    inline-size: 48px;
-    block-size: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    padding: 0;
-    border-radius: var(--qa-react-radius-pill);
-  }
-
-  .qar-react-mushaf-page-counter {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.25rem;
-    min-height: 2rem;
-    padding: 0 0.35rem;
-    color: var(--qa-react-accent);
-    font-family: "Scheherazade New", "Noto Naskh Arabic", var(--qa-react-font-arabic);
-    font-size: clamp(1.2rem, 2.35vw, 1.55rem);
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.15;
-    text-align: center;
-    text-rendering: optimizelegibility;
-  }
-
-  .qar-react-mushaf-bookmark-toggle {
-    position: relative;
-    inline-size: 48px;
-    block-size: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    padding: 0;
-    border-color: var(--qa-react-nav-control-border);
-    border-radius: var(--qa-react-radius-pill);
-    background: color-mix(in srgb, var(--qa-react-surface) 86%, transparent);
-    color: var(--qa-react-text-muted);
-    box-shadow: var(--qa-react-nav-shadow-control);
-    transform: none;
-    backdrop-filter: blur(14px);
-  }
-
-  .qar-react-mushaf-bookmark-toggle:hover,
-  .qar-react-mushaf-bookmark-toggle:focus-visible {
-    border-color: var(--qa-react-accent);
+  .qar-react-mushaf-focus-handle:hover {
     color: var(--qa-react-accent);
   }
 
-  .qar-react-mushaf-bookmark-toggle[aria-pressed="true"] {
-    border-color: color-mix(in srgb, var(--qa-react-accent) 44%, var(--qa-react-nav-control-border));
-    background: color-mix(in srgb, var(--qa-react-accent) 13%, var(--qa-react-surface));
-    color: var(--qa-react-accent);
-  }
-
-  @media (orientation: landscape) and (max-height: 600px) {
-    .qar-react-mushaf-page-surface {
-      --qa-react-mushaf-safe-left: max(0.25rem, env(safe-area-inset-left));
-      --qa-react-mushaf-safe-right: max(0.25rem, env(safe-area-inset-right));
-      --qa-react-mushaf-safe-bottom: max(0.25rem, env(safe-area-inset-bottom));
-    }
-
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome {
-      height: calc(env(safe-area-inset-top) + 48px);
-      padding-right: max(4px, env(safe-area-inset-right));
-      padding-left: max(4px, env(safe-area-inset-left));
-    }
-
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome-right {
-      gap: 4px;
-    }
-
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome .qar-reader-chrome-icon,
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome-view-toggle,
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome-wird-anchor,
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome-wird-status {
-      inline-size: 44px;
-      block-size: 44px;
-      min-width: 44px;
-      min-height: 44px;
-    }
-
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome-title {
-      max-width: min(32vw, 16rem);
-      font-size: clamp(1.05rem, 4.4dvh, 1.28rem);
-      line-height: 1.1;
-    }
-
-    .qar-react-mushaf-page-actions {
-      gap: 2px;
-      min-height: 44px;
-      padding: 2px;
-    }
-
-    .qar-react-mushaf-page-actions > button,
-    .qar-react-mushaf-bookmark-toggle {
-      inline-size: 44px;
-      block-size: 44px;
-      min-width: 44px;
-      min-height: 44px;
-    }
-
-    .qar-react-mushaf-page-counter {
-      min-height: 1.45rem;
-      font-size: clamp(1.02rem, 4dvh, 1.22rem);
-      line-height: 1;
-    }
-  }
-
-  @media (min-width: 768px) {
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome {
-      padding-right: max(16px, env(safe-area-inset-right));
-      padding-left: max(16px, env(safe-area-inset-left));
-    }
-
-    .qar-react-mushaf-page-actions {
-      max-width: min(var(--qa-react-mushaf-stage-width), 32rem);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .qar-react-mushaf-page-surface {
-      --qa-react-mushaf-page-turn-duration: 0ms;
-    }
-
-    .qar-react-mushaf-page-strip {
-      will-change: auto;
-    }
-
-    .qar-react-reader-shell[data-reader-mode="mushaf"] .qar-reader-chrome {
-      transition: none;
-      transform: none;
-      will-change: auto;
-    }
-  }
-
-  .qar-reader-surah-header {
+  /* One-time coach mark (S4). */
+  .qar-react-mushaf-coach {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 68px);
+    left: 50%;
+    z-index: 96;
     display: grid;
-    grid-template-columns: auto auto;
-    grid-template-rows: auto auto;
-    align-items: center;
-    column-gap: 1.25rem;
-    width: fit-content;
-    max-width: 100%;
-    margin: 0 auto 0.25rem;
-    padding: 0.75rem 1rem;
+    gap: 8px;
+    width: min(320px, calc(100vw - 32px));
+    padding: 12px 16px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-surface);
+    box-shadow: var(--qa-react-overlay-shadow);
+    transform: translateX(-50%);
   }
 
-  .qar-reader-surah-meta-col {
-    grid-column: 1;
-    grid-row: 1 / span 2;
-    align-self: center;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    gap: 0.375rem;
-    text-align: left;
-  }
+  /* ------------------------------ Launch splash (S11) ---------------------- */
 
-  .qar-reader-surah-meta {
-    margin: 0;
-    color: var(--qa-react-text-muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-
-  .qar-reader-surah-name {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    align-self: center;
-    margin: 0;
-    color: var(--qa-react-accent);
-    font-family: "Scheherazade New", "Noto Naskh Arabic", var(--qa-react-font-arabic);
-    font-size: clamp(2.125rem, 4.6vw + 1rem, 2.875rem);
-    font-weight: 500;
-    line-height: 1.2;
-    text-align: right;
-    text-rendering: optimizelegibility;
-  }
-
-  .qar-reader-surah-ornament {
-    margin-inline: 0.35em;
-    color: var(--qa-react-text-muted);
-    font-size: 0.85em;
-  }
-
-  .qar-reader-basmala {
-    container-type: inline-size;
+  .qar-launch-splash {
     display: grid;
+    place-content: center;
     justify-items: center;
-    gap: 1.25rem;
-    margin: 0.5rem auto 1rem;
-    padding: 1.5rem 1rem 2rem;
-  }
-
-  .qar-reader-basmala-text {
-    display: block;
-    max-width: 100%;
-    color: var(--qa-react-text);
-    direction: rtl;
-    font-family: "Scheherazade New", "Noto Naskh Arabic", var(--qa-react-font-arabic);
-    font-size: clamp(1.375rem, 7.6cqi, 4.5rem);
-    font-weight: 400;
-    line-height: 1.5;
+    gap: 16px;
+    min-height: 100dvh;
+    padding: 24px;
     text-align: center;
-    text-rendering: optimizelegibility;
   }
 
-  .qar-reader-basmala-translation {
-    max-width: 36ch;
+  .qar-launch-splash .qar-ornament-rule-star {
+    font-size: 24px;
+  }
+
+  .qar-launch-wordmark {
     margin: 0;
-    color: var(--qa-react-text-muted);
+    color: var(--qa-react-text);
     font-family: var(--qa-react-font-translation);
-    font-size: 0.875rem;
-    font-style: italic;
-    line-height: 1.4;
-    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 500;
   }
 
-  .qa-react-mushaf-svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    color: var(--qa-react-mushaf-ink);
+  /* Unlayered so the brand wordmark font wins over the font-ui utility. */
+  .qar-react-chrome-wordmark {
+    font-family: georgia, "Times New Roman", serif;
+    letter-spacing: 0;
+  }
+}
+
+@layer qa-react-components {
+  /* Surah selector surfaces (S5). */
+  .qar-react-selector-dialog {
+    width: min(640px, calc(100vw - 32px));
   }
 
-  @keyframes qar-reader-verse-pulse {
-    0%,
-    18% {
-      background-color: var(--qa-react-reader-selection);
-      box-shadow:
-        inset 2px 0 0 var(--qa-react-bookmark-accent),
-        inset -2px 0 0 var(--qa-react-bookmark-accent);
-    }
+  /* Full-height sizing lives with the later block (see below): it must beat
+     .qar-react-bottom-sheet[data-sheet-variant="default"]'s 85dvh cap. */
 
-    100% {
-      background-color: transparent;
-      box-shadow:
-        inset 2px 0 0 transparent,
-        inset -2px 0 0 transparent;
-    }
+  .qar-react-selector-filter {
+    background: var(--qa-react-surface);
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .qar-reader-verse--pulse,
-    .qar-reader-verse[data-bookmark-pulse="true"] {
-      animation: none;
-    }
+  /* Bottom strip slot is layout-transparent; the hidden state drives the strip. */
+  .qar-reader-bottom-strip-slot {
+    display: contents;
   }
 
-  .qar-reader-verse {
-    position: relative;
-    display: grid;
-    gap: 0.75rem;
-    padding: var(--qa-react-verse-pad-y, 1.125rem) var(--qa-react-verse-pad-x, 24px)
-      var(--qa-react-verse-pad-y, 1.125rem) calc(var(--qa-react-verse-pad-x, 24px) + 6px);
-    transition: background-color var(--qa-react-transition-fast);
-  }
-
-  .qar-reader-verse--divided::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 12%;
-    right: 12%;
-    height: 1px;
+  .qar-reader-bottom-strip-slot--hidden .qar-reader-bottom-strip {
+    transform: translate3d(0, calc(100% + env(safe-area-inset-bottom)), 0);
     pointer-events: none;
-    background: linear-gradient(
-      to right,
-      transparent,
-      color-mix(in srgb, var(--qa-react-text-muted) 14%, transparent),
-      transparent
-    );
   }
 
-  .qar-reader-verse[data-selected="true"] {
-    border-radius: var(--qa-react-radius-surface);
-    background: color-mix(in srgb, var(--qa-react-text) 4%, transparent);
-    box-shadow: inset 0 0 0 1px var(--qa-react-border);
+  /* Verse-mode strip is a phone affordance (S3); desktop has no bottom strip. */
+  .qar-reader-bottom-strip[data-bottom-strip="verse"] {
+    display: none;
   }
 
-  @media (hover: hover) {
-    .qar-reader-verse:hover {
-      border-radius: var(--qa-react-radius-surface);
-      background: var(--qa-react-surface);
+  @media (max-width: 639px) {
+    .qar-reader-bottom-strip[data-bottom-strip="verse"] {
+      display: grid;
     }
   }
 
-  .qar-reader-verse--pulse,
-  .qar-reader-verse[data-bookmark-pulse="true"] {
-    border-radius: var(--qa-react-radius-surface);
-    animation: qar-reader-verse-pulse 1000ms ease-out 1;
+  .qar-reader-bottom-strip .qar-reader-chrome-icon {
+    color: var(--qa-react-text-muted);
   }
 
-  .qar-reader-verse-head {
+  .qar-reader-bottom-strip .qar-reader-chrome-icon:hover {
+    color: var(--qa-react-text);
+  }
+
+  .qar-reader-verse-translation-offline {
+    margin: var(--qa-react-verse-translation-gap) 0 0;
+    color: var(--qa-react-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  /* Adjustments sheet (S3): bottom sheet, half-detent feel via content size. */
+  .qar-react-adjustments-sheet {
+    max-height: 62dvh;
+  }
+
+  /* Mushaf loading reserve (S4): same paper surface + hairline at the page's
+     aspect ratio so the anchor never shifts while a page loads. */
+  .qar-react-mushaf-loading-reserve {
+    display: grid;
+    width: min(
+      100%,
+      calc(
+        (100dvh - var(--qa-react-mushaf-reserve-top, 0px) - var(--qa-react-mushaf-reserve-bottom, 0px)) *
+        var(--qa-react-mushaf-page-ratio, 0.707)
+      )
+    );
+    aspect-ratio: var(--qa-react-mushaf-page-ratio, 0.707);
+    margin-inline: auto;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-surface);
+  }
+
+  /* Theme swatch strip (S8): one selector, swatches share one layout. */
+  .qar-theme-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Settings live preview (S8): dedicated sample block inside the sheet. */
+  .qar-settings-preview {
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-surface);
+    padding: 16px;
+  }
+
+  /* Selector dialog scroll body. */
+  .qar-react-selector-body {
+    max-height: 70dvh;
+  }
+}
+
+@layer qa-react-components {
+  .qar-react-bottom-sheet[data-sheet-variant="default"] {
+    grid-template-rows: auto minmax(0, 1fr);
+    max-height: 85dvh;
+    overflow-y: auto;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .qar-react-bottom-sheet.qar-react-adjustments-sheet {
+    height: 62dvh;
+    max-height: 62dvh;
+    overflow: hidden;
+  }
+  .qar-react-bottom-sheet.qar-react-adjustments-sheet[data-expanded="true"] {
+    height: 92dvh;
+    max-height: 92dvh;
+  }
+  .qar-react-sheet-handle {
+    touch-action: none;
+  }
+  .qar-react-settings-font-slider {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: var(--qa-react-control-touch-target);
-    margin-bottom: 6px;
+    gap: 8px;
+    min-width: 0;
   }
-
-  .qar-reader-verse-body {
-    display: block;
+  /* The settings row's second grid column is `auto`; without a floor the
+     slider's flex chain collapses to a 0 px track and the thumb swallows the
+     large mark. Definite width (a percentage inside min() stays indefinite
+     here and never applies). */
+  .qar-react-settings-row--font-size .qar-react-settings-font-slider {
+    width: 11rem;
+    max-width: 100%;
   }
-
-  .qar-reader-verse-number {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    flex-shrink: 0;
-    min-width: var(--qa-react-control-touch-target);
-    min-height: var(--qa-react-control-touch-target);
-    padding: 6px 4px;
-    border: 0;
-    border-radius: var(--qa-react-radius-control, 6px);
-    background: transparent;
+  .qar-react-settings-font-size-mark {
     color: var(--qa-react-text-muted);
-    font-family: var(--qa-react-font-mono);
-    font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    touch-action: manipulation;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .qar-reader-verse-number:hover,
-  .qar-reader-verse-number:focus-visible {
-    color: var(--qa-react-accent-strong, var(--qa-react-accent));
-  }
-
-  .qar-reader-verse-number:active {
-    background: transparent;
-    color: var(--qa-react-bookmark-accent, var(--qa-react-accent));
-  }
-
-  .qar-reader-verse--bookmarked .qar-reader-verse-number,
-  .qar-reader-verse[data-bookmarked="true"] .qar-reader-verse-number,
-  .qar-reader-verse-number--bookmarked {
-    background: transparent;
-    color: var(--qa-react-bookmark-accent, var(--qa-react-accent));
-    font-weight: 700;
-  }
-
-  .qar-reader-verse-bookmark-glyph {
-    display: inline-block;
-    flex: 0 0 auto;
-    opacity: 0.82;
-  }
-
-  .qar-reader-verse-bookmark-glyph[data-active="true"] {
-    opacity: 1;
-  }
-
-  .qar-reader-verse-number-text {
-    display: inline-block;
-  }
-
-  .qar-reader-verse-bookmark-hint {
-    display: inline-flex;
-    align-items: center;
-    min-height: 32px;
-    color: var(--qa-react-text-muted);
-    font-family: var(--qa-react-font-ui);
-    font-size: 0.72rem;
-    font-weight: 500;
-    line-height: 1;
-    white-space: nowrap;
-  }
-
-  .qar-reader-verse-continuation {
-    font-size: 0.875rem;
-    font-style: italic;
-  }
-
-  .qar-reader-fn-marker {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--qa-react-control-touch-target);
-    min-height: var(--qa-react-control-touch-target);
-    margin: -12px -9px;
-    padding: 0 0.1em;
-    border: 0;
-    border-radius: 2px;
-    background: transparent;
-    color: var(--qa-react-accent);
-    font-family: var(--qa-react-font-translation);
-    font-size: 0.7em;
-    font-weight: 400;
-    line-height: 1;
-    text-decoration: underline dotted;
-    text-underline-offset: 0.15em;
-    vertical-align: super;
-  }
-
-  .qar-reader-fn-marker:hover,
-  .qar-reader-fn-marker:focus-visible,
-  .qar-reader-fn-marker[aria-expanded="true"] {
-    color: var(--qa-react-accent-strong);
-  }
-
-  .qar-reader-fn-marker[aria-expanded="true"] {
-    background: color-mix(in srgb, var(--qa-react-accent) 12%, transparent);
-  }
-
-  .qar-reader-fn-panel {
-    position: relative;
-    margin: 0.25rem 0 0.25rem 0.5rem;
-    padding: 0.55rem 2.5rem 0.55rem 0.75rem;
-    border-left: 2px solid var(--qa-react-accent);
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--qa-react-accent) 6%, transparent);
-    color: var(--qa-react-text);
-    font-family: var(--qa-react-font-translation);
-    font-size: 0.875rem;
-    line-height: 1.5;
-    text-wrap: pretty;
-  }
-
-  .qar-reader-fn-panel-number {
-    margin-right: 0.4em;
-    color: var(--qa-react-accent);
-    font-weight: 600;
-  }
-
-  .qar-reader-fn-close {
-    position: absolute;
-    top: 0.2rem;
-    right: 0.3rem;
-    min-width: var(--qa-react-control-touch-target);
-    min-height: var(--qa-react-control-touch-target);
-    padding: 0.15rem 0.4rem;
-    border: 0;
-    background: transparent;
-    color: var(--qa-react-text-muted);
-    font-size: 1.1rem;
     line-height: 1;
   }
-
-  .qar-reader-fn-close:hover,
-  .qar-reader-fn-close:focus-visible {
+  .qar-react-settings-font-size-mark--small {
+    font-size: 0.75rem;
+  }
+  .qar-react-settings-font-size-mark--large {
+    font-size: 1.2rem;
+  }
+  .qar-react-settings-font-size-slider {
+    flex: 1;
+    min-width: 0;
+  }
+  .qar-theme-choice[aria-pressed="true"] {
+    border-color: var(--qa-react-accent);
+    background: var(--qa-react-accent-tint);
+  }
+  .qar-theme-choice[aria-checked="true"] {
     color: var(--qa-react-text);
   }
-
-  @media (max-width: 380px) {
+  @media (max-width: 639px) {
+    .qar-reader-chrome-bookmarks {
+      display: none;
+    }
     .qar-reader-surah-header {
-      grid-template-columns: 1fr;
-      justify-items: center;
-      row-gap: 0.5rem;
-    }
-
-    .qar-reader-surah-meta-col,
-    .qar-reader-surah-name {
-      grid-column: 1;
-      grid-row: auto;
-      text-align: center;
-    }
-
-    .qar-reader-surah-meta-col {
-      align-items: center;
+      margin-bottom: 24px;
     }
   }
-
-  @media (max-width: 767px) {
-    [data-reader-margin="xs"] {
-      --qa-react-verse-pad-x: 6px;
-    }
-    [data-reader-margin="sm"] {
-      --qa-react-verse-pad-x: 14px;
-    }
-    [data-reader-margin="md"] {
-      --qa-react-verse-pad-x: 24px;
-    }
-    [data-reader-margin="lg"] {
-      --qa-react-verse-pad-x: 36px;
-    }
-    [data-reader-margin="xl"] {
-      --qa-react-verse-pad-x: 52px;
-    }
-  }
-
-  @media (min-width: 768px) and (max-width: 1179px) {
-    [data-reader-margin="xs"] .qar-reader-verse-surface {
-      max-width: 1100px;
-    }
-    [data-reader-margin="sm"] .qar-reader-verse-surface {
-      max-width: 900px;
-    }
-    [data-reader-margin="md"] .qar-reader-verse-surface {
-      max-width: 800px;
-    }
-    [data-reader-margin="lg"] .qar-reader-verse-surface {
-      max-width: 700px;
-    }
-    [data-reader-margin="xl"] .qar-reader-verse-surface {
-      max-width: 600px;
-    }
-  }
-
-  @media (min-width: 1180px) {
-    [data-reader-margin="xs"] .qar-reader-verse-surface {
-      max-width: 1320px;
-    }
-    [data-reader-margin="sm"] .qar-reader-verse-surface {
-      max-width: 1200px;
-    }
-    [data-reader-margin="md"] .qar-reader-verse-surface {
-      max-width: 1080px;
-    }
-    [data-reader-margin="lg"] .qar-reader-verse-surface {
-      max-width: 940px;
-    }
-    [data-reader-margin="xl"] .qar-reader-verse-surface {
-      max-width: 820px;
+  @media (min-width: 640px) {
+    .qar-reader-chrome-title-range {
+      display: none;
     }
   }
 }
 
-/* Unlayered so the brand wordmark font wins over the font-ui utility. */
-.qar-react-chrome-wordmark {
-  font-family: georgia, "Times New Roman", serif;
-  letter-spacing: 0;
+@layer qa-react-components {
+  .qar-fit-thumbnail {
+    position: relative;
+    block-size: auto;
+  }
+  .qar-fit-thumbnail > img {
+    position: absolute;
+    max-width: none;
+  }
+  .qar-settings-page-preview {
+    position: relative;
+    width: 160px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .qar-settings-preview-verse + .qar-settings-preview-verse {
+    margin-top: var(--qa-react-verse-gap);
+  }
+  .qar-react-selector-recents {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Full-height mobile selector (brief S5). Compound selector + late source
+     order beats the default sheet's 85dvh max-height (0,2,0 specificity). */
+  .qar-react-bottom-sheet.qar-react-selector-sheet {
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: auto;
+  }
 }

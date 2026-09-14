@@ -328,17 +328,25 @@ test('preserves the production reader through offline, fallback, retry, and resy
 test('first run reaches the reader before deciding on offline pages', async ({ page }) => {
   await wipeApplicationData(page, ORIGIN)
 
+  // S1: no setup gate — the reader renders at Al-Fātiḥah straight away, and
+  // the one-shot offer only appears after (beside) the rendered reader.
   await page.goto(`${ORIGIN}/#/s/1`)
-  await expect(page.getByRole('heading', { name: 'Choose your Mushaf edition' })).toBeVisible()
-  await expect(page.getByText('Minimal monochrome pages from quran.ws.')).toBeVisible()
-  await page.getByRole('button', { name: 'Start reading', exact: true }).click()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Download for offline reading' })).toBeVisible()
   await page.getByRole('button', { name: 'Not now' }).click()
   await expect(page.getByRole('heading', { name: 'Download for offline reading' })).toHaveCount(0)
+
+  // The one-shot edition banner names the current edition and its dismissal
+  // persists across a reload.
+  const banner = page.getByText("You're reading the Qalun Quran.ws edition")
+  await expect(banner).toBeVisible()
+  await page.getByRole('button', { name: 'Dismiss', exact: true }).click()
+  await expect(banner).toHaveCount(0)
   await page.reload()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Download for offline reading' })).toHaveCount(0)
+  await expect(page.getByText("You're reading the Qalun Quran.ws edition")).toHaveCount(0)
 })
 
 test('offline pages download still works via the one-shot offer prompt', async ({ page }) => {
@@ -346,22 +354,20 @@ test('offline pages download still works via the one-shot offer prompt', async (
   await wipeApplicationData(page, ORIGIN)
 
   await page.goto(`${ORIGIN}/#/s/1`)
-  const editionGroup = page.getByRole('radiogroup', { name: 'Mushaf edition' })
-  await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_EDITION_LABEL })).toBeVisible()
-  await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toBeVisible()
-  await page.getByRole('button', { name: 'Start reading', exact: true }).click()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-  await page.getByRole('button', { name: 'Download pages' }).click()
   await expect(page.getByRole('heading', { name: 'Download for offline reading' })).toBeVisible()
-  await page.getByRole('button', { name: 'Download for offline reading' }).click()
+  // The offer names the edition and the exact size from the asset index.
+  await expect(page.getByText(/Save the Qalun Quran.ws page images/)).toBeVisible()
+  await page.getByRole('button', { name: 'Download pages' }).click()
   await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
+  // Continue reading dismisses the overlay while the download persists.
   await page.getByRole('button', { name: 'Continue reading' }).click()
   await expect(page).toHaveURL(/#\/s\/1$/)
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
 
   await test.step('report both packs downloaded in Settings', async () => {
     await expectControlledServiceWorker(page)
-    await page.goto(`${ORIGIN}/#/settings`)
+    await page.goto(`${ORIGIN}/#/assets`)
     const region = page.getByRole('region', { name: 'Offline reading data' })
     await expect(region).toBeVisible()
     await expect(region.getByText('Reader texts')).toBeVisible()
@@ -415,20 +421,13 @@ test('rejects byte-mismatched pack files instead of caching them', async ({ page
   try {
     await wipeApplicationData(page, ORIGIN)
     await page.goto(`${ORIGIN}/#/s/1`)
-    const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
-    // The radio input is visually hidden (sr-only) under its label span; a real
-    // user clicks the visible label, so the test does too.
-    await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
     await page.getByRole('button', { name: 'Download pages' }).click()
-    await expect(page.getByRole('heading', { name: 'Download for offline reading' })).toBeVisible()
-    await page.getByRole('button', { name: 'Download for offline reading' }).click()
     await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
     await page.getByRole('button', { name: 'Continue reading' }).click()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
 
-    await page.goto(`${ORIGIN}/#/settings`)
+    await page.goto(`${ORIGIN}/#/assets`)
     const region = page.getByRole('region', { name: 'Offline reading data' })
     await expect(region).toBeVisible()
     await expect(region.getByText(SYNTHETIC_EDITION_LABEL)).toBeVisible()
@@ -449,19 +448,15 @@ test('auto-downloads the required reader texts without consent', async ({ page }
   test.setTimeout(120_000)
   await wipeApplicationData(page, ORIGIN)
 
-  await test.step('skip the optional Mushaf pages at onboarding', async () => {
+  await test.step('skip the optional Mushaf pages at the one-shot offer', async () => {
     await page.goto(`${ORIGIN}/#/s/1`)
-    const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
-    // The radio input is visually hidden (sr-only) under its label span; a real
-    // user clicks the visible label, so the test does too.
-    await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
+    await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
     await page.getByRole('button', { name: 'Not now' }).click()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   })
   await test.step('reader texts install on their own while the Mushaf pack stays untouched', async () => {
     await expectControlledServiceWorker(page)
-    await page.goto(`${ORIGIN}/#/settings`)
+    await page.goto(`${ORIGIN}/#/assets`)
     const region = page.getByRole('region', { name: 'Offline reading data' })
     await expect(region).toBeVisible()
     await expect(region.getByText('Reader texts')).toBeVisible()
@@ -482,11 +477,16 @@ test('renders an uncached external-image page without waiting for decode', async
   await wipeApplicationData(page, ORIGIN)
 
   await page.goto(`${ORIGIN}/#/s/1`)
-  const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
-  await group.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
-  await page.getByRole('button', { name: 'Start reading', exact: true }).click()
-  await page.getByRole('button', { name: 'Not now' }).click()
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  // Choose the custom edition from Settings (S8); the onboarding chooser is
+  // superseded by the read-first launch.
+  await page.getByRole('button', { name: 'Not now' }).click()
+  await page.goto(`${ORIGIN}/#/settings`)
+  const editionGroup = page.getByRole('radiogroup', { name: 'Mushaf edition' })
+  await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toBeVisible()
+  await editionGroup.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
+  await page.getByRole('button', { name: 'Close settings', exact: true }).click()
+  await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
   await expectControlledServiceWorker(page)
   await expect(
     cachedResources(page, {
@@ -499,11 +499,12 @@ test('renders an uncached external-image page without waiting for decode', async
   await expect(page.getByRole('main', { name: /mushaf reader/i })).toBeVisible()
   await expect(page.getByRole('img', { name: 'Mushaf page 1, Qaloon, beginning near 1:1' })).toBeVisible()
 
-  await test.step('the v2 edition pack exposes the plain-language text-area control', async () => {
+  await test.step('the v2 edition pack exposes the plain-language page zoom control', async () => {
     await page.getByRole('button', { name: 'Open settings' }).click()
-    await expect(page.getByRole('heading', { name: 'Mushaf settings' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
     await expect(page.getByText(/% reviewed frame width/)).toHaveCount(0)
-    await expect(page.getByText(/Text area \d+%/)).toBeVisible()
+    await expect(page.getByText(/Text area \d+%/)).toHaveCount(0)
+    await expect(page.getByText(/Page zoom — \d+%/)).toBeVisible()
   })
 })
 
@@ -513,22 +514,21 @@ test('downloads the custom external-image edition and renders it offline', async
 
   await test.step('choose the custom v2 edition and consent to the page download', async () => {
     await page.goto(`${ORIGIN}/#/s/1`)
+    await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+    await page.getByRole('button', { name: 'Not now' }).click()
+    await page.goto(`${ORIGIN}/#/settings`)
     const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
     await group.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
+    await page.getByRole('button', { name: 'Close settings', exact: true }).click()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-    await page.getByRole('button', { name: 'Download pages' }).click()
-    await expect(page.getByRole('heading', { name: 'Download for offline reading' })).toBeVisible()
-    await expect(page.getByText('Complete Mushaf ·')).toContainText(/ MB$/)
-    await page.getByRole('button', { name: 'Download for offline reading' }).click()
-    await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
-    await page.getByRole('button', { name: 'Continue reading' }).click()
-    await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+    await page.goto(`${ORIGIN}/#/assets`)
+    await page.getByRole('button', { name: 'Download pages', exact: true }).click()
+    await expect(page.getByRole('progressbar', { name: /Downloading/ }).first()).toBeVisible()
   })
 
   await test.step('both the reader texts and the custom page pack install', async () => {
     await expectControlledServiceWorker(page)
-    await page.goto(`${ORIGIN}/#/settings`)
+    await page.goto(`${ORIGIN}/#/assets`)
     const region = page.getByRole('region', { name: 'Offline reading data' })
     await expect(region.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL)).toBeVisible()
     await expect.poll(async () => region.getByText('Downloaded', { exact: true }).count(), { timeout: 180_000 }).toBe(3)
@@ -564,15 +564,10 @@ test('switches the Mushaf edition from settings and downloads the other edition 
   test.setTimeout(240_000)
   await wipeApplicationData(page, ORIGIN)
 
-  await test.step('onboard and install the default edition pack', async () => {
+  await test.step('install the default edition pack via the one-shot offer', async () => {
     await page.goto(`${ORIGIN}/#/s/1`)
-    const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
-    await group.getByText(SYNTHETIC_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Start reading', exact: true }).click()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
     await page.getByRole('button', { name: 'Download pages' }).click()
-    await expect(page.getByRole('heading', { name: 'Download for offline reading' })).toBeVisible()
-    await page.getByRole('button', { name: 'Download for offline reading' }).click()
     await expect(page.getByRole('progressbar', { name: 'Downloading offline reading data' })).toBeVisible()
     await page.getByRole('button', { name: 'Continue reading' }).click()
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
@@ -581,26 +576,24 @@ test('switches the Mushaf edition from settings and downloads the other edition 
   await test.step('switch to the other edition from the settings Mushaf edition group', async () => {
     await expectControlledServiceWorker(page)
     await page.goto(`${ORIGIN}/#/settings`)
-    const offlineRegion = page.getByRole('region', { name: 'Offline reading data' })
-    await expect(offlineRegion.getByText(SYNTHETIC_EDITION_LABEL)).toBeVisible()
-
     const editionRegion = page.getByRole('region', { name: 'Mushaf edition' })
     const editionGroup = editionRegion.getByRole('radiogroup', { name: 'Mushaf edition' })
     await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_EDITION_LABEL })).toBeVisible()
     await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toBeVisible()
-    // The radio input is visually hidden (sr-only) under its label span; a real
-    // user clicks the visible label, so the test does too.
+    // A real user clicks the visible edition row label, so the test does too.
     await editionRegion.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
+    await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+  })
 
-    // The offline rows re-derive from the newly active edition: its pack is
-    // not downloaded, while the previous edition's row leaves the surface.
+  await test.step('the downloads surface re-derives from the newly active edition', async () => {
+    await page.goto(`${ORIGIN}/#/assets`)
+    const offlineRegion = page.getByRole('region', { name: 'Offline reading data' })
     await expect(offlineRegion.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL)).toBeVisible()
     await expect(offlineRegion.getByText(SYNTHETIC_EDITION_LABEL)).toHaveCount(0)
     await expect(offlineRegion.getByText('Not downloaded')).toBeVisible()
-  })
-
-  await test.step('download the switched edition pack from settings', async () => {
-    const offlineRegion = page.getByRole('region', { name: 'Offline reading data' })
     await offlineRegion.getByRole('button', { name: 'Download pages', exact: true }).click()
     await expect
       .poll(async () => offlineRegion.getByText('Downloaded', { exact: true }).count(), { timeout: 180_000 })

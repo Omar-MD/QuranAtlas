@@ -5,9 +5,6 @@ import { fn } from 'storybook/test'
 import { ChromeFrame } from './ChromeFrame'
 import { useNavDrawerController } from './nav-drawer-controller'
 import { BookmarksList } from './BookmarksList'
-import { HizbList } from './HizbList'
-import { JuzList } from './JuzList'
-import { SurahList } from './SurahList'
 import { SurahsRoute } from '../../app/routes/navigation/SurahsRoute'
 
 const meta = {
@@ -43,18 +40,6 @@ export const ChromeFrameDefault: Story = {
 export const ChromeFrameDrawerOpen: Story = {
   parameters: { layout: 'fullscreen' },
   render: () => <ChromeFramePage openDrawer />,
-}
-
-export const Surahs: Story = {
-  render: () => <SurahList />,
-}
-
-export const Juz: Story = {
-  render: () => <JuzList />,
-}
-
-export const Hizb: Story = {
-  render: () => <HizbList />,
 }
 
 export const BookmarksPopulated: Story = {

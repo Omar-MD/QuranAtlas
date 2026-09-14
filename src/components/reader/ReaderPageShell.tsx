@@ -2,6 +2,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ReaderPageRecipe } from '../../design-system/recipes/reader-page'
 import { ReaderChrome, type ReaderMode } from './ReaderChrome'
+import { SurahSelector } from './SurahSelector'
 import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
 import { ChromeDrawer } from '../navigation/ChromeFrame'
 import { requestReactSettingsOverlay } from '../../app/settings-overlay-events'
@@ -9,54 +10,53 @@ import type { WirdSummary } from '../../continuity/wird/types'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 import { ReaderInteractionProvider } from './ReaderInteractionContext'
 import type { MushafChromePin } from './useMushafChromeVisibility'
+import { REACT_ROUTES } from '../../app/router/routes'
 
 export function ReaderPageShell({
+  bottomStrip,
+  bottomStripPinned = false,
   children,
-  chromeVisible,
+  chromeVisible = true,
+  currentSurah = null,
   interactionSuspended = false,
   mode,
   onChromePinChange,
   onModeChange,
-  onChromeVisibleChange,
+  pageImageUrl,
+  resolveSelectorHref,
   showWirdStatus = true,
-  surahLabel,
+  surahName,
+  verseRange,
   wirdSummary,
 }: {
+  bottomStrip?: ReactNode
+  /** Mushaf Focus mode pins the strip regardless of the scroll rule. */
+  bottomStripPinned?: boolean
   children: ReactNode
   chromeVisible?: boolean
+  currentSurah?: number | null
   interactionSuspended?: boolean
   mode: ReaderMode
   onChromePinChange?: (source: MushafChromePin, pinned: boolean) => void
   onModeChange?: (mode: ReaderMode) => void
-  onChromeVisibleChange?: (visible: boolean) => void
+  pageImageUrl?: string | null
+  resolveSelectorHref?: (hash: string) => Promise<string> | string
   showWirdStatus?: boolean
-  surahLabel?: string
+  surahName?: string
+  verseRange?: string
   wirdSummary?: WirdSummary
 }) {
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
-  const [internalChromeVisible, setInternalChromeVisible] = useState(true)
+  const [selectorOpen, setSelectorOpen] = useState(false)
   const [drawerWirdInitialView, setDrawerWirdInitialView] = useState<'card' | 'detail'>('card')
-  const visible = chromeVisible ?? internalChromeVisible
   const dailyWirdVisible = showWirdStatus
+  // S3: the mobile verse bottom strip hides on scroll down and returns on
+  // scroll up — one stable hidden endpoint, one directional threshold.
+  const [stripVisible, setStripVisible] = useState(true)
   const lastScrollTopRef = useRef(0)
 
-  const setChromeVisible = useCallback(
-    (nextVisible: boolean) => {
-      if (chromeVisible === undefined) {
-        setInternalChromeVisible(nextVisible)
-      } else {
-        onChromeVisibleChange?.(nextVisible)
-      }
-    },
-    [chromeVisible, onChromeVisibleChange],
-  )
-
-  useEffect(() => {
-    if (!drawerState.open) return undefined
-    setChromeVisible(true)
-    return undefined
-  }, [drawerState.open, setChromeVisible])
-
+  // Chrome pinning: open overlays (drawer) and suspended interaction keep the
+  // bars visible regardless of Focus mode (Mushaf S4).
   useEffect(() => {
     onChromePinChange?.('drawer', drawerState.open)
   }, [drawerState.open, onChromePinChange])
@@ -68,21 +68,21 @@ export function ReaderPageShell({
   useEffect(() => {
     if (mode !== 'verse') return undefined
     lastScrollTopRef.current = currentScrollTop()
-    setChromeVisible(true)
+    setStripVisible(true)
 
     function onScroll() {
       const top = currentScrollTop()
       const delta = top - lastScrollTopRef.current
       if (top < 20) {
-        setChromeVisible(true)
+        setStripVisible(true)
         lastScrollTopRef.current = top
         return
       }
       if (delta > 36) {
-        setChromeVisible(false)
+        setStripVisible(false)
         lastScrollTopRef.current = top
       } else if (delta < -36) {
-        setChromeVisible(true)
+        setStripVisible(true)
         lastScrollTopRef.current = top
       }
     }
@@ -91,13 +91,25 @@ export function ReaderPageShell({
     return () => {
       window.removeEventListener('scroll', onScroll, { capture: true })
     }
-  }, [mode, setChromeVisible])
+  }, [mode])
+
+  // Mushaf Focus mode hides the strip via the pin; the scroll rule is a
+  // verse-mode (mobile) affordance only.
+  const stripShown = bottomStripPinned || (mode === 'verse' && stripVisible)
+
+  const openDrawer = useCallback(
+    (returnFocusId: string, initialWirdView: 'card' | 'detail') => {
+      setDrawerWirdInitialView(initialWirdView)
+      dispatchDrawer({ returnFocusId, type: 'open' })
+    },
+    [dispatchDrawer],
+  )
 
   return (
-    <ReaderInteractionProvider suspended={interactionSuspended || drawerState.open}>
+    <ReaderInteractionProvider suspended={interactionSuspended || drawerState.open || selectorOpen}>
       <main
-        className={`qar-react-reader-shell qar:bg-canvas qar:text-text${mode === 'verse' ? ' qar:min-h-screen' : ''}`}
         aria-label={mode === 'verse' ? 'Verse reader' : 'Mushaf reader'}
+        className={`qar-react-reader-shell qar:bg-canvas qar:text-text${mode === 'verse' ? ' qar:min-h-screen' : ''}`}
         data-reader-mode={mode}
         id="reader-main"
         tabIndex={-1}
@@ -107,31 +119,25 @@ export function ReaderPageShell({
             <>
               <ReaderChrome
                 mode={mode}
-                onBlurCapture={(event) => {
-                  if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
-                    onChromePinChange?.('focus', false)
-                  }
+                visible={chromeVisible}
+                onOpenBookmarks={() => {
+                  window.location.hash = REACT_ROUTES.bookmarks
                 }}
-                onFocusCapture={() => onChromePinChange?.('focus', true)}
-                onModeChange={onModeChange}
                 onOpenNavigation={() => {
-                  setChromeVisible(true)
-                  setDrawerWirdInitialView('card')
-                  dispatchDrawer({ returnFocusId: 'reader-navigation-trigger', type: 'open' })
+                  openDrawer('reader-navigation-trigger', 'card')
                 }}
+                onOpenSelector={() => setSelectorOpen(true)}
                 onOpenSettings={() => {
-                  setChromeVisible(true)
-                  requestReactSettingsOverlay(mode, 'reader-settings-trigger')
+                  requestReactSettingsOverlay(mode, 'reader-settings-trigger', pageImageUrl)
                 }}
-                title={surahLabel}
-                visible={visible}
+                onModeChange={onModeChange}
+                surahName={surahName}
+                verseRange={verseRange}
                 wirdStatus={
                   dailyWirdVisible && wirdSummary ? (
                     <ReaderWirdStatusIndicator
                       onOpen={() => {
-                        setChromeVisible(true)
-                        setDrawerWirdInitialView('detail')
-                        dispatchDrawer({ returnFocusId: 'reader-wird-status-trigger', type: 'open' })
+                        openDrawer('reader-wird-status-trigger', 'detail')
                       }}
                       summary={wirdSummary}
                     />
@@ -142,12 +148,39 @@ export function ReaderPageShell({
                 controller={{ dispatch: dispatchDrawer, state: drawerState }}
                 initialWirdView={dailyWirdVisible ? drawerWirdInitialView : 'card'}
                 mode={mode}
+                onOpenSurahs={() => {
+                  setSelectorOpen(true)
+                }}
                 showWird={dailyWirdVisible}
+              />
+              <SurahSelector
+                currentSurah={currentSurah}
+                onClose={() => setSelectorOpen(false)}
+                onNavigate={(hash) => {
+                  setSelectorOpen(false)
+                  window.location.hash = hash
+                }}
+                open={selectorOpen}
+                resolveHref={resolveSelectorHref}
               />
             </>
           }
-          contentClassName={mode === 'mushaf' ? 'qar:max-w-none qar:p-0' : undefined}
+          contentClassName={mode === 'mushaf' ? 'qar:max-w-none qar:p-0 qar:flex-1 qar:min-h-0' : undefined}
         >
+          {bottomStrip ? (
+            <div
+              className={
+                stripShown
+                  ? 'qar-reader-bottom-strip-slot'
+                  : 'qar-reader-bottom-strip-slot qar-reader-bottom-strip-slot--hidden'
+              }
+              inert={!stripShown || undefined}
+              aria-hidden={!stripShown || undefined}
+              data-bottom-strip={mode}
+            >
+              {bottomStrip}
+            </div>
+          ) : null}
           {children}
         </ReaderPageRecipe>
       </main>

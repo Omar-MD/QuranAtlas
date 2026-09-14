@@ -9,7 +9,11 @@ import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/rou
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
 import { shouldPersistLastSurface, useLaunchRestore } from '../continuity/launch-restore'
 import { normalizeLastSurface } from '../continuity/last-surface'
-import { applyReactReaderAppearance, subscribeReactReaderPreferencesChanged } from '../storage/reader-preferences'
+import {
+  applyReactReaderAppearance,
+  subscribeReactReaderPreferencesChanged,
+  subscribeReactSystemTheme,
+} from '../storage/reader-preferences'
 import { reconcileOfflinePacks } from '../offline/download/offline-pack-downloader'
 import { readNativeReactReaderPreferences } from '../storage/settings-writer'
 import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-scheduler'
@@ -26,9 +30,6 @@ const BookmarksRoute = lazy(() =>
   import('./routes/navigation/BookmarksRoute').then((module) => ({ default: module.BookmarksRoute })),
 )
 const MushafRoute = lazy(() => import('./routes/read/MushafRoute').then((module) => ({ default: module.MushafRoute })))
-const OnboardingRoute = lazy(() =>
-  import('./routes/onboarding/OnboardingRoute').then((module) => ({ default: module.OnboardingRoute })),
-)
 const ReaderRoute = lazy(() => import('./routes/read/ReaderRoute').then((module) => ({ default: module.ReaderRoute })))
 const SettingsRoute = lazy(() =>
   import('./routes/settings/SettingsRoute').then((module) => ({ default: module.SettingsRoute })),
@@ -42,18 +43,17 @@ export function App() {
   const [offerDismissed, setOfferDismissed] = useState(false)
   const initialRoute = useMemo(() => getInitialReactHash(), [])
   const [hash, setHash] = useState(initialRoute)
-  const [launchRefreshVersion, setLaunchRefreshVersion] = useState(0)
   const [lastBaseHash, setLastBaseHash] = useState<string | null>(null)
   const [settingsOverlay, setSettingsOverlay] = useState<{
     initialAssetsExpanded?: boolean
     mode: SettingsRouteMode
+    pageImageUrl?: string | null
     previousHash: string
     returnFocusId?: string
   } | null>(null)
   const upgradeBlocked = useSyncExternalStore(subscribeReaderUpgrade, isReaderUpgradeBlocked, () => false)
-  const launchRestore = useLaunchRestore(hash, launchRefreshVersion)
-  const activeHash =
-    launchRestore.status === 'ready' ? launchRestore.hash : launchRestore.status === 'setup' ? '#/onboarding' : hash
+  const launchRestore = useLaunchRestore(hash)
+  const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : hash
   const activeRoute = matchReactRoute(activeHash)
   const transientSettingsHash =
     !settingsOverlay && activeRoute.type === 'settings' && lastBaseHash && isBaseHash(lastBaseHash)
@@ -78,6 +78,7 @@ export function App() {
       }
       setHash(nextHash)
     }
+
     window.addEventListener('hashchange', syncHash)
     return () => window.removeEventListener('hashchange', syncHash)
   }, [hash, initialRoute])
@@ -90,13 +91,15 @@ export function App() {
       })
       .catch(() => undefined)
     const unsubscribe = subscribeReactReaderPreferencesChanged((preferences) => {
-      if (preferences.theme && preferences.nightMode) {
-        applyReactReaderAppearance({ theme: preferences.theme, nightMode: preferences.nightMode })
+      if (preferences.theme) {
+        applyReactReaderAppearance({ dimPageImages: preferences.dimPageImages, theme: preferences.theme })
       }
     })
+    const unsubscribeSystemTheme = subscribeReactSystemTheme()
     return () => {
       active = false
       unsubscribe()
+      unsubscribeSystemTheme()
     }
   }, [])
 
@@ -113,6 +116,7 @@ export function App() {
         setLastBaseHash(previousHash)
         setSettingsOverlay({
           mode: settingsModeForHash(previousHash),
+          pageImageUrl: request.pageImageUrl,
           previousHash,
           returnFocusId: request.returnFocusId,
         })
@@ -182,7 +186,6 @@ export function App() {
       className={`${containsMushafViewport ? 'qar:h-dvh qar:overflow-hidden' : 'qar:min-h-screen'} qar:bg-canvas qar:text-text`}
       data-react-route={activeHash}
     >
-      <div aria-hidden="true" className="qar-react-night-shift" data-testid="react-night-shift" />
       {upgradeBlocked && (
         <Status
           title="Close other QuranAtlas tabs to finish updating."
@@ -191,30 +194,11 @@ export function App() {
         />
       )}
       {launchRestore.status === 'loading' && !upgradeBlocked && <LaunchSplash />}
-      {launchRestore.status === 'setup' && (
-        <Suspense fallback={<LaunchSplash />}>
-          <OnboardingRoute
-            onComplete={(nextHash) => {
-              window.history.replaceState(null, '', nextHash)
-              setLaunchRefreshVersion((version) => version + 1)
-              setHash(nextHash)
-            }}
-            onRetryAvailability={() => {
-              setLaunchRefreshVersion((version) => version + 1)
-            }}
-            pendingHash={launchRestore.hash}
-            setup={launchRestore.setup}
-          />
-        </Suspense>
-      )}
       {launchRestore.status === 'ready' && (
         <Suspense fallback={<LaunchSplash />}>
           {launchRestore.offlineOffer != null && !offerDismissed ? (
             <OfflineOfferPrompt
               offer={launchRestore.offlineOffer}
-              onDownload={() => {
-                window.location.hash = '#/onboarding'
-              }}
               onLater={() => {
                 // Dismiss only after the completion marker commits, so a quick
                 // reload never resurrects the offer for the decided session.
@@ -256,6 +240,7 @@ export function App() {
                 initialAssetsExpanded={settingsOverlay.initialAssetsExpanded}
                 mode={settingsOverlay.mode}
                 onClose={closeSettingsOverlay}
+                pageImageUrl={settingsOverlay.pageImageUrl}
                 previousHash={settingsOverlay.previousHash}
                 returnFocusId={settingsOverlay.returnFocusId}
               />
@@ -304,7 +289,7 @@ function UnsupportedRoute({ hash }: { hash: string }) {
     <NavigationPageRecipe title="This link is not supported">
       <Status
         action={
-          <Button onClick={() => (window.location.hash = REACT_ROUTES.surahs)} variant="secondary">
+          <Button onClick={() => (window.location.hash = REACT_ROUTES.surahs)} variant="primary">
             Go to Surah list
           </Button>
         }

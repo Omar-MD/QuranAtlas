@@ -52,14 +52,14 @@ export function SurahsRoute() {
         <div className="qar:grid qar:gap-2">
           <Input
             autoComplete="off"
-            className="qar-react-nav-drawer-search-input"
+            className="qar:min-h-11"
             hideLabel
-            label="Search surah by name, number, or verse reference"
-            labelClassName="qar-react-nav-drawer-source-search"
+            label="Filter by name, number, or verse"
+            labelClassName="qar:grid qar:gap-2"
             maxLength={20}
             onChange={(event) => setQuery(event.currentTarget.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Search by name, number, or 2:255"
+            placeholder="Filter by name, number, or verse"
             prefix={
               <SearchIcon aria-hidden="true" className="qar-react-nav-drawer-search-icon" size={15} strokeWidth={1.7} />
             }
@@ -67,7 +67,7 @@ export function SurahsRoute() {
             value={query}
           />
           <SegmentedControl
-            label="Surah filter"
+            label="Show"
             onValueChange={(next) => setFilter(next as SurahsFilter)}
             options={[
               { label: 'All', value: 'all' },

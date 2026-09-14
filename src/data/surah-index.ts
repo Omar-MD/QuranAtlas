@@ -37,9 +37,9 @@ export async function loadReaderSurahIndex(
   return rows
 }
 
-export function adjacentSurahNumber(surah: number, direction: ReaderSurahDirection): number {
-  if (direction === 'next') return surah >= SURAH_COUNT ? FIRST_SURAH : surah + 1
-  return surah <= FIRST_SURAH ? SURAH_COUNT : surah - 1
+export function adjacentSurahNumber(surah: number, direction: ReaderSurahDirection): number | null {
+  if (direction === 'next') return surah >= SURAH_COUNT ? null : surah + 1
+  return surah <= FIRST_SURAH ? null : surah - 1
 }
 
 export function findAdjacentSurah(

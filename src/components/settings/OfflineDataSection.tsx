@@ -15,6 +15,7 @@ import {
 import {
   buildMushafPackPlan,
   buildReaderCorePackPlan,
+  formatOfflineBytes,
   loadDatasetByteSizes,
   readerCorePackId,
   type OfflinePackPlan,
@@ -48,6 +49,7 @@ type SectionMetadata = {
 }
 
 type RemoveTarget = {
+  kind: 'reader-core' | 'mushaf-pages'
   packId: string
   rowName: string
 }
@@ -137,6 +139,11 @@ export function OfflineDataSection() {
   const [reloadKey, setReloadKey] = useState(0)
   const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null)
   const [hydrated, setHydrated] = useState(false)
+  const [storageFoot, setStorageFoot] = useState<string | null>(null)
+  // S9 offline state (§4 matrix): downloads and resumes need a connection —
+  // disable those actions and say why. Pausing and removing are local and
+  // stay enabled.
+  const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine)
   const cancelRemoveRef = useRef<HTMLButtonElement>(null)
   const recordsRef = useRef<OfflinePackRecord[] | null>(null)
   // §3 safety rules: the section tracks the edition id it last resolved and
@@ -293,6 +300,26 @@ export function OfflineDataSection() {
   const bothInstalled = readerRow?.status === 'installed' && mushafRow?.status === 'installed'
   const editionFallbackName = metadata?.entry?.label ?? 'Mushaf edition'
 
+  useEffect(() => {
+    let active = true
+    void navigator.storage
+      ?.estimate()
+      .then((estimate) => {
+        if (active && estimate.usage != null) setStorageFoot(formatOfflineBytes(estimate.usage))
+      })
+      .catch(() => undefined)
+    function syncOnlineState() {
+      setOnline(typeof navigator === 'undefined' || navigator.onLine)
+    }
+    window.addEventListener('online', syncOnlineState)
+    window.addEventListener('offline', syncOnlineState)
+    return () => {
+      active = false
+      window.removeEventListener('online', syncOnlineState)
+      window.removeEventListener('offline', syncOnlineState)
+    }
+  }, [])
+
   return (
     <SettingsGroup description="Saved on this device for reading without a connection." title="Offline reading data">
       <div aria-busy={loading ? 'true' : undefined}>
@@ -305,6 +332,7 @@ export function OfflineDataSection() {
               onRemoveTarget={setRemoveTarget}
               onRetry={retryFailedPack}
               onResume={resumePack}
+              online={online}
               row={readerRow}
             />
             <OfflineDataRow
@@ -313,6 +341,7 @@ export function OfflineDataSection() {
               onRemoveTarget={setRemoveTarget}
               onRetry={retryFailedPack}
               onResume={resumePack}
+              online={online}
               row={mushafRow}
             />
           </>
@@ -330,6 +359,16 @@ export function OfflineDataSection() {
             </div>
           </>
         )}
+        {storageFoot ? (
+          <p className="qar:m-0 qar:pt-2 qar:text-sm qar:text-muted" data-storage-foot="true">
+            Using ~{storageFoot} for offline reading
+          </p>
+        ) : null}
+        {!online ? (
+          <p className="qar:m-0 qar:pt-2 qar:text-sm qar:text-muted" data-offline-note="true" role="status">
+            You are offline — downloads and resumes need a connection. Removing a download still works.
+          </p>
+        ) : null}
       </div>
       <Dialog
         initialFocusRef={cancelRemoveRef}
@@ -337,17 +376,17 @@ export function OfflineDataSection() {
           if (!open) setRemoveTarget(null)
         }}
         open={removeTarget != null}
-        title={removeTarget ? `Remove ${removeTarget.rowName}?` : ''}
+        title={removeTarget ? removeDialogTitle(removeTarget) : ''}
       >
         <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          This removes the downloaded files from this device. You can download them again.
+          You won't be able to read them offline. Your bookmarks and settings are not affected.
         </p>
         <div className="qar:flex qar:flex-wrap qar:justify-end qar:gap-2">
           <Button onClick={() => setRemoveTarget(null)} ref={cancelRemoveRef} variant="ghost">
             Cancel
           </Button>
           <Button onClick={confirmRemove} variant="danger">
-            Remove
+            Remove download
           </Button>
         </div>
       </Dialog>
@@ -361,6 +400,7 @@ function OfflineDataRow({
   onRetry,
   onResume,
   onStartDownload,
+  online,
   row,
 }: {
   onPause: (packId: string) => void
@@ -368,6 +408,7 @@ function OfflineDataRow({
   onRetry: (packId: string, fallback: OfflinePackRecord | null) => Promise<void>
   onResume: (packId: string) => void
   onStartDownload: (kind: 'reader-core' | 'mushaf-pages') => Promise<void>
+  online: boolean
   row: ResolvedRow
 }) {
   // The failed state can come from the live snapshot alone (a pack enqueued
@@ -405,7 +446,7 @@ function OfflineDataRow({
       <div className="qar:flex qar:items-center">
         {row.status === 'not-installed' ? (
           <Button
-            disabled={!row.planBuildable}
+            disabled={!row.planBuildable || !online}
             onClick={() => {
               void onStartDownload(row.kind)
             }}
@@ -421,15 +462,15 @@ function OfflineDataRow({
           </Button>
         ) : null}
         {row.status === 'paused-user' || row.status === 'paused-network' ? (
-          <Button onClick={() => onResume(row.packId)} size="sm" variant="secondary">
+          <Button disabled={!online} onClick={() => onResume(row.packId)} size="sm" variant="secondary">
             Resume
           </Button>
         ) : null}
         {row.status === 'installed' ? (
           <Button
-            onClick={() => onRemoveTarget({ packId: row.packId, rowName: row.rowName })}
+            onClick={() => onRemoveTarget({ kind: row.kind, packId: row.packId, rowName: row.rowName })}
             size="sm"
-            variant="danger"
+            variant="secondary"
           >
             Remove download
           </Button>
@@ -448,4 +489,13 @@ function OfflineRowShell({ rowName, statusText }: { rowName: string; statusText:
       </div>
     </div>
   )
+}
+
+// Destructive-confirm copy (S9, brief §5 deck): the edition pack names the page
+// images explicitly; the reader-texts pack gets the parallel plain wording.
+// Never implies personal data is deleted.
+function removeDialogTitle(target: RemoveTarget): string {
+  return target.kind === 'mushaf-pages'
+    ? `Remove the ${target.rowName} page images?`
+    : `Remove the ${target.rowName} download?`
 }

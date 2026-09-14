@@ -1,30 +1,26 @@
-import { BookOpenText, ScrollText } from 'lucide-react'
+import { SegmentedControl } from '../ui'
 
-import { IconButton, Tooltip } from '../ui'
-
+// Verses/Mushaf is a labelled segmented control, never an icon toggle
+// (brief §1.7, supersedes §8 item 9).
 export function ReadingViewToggle({
+  compact = false,
   mode,
   onModeChange,
 }: {
+  compact?: boolean
   mode: 'verse' | 'mushaf'
   onModeChange: (mode: 'verse' | 'mushaf') => void
 }) {
-  const destination = mode === 'verse' ? 'mushaf' : 'verse'
-  const label = destination === 'mushaf' ? 'Switch to Mushaf view' : 'Switch to Verse view'
-
   return (
-    <Tooltip content={label}>
-      <IconButton
-        className="qar-reader-chrome-pill qar-reader-chrome-view-toggle"
-        label={label}
-        onClick={() => onModeChange(destination)}
-      >
-        {destination === 'mushaf' ? (
-          <BookOpenText aria-hidden="true" size={24} strokeWidth={1.7} />
-        ) : (
-          <ScrollText aria-hidden="true" size={24} strokeWidth={1.7} />
-        )}
-      </IconButton>
-    </Tooltip>
+    <SegmentedControl
+      compact={compact}
+      label="View"
+      onValueChange={(value) => onModeChange(value as 'verse' | 'mushaf')}
+      options={[
+        { label: 'Verses', value: 'verse' },
+        { label: 'Mushaf', value: 'mushaf' },
+      ]}
+      value={mode}
+    />
   )
 }

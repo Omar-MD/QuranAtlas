@@ -29,9 +29,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <NavigationPageRecipe title="QuranAtlas cannot continue">
             <Status
               action={
-                <Button onClick={() => window.location.reload()} variant="secondary">
-                  Reload QuranAtlas
-                </Button>
+                <>
+                  <Button onClick={() => window.location.reload()} variant="primary">
+                    Reload
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      window.location.hash = '#/surahs'
+                    }}
+                    variant="secondary"
+                  >
+                    Go to Surah list
+                  </Button>
+                </>
               }
               description="An unexpected error interrupted this screen. Reloading restores a working copy of the app."
               title="Something went wrong"

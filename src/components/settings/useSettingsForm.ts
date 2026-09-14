@@ -7,7 +7,6 @@ import {
   readReactReaderPreferences,
   writeReactReaderPreferences,
   type NormalizedReactMushafViewMode,
-  type ReactNightModePreference,
   type ReactPreferenceStep,
   type ReactReaderPreferences,
   type ReactThemePreference,
@@ -39,9 +38,10 @@ export function useSettingsForm(): {
   setMushafViewMode: (value: NormalizedReactMushafViewMode) => void
   setMushafFitWidth: (value: boolean) => void
   setMushafPageFraming: (value: number) => void
-  setNightMode: (value: ReactNightModePreference) => void
-  setReadingFlow: (value: ReactPreferenceStep) => void
+  setDimPageImages: (value: boolean) => void
+  setVerseSpacing: (value: ReactPreferenceStep) => void
   setFontSize: (value: ReactPreferenceStep) => void
+  setTranslationFontSize: (value: ReactPreferenceStep) => void
   setTheme: (value: ReactThemePreference) => void
   setTranslationVisible: (value: boolean) => void
   setWirdReaderStatusVisible: (value: boolean) => void
@@ -169,22 +169,17 @@ export function useSettingsForm(): {
     retrySettingsWrite: () => retrySettingsWriteRef.current?.(),
     settingsWriteError,
     settingsWriteStatus,
-    setFontSize: (fontSize) => updatePreferences((current) => ({ ...current, fontSize })),
     setMushafViewMode: (mushafViewMode) => updatePreferences((current) => ({ ...current, mushafViewMode })),
     setMushafFitWidth: (mushafFitWidth) => {
       updateLandscapeFitWidthOverride(mushafFitWidth)
       updatePreferences((current) => ({ ...current, mushafFitWidth }))
     },
     setMushafPageFraming: persistMushafPageFraming,
-    setNightMode: (nightMode) => updatePreferences((current) => ({ ...current, nightMode })),
-    setReadingFlow: (value) =>
-      updatePreferences((current) => ({
-        ...current,
-        lineSpacing: value,
-        readerMargin: value,
-        verseSpacing: value,
-        wordSpacing: value,
-      })),
+    setDimPageImages: (dimPageImages) => updatePreferences((current) => ({ ...current, dimPageImages })),
+    setVerseSpacing: (verseSpacing) => updatePreferences((current) => ({ ...current, verseSpacing })),
+    setFontSize: (fontSize) => updatePreferences((current) => ({ ...current, fontSize })),
+    setTranslationFontSize: (translationFontSize) =>
+      updatePreferences((current) => ({ ...current, translationFontSize })),
     setTheme: (theme) => updatePreferences((current) => ({ ...current, theme })),
     setTranslationVisible: (translationVisible) => updatePreferences((current) => ({ ...current, translationVisible })),
     setWirdReaderStatusVisible: (wirdReaderStatusVisible) =>

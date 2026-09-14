@@ -11,9 +11,11 @@
   --color-muted: var(--qa-react-text-muted);
   --color-accent: var(--qa-react-accent);
   --color-accent-strong: var(--qa-react-accent-strong);
+  --color-accent-tint: var(--qa-react-accent-tint);
+  --color-on-accent: var(--qa-react-text-on-accent);
   --color-focus: var(--qa-react-accent);
   --color-danger: var(--qa-react-danger);
-  --color-text-on-danger: var(--qa-react-text-on-danger);
+  --color-on-danger: var(--qa-react-text-on-danger);
   --radius-control: var(--qa-react-radius-control);
   --radius-surface: var(--qa-react-radius-surface);
   --radius-pill: var(--qa-react-radius-pill);

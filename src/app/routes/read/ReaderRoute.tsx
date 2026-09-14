@@ -1,4 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
+import { Bookmark, CaseSensitive } from 'lucide-react'
 
 import { loadReaderSurah, type ReaderCorpusState } from '../../../data/reader-corpus'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
@@ -16,13 +18,16 @@ import { DEFAULT_REACT_READER_PREFERENCES, readNativeReactReaderPreferences } fr
 import { applyReactReaderTypography, subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
 import { ReaderVerseSurface } from '../../../components/reader/ReaderVerseSurface'
-import { consumeReactReaderAnchor } from '../../../components/reader/SurahContinuityButton'
+import { AdjustmentsSheet } from '../../../components/reader/AdjustmentsSheet'
+import { ReadingViewToggle } from '../../../components/reader/ReadingViewToggle'
+import { EditionBannerGate } from '../../../components/launch/EditionBanner'
 import {
   resolveMushafHrefForVerseRef,
   resolveMushafHrefForVerseRoute,
 } from '../../../components/reader/reader-mode-routing'
 import { useReaderPositionSync } from '../../../components/reader/useReaderPositionSync'
 import { useVerseInteractionReducer } from '../../../components/reader/useVerseInteractionReducer'
+import { IconButton, Status } from '../../../components/ui'
 import { readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird/store'
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
@@ -30,18 +35,15 @@ import { deriveWirdSummary } from '../../../continuity/wird/progress'
 import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
 import type { SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import { useSharedBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
-import { isMushafPageBookmark } from '../../../continuity/bookmarks/page-bookmark'
 
 type ReaderSettings = {
   fontSize: ReaderSpacingStep
-  lineSpacing: ReaderSpacingStep
   quranTextStyleId: string
-  readerMargin: ReaderSpacingStep
   riwayah: Riwayah
   translationId: string
   translationVisible: boolean
+  translationFontSize: ReaderSpacingStep
   verseSpacing: ReaderSpacingStep
-  wordSpacing: ReaderSpacingStep
   wirdReaderStatusVisible: boolean
 }
 
@@ -49,14 +51,12 @@ type ReaderSpacingStep = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
 const DEFAULT_READER_SETTINGS: ReaderSettings = {
   fontSize: DEFAULT_REACT_READER_PREFERENCES.fontSize,
-  lineSpacing: DEFAULT_REACT_READER_PREFERENCES.lineSpacing,
   quranTextStyleId: DEFAULT_QURAN_TEXT_STYLE_ID,
-  readerMargin: DEFAULT_REACT_READER_PREFERENCES.readerMargin,
   riwayah: DEFAULT_RIWAYAH,
   translationId: DEFAULT_TRANSLATION_ID,
   translationVisible: DEFAULT_REACT_READER_PREFERENCES.translationVisible,
+  translationFontSize: DEFAULT_REACT_READER_PREFERENCES.translationFontSize,
   verseSpacing: DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
-  wordSpacing: DEFAULT_REACT_READER_PREFERENCES.wordSpacing,
   wirdReaderStatusVisible: DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible,
 }
 
@@ -70,22 +70,22 @@ async function readReaderSettings(): Promise<ReaderSettings> {
     const preferences = await readNativeReactReaderPreferences()
     return {
       fontSize: preferences.fontSize,
-      lineSpacing: preferences.lineSpacing,
       quranTextStyleId:
         typeof quranTextStyleId?.value === 'string' ? quranTextStyleId.value : DEFAULT_READER_SETTINGS.quranTextStyleId,
-      readerMargin: preferences.readerMargin,
       riwayah: isRiwayah(riwayah?.value) ? riwayah.value : DEFAULT_READER_SETTINGS.riwayah,
       translationId:
         typeof translationId?.value === 'string' ? translationId.value : DEFAULT_READER_SETTINGS.translationId,
       translationVisible: preferences.translationVisible,
+      translationFontSize: preferences.translationFontSize,
       verseSpacing: preferences.verseSpacing,
-      wordSpacing: preferences.wordSpacing,
       wirdReaderStatusVisible: preferences.wirdReaderStatusVisible,
     }
   } catch {
     return DEFAULT_READER_SETTINGS
   }
 }
+
+const COPY_TOAST_CLEAR_MS = 4000
 
 export function ReaderRoute({
   ayah,
@@ -105,6 +105,9 @@ export function ReaderRoute({
   const [wirdReaderStatusVisible, setWirdReaderStatusVisible] = useState(
     DEFAULT_READER_SETTINGS.wirdReaderStatusVisible,
   )
+  const [adjustmentsOpen, setAdjustmentsOpen] = useState(false)
+  const [copyToast, setCopyToast] = useState<string | null>(null)
+  const [verseRange, setVerseRange] = useState<string | undefined>(undefined)
   const lastFocusedRouteKeyRef = useRef<string | null>(null)
   const lastRouteKeyRef = useRef<string | null>(null)
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex, corpus), [corpus, surahIndex])
@@ -127,11 +130,7 @@ export function ReaderRoute({
     suspendAutoSync: preservePosition,
     wirdCounts: wirdProgressCounts,
   })
-  const { bookmarkedVerseKeys, bookmarks, status: bookmarkStatus, toggleBookmark } = useSharedBookmarks()
-  const showVerseBookmarkHint =
-    bookmarkStatus === 'ready' && !bookmarks.some((bookmark) => !isMushafPageBookmark(bookmark))
-
-  useReaderScrollLock(preservePosition)
+  const { bookmarkedVerseKeys, toggleBookmark } = useSharedBookmarks()
 
   useEffect(
     () =>
@@ -219,13 +218,38 @@ export function ReaderRoute({
     }
   }, [surah, corpusRequestToken])
 
+  // S3: live verse range in the compact header ("Al-Fātiḥah · 1–4") updates on
+  // scroll from the verse groups actually in view.
   useEffect(() => {
-    if (corpus.status !== 'ready') return
-    const anchor = consumeReactReaderAnchor()
-    if (anchor !== 'bottom') return
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' })
-    })
+    if (corpus.status !== 'ready') return undefined
+    function measureRange() {
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+      let first: number | null = null
+      let last: number | null = null
+      for (const element of document.querySelectorAll<HTMLElement>('[data-token-key]')) {
+        const rect = element.getBoundingClientRect()
+        if (rect.bottom <= 0 || rect.top >= viewportHeight || rect.height <= 0) continue
+        const verse = Number(element.dataset.tokenKey?.split(':')[1])
+        if (!Number.isFinite(verse)) continue
+        if (first === null || verse < first) first = verse
+        if (last === null || verse > last) last = verse
+      }
+      setVerseRange(first !== null && last !== null ? (first === last ? `${first}` : `${first}–${last}`) : undefined)
+    }
+    let frame = 0
+    function onScroll() {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        measureRange()
+      })
+    }
+    measureRange()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', onScroll)
+    }
   }, [corpus])
 
   useEffect(() => {
@@ -252,8 +276,70 @@ export function ReaderRoute({
     window.setTimeout(() => landAtTarget(false), 50)
   }, [ayah, corpus, surah, syncPosition])
 
+  // Continuity (S2): the reading position anchors to the verse via the sync
+  // above; restore lands the anchored verse in view.
+  useReaderScrollLock(preservePosition)
+
+  const copyToastVisible = copyToast !== null
+  useEffect(() => {
+    if (!copyToastVisible) return undefined
+    const timer = window.setTimeout(() => setCopyToast(null), COPY_TOAST_CLEAR_MS)
+    return () => window.clearTimeout(timer)
+  }, [copyToastVisible])
+
+  const surahName = surahIndex.find((row) => row.n === surah)?.name
+
+  const toggleBookmarkForPosition = useCallback(() => {
+    const position = getCurrentPosition()
+    const verseKey = position ? `${position.surah}:${position.verse}` : `${surah}:1`
+    void toggleBookmark({ surah: position?.surah ?? surah, verseKey })
+  }, [getCurrentPosition, surah, toggleBookmark])
+
+  const bottomStrip = (
+    <div className="qar-reader-bottom-strip" data-bottom-strip="verse">
+      <div className="qar-reader-bottom-strip-left">
+        <ReadingViewToggle
+          compact
+          mode="verse"
+          onModeChange={(nextMode) => {
+            if (nextMode !== 'mushaf') return
+            const currentPosition = getCurrentPosition()
+            const hrefPromise =
+              currentPosition?.surah === surah
+                ? resolveMushafHrefForVerseRef(currentPosition)
+                : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
+            void hrefPromise.then((href) => {
+              window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
+            })
+          }}
+        />
+      </div>
+      <div className="qar-reader-bottom-strip-center">
+        <IconButton
+          className="qar-reader-chrome-icon"
+          label="Bookmark current verse"
+          onClick={toggleBookmarkForPosition}
+        >
+          <Bookmark aria-hidden="true" size={20} strokeWidth={1.7} />
+        </IconButton>
+      </div>
+      <div className="qar-reader-bottom-strip-right">
+        <IconButton
+          className="qar-reader-chrome-icon"
+          id="reader-adjustments-trigger"
+          label="Text size"
+          onClick={() => setAdjustmentsOpen(true)}
+        >
+          <CaseSensitive aria-hidden="true" size={22} strokeWidth={1.7} />
+        </IconButton>
+      </div>
+    </div>
+  )
+
   return (
     <ReaderPageShell
+      bottomStrip={bottomStrip}
+      currentSurah={surah}
       mode="verse"
       onModeChange={(nextMode) => {
         if (nextMode === 'mushaf') {
@@ -268,32 +354,43 @@ export function ReaderRoute({
         }
       }}
       showWirdStatus={wirdReaderStatusVisible}
-      surahLabel={surahIndex.find((row) => row.n === surah)?.name ?? `Surah ${surah}`}
+      surahName={surahName}
+      verseRange={verseRange}
       wirdSummary={wirdSummary}
     >
-      <ReaderVerseSurface
-        bookmarkedVerseKeys={bookmarkedVerseKeys}
-        corpus={corpus}
-        metadata={metadata}
-        onSelectVerse={(verseKey) => {
-          selectVerse(verseKey)
-          syncPosition(verseKey)
-        }}
-        onToggleBookmark={(verseKey) => {
-          const bookmarkSurah = surahFromVerseKey(verseKey) ?? surah
-          void toggleBookmark({ surah: bookmarkSurah, verseKey })
-        }}
-        onRetry={() => setCorpusRequestToken((token) => token + 1)}
-        selectedVerseKey={selectedVerseKey}
-        showVerseBookmarkHint={showVerseBookmarkHint}
-        surahIndex={surahIndex}
-      />
+      <div className="qar-reader-column">
+        <EditionBannerGate />
+        <ReaderVerseSurface
+          bookmarkedVerseKeys={bookmarkedVerseKeys}
+          corpus={corpus}
+          metadata={metadata}
+          onCopyReference={() => setCopyToast('Reference copied')}
+          onRetry={() => setCorpusRequestToken((token) => token + 1)}
+          onSelectVerse={(verseKey) => {
+            selectVerse(verseKey)
+            syncPosition(verseKey)
+          }}
+          onToggleBookmark={(verseKey) => {
+            void toggleBookmark({ surah, verseKey })
+          }}
+          selectedVerseKey={selectedVerseKey}
+        />
+        {copyToastVisible ? (
+          // Floating toast (S2): anchored above the bottom strip / safe area so
+          // the confirmation is visible without scrolling — never inline at the
+          // end of the passage.
+          <div className="qar-react-copy-toast">
+            <Status data-copy-toast="true" role="status" title={copyToast ?? ''} tone="success" />
+          </div>
+        ) : null}
+      </div>
+      <AdjustmentsSheet onClose={() => setAdjustmentsOpen(false)} open={adjustmentsOpen} />
     </ReaderPageShell>
   )
 }
 
 function findReaderVerseElement(verseKey: string): HTMLElement | null {
-  for (const element of document.querySelectorAll<HTMLElement>('.qar-reader-verse[data-token-key]')) {
+  for (const element of document.querySelectorAll<HTMLElement>('[data-token-key]')) {
     if (element.dataset.tokenKey === verseKey) return element
   }
   return null
@@ -304,14 +401,7 @@ type ReaderScrollAnchor = { key: string; top: number }
 function useReaderScrollLock(enabled: boolean): void {
   const anchorRef = useRef<ReaderScrollAnchor | null>(null)
 
-  useLayoutEffect(() => {
-    if (!enabled) {
-      anchorRef.current = null
-      return
-    }
-    anchorRef.current ??= findCurrentReaderScrollAnchor()
-    restoreReaderScrollAnchor(anchorRef.current)
-  }, [enabled])
+  useLayoutEffectSafe(enabled, anchorRef)
 
   useEffect(() => {
     if (!enabled) return undefined
@@ -325,12 +415,23 @@ function useReaderScrollLock(enabled: boolean): void {
   }, [enabled])
 }
 
+function useLayoutEffectSafe(enabled: boolean, anchorRef: React.MutableRefObject<ReaderScrollAnchor | null>): void {
+  useEffect(() => {
+    if (!enabled) {
+      anchorRef.current = null
+      return
+    }
+    anchorRef.current ??= findCurrentReaderScrollAnchor()
+    restoreReaderScrollAnchor(anchorRef.current)
+  }, [anchorRef, enabled])
+}
+
 function findCurrentReaderScrollAnchor(): ReaderScrollAnchor | null {
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight
   const centerY = viewportHeight / 2
   let closest: { distance: number; element: HTMLElement } | null = null
 
-  for (const element of document.querySelectorAll<HTMLElement>('.qar-reader-verse[data-token-key]')) {
+  for (const element of document.querySelectorAll<HTMLElement>('[data-token-key]')) {
     const verseKey = element.dataset.tokenKey
     if (!verseKey) continue
     const rect = element.getBoundingClientRect()
@@ -357,12 +458,6 @@ function restoreReaderScrollAnchor(anchor: ReaderScrollAnchor | null): void {
   const delta = element.getBoundingClientRect().top - anchor.top
   if (Math.abs(delta) < 1) return
   window.scrollBy({ behavior: 'auto', top: delta })
-}
-
-function surahFromVerseKey(verseKey: string): number | null {
-  const [surahPart] = verseKey.split(':')
-  const parsed = Number.parseInt(surahPart ?? '', 10)
-  return Number.isInteger(parsed) && parsed >= 1 && parsed <= 114 ? parsed : null
 }
 
 function wirdCountsFromIndex(index: ReaderSurahIndexEntry[], corpus: ReaderCorpusState): SurahCount[] {

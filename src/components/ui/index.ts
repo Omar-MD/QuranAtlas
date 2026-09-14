@@ -1,4 +1,5 @@
 export { Button, type ButtonProps } from './button'
+export { ChoiceButton, type ChoiceButtonProps } from './choice-button'
 export { IconButton, type IconButtonProps } from './icon-button'
 export {
   Checkbox,

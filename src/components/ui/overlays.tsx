@@ -1,6 +1,6 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { X } from 'lucide-react'
-import { useEffect, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
+import { useRef, useState, type ReactNode, type RefObject } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 import { Button } from './button'
@@ -8,6 +8,7 @@ import { Button } from './button'
 type OverlayBaseProps = {
   title: string
   children: ReactNode
+  contentClassName?: string
   onOpenChange?: (open: boolean) => void
   open?: boolean
   trigger?: ReactNode
@@ -27,7 +28,16 @@ function CloseButton({ label = 'Close' }: { label?: string }) {
   )
 }
 
-export function Dialog({ initialFocusRef, title, trigger, children, onOpenChange, open }: DialogProps) {
+export function Dialog({
+  contentClassName,
+  initialFocusRef,
+  title,
+  trigger,
+  children,
+  onOpenChange,
+  open,
+}: DialogProps) {
+  const invoker = useRef<HTMLElement | null>(null)
   return (
     <DialogPrimitive.Root onOpenChange={onOpenChange} open={open}>
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
@@ -35,8 +45,15 @@ export function Dialog({ initialFocusRef, title, trigger, children, onOpenChange
         <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-[125] qar-react-scrim" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className="qar:fixed qar:left-1/2 qar:top-1/2 qar:z-[130] qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg"
+          className={`qar:fixed qar:left-1/2 qar:top-1/2 qar:z-[130] qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-5 qar:text-text qar-react-overlay-shadow${contentClassName ? ` ${contentClassName}` : ''}`}
+          onCloseAutoFocus={(event) => {
+            if (invoker.current?.isConnected) {
+              event.preventDefault()
+              invoker.current.focus({ preventScroll: true })
+            }
+          }}
           onOpenAutoFocus={(event) => {
+            invoker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
             if (!initialFocusRef?.current) return
             event.preventDefault()
             initialFocusRef.current.focus({ preventScroll: true })
@@ -62,63 +79,11 @@ export type SheetProps = OverlayBaseProps & {
   suppressCloseAutoFocus?: boolean
   variant?: 'default' | 'adaptive-settings' | 'navigation-drawer'
 }
-const DRAWER_DESKTOP_QUERY = '(min-width: 768px)'
-const DRAWER_FOCUSABLE_SELECTOR =
-  "a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
-
-function useDrawerDesktopViewport(open?: boolean): {
-  isDesktop: boolean
-  refreshOnOpenChange: (nextOpen: boolean) => void
-} {
-  const [isDesktop, setIsDesktop] = useState(
-    () =>
-      Boolean(open) &&
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia(DRAWER_DESKTOP_QUERY).matches,
-  )
-  // Sample the viewport exactly once per controlled open; no live listener, so
-  // crossing the breakpoint while open never flips the modal shell (which
-  // would remount Radix Dialog content and reset inner state such as editors).
-  useEffect(() => {
-    if (!open) return
-    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-      setIsDesktop(window.matchMedia(DRAWER_DESKTOP_QUERY).matches)
-    }
-  }, [open])
-  function refreshOnOpenChange(nextOpen: boolean): void {
-    if (nextOpen && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-      setIsDesktop(window.matchMedia(DRAWER_DESKTOP_QUERY).matches)
-    }
-  }
-  return { isDesktop, refreshOnOpenChange }
-}
-
-function containDrawerFocus(event: KeyboardEvent<HTMLDivElement>): void {
-  if (event.key !== 'Tab') return
-  const focusable = event.currentTarget.querySelectorAll<HTMLElement>(DRAWER_FOCUSABLE_SELECTOR)
-  if (focusable.length === 0) {
-    event.preventDefault()
-    return
-  }
-  const first = focusable[0]
-  const last = focusable[focusable.length - 1]
-  const active = document.activeElement
-  const contained = event.currentTarget.contains(active)
-  if (!contained || (event.shiftKey && active === first)) {
-    event.preventDefault()
-    last.focus()
-    return
-  }
-  if (!event.shiftKey && active === last) {
-    event.preventDefault()
-    first.focus()
-  }
-}
 
 export function Sheet({
   children,
   closeLabel,
+  contentClassName,
   onOpenChange,
   open,
   returnFocusId,
@@ -127,49 +92,52 @@ export function Sheet({
   trigger,
   variant = 'default',
 }: SheetProps) {
+  const invoker = useRef<HTMLElement | null>(null)
+  const dragStart = useRef<{ x: number; y: number } | null>(null)
+  const [expanded, setExpanded] = useState(false)
   const isNavigationDrawer = variant === 'navigation-drawer'
-  const { isDesktop: isDesktopViewport, refreshOnOpenChange: refreshDrawerViewport } = useDrawerDesktopViewport(
-    open ?? false,
-  )
-  const modal = isNavigationDrawer ? !isDesktopViewport : true
+  // S6: the navigation drawer is unambiguously modal everywhere — scrim,
+  // focus trap, Esc close; Radix owns the trap for every variant.
   return (
     <DialogPrimitive.Root
-      modal={modal}
+      modal
       onOpenChange={(nextOpen) => {
-        if (isNavigationDrawer) {
-          refreshDrawerViewport(nextOpen)
-        }
         onOpenChange?.(nextOpen)
       }}
       open={open}
     >
       {trigger ? <DialogPrimitive.Trigger asChild>{trigger}</DialogPrimitive.Trigger> : null}
       <DialogPrimitive.Portal>
-        {modal ? (
-          <DialogPrimitive.Overlay
-            className={
-              isNavigationDrawer
-                ? 'qar:fixed qar:inset-0 qar:z-40 qar-react-scrim qar-react-sheet-scrim'
-                : 'qar:fixed qar:inset-0 qar:z-40 qar-react-scrim'
-            }
-          />
-        ) : null}
-        <DialogPrimitive.Content
-          aria-describedby={undefined}
-          aria-modal={modal ? 'true' : undefined}
+        <DialogPrimitive.Overlay
           className={
             isNavigationDrawer
-              ? 'qar-react-sheet-drawer qar:gap-4'
-              : 'qar:fixed qar:bottom-0 qar:left-0 qar:right-0 qar:z-50 qar:grid qar:max-h-screen qar:gap-4 qar:rounded-t-surface qar:border qar:border-border qar:bg-canvas qar:p-5 qar:text-text qar:shadow-lg md:qar:left-auto md:qar:top-0 md:qar:w-96 md:qar:rounded-l-surface md:qar:rounded-t-none'
+              ? 'qar:fixed qar:inset-0 qar:z-40 qar-react-scrim qar-react-sheet-scrim'
+              : 'qar:fixed qar:inset-0 qar:z-[125] qar-react-scrim'
+          }
+        />
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          className={
+            isNavigationDrawer
+              ? `qar-react-sheet-drawer qar:gap-4${contentClassName ? ` ${contentClassName}` : ''}`
+              : `qar:fixed qar:bottom-0 qar:left-0 qar:right-0 qar:z-[130] qar:grid qar:max-h-screen qar-react-bottom-sheet qar:gap-4 qar:rounded-t-surface qar:border qar:border-border qar:bg-surface qar:p-5 qar:text-text qar-react-overlay-shadow md:qar:left-auto md:qar:top-0 md:qar:w-96 md:qar:rounded-l-surface md:qar:rounded-t-none${contentClassName ? ` ${contentClassName}` : ''}`
           }
           data-sheet-variant={variant}
+          data-expanded={expanded ? 'true' : 'false'}
+          onOpenAutoFocus={() => {
+            invoker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+          }}
           onCloseAutoFocus={(event) => {
             // Route-transition closes hand focus to the destination route.
             if (suppressCloseAutoFocus) {
               event.preventDefault()
               return
             }
-            if (variant !== 'adaptive-settings' && !returnFocusId) return
+            if (variant !== 'adaptive-settings' && !returnFocusId && invoker.current?.isConnected) {
+              event.preventDefault()
+              invoker.current.focus({ preventScroll: true })
+              return
+            }
             const targetIds = [returnFocusId, 'chrome-settings-trigger', 'reader-settings-trigger', 'reader-main']
             const target = targetIds
               .filter((id): id is string => Boolean(id))
@@ -179,12 +147,32 @@ export function Sheet({
             event.preventDefault()
             target.focus({ preventScroll: true })
           }}
-          onKeyDown={isNavigationDrawer && isDesktopViewport ? containDrawerFocus : undefined}
         >
           {isNavigationDrawer ? (
             <DialogPrimitive.Title className="qar:sr-only">{title}</DialogPrimitive.Title>
           ) : (
-            <div className="qar:flex qar:items-center qar:justify-between qar:gap-3">
+            <div
+              className="qar:flex qar:items-center qar:justify-between qar:gap-3 qar-react-sheet-handle"
+              onPointerDown={(event) => {
+                if (variant !== 'default' || (event.target as HTMLElement).closest('button')) return
+                dragStart.current = { x: event.clientX, y: event.clientY }
+                event.currentTarget.setPointerCapture(event.pointerId)
+              }}
+              onPointerUp={(event) => {
+                const start = dragStart.current
+                dragStart.current = null
+                if (!start || Math.abs(event.clientX - start.x) > Math.abs(event.clientY - start.y)) return
+                const delta = event.clientY - start.y
+                if (delta < -60) setExpanded(true)
+                if (delta > 60) {
+                  if (expanded) setExpanded(false)
+                  else onOpenChange?.(false)
+                }
+              }}
+              onPointerCancel={() => {
+                dragStart.current = null
+              }}
+            >
               <DialogPrimitive.Title className="qar:m-0 qar:text-base qar:font-semibold">{title}</DialogPrimitive.Title>
               <CloseButton label={closeLabel} />
             </div>

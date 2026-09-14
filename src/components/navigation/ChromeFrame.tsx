@@ -2,7 +2,6 @@ import { Menu, Settings } from 'lucide-react'
 import type { Dispatch, ReactNode } from 'react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
-import { useSharedBookmarks } from '../../continuity/bookmarks/use-bookmarks'
 import { Button, IconButton } from '../ui'
 import { NavDrawer } from './NavDrawer'
 import type { NavDrawerAction, NavDrawerState } from './nav-drawer-controller'
@@ -56,16 +55,19 @@ export function ChromeBar({
  */
 export function ChromeDrawer({
   controller,
+  currentRoute = null,
   initialWirdView = 'card',
   mode = 'verse',
+  onOpenSurahs,
   showWird = false,
 }: {
   controller: ChromeDrawerController
+  currentRoute?: 'bookmarks' | 'downloads' | 'settings' | 'about' | null
   initialWirdView?: 'card' | 'detail'
   mode?: 'verse' | 'mushaf'
+  onOpenSurahs?: () => void
   showWird?: boolean
 }) {
-  const { bookmarks, deleteBookmark } = useSharedBookmarks()
   const { dispatch, state } = controller
 
   function navigate(hash: string) {
@@ -75,12 +77,12 @@ export function ChromeDrawer({
 
   return (
     <NavDrawer
-      bookmarks={bookmarks}
+      currentRoute={currentRoute}
       initialWirdView={initialWirdView}
       mode={mode}
       onClose={() => dispatch({ type: 'close' })}
-      onDeleteBookmark={deleteBookmark}
       onNavigate={navigate}
+      onOpenSurahs={onOpenSurahs}
       open={state.open}
       returnFocusId={state.returnFocusId ?? undefined}
       showWird={showWird}

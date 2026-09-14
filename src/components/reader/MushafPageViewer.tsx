@@ -11,12 +11,10 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { Bookmark, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import type { MushafPageWindowEntry } from '../../app/routes/read/useMushafPageWindow'
 import type { MushafReadyPageAssetState, MushafResolvedPage, ReactInlineMushafSvg } from '../../packs/mushaf-page-asset'
 import { mushafImagePlacement } from './mushaf-page-framing'
-import { IconButton } from '../ui'
 import type { MushafViewMode } from './MushafModeControl'
 import { useMushafPageGesture } from './useMushafPageGesture'
 import { useReaderInteractionSuspended } from './ReaderInteractionContext'
@@ -30,7 +28,6 @@ export type MushafPageViewerProps = {
     next?: MushafPreviewPage | null
     previous?: MushafPreviewPage | null
   }
-  bookmarked?: boolean
   chromeVisible?: boolean
   fitWidth?: boolean
   framingValue?: number
@@ -41,7 +38,6 @@ export type MushafPageViewerProps = {
   onNavigate?: (page: number) => void
   onRequestPage?: (page: number) => void
   onToggleChrome?: (visible: boolean) => void
-  onToggleBookmark?: () => void
   pages?: readonly MushafPageWindowEntry[]
   retainedPage?: MushafReadyPageAssetState
   resolved: MushafResolvedPage
@@ -107,17 +103,14 @@ class MushafScrollWindow extends Component<MushafScrollWindowProps> {
 
 export function MushafPageViewer({
   adjacentPages,
-  bookmarked = false,
   chromeVisible = true,
   fitWidth = false,
   framingValue = 0,
   inert = false,
   inlineSvg,
-  onChromePinChange,
   onDominantPageChange,
   onNavigate,
   onRequestPage,
-  onToggleBookmark,
   onToggleChrome,
   pages,
   retainedPage,
@@ -173,11 +166,6 @@ export function MushafPageViewer({
     else onRequestPage?.(page)
   }
 
-  function requestFromDock(page: number): void {
-    stageRef.current?.focus({ preventScroll: true })
-    requestOrNavigate(page)
-  }
-
   function requestFromPageArrow(page: number): void {
     if (page < 1 || page > resolved.pageCount) return
     if (isReaderChromeTarget(document.activeElement)) stageRef.current?.focus({ preventScroll: true })
@@ -185,12 +173,19 @@ export function MushafPageViewer({
   }
   requestFromPageArrowRef.current = requestFromPageArrow
   function activateStageAt(clientX: number, stage: HTMLElement): void {
+    if (!chromeVisible) {
+      onToggleChrome?.(true)
+      return
+    }
     const rect = stage.getBoundingClientRect()
     if (rect.width <= 0) return
     const ratio = (clientX - rect.left) / rect.width
     if (ratio < EDGE_TAP_RATIO) requestOrNavigate(resolved.page + 1)
     else if (ratio > 1 - EDGE_TAP_RATIO) requestOrNavigate(resolved.page - 1)
-    else onToggleChrome?.(!chromeVisible)
+    // Focus reveal: tapping the page (including the live margins) brings the
+    // bars back; when chrome is already visible a centre tap does nothing —
+    // Focus is an explicit control (S4).
+    else if (!chromeVisible) onToggleChrome?.(true)
   }
 
   const gesture = useMushafPageGesture({
@@ -449,9 +444,6 @@ export function MushafPageViewer({
   )
 
   const stageName = stageScrollable ? 'Scrollable Mushaf pages' : undefined
-  const bookmarkLabel = bookmarked
-    ? `Remove bookmark for Mushaf page ${resolved.page}`
-    : `Bookmark Mushaf page ${resolved.page}`
 
   return (
     <section
@@ -514,47 +506,6 @@ export function MushafPageViewer({
           </div>
         )}
       </section>
-      {chromeVisible ? (
-        <nav
-          aria-label="Mushaf page navigation"
-          className="qar-react-mushaf-page-actions"
-          onBlurCapture={(event) => {
-            if (!(event.relatedTarget instanceof Node) || !event.currentTarget.contains(event.relatedTarget)) {
-              onChromePinChange?.('focus', false)
-            }
-          }}
-          onFocusCapture={() => onChromePinChange?.('focus', true)}
-        >
-          <IconButton
-            disabled={resolved.page >= resolved.pageCount}
-            label="Next Mushaf page"
-            onClick={() => requestFromDock(resolved.page + 1)}
-          >
-            <ChevronLeft aria-hidden="true" />
-          </IconButton>
-          <div aria-live="polite" className="qar-react-mushaf-page-counter" role="status">
-            <span className="qar:sr-only">Mushaf page</span>
-            {resolved.page}
-          </div>
-          <IconButton
-            disabled={resolved.page <= 1}
-            label="Previous Mushaf page"
-            onClick={() => requestFromDock(resolved.page - 1)}
-          >
-            <ChevronRight aria-hidden="true" />
-          </IconButton>
-          {onToggleBookmark ? (
-            <IconButton
-              aria-pressed={bookmarked}
-              className="qar-react-mushaf-bookmark-toggle"
-              label={bookmarkLabel}
-              onClick={onToggleBookmark}
-            >
-              <Bookmark aria-hidden="true" fill={bookmarked ? 'currentColor' : 'none'} size={17} strokeWidth={1.85} />
-            </IconButton>
-          ) : null}
-        </nav>
-      ) : null}
     </section>
   )
 }

@@ -1,13 +1,15 @@
 import { Spinner } from '../ui'
-import { OnboardingPageRecipe } from '../../design-system/recipes/onboarding-page'
 
+// Launch/splash (S11): ۞ motif placement 3, wordmark, labelled spinner —
+// never a marketing hero, never longer than necessary.
 export function LaunchSplash() {
   return (
-    <OnboardingPageRecipe title="QuranAtlas">
-      <section className="qar:grid qar:justify-items-center qar:gap-3 qar:text-center" aria-label="Launch restore">
-        <Spinner label="Opening QuranAtlas" />
-        <p className="qar:m-0 qar:text-sm qar:text-muted">Opening QuranAtlas · restoring your reading surface.</p>
-      </section>
-    </OnboardingPageRecipe>
+    <div aria-label="Opening QuranAtlas" className="qar-launch-splash" role="status">
+      <span aria-hidden="true" className="qar-ornament-rule-star">
+        ۞
+      </span>
+      <p className="qar-launch-wordmark">QuranAtlas</p>
+      <Spinner label="Opening QuranAtlas" />
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { Check, ListChecks } from 'lucide-react'
 
-import { IconButton, Tooltip } from '../../ui'
+import { IconButton } from '../../ui'
 import type { WirdSummary } from '../../../continuity/wird/types'
 
 export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => void; summary: WirdSummary }) {
@@ -9,24 +9,22 @@ export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => v
   const label = statusLabel(summary)
 
   return (
-    <Tooltip content={label}>
-      <span className="qar-reader-chrome-wird-anchor">
-        <IconButton
-          className="qar-reader-chrome-pill qar-reader-chrome-wird-status"
-          data-wird-state={summary.state}
-          id="reader-wird-status-trigger"
-          label={label}
-          onClick={onOpen}
-          style={{ '--qa-react-wird-status-progress': `${summary.todayPercent * 3.6}deg` } as CSSProperties}
-        >
-          <span className="qar-reader-chrome-wird-ring" aria-hidden="true">
-            <span className="qar-reader-chrome-wird-core">
-              {complete ? <Check size={15} strokeWidth={2.2} /> : <ListChecks size={15} strokeWidth={1.65} />}
-            </span>
+    <span className="qar-reader-chrome-wird-anchor">
+      <IconButton
+        className="qar-reader-chrome-pill qar-reader-chrome-wird-status"
+        data-wird-state={summary.state}
+        id="reader-wird-status-trigger"
+        label={label}
+        onClick={onOpen}
+        style={{ '--qa-react-wird-status-progress': `${summary.todayPercent * 3.6}deg` } as CSSProperties}
+      >
+        <span className="qar-reader-chrome-wird-ring" aria-hidden="true">
+          <span className="qar-reader-chrome-wird-core">
+            {complete ? <Check size={15} strokeWidth={2.2} /> : <ListChecks size={15} strokeWidth={1.65} />}
           </span>
-        </IconButton>
-      </span>
-    </Tooltip>
+        </span>
+      </IconButton>
+    </span>
   )
 }
 

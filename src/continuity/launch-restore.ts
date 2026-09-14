@@ -4,25 +4,19 @@ import type { SettingRecord } from '../storage/types'
 import type { QuranRef } from './verse-key'
 import { ensureReactMvpAssetContractReset } from '../launch/asset-contract-reset'
 import {
-  MUSHAF_EDITION_SETUP_VERSION,
-  resolveMushafEditionSetup,
-  type MushafEditionSetupState,
-} from '../launch/mushaf-edition-setup'
-import {
   beginRequiredReaderCoreDownload,
   readActiveReaderProfile,
   resolveOfflineDownloadOffer,
   type OfflineDownloadOffer,
 } from '../launch/offline-download-setup'
-import { nativeSettingsReader, readNativeSetting } from '../storage/native-reader-store'
+import { resolveMushafEditionSetup } from '../launch/mushaf-edition-setup'
+import { nativeSettingsReader } from '../storage/native-reader-store'
 import { retireSearchData } from '../launch/search-retirement'
 
 export type SavedPosition = QuranRef
-export type LaunchSetupState = Exclude<MushafEditionSetupState, { status: 'complete' }> | OfflineDownloadOffer
 export type LaunchRestoreState =
   | { status: 'loading'; hash: string; sourceHash: string }
   | { status: 'ready'; hash: string; sourceHash: string; offlineOffer?: OfflineDownloadOffer | null }
-  | { status: 'setup'; hash: string; sourceHash: string; setup: LaunchSetupState }
 
 // Only app-internal non-reader screens are excluded by exact hash. Unknown
 // addresses (e.g. retired '#/search?...' deep links) already fail the
@@ -99,6 +93,11 @@ export async function resolveHashWithLaunchState(db: LaunchSettingsReader, hash:
   return hash
 }
 
+// S1 (approved Step 5): first run boots straight into the reader — no setup
+// gate, no edition chooser, no download offer before content. Launch restore
+// answers "is an offer pending" as data and never chooses UI modes (§9 B2):
+// the offer renders as a standalone overlay beside the reader, downloads in
+// place, and never round-trips through a hash or a resolver re-run.
 export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestoreState {
   const [state, setState] = useState<LaunchRestoreState>(() => ({
     status: 'loading',
@@ -106,14 +105,11 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
     sourceHash: hash,
   }))
   const hasResolvedOnceRef = useRef(false)
-  const setupPendingRef = useRef(false)
-  const onboardedAtBootRef = useRef<boolean | null>(null)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshVersion intentionally retriggers restoration.
   useEffect(() => {
     let active = true
-    const canKeepReady =
-      hasResolvedOnceRef.current && !setupPendingRef.current && !isLaunchHash(hash) && hash !== '#/onboarding'
+    const canKeepReady = hasResolvedOnceRef.current && !isLaunchHash(hash) && hash !== '#/onboarding'
 
     if (canKeepReady) {
       // Preserve a pending offline offer across in-session navigation: the
@@ -130,17 +126,12 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
     }
 
     async function resolve() {
-      if (onboardedAtBootRef.current === null) {
-        // SESSION-scoped capture, read BEFORE resolveMushafEditionSetup (its
-        // auto-repair and contract reset can write the edition marker): a fresh
-        // user's marker appears between resolve #1 and resolve #2, so a
-        // per-resolve read would misclassify them as already onboarded.
-        const editionMarker = await readNativeSetting('mushafEditionSetupVersion')
-        onboardedAtBootRef.current = editionMarker?.value === MUSHAF_EDITION_SETUP_VERSION
-      }
       const assetContract = await ensureReactMvpAssetContractReset()
       const resolvedHash = await resolveHashWithLaunchState(nativeSettingsReader(), hash)
-      const setup = await resolveMushafEditionSetup({ contractWasValid: assetContract.hadValidContract })
+      // The edition resolver runs for its side effects only (persisting the
+      // shipped default edition on a fresh profile); its outcome never gates
+      // the launch — the reader renders from bundled data in every state.
+      await resolveMushafEditionSetup({ contractWasValid: assetContract.hadValidContract }).catch(() => undefined)
       // Search retirement runs once per launch resolution after the short-lived
       // native reads complete and before reader-core downloads start. It is
       // fire-and-forget by contract: a blocked upgrade (older tab) or cache
@@ -149,38 +140,16 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
       void retireSearchData()
       if (active) {
         hasResolvedOnceRef.current = true
-        if (setup.status === 'complete') {
-          // The verse/reader-text pack is required offline data: it enqueues
-          // automatically for every launch-resolved reader, onboarded or not.
-          // The enqueue must not block launch resolution — its Dexie open can
-          // wait behind a schema upgrade on upgrade launches — so it is
-          // fire-and-forget; reconcileOfflinePacks resumes pending packs at
-          // ready regardless.
-          const profile = await readActiveReaderProfile().catch(() => null)
-          if (profile) void beginRequiredReaderCoreDownload(profile).catch(() => undefined)
-          if (!active) return
-          const offer = await resolveOfflineDownloadOffer().catch(() => null)
-          if (!active) return
-          if (offer) {
-            if (hash === '#/onboarding') {
-              // The user explicitly opened onboarding from the offer prompt:
-              // show the full download screen with its progress/pause UI.
-              setupPendingRef.current = true
-              setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup: offer })
-            } else {
-              // The offer never blocks first launch: the reader resolves ready
-              // and App renders the one-shot prompt beside it.
-              setupPendingRef.current = false
-              setState({ status: 'ready', hash: resolvedHash, sourceHash: hash, offlineOffer: offer })
-            }
-          } else {
-            setupPendingRef.current = false
-            setState({ status: 'ready', hash: resolvedHash, sourceHash: hash, offlineOffer: null })
-          }
-        } else {
-          setupPendingRef.current = true
-          setState({ status: 'setup', hash: resolvedHash, sourceHash: hash, setup })
-        }
+        // The verse/reader-text pack is required offline data: it enqueues
+        // automatically for every launch-resolved reader. The enqueue must not
+        // block launch resolution; reconcileOfflinePacks resumes pending packs
+        // at ready regardless.
+        const profile = await readActiveReaderProfile().catch(() => null)
+        if (profile) void beginRequiredReaderCoreDownload(profile).catch(() => undefined)
+        if (!active) return
+        const offer = await resolveOfflineDownloadOffer().catch(() => null)
+        if (!active) return
+        setState({ status: 'ready', hash: resolvedHash, sourceHash: hash, offlineOffer: offer })
       }
     }
 
@@ -188,12 +157,12 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
     void resolve().catch(() => {
       if (active) {
         hasResolvedOnceRef.current = true
-        setupPendingRef.current = true
+        // A failed launch resolution still lands in the reader (bundled data).
         setState({
-          status: 'setup',
+          status: 'ready',
           hash: isLaunchHash(hash) || hash === '#/onboarding' ? '#/s/1' : hash,
           sourceHash: hash,
-          setup: { status: 'choose', editions: [] },
+          offlineOffer: null,
         })
       }
     })

@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { seedOnboardedReader } from './fixtures/app'
 
 // The dev server ships no Mushaf page media, and the seeded default edition
-// resolves to a v1 (inline-SVG, no framing) manifest — so the Mushaf text-size
+// resolves to a v1 (inline-SVG, no framing) manifest — so the Mushaf page-zoom
 // control never mounts in this suite on its own. The plain-language copy under
 // test lives behind that control, so the test fulfills the edition's asset
 // index + manifest with the same synthetic v2 contract (framing +
@@ -123,10 +123,9 @@ test('boots the reader and reaches primary reader, surah list, and settings surf
   // S-P4: opening settings from a ChromeFrame base (surahs) preserves that base
   // instead of teleporting to the reader.
   await expect(page).toHaveURL(/#\/surahs$/)
-  await expect(page.getByRole('heading', { name: 'Verse settings' })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Texts and editions' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
   await page.getByRole('button', { name: 'Close settings', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Verse settings' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Settings' })).toHaveCount(0)
 
   // Removed Search deep links land on the existing unsupported-address
   // recovery screen, with or without a query string, and recovery navigates
@@ -147,20 +146,26 @@ test('boots the reader and reaches primary reader, surah list, and settings surf
 test('settings use plain-language copy for controls and inventory', async ({ page }) => {
   await seedOnboardedReader(page)
   // Serve the synthetic v2 (external-image, framed) edition pack so the Mushaf
-  // text-size control — gated on framing capability — renders in the mushaf
-  // settings overlay; the shipped quran.ws edition is v1 and has no framing.
+  // page-zoom control — gated on framing capability — renders in the settings
+  // overlay; the shipped quran.ws edition is v1 and has no framing.
   await fulfillFramedMushafEdition(page)
-
-  await page.goto('/#/settings')
-  await expect(page.getByRole('heading', { name: 'Verse settings' })).toBeVisible()
-  await expect(page.getByText('Read-only inventory for the active reading profile.')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Close settings', exact: true }).click()
 
   await page.goto('/#/m/1')
   await page.getByRole('button', { name: 'Open settings' }).click()
-  await expect(page.getByRole('heading', { name: 'Mushaf settings' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
   await expect(page.getByText(/% reviewed frame width/)).toHaveCount(0)
-  await expect(page.getByText(/Text area \d+%/)).toBeVisible()
+  await expect(page.getByText(/Text area \d+%/)).toHaveCount(0)
+  await expect(page.getByText(/Page zoom — \d+%/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Notation guide' })).toBeVisible()
+  await page.getByRole('button', { name: 'Notation guide' }).click()
+  await expect(page.getByRole('heading', { name: 'Notation guide' })).toBeVisible()
+  await expect(page.getByText('Notation conventions differ between printed editions.')).toBeVisible()
+  await expect(page.getByText(/does not guess at a mark's meaning/)).toBeVisible()
+  await expect(page.getByText(/bowing is recommended/)).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(page.getByText('Fit width')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Close settings', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Settings' })).toHaveCount(0)
 })
 
 test('reader never shows internal Hafs-keyed continuation vocabulary', async ({ page }) => {
@@ -171,73 +176,134 @@ test('reader never shows internal Hafs-keyed continuation vocabulary', async ({ 
   await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
 })
 
-test('verse spacing offers three plain-language options', async ({ page }) => {
+test('verse spacing offers three plain-language preset options', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/settings')
-  await expect(page.getByRole('heading', { name: 'Verse settings' })).toBeVisible()
-  await page.getByRole('combobox', { name: 'Reading flow' }).click()
-  await expect(page.getByRole('option', { name: 'Compact' })).toBeVisible()
-  await expect(page.getByRole('option', { name: 'Comfortable' })).toBeVisible()
-  await expect(page.getByRole('option', { name: 'Spacious' })).toBeVisible()
-  await expect(page.getByRole('option', { name: 'Tight' })).toHaveCount(0)
-  await expect(page.getByRole('option', { name: 'Standard' })).toHaveCount(0)
-  await expect(page.getByRole('option', { name: 'Wide' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
+  const spacing = page.getByRole('radiogroup', { name: 'Verse spacing' })
+  await expect(spacing.getByRole('radio', { name: 'Verse spacing: Compact' })).toBeVisible()
+  await expect(spacing.getByRole('radio', { name: 'Verse spacing: Comfortable' })).toBeVisible()
+  await expect(spacing.getByRole('radio', { name: 'Verse spacing: Spacious' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: /Tight/ })).toHaveCount(0)
+  await expect(page.getByRole('radio', { name: /Standard/ })).toHaveCount(0)
+  await expect(page.getByRole('radio', { name: /Wide/ })).toHaveCount(0)
 })
 
 test('about separates sources from build credits and offers a report route', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/about')
-  await expect(page.getByRole('heading', { name: 'Sources' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Built with' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sources used' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'King Fahd Complex source' })).toHaveAttribute(
+    'href',
+    'https://qurancomplex.gov.sa/en/techquran/dev/',
+  )
+  await expect(page.getByText('KFGQPC Quran text source; restricted terms apply.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Bridges translation source' })).toHaveAttribute(
+    'href',
+    'https://qul.tarteel.ai/resources/translation/179',
+  )
+  await expect(page.getByText('QUL downloadable resource.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Quran.ws page source' })).toHaveAttribute('href', 'https://quran.ws')
+  await expect(page.getByText('Quran.ws page assets free use.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Furatiyyah source record' })).toHaveAttribute(
+    'href',
+    /data\/catalog\/mushaf-assets\.json/,
+  )
+  await expect(
+    page.getByText(/redistribution is limited to the user-authorized QuranAtlas noncommercial deployment/),
+  ).toBeVisible()
+  // Technical credits come last and stay visually secondary (S10).
+  await expect(page.getByText('Built with React, Vite, and Workbox.')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Report an issue' })).toBeVisible()
+})
+
+test('about disables update checks while offline', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/about')
+  const updateButton = page.getByRole('button', { name: 'Check for updates' })
+  await expect(updateButton).toBeEnabled()
+  await page.context().setOffline(true)
+  await expect(updateButton).toBeDisabled()
+  await expect(page.getByText('Connect to the internet to check for updates.')).toBeVisible()
 })
 
 test('reader chrome offers a surah selector and no Search action', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/s/1')
   await expect(page.getByRole('button', { name: 'Search Quran' })).toHaveCount(0)
+  // The labelled Verses/Mushaf segmented control replaces the icon toggle.
+  await expect(page.getByRole('radiogroup', { name: 'View' })).toBeVisible()
   await page.goto('/#/s/2')
-  await page.getByRole('button', { name: 'Choose surah' }).click()
-  await expect(page.getByRole('dialog', { name: /navigation/i })).toBeVisible()
+  // The selector trigger's accessible name includes the current surah (D2).
+  await page.getByRole('button', { name: /Choose surah/ }).click()
+  await expect(page.getByRole('dialog', { name: /choose surah/i })).toBeVisible()
+  await page.keyboard.press('Escape')
   // The drawer has no Read/Search destination switch and no saved searches.
+  await page.getByRole('button', { name: 'Open navigation' }).click()
   await expect(page.getByRole('radiogroup', { name: 'Destination' })).toHaveCount(0)
   await expect(page.getByRole('radio', { name: 'Search' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Save search' })).toHaveCount(0)
+})
+
+test('plain icon controls expose desktop tooltips', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-smoke', 'Desktop tooltip requirement')
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1')
+  await page.getByRole('button', { name: 'Open settings' }).hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Open settings')
 })
 
 test('bookmarks is a standalone destination in the navigation drawer', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/s/1')
   await page.getByRole('button', { name: 'Open navigation' }).click()
-  await expect(page.getByRole('button', { name: 'Bookmarks', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Bookmarks', exact: true }).click()
-  await expect(page.getByRole('region', { name: /bookmarks/i })).toBeVisible()
+  const drawer = page.getByRole('dialog', { name: 'Navigation' })
+  await expect(drawer.getByRole('button', { name: 'Bookmarks', exact: true })).toBeVisible()
+  await drawer.getByRole('button', { name: 'Bookmarks', exact: true }).click()
+  await expect(page.getByRole('main', { name: /bookmarks/i })).toBeVisible()
 })
 
-test('theme offers a system-following option and night dimming is named by effect', async ({ page }) => {
+test('theme offers a system-following option and dimming is named by effect', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/settings')
   await expect(page.getByRole('radio', { name: 'Theme: System' })).toBeVisible()
   await expect(page.getByRole('radio', { name: 'Theme: Auto' })).toHaveCount(0)
-  await expect(page.getByText('Dims Mushaf page images in low light.')).toBeVisible()
+  // One theme selector exists; the retired Night-mode controls are gone (A3).
+  await expect(page.getByText('Mushaf night dimming')).toHaveCount(0)
+  await expect(page.getByRole('radio', { name: 'Night mode: On' })).toHaveCount(0)
+  await expect(page.getByText('Dims Mushaf page images in Dark theme.')).toBeVisible()
+  await expect(page.getByRole('switch', { name: 'Dim page images' })).toBeVisible()
+})
+
+test('system theme follows operating-system changes without a reload', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.goto('/#/settings')
+  await page.getByRole('radio', { name: 'Theme: System' }).click()
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 })
 
 test('surah start offers no backward navigation and titles appear once', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/s/1')
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
+  // Below-passage continuity buttons are removed; adjacent navigation lives
+  // in the selector (§8 item 1).
   await expect(page.getByRole('button', { name: /Previous surah/i })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Next surah/i })).toHaveCount(0)
   await expect(page.getByText('All praise be to Allah, Lord of all realms,')).toBeVisible()
   await page.goto('/#/s/2')
-  await expect(page.getByRole('button', { name: /Previous surah/i })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Previous surah/i })).toHaveCount(0)
 })
 
-test('surah filter navigates by name, number, and verse reference', async ({ page }) => {
+test('surah selector filter navigates by name, number, and verse reference', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/s/1')
-  await page.getByRole('button', { name: 'Open navigation' }).click()
-  await expect(page.getByRole('dialog', { name: /navigation/i })).toBeVisible()
-  const filter = page.getByRole('searchbox', { name: 'Search surah by name, number, or verse reference' })
+  await page.getByRole('button', { name: /Choose surah/ }).click()
+  await expect(page.getByRole('dialog', { name: /choose surah/i })).toBeVisible()
+  const filter = page.getByRole('textbox', { name: 'Filter by name, number, or verse' })
   await expect(filter).toBeVisible()
   const surahList = page.getByRole('list', { name: 'Surah list' })
 
@@ -257,12 +323,90 @@ test('surah filter navigates by name, number, and verse reference', async ({ pag
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
 })
 
+test('surah selector shows adjacent navigation without wrapping at the book ends', async ({ page }) => {
+  await seedOnboardedReader(page)
+  // At surah 1 there is no Previous action (no wrap to An-Nās, D6).
+  await page.goto('/#/s/1')
+  await page.getByRole('button', { name: /Choose surah/ }).click()
+  const dialog = page.getByRole('dialog', { name: /choose surah/i })
+  await expect(dialog.getByRole('button', { name: /Next: Al-Baqarah/ })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: /Previous:/ })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  await page.goto('/#/s/114')
+  await page.getByRole('button', { name: /Choose surah/ }).click()
+  await expect(dialog.getByRole('button', { name: /Previous: Al-Mā'idah|Previous:/ })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: /Next:/ })).toHaveCount(0)
+})
+
+test('verse selection reveals the quiet action row and the copy toast confirms', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/#/s/1')
+  await page.getByTestId('verse-1:1').click()
+  await expect(page.getByTestId('verse-1:1')).toHaveAttribute('data-selected', 'true')
+  await expect(page.getByRole('button', { name: 'Bookmark Al-Fātiḥah 1' })).toBeVisible()
+  await page.getByRole('button', { name: 'Copy reference' }).click()
+  await expect(page.getByText('Reference copied')).toBeVisible()
+})
+
+test('verse medallion is not a button and the bookmark is a separate control', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1')
+  // The number is a stable reference, never a button (Step 3/S2).
+  await expect(page.getByRole('button', { name: /Bookmark verse 1\b/ })).toHaveCount(0)
+  const bookmark = page.getByRole('button', { name: 'Bookmark Al-Fātiḥah 1' })
+  await expect(bookmark).toBeVisible()
+  await bookmark.click()
+  // Bookmark fills accent when saved: aria-pressed flips and the remove name appears.
+  await expect(page.getByRole('button', { name: 'Remove bookmark from Al-Fātiḥah 1' })).toBeVisible()
+})
+
 test('about documents reference numbering and identifies editions', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/about')
-  await expect(page.getByRole('heading', { name: 'Reference numbering' })).toBeVisible()
-  await expect(page.getByText(/QuranAtlas reads in the Qalūn narration/)).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Editions' })).toBeVisible()
-  await expect(page.getByText('Qalun Quran.ws')).toBeVisible()
-  await expect(page.getByText('Qalun Furatiyyah 2023')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Numbering and references' })).toBeVisible()
+  await expect(page.getByText(/Verse references follow the Hafs counting/)).toBeVisible()
+  await expect(page.getByText('Qalun Quran.ws (minimal monochrome pages)')).toBeVisible()
+  await expect(page.getByText(/Qalun Furatiyyah 2023/)).toBeVisible()
+})
+
+test('downloads link opens the downloads surface with the included inventory', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/settings')
+  await page.getByRole('button', { name: /Downloads/ }).click()
+  await expect(page.getByRole('region', { name: 'Offline reading data' })).toBeVisible()
+  await expect(page.getByText('Reader texts')).toBeVisible()
+})
+
+test('selector opens an exact number with Enter and restores focus on Escape', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1')
+  const trigger = page.getByRole('button', { name: /Al-Fātiḥah.*Choose surah/ })
+  await trigger.click()
+  const filter = page.getByRole('textbox', { name: 'Filter by name, number, or verse' })
+  await filter.fill('112')
+  await filter.press('Enter')
+  await expect(page).toHaveURL(/#\/s\/112$/)
+  const nextTrigger = page.getByRole('button', { name: /Al-Ikhlāṣ.*Choose surah/ })
+  await nextTrigger.click()
+  await page.getByRole('textbox', { name: 'Filter by name, number, or verse' }).press('Escape')
+  await expect(nextTrigger).toBeFocused()
+})
+
+test('continuation verse links land on their visible passage', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.goto('/#/s/1/7')
+  await expect(page.getByText('غَيْرِ اِ۬لْمَغْضُوبِ عَلَيْهِمْ وَلَا اَ۬لضَّآلِّينَۖ', { exact: false })).toBeInViewport()
+})
+
+test('copied verse references include the surah number', async ({ page }) => {
+  await seedOnboardedReader(page)
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/#/s/1')
+  await page.getByRole('article', { name: 'Al-Fātiḥah 1', exact: true }).click()
+  await page.getByRole('button', { name: 'Copy reference' }).click()
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe('Al-Fātiḥah 1:1 — All praise be to Allah, Lord of all realms,')
 })

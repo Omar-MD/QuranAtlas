@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, type ReactNode } from 'react'
 
-import { OnboardingRoute } from '../../app/routes/onboarding/OnboardingRoute'
 import { AboutRoute } from '../../app/routes/settings/AboutRoute'
 import { SettingsRoute } from '../../app/routes/settings/SettingsRoute'
 
@@ -31,11 +30,11 @@ export const Dark: Story = {
   render: () => <SettingsRoute mode="verse" />,
 }
 
-export const Night: Story = {
+export const DimPageImages: Story = {
   render: () => (
-    <NightAppearance>
+    <DimAppearance>
       <SettingsRoute mode="verse" />
-    </NightAppearance>
+    </DimAppearance>
   ),
 }
 
@@ -43,16 +42,13 @@ export const About: Story = {
   render: () => <AboutRoute />,
 }
 
-export const Onboarding: Story = {
-  render: () => <OnboardingRoute />,
-}
-
-function NightAppearance({ children }: { children: ReactNode }) {
+function DimAppearance({ children }: { children: ReactNode }) {
   useEffect(() => {
-    document.documentElement.dataset.theme = 'light'
-    document.documentElement.dataset.nightMode = 'on'
+    document.documentElement.dataset.theme = 'dark'
+    document.documentElement.dataset.dimPageImages = 'on'
     return () => {
-      delete document.documentElement.dataset.nightMode
+      document.documentElement.dataset.theme = 'light'
+      delete document.documentElement.dataset.dimPageImages
     }
   }, [])
   return children

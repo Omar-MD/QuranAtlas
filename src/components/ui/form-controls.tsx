@@ -3,13 +3,13 @@ import * as SelectPrimitive from '@radix-ui/react-select'
 import * as SliderPrimitive from '@radix-ui/react-slider'
 import * as SwitchPrimitive from '@radix-ui/react-switch'
 import { Check, ChevronDown } from 'lucide-react'
-import { forwardRef, useState } from 'react'
+import { forwardRef, useId, useState } from 'react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
 
 const fieldClass =
-  'qar:min-h-11 qar:w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:px-3 qar:py-2 qar:font-ui qar:text-sm qar:text-text qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:opacity-55'
+  'qar:min-h-11 qar:w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:px-3 qar:py-2 qar:font-ui qar:text-sm qar:text-text qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:opacity-40'
 const labelClass = 'qar:grid qar:gap-1 qar:text-sm qar:text-muted'
 
 export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> & {
@@ -53,11 +53,11 @@ export function Select({ className, label, options, placeholder = 'Select', ...p
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
-        <SelectPrimitive.Content className="qar-react-select-content qar:z-50 qar:overflow-hidden qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1 qar:text-text qar:shadow-lg">
+        <SelectPrimitive.Content className="qar-react-select-content qar:z-50 qar:overflow-hidden qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-1 qar:text-text qar-react-overlay-shadow">
           <SelectPrimitive.Viewport>
             {options.map((option) => (
               <SelectPrimitive.Item
-                className="qar:flex qar:min-h-11 qar:cursor-default qar:items-center qar:gap-2 qar:rounded-control qar:px-2 qar:text-sm qar:outline-none qar:focus:bg-canvas qar:data-[disabled]:opacity-50"
+                className="qar:flex qar:min-h-11 qar:cursor-default qar:items-center qar:gap-2 qar:rounded-control qar:px-2 qar:text-sm qar:outline-none qar:focus:bg-accent-tint qar:data-[disabled]:opacity-40"
                 disabled={option.disabled}
                 key={option.value}
                 value={option.value}
@@ -82,10 +82,21 @@ export type SegmentedControlProps = {
   value?: string
   defaultValue?: string
   onValueChange?: (value: string) => void
+  /** Suppress the selected-checkmark (compact chrome placements). */
+  compact?: boolean
 }
 
-export function SegmentedControl({ label, options, value, defaultValue, onValueChange }: SegmentedControlProps) {
-  const groupName = `qa-segmented-${label.replace(/\W+/g, '-').toLowerCase()}`
+// Universal selected treatment (brief §2.3): tint wash + 1 px accent border +
+// visible checkmark — never colour alone.
+export function SegmentedControl({
+  label,
+  options,
+  value,
+  defaultValue,
+  onValueChange,
+  compact: _compact = false,
+}: SegmentedControlProps) {
+  const groupName = useId()
   const firstEnabledValue = options.find((option) => !option.disabled)?.value
   const [internalValue, setInternalValue] = useState(defaultValue ?? value ?? firstEnabledValue ?? options[0]?.value)
   const rawSelectedValue = value ?? internalValue
@@ -111,8 +122,10 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
         return (
           <label
             className={cn(
-              'qar-react-segmented-option qar:flex qar:min-h-11 qar:min-w-0 qar:items-center qar:rounded-control qar:px-3 qar:text-sm',
-              selected ? 'qar-react-segmented-option--selected' : 'qar:text-muted',
+              'qar-react-segmented-option qar:flex qar:min-h-11 qar:min-w-0 qar:items-center qar:justify-center qar:gap-1 qar:rounded-control qar:px-3 qar:text-sm',
+              // Selected label stays ink (accent text on tint is below 4.5:1 in
+              // Dark); the check carries the accent (icon: 3:1 applies).
+              selected ? 'qar-react-segmented-option--selected qar:text-text' : 'qar:text-muted qar:hover:text-text',
             )}
             key={option.value}
           >
@@ -126,6 +139,7 @@ export function SegmentedControl({ label, options, value, defaultValue, onValueC
               type="radio"
               value={option.value}
             />
+            {selected ? <Check aria-hidden="true" className="qar:size-3.5 qar:shrink-0 qar:text-accent" /> : null}
             <span className="qar:truncate">{option.shortLabel ?? option.label}</span>
           </label>
         )
@@ -141,7 +155,7 @@ export function Checkbox({ label, className, id, ...props }: CheckboxProps) {
     <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text" htmlFor={checkboxId}>
       <CheckboxPrimitive.Root
         className={cn(
-          'qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:text-surface qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-55',
+          'qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:text-on-accent qar:data-[state=checked]:border-accent qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-40',
           className,
         )}
         id={checkboxId}
@@ -172,7 +186,7 @@ export function Switch({ label, className, checked, defaultChecked, id, onChecke
     <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text" htmlFor={switchId}>
       <SwitchPrimitive.Root
         className={cn(
-          'qar:relative qar:inline-flex qar:min-h-11 qar:min-w-11 qar:items-center qar:justify-center qar:rounded-control qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-55',
+          'qar:relative qar:inline-flex qar:min-h-11 qar:min-w-11 qar:items-center qar:justify-center qar:rounded-control qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-40',
           className,
         )}
         id={switchId}
@@ -182,7 +196,7 @@ export function Switch({ label, className, checked, defaultChecked, id, onChecke
       >
         <span
           aria-hidden="true"
-          className="qar:pointer-events-none qar:absolute qar:h-6 qar:w-11 qar:rounded-surface qar:border qar:border-border qar:bg-muted qar:data-[state=checked]:bg-accent"
+          className="qar:pointer-events-none qar:absolute qar:h-6 qar:w-11 qar:rounded-surface qar:border qar:border-border qar:bg-border qar:data-[state=checked]:border-accent qar:data-[state=checked]:bg-accent"
           data-state={visualState ? 'checked' : 'unchecked'}
         />
         <SwitchPrimitive.Thumb className="qar:pointer-events-none qar:absolute qar:left-0 qar:top-1/2 qar:block qar:size-5 qar:-translate-y-1/2 qar:translate-x-0.5 qar:rounded-surface qar:bg-surface qar:transition-transform qar:data-[state=checked]:translate-x-5" />
@@ -193,7 +207,7 @@ export function Switch({ label, className, checked, defaultChecked, id, onChecke
 }
 
 const sliderThumbClass =
-  'qar:block qar:size-5 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:shadow-sm qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-55'
+  'qar:block qar:size-5 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-40'
 
 export type SliderProps = SliderPrimitive.SliderProps & { hideLabel?: boolean; label: string }
 export function Slider({ hideLabel = false, label, className, ...props }: SliderProps) {
@@ -202,7 +216,7 @@ export function Slider({ hideLabel = false, label, className, ...props }: Slider
       <span className={hideLabel ? 'qar:sr-only' : undefined}>{label}</span>
       <SliderPrimitive.Root
         aria-label={label}
-        className="qar:relative qar:flex qar:h-6 qar:w-full qar:touch-none qar:items-center"
+        className="qar:relative qar:flex qar:min-h-11 qar:w-full qar:touch-none qar:items-center"
         {...props}
       >
         <SliderPrimitive.Track className="qar:relative qar:h-2 qar:grow qar:rounded-surface qar:bg-border">

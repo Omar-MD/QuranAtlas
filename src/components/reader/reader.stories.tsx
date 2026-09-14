@@ -68,12 +68,6 @@ const readyCorpus: ReaderCorpusState = {
   ],
 }
 
-const surahIndex = [
-  { n: 1, name: 'Al-Fatihah', name_ar: 'الفَاتِحة', counts: { hafs: 7, warsh: 7, qaloon: 7 } },
-  { n: 2, name: 'Al-Baqarah', name_ar: 'البَقَرَة', counts: { hafs: 286, warsh: 285, qaloon: 285 } },
-  { n: 114, name: 'An-Nas', name_ar: 'النَّاس', counts: { hafs: 6, warsh: 6, qaloon: 6 } },
-]
-
 const sampleMushafPage: MushafResolvedPage = {
   assetUrl: '/dataset/mushaf-pages/qaloon/qalun-quran-ws-v1/pages/001.svg',
   displaySize: { width: 120, height: 180 },
@@ -122,13 +116,11 @@ const activeWirdSummary: WirdSummary = {
 }
 
 export const VerseReader: Story = {
-  render: () => <ReaderVerseSurface corpus={readyCorpus} selectedVerseKey="1:4" surahIndex={surahIndex} />,
+  render: () => <ReaderVerseSurface corpus={readyCorpus} selectedVerseKey="1:4" />,
 }
 
 export const VerseReaderBookmarked: Story = {
-  render: () => (
-    <ReaderVerseSurface bookmarkedVerseKeys={new Set(['1:1'])} corpus={readyCorpus} surahIndex={surahIndex} />
-  ),
+  render: () => <ReaderVerseSurface bookmarkedVerseKeys={new Set(['1:1'])} corpus={readyCorpus} />,
 }
 
 export const VerseReaderLoading: Story = {

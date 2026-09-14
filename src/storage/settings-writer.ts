@@ -9,6 +9,7 @@ export type ReactMushafViewMode = 'auto' | 'fit-page' | 'fit-width' | 'continuou
 export type NormalizedReactMushafViewMode = 'auto' | 'fit-page' | 'continuous'
 
 export type ReactReaderPreferences = {
+  dimPageImages: boolean
   fontSize: ReactPreferenceStep
   lineSpacing: ReactPreferenceStep
   mushafFitWidth: boolean
@@ -17,6 +18,7 @@ export type ReactReaderPreferences = {
   nightMode: ReactNightModePreference
   readerMargin: ReactPreferenceStep
   theme: ReactThemePreference
+  translationFontSize: ReactPreferenceStep
   translationVisible: boolean
   verseSpacing: ReactPreferenceStep
   wordSpacing: ReactPreferenceStep
@@ -24,6 +26,7 @@ export type ReactReaderPreferences = {
 }
 
 export const DEFAULT_REACT_READER_PREFERENCES: ReactReaderPreferences = {
+  dimPageImages: false,
   fontSize: 'md',
   lineSpacing: 'md',
   mushafFitWidth: false,
@@ -32,6 +35,7 @@ export const DEFAULT_REACT_READER_PREFERENCES: ReactReaderPreferences = {
   nightMode: 'off',
   readerMargin: 'md',
   theme: 'light',
+  translationFontSize: 'sm',
   translationVisible: true,
   verseSpacing: 'md',
   wordSpacing: 'md',
@@ -42,12 +46,14 @@ const READER_PREFERENCE_KEYS = [
   'translationVisible',
   'wirdReaderStatusVisible',
   'fontSize',
+  'translationFontSize',
   'lineSpacing',
   'wordSpacing',
   'readerMargin',
   'verseSpacing',
   'theme',
   'nightMode',
+  'dimPageImages',
   'mushafViewMode',
   'mushafFitWidth',
   'mushafPageFraming',
@@ -78,6 +84,16 @@ function clampMushafPageFraming(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
 }
 
+// D1 (A1) repair: the superseded Reading-flow select stored five steps while
+// the Verse-spacing preset exposes three (Compact/Comfortable/Spacious).
+// Legacy 'sm'/'lg' normalize to the nearest preset at the storage boundary so
+// the control never renders blank.
+function normalizeVerseSpacing(value: unknown): ReactPreferenceStep | null {
+  if (value === 'sm') return 'xs'
+  if (value === 'lg') return 'xl'
+  return asStep(value)
+}
+
 export async function readReactReaderPreferences(db: QuranAtlasReactDb): Promise<ReactReaderPreferences> {
   const records = await db.settings.bulkGet([...READER_PREFERENCE_KEYS])
   return reactReaderPreferencesFromRecords(records)
@@ -91,8 +107,19 @@ export async function readNativeReactReaderPreferences(): Promise<ReactReaderPre
 function reactReaderPreferencesFromRecords(records: Array<SettingRecord | undefined>): ReactReaderPreferences {
   const values = Object.fromEntries(records.map((record, index) => [READER_PREFERENCE_KEYS[index], record?.value]))
   const legacyMushafViewMode = asMushafViewMode(values.mushafViewMode)
+  // A3 repair: the Night-mode pair is retired. A legacy night-mode preference
+  // maps onto the Dim page images switch (the only image treatment) until the
+  // user changes it; the control itself defaults off.
+  const legacyDim =
+    typeof values.dimPageImages === 'boolean'
+      ? values.dimPageImages
+      : asNightMode(values.nightMode) === 'off' || values.nightMode === undefined
+        ? DEFAULT_REACT_READER_PREFERENCES.dimPageImages
+        : true
   return {
+    dimPageImages: legacyDim,
     fontSize: asStep(values.fontSize) ?? DEFAULT_REACT_READER_PREFERENCES.fontSize,
+    translationFontSize: asStep(values.translationFontSize) ?? DEFAULT_REACT_READER_PREFERENCES.translationFontSize,
     lineSpacing: asStep(values.lineSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.lineSpacing,
     mushafFitWidth:
       typeof values.mushafFitWidth === 'boolean'
@@ -109,7 +136,7 @@ function reactReaderPreferencesFromRecords(records: Array<SettingRecord | undefi
       typeof values.translationVisible === 'boolean'
         ? values.translationVisible
         : DEFAULT_REACT_READER_PREFERENCES.translationVisible,
-    verseSpacing: asStep(values.verseSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
+    verseSpacing: normalizeVerseSpacing(values.verseSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
     wordSpacing: asStep(values.wordSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.wordSpacing,
     wirdReaderStatusVisible:
       typeof values.wirdReaderStatusVisible === 'boolean'
@@ -126,12 +153,17 @@ export async function writeReactReaderPreferences(
     { key: 'translationVisible', value: preferences.translationVisible },
     { key: 'wirdReaderStatusVisible', value: preferences.wirdReaderStatusVisible },
     { key: 'fontSize', value: preferences.fontSize },
+    { key: 'translationFontSize', value: preferences.translationFontSize },
     { key: 'lineSpacing', value: preferences.lineSpacing },
     { key: 'wordSpacing', value: preferences.wordSpacing },
     { key: 'readerMargin', value: preferences.readerMargin },
-    { key: 'verseSpacing', value: preferences.verseSpacing },
+    {
+      key: 'verseSpacing',
+      value: normalizeVerseSpacing(preferences.verseSpacing) ?? DEFAULT_REACT_READER_PREFERENCES.verseSpacing,
+    },
     { key: 'theme', value: preferences.theme },
     { key: 'nightMode', value: preferences.nightMode },
+    { key: 'dimPageImages', value: preferences.dimPageImages },
     { key: 'mushafViewMode', value: normalizeMushafViewMode(preferences.mushafViewMode) },
     { key: 'mushafFitWidth', value: preferences.mushafFitWidth },
     { key: 'mushafPageFraming', value: clampMushafPageFraming(preferences.mushafPageFraming) },

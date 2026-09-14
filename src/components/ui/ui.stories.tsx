@@ -38,38 +38,35 @@ type Story = StoryObj
 export const Primitives: Story = {
   render: () => (
     <div className="qar:grid qar:max-w-3xl qar:gap-4 qar:bg-canvas qar:p-6 qar:text-text">
-      <div className="qar:flex qar:flex-wrap qar:gap-2">
-        <Button variant="primary">Primary</Button>
-        <Button>Secondary</Button>
-        <IconButton label="Settings">
+      <div className="qar:flex qar:flex-wrap qar:items-center qar:gap-2">
+        <Button variant="primary">Download pages</Button>
+        <Button variant="primary" loading>
+          Download pages
+        </Button>
+        <Button>Change edition</Button>
+        <Button disabled>Disabled</Button>
+        <IconButton label="Bookmarks">
           <Settings aria-hidden="true" />
         </IconButton>
-        <Badge tone="success">Installed</Badge>
+        <Badge tone="success">Downloaded</Badge>
         <Spinner label="Loading" />
       </div>
       <Progress label="Download progress" value={64} />
       <Input label="Filter surahs" />
-      <Select
-        label="Riwayah"
-        defaultValue="qaloon"
-        options={[
-          { label: 'Qalun', value: 'qaloon' },
-          { label: 'Hafs', value: 'hafs' },
-        ]}
-      />
+      <Select label="Translation" defaultValue="bridges" options={[{ label: 'Bridges', value: 'bridges' }]} />
       <SegmentedControl
-        label="Mode"
+        label="View"
         options={[
-          { label: 'Verse', value: 'verse' },
+          { label: 'Verses', value: 'verse' },
           { label: 'Mushaf', value: 'mushaf' },
         ]}
         defaultValue="verse"
       />
       <Checkbox label="Downloaded" />
-      <Switch label="Night mode" />
+      <Switch label="Dim page images" />
       <Checkbox disabled label="Downloaded (disabled)" />
-      <Switch disabled label="Night mode (disabled)" />
-      <Slider label="Font size" defaultValue={[100]} min={70} max={130} />
+      <Switch disabled label="Dim page images (disabled)" />
+      <Slider label="Page zoom" defaultValue={[100]} min={0} max={100} />
     </div>
   ),
 }
@@ -87,10 +84,10 @@ export const Behavior: Story = {
         Sheet content
       </Sheet>
       <Tabs
-        label="Reader tabs"
+        label="Selector tabs"
         items={[
-          { label: 'Verse', value: 'verse', content: 'Verse content' },
-          { label: 'Mushaf', value: 'mushaf', content: 'Mushaf content' },
+          { label: 'Surahs', value: 'surahs', content: 'Surah content' },
+          { label: 'Juz', value: 'juz', content: 'Juz content' },
         ]}
       />
       <Accordion items={[{ title: 'Pack details', content: 'Install-before-activate state' }]} />
@@ -101,20 +98,14 @@ export const Behavior: Story = {
 export const AdaptiveSettingsSheetOpen: Story = {
   parameters: { layout: 'fullscreen', viewport: { defaultViewport: 'mobile' } },
   render: () => (
-    <Sheet
-      closeLabel="Close settings"
-      onOpenChange={() => undefined}
-      open
-      title="Verse settings"
-      variant="adaptive-settings"
-    >
+    <Sheet closeLabel="Close settings" onOpenChange={() => undefined} open title="Settings" variant="adaptive-settings">
       <SheetBody className="qar-react-settings-shell">
         <div className="qar-react-settings-body">
-          <section aria-labelledby="adaptive-sheet-heading" className="qar-react-settings-group">
-            <header className="qar-react-settings-group-heading">
-              <h3 id="adaptive-sheet-heading">Verse reading</h3>
-            </header>
-            <div className="qar-react-settings-group-content qar:p-4">Adaptive Settings sheet body</div>
+          <section aria-labelledby="adaptive-sheet-heading" className="qar-react-settings-section">
+            <p className="qar-eyebrow" id="adaptive-sheet-heading">
+              Reading
+            </p>
+            <div className="qar-react-settings-panel-controls qar:p-4">Adaptive Settings sheet body</div>
           </section>
         </div>
       </SheetBody>
@@ -125,7 +116,7 @@ export const AdaptiveSettingsSheetOpen: Story = {
 export const StatusStates: Story = {
   render: () => (
     <div className="qar:grid qar:max-w-3xl qar:gap-4 qar:bg-canvas qar:p-6 qar:text-text">
-      <Status tone="info" title="Enter a word, phrase, or ayah reference" />
+      <Status tone="info" title="Reference copied" />
       <Status
         icon={<Info aria-hidden="true" size={18} />}
         tone="info"
@@ -141,7 +132,7 @@ export const StatusStates: Story = {
       <Status
         action={
           <Button size="sm" variant="secondary">
-            Retry
+            Try again
           </Button>
         }
         description="Translations from the network are unavailable until you reconnect."
@@ -156,7 +147,7 @@ export const StatusStates: Story = {
               Manage assets
             </Button>
             <Button size="sm" variant="secondary">
-              Retry
+              Try again
             </Button>
           </>
         }
@@ -177,7 +168,7 @@ export const ListRows: Story = {
       <ListRow arabic="آل عمران" current meta="200 verses" onSelect={() => undefined} title="Āl-ʿImrān" />
       <ListRow
         action={
-          <IconButton label="Remove bookmark for An-Nisā">
+          <IconButton label="Remove bookmark from An-Nisā 1:1">
             <X aria-hidden="true" size={16} />
           </IconButton>
         }
@@ -200,14 +191,14 @@ export const Cards: Story = {
   render: () => (
     <div className="qar:grid qar:max-w-3xl qar:gap-4 qar:bg-canvas qar:p-6 qar:text-text">
       <Card title="Continue reading">Surah Al-Baqarah · Ayah 255</Card>
-      <Card>Onboarding edition card without a header</Card>
+      <Card>Flat card without a header</Card>
     </div>
   ),
 }
 
 export const SegmentedControlSelected: Story = {
   render: () => (
-    <div className="qar:bg-canvas qar:p-6 qar:text-text">
+    <div className="qar:grid qar:gap-4 qar:bg-canvas qar:p-6 qar:text-text">
       <SegmentedControl
         defaultValue="sepia"
         label="Theme"
@@ -215,6 +206,16 @@ export const SegmentedControlSelected: Story = {
           { label: 'Light', value: 'light' },
           { label: 'Sepia', value: 'sepia' },
           { label: 'Dark', value: 'dark' },
+          { label: 'System', value: 'auto' },
+        ]}
+      />
+      <SegmentedControl
+        compact
+        defaultValue="verse"
+        label="View"
+        options={[
+          { label: 'Verses', value: 'verse' },
+          { label: 'Mushaf', value: 'mushaf' },
         ]}
       />
     </div>
@@ -234,9 +235,9 @@ export const NavigationDrawerSheetMobile: Story = {
         variant="navigation-drawer"
       >
         <div className="qar:grid qar:gap-1 qar:p-3">
-          <ListRow arabic="الفاتحة" meta="7 verses" onSelect={() => undefined} title="Al-Fātiḥah" />
-          <ListRow arabic="البقرة" current meta="286 verses" onSelect={() => undefined} title="Al-Baqarah" />
-          <ListRow arabic="آل عمران" meta="200 verses" onSelect={() => undefined} title="Āl-ʿImrān" />
+          <ListRow onSelect={() => undefined} title="Surahs" />
+          <ListRow onSelect={() => undefined} title="Bookmarks" />
+          <ListRow current onSelect={() => undefined} title="Settings" />
         </div>
       </Sheet>
     </div>
@@ -247,7 +248,7 @@ export const NavigationDrawerSheetDesktop: Story = {
   parameters: { layout: 'fullscreen', viewport: { defaultViewport: 'desktop' } },
   render: () => (
     <div>
-      <main className="qar:p-6">Reader canvas stays interactive beside the desktop drawer rail.</main>
+      <main className="qar:p-6">Reader canvas beneath the modal drawer scrim on desktop too.</main>
       <Sheet
         closeLabel="Close navigation"
         onOpenChange={() => undefined}
@@ -256,9 +257,9 @@ export const NavigationDrawerSheetDesktop: Story = {
         variant="navigation-drawer"
       >
         <div className="qar:grid qar:gap-1 qar:p-3">
-          <ListRow arabic="الفاتحة" meta="7 verses" onSelect={() => undefined} title="Al-Fātiḥah" />
-          <ListRow arabic="البقرة" current meta="286 verses" onSelect={() => undefined} title="Al-Baqarah" />
-          <ListRow arabic="آل عمران" meta="200 verses" onSelect={() => undefined} title="Āl-ʿImrān" />
+          <ListRow onSelect={() => undefined} title="Surahs" />
+          <ListRow onSelect={() => undefined} title="Bookmarks" />
+          <ListRow current onSelect={() => undefined} title="Settings" />
         </div>
       </Sheet>
     </div>
@@ -276,9 +277,9 @@ export const NavigationDrawerSheetTrigger: Story = {
         variant="navigation-drawer"
       >
         <div className="qar:grid qar:gap-1 qar:p-3">
-          <ListRow arabic="الفاتحة" meta="7 verses" onSelect={() => undefined} title="Al-Fātiḥah" />
-          <ListRow arabic="البقرة" current meta="286 verses" onSelect={() => undefined} title="Al-Baqarah" />
-          <ListRow arabic="آل عمران" meta="200 verses" onSelect={() => undefined} title="Āl-ʿImrān" />
+          <ListRow onSelect={() => undefined} title="Surahs" />
+          <ListRow onSelect={() => undefined} title="Bookmarks" />
+          <ListRow current onSelect={() => undefined} title="Settings" />
         </div>
       </Sheet>
     </main>
