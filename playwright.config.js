@@ -28,12 +28,23 @@ export default defineConfig({
     {
       name: 'desktop-smoke',
       testMatch: '**/core-smoke.spec.ts',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } },
+      // Core smoke stubs selected dataset responses. Block the production
+      // service worker here so those route fixtures remain authoritative;
+      // the offline-lifecycle project below owns service-worker coverage.
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+        serviceWorkers: 'block',
+      },
     },
     {
       name: 'mobile-smoke',
       testMatch: '**/core-smoke.spec.ts',
-      use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } },
+      use: {
+        ...devices['Pixel 5'],
+        viewport: { width: 375, height: 812 },
+        serviceWorkers: 'block',
+      },
     },
     {
       name: 'offline-lifecycle',
