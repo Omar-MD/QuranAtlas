@@ -18,7 +18,7 @@ jobs:
     name: Static checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
@@ -28,7 +28,7 @@ jobs:
     name: Dataset build + check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
@@ -62,7 +62,7 @@ jobs:
     needs: data
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
@@ -102,7 +102,7 @@ jobs:
     name: Storybook build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
@@ -118,7 +118,7 @@ jobs:
       # shared build-output artifact supplies dist/, and PLAYWRIGHT_USE_PREVIEW
       # points Playwright at the production preview rather than the dev server
       # that local `mise run smoke` uses.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
@@ -157,7 +157,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup # zizmor: ignore[self-repository] actionlint 1.7.12 does not parse the 2026-07 self-repository syntax (rhysd/actionlint#732)
