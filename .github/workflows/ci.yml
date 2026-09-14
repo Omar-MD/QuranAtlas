@@ -38,6 +38,7 @@ jobs:
         with:
           path: |
             public/dataset
+            data/normalized/mushaf-pages
             .data-build-complete
           key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml', '.github/workflows/ci.yml') }}
       # The key already hashes every data:build source; restoring outputs with
@@ -73,6 +74,7 @@ jobs:
         with:
           path: |
             public/dataset
+            data/normalized/mushaf-pages
             .data-build-complete
           key: dataset-${{ runner.os }}-${{ hashFiles('data/catalog/**', 'data/normalized/**', 'data/taxonomy/**', 'shared/**', 'scripts/data/**', 'pnpm-lock.yaml', 'package.json', 'mise.toml', '.github/workflows/ci.yml') }}
       - name: Restamp restored dataset outputs for mise freshness
