@@ -5,7 +5,7 @@ runs:
   using: composite
   steps:
     - name: Setup mise
-      uses: jdx/mise-action@0c6ea298a49e2fc9b6b8ec854c2e6c292490f032 # main as of 2026-09-01; runs mise install
+      uses: jdx/mise-action@04d84180cbc2565be119d8d6191515a6983c5fde # main as of 2026-09-01; runs mise install
       with:
         install: 'true'
         cache: 'true'
