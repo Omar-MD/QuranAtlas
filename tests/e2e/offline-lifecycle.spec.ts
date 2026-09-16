@@ -5,7 +5,7 @@ import { createServer, type Server } from 'node:http'
 import { extname, join, normalize } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import {
   expectControlledServiceWorker,
@@ -49,6 +49,21 @@ const SYNTHETIC_PAGE_COUNT = 604
 const SYNTHETIC_MUSHAF_PREFIX = `/dataset/mushaf-pages/${SYNTHETIC_RIWAYAH}/${SYNTHETIC_EDITION_ID}`
 const SYNTHETIC_CUSTOM_PREFIX = `/dataset/mushaf-pages/${SYNTHETIC_RIWAYAH}/${SYNTHETIC_CUSTOM_EDITION_ID}`
 let corruptOnePage = false
+
+// Edition switching lives in the reader's edition banner, not in settings:
+// open the banner's change dialog, pick the edition row by its visible label,
+// and close the dialog again.
+async function switchEditionFromBanner(page: Page, editionLabel: string): Promise<void> {
+  await page.getByRole('button', { name: 'Change edition' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Mushaf edition' })
+  const editionGroup = dialog.getByRole('radiogroup', { name: 'Mushaf edition' })
+  await expect(editionGroup.getByRole('radio', { name: editionLabel })).toBeVisible()
+  // A real user clicks the visible edition row label, so the test does too.
+  await dialog.getByText(editionLabel, { exact: true }).click()
+  await expect(editionGroup.getByRole('radio', { name: editionLabel })).toHaveAttribute('aria-checked', 'true')
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+}
 
 function syntheticMushafSvg(page: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 141"><rect width="100" height="141" fill="#ffffff"/><text x="50" y="75" text-anchor="middle" font-size="12">Page ${page}</text></svg>`
@@ -478,14 +493,10 @@ test('renders an uncached external-image page without waiting for decode', async
 
   await page.goto(`${ORIGIN}/#/s/1`)
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
-  // Choose the custom edition from Settings (S8); the onboarding chooser is
-  // superseded by the read-first launch.
+  // Choose the custom edition from the edition banner's change dialog; the
+  // onboarding chooser is superseded by the read-first launch.
   await page.getByRole('button', { name: 'Not now' }).click()
-  await page.goto(`${ORIGIN}/#/settings`)
-  const editionGroup = page.getByRole('radiogroup', { name: 'Mushaf edition' })
-  await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toBeVisible()
-  await editionGroup.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
-  await page.getByRole('button', { name: 'Close settings', exact: true }).click()
+  await switchEditionFromBanner(page, SYNTHETIC_CUSTOM_EDITION_LABEL)
   await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible({ timeout: 15_000 })
   await expectControlledServiceWorker(page)
   await expect(
@@ -516,10 +527,7 @@ test('downloads the custom external-image edition and renders it offline', async
     await page.goto(`${ORIGIN}/#/s/1`)
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
     await page.getByRole('button', { name: 'Not now' }).click()
-    await page.goto(`${ORIGIN}/#/settings`)
-    const group = page.getByRole('radiogroup', { name: 'Mushaf edition' })
-    await group.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
-    await page.getByRole('button', { name: 'Close settings', exact: true }).click()
+    await switchEditionFromBanner(page, SYNTHETIC_CUSTOM_EDITION_LABEL)
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
     await page.goto(`${ORIGIN}/#/assets`)
     await page.getByRole('button', { name: 'Download pages', exact: true }).click()
@@ -560,7 +568,7 @@ test('downloads the custom external-image edition and renders it offline', async
   }
 })
 
-test('switches the Mushaf edition from settings and downloads the other edition pack', async ({ page }) => {
+test('switches the Mushaf edition from the edition banner and downloads the other edition pack', async ({ page }) => {
   test.setTimeout(240_000)
   await wipeApplicationData(page, ORIGIN)
 
@@ -573,19 +581,21 @@ test('switches the Mushaf edition from settings and downloads the other edition 
     await expect(page.getByRole('main', { name: /verse reader/i })).toBeVisible()
   })
 
-  await test.step('switch to the other edition from the settings Mushaf edition group', async () => {
+  await test.step('switch to the other edition from the edition banner dialog', async () => {
     await expectControlledServiceWorker(page)
-    await page.goto(`${ORIGIN}/#/settings`)
-    const editionRegion = page.getByRole('region', { name: 'Mushaf edition' })
-    const editionGroup = editionRegion.getByRole('radiogroup', { name: 'Mushaf edition' })
+    await page.getByRole('button', { name: 'Change edition' }).click()
+    const editionDialog = page.getByRole('dialog', { name: 'Mushaf edition' })
+    const editionGroup = editionDialog.getByRole('radiogroup', { name: 'Mushaf edition' })
     await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_EDITION_LABEL })).toBeVisible()
     await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toBeVisible()
     // A real user clicks the visible edition row label, so the test does too.
-    await editionRegion.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
+    await editionDialog.getByText(SYNTHETIC_CUSTOM_EDITION_LABEL, { exact: true }).click()
     await expect(editionGroup.getByRole('radio', { name: SYNTHETIC_CUSTOM_EDITION_LABEL })).toHaveAttribute(
       'aria-checked',
       'true',
     )
+    await page.keyboard.press('Escape')
+    await expect(editionDialog).toHaveCount(0)
   })
 
   await test.step('the downloads surface re-derives from the newly active edition', async () => {

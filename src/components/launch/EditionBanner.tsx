@@ -4,8 +4,8 @@ import { subscribeReactReaderPreferencesChanged } from '../../storage/reader-pre
 import { Button } from '../ui'
 import { readActiveMushafProfile } from '../../storage/reader-settings'
 import { readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
-import { requestReactSettingsOverlay } from '../../app/settings-overlay-events'
 import { loadMushafEditionEntries } from '../../launch/mushaf-edition-setup'
+import { EditionChangeDialog } from './EditionChangeDialog'
 
 const DISMISSED_EDITION_KEY = 'editionBannerDismissedEditionId'
 
@@ -42,10 +42,12 @@ export function dismissEditionBanner(editionId: string): Promise<void> {
   return writeNativeSetting({ key: DISMISSED_EDITION_KEY, value: editionId }).then(() => undefined)
 }
 
-// Gate owns the persisted-dismissal wiring; the banner itself is presentational.
+// Gate owns the persisted-dismissal wiring and the edition-change dialog; the
+// banner itself is presentational.
 export function EditionBannerGate() {
   const [banner, setBanner] = useState<EditionBannerState | null>(null)
   const [hidden, setHidden] = useState(false)
+  const [editionDialogOpen, setEditionDialogOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -69,34 +71,41 @@ export function EditionBannerGate() {
     }
   }, [])
 
-  if (!banner || hidden) return null
   return (
-    <EditionBanner
-      editionLabel={banner.editionLabel}
-      onDismiss={() => {
-        // Hide only after the dismissal marker commits, so a quick reload
-        // never resurrects the banner for the decided session.
-        dismissEditionBanner(banner.editionId)
-          .catch(() => undefined)
-          .then(() => setHidden(true))
-      }}
-    />
+    <>
+      {banner && !hidden ? (
+        <EditionBanner
+          editionLabel={banner.editionLabel}
+          onChangeEdition={() => setEditionDialogOpen(true)}
+          onDismiss={() => {
+            // Hide only after the dismissal marker commits, so a quick reload
+            // never resurrects the banner for the decided session.
+            dismissEditionBanner(banner.editionId)
+              .catch(() => undefined)
+              .then(() => setHidden(true))
+          }}
+        />
+      ) : null}
+      {editionDialogOpen ? <EditionChangeDialog onOpenChange={setEditionDialogOpen} open={editionDialogOpen} /> : null}
+    </>
   )
 }
 
-export function EditionBanner({ editionLabel, onDismiss }: { editionLabel: string; onDismiss: () => void }) {
+export function EditionBanner({
+  editionLabel,
+  onChangeEdition,
+  onDismiss,
+}: {
+  editionLabel: string
+  onChangeEdition: () => void
+  onDismiss: () => void
+}) {
   return (
     <aside aria-label="Current edition" className="qar-edition-banner" data-edition-banner="true">
       <p className="qar-eyebrow qar-eyebrow--accent qar:m-0">Current edition</p>
       <p className="qar:m-0 qar:text-sm qar:leading-6">You're reading the {editionLabel} edition</p>
       <div className="qar-edition-banner-actions">
-        <Button
-          onClick={() => {
-            requestReactSettingsOverlay('mushaf', 'edition-banner-change')
-          }}
-          size="sm"
-          variant="secondary"
-        >
+        <Button onClick={onChangeEdition} size="sm" variant="secondary">
           Change edition
         </Button>
         <Button onClick={onDismiss} size="sm" variant="ghost">

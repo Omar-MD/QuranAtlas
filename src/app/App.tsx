@@ -47,7 +47,6 @@ export function App() {
   const [settingsOverlay, setSettingsOverlay] = useState<{
     initialAssetsExpanded?: boolean
     mode: SettingsRouteMode
-    pageImageUrl?: string | null
     previousHash: string
     returnFocusId?: string
   } | null>(null)
@@ -116,7 +115,6 @@ export function App() {
         setLastBaseHash(previousHash)
         setSettingsOverlay({
           mode: settingsModeForHash(previousHash),
-          pageImageUrl: request.pageImageUrl,
           previousHash,
           returnFocusId: request.returnFocusId,
         })
@@ -240,7 +238,6 @@ export function App() {
                 initialAssetsExpanded={settingsOverlay.initialAssetsExpanded}
                 mode={settingsOverlay.mode}
                 onClose={closeSettingsOverlay}
-                pageImageUrl={settingsOverlay.pageImageUrl}
                 previousHash={settingsOverlay.previousHash}
                 returnFocusId={settingsOverlay.returnFocusId}
               />

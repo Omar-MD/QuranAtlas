@@ -454,7 +454,6 @@ export function MushafRoute({
       interactionSuspended={interactionSuspended || gateSurfaceRendered}
       mode="mushaf"
       onChromePinChange={handleChromePin}
-      pageImageUrl={visiblePage?.media.kind === 'external-image' ? visiblePage.media.source.assetUrl : null}
       onModeChange={(nextMode) => {
         if (nextMode === 'verse') {
           const visibleRef = visiblePage?.resolved.firstVerse

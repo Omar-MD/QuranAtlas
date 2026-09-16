@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Info, X } from 'lucide-react'
+import { X } from 'lucide-react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
 import type { JuzIndexEntry } from '../../data/juz-index'
@@ -312,25 +312,11 @@ export function NavDrawer({
         ) : null}
         <div aria-hidden="true" className="qar:my-2 qar:border-t qar:border-border" />
         <ListRow
-          current={currentRoute === 'downloads'}
-          onSelect={openDestination(REACT_ROUTES.assets)}
-          title="Downloads"
-        />
-        <ListRow
           current={currentRoute === 'settings'}
           onSelect={openDestination(REACT_ROUTES.settings)}
           title="Settings"
         />
-        <ListRow
-          action={
-            <span aria-hidden="true" className="qar-react-list-row-chevron">
-              <Info size={18} strokeWidth={1.7} />
-            </span>
-          }
-          current={currentRoute === 'about'}
-          onSelect={openDestination(REACT_ROUTES.about)}
-          title="About"
-        />
+        <ListRow current={currentRoute === 'about'} onSelect={openDestination(REACT_ROUTES.about)} title="About" />
       </div>
     </Sheet>
   )

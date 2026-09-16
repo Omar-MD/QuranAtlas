@@ -1,5 +1,3 @@
-import { Check } from 'lucide-react'
-
 import { ChoiceButton, Switch } from '../ui'
 import type { ReactThemePreference } from '../../storage/settings-writer'
 
@@ -13,7 +11,7 @@ const THEMES: Array<{ id: ReactThemePreference; label: string; swatch: 'light' |
 // S8 Appearance: ONE theme selector (Light/Sepia/Dark/System — System follows
 // the OS) plus the separately-named "Dim page images" switch, the only image
 // treatment (repair A3: the Theme/Night pair and night-dimming radios are
-// removed). Swatches share one layout; selected = tint + border + check.
+// removed). Swatches share one layout; selected = quiet ink ring.
 export function ThemeControls({
   dimPageImages,
   onDimPageImagesChange,
@@ -46,10 +44,7 @@ export function ThemeControls({
                 tabIndex={active ? 0 : -1}
               >
                 <span aria-hidden="true" className="qar-theme-swatch" data-swatch={option.swatch} />
-                <span className="qar-theme-choice-label">
-                  {active ? <Check aria-hidden="true" size={13} strokeWidth={2.2} /> : null}
-                  {option.label}
-                </span>
+                <span className="qar-theme-choice-label">{option.label}</span>
               </ChoiceButton>
             )
           })}
@@ -60,10 +55,7 @@ export function ThemeControls({
           <span className="qar-react-settings-row-label">Dim page images</span>
           <span className="qar-react-settings-row-control">Dims Mushaf page images in Dark theme.</span>
         </span>
-        <span className="qar:grid qar:justify-items-center qar:gap-2">
-          <span aria-hidden="true" className="qar-dim-preview" data-testid="settings-dim-preview" />
-          <Switch checked={dimPageImages} label="Dim page images" onCheckedChange={onDimPageImagesChange} />
-        </span>
+        <Switch checked={dimPageImages} hideLabel label="Dim page images" onCheckedChange={onDimPageImagesChange} />
       </div>
     </div>
   )

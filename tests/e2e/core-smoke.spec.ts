@@ -156,14 +156,13 @@ test('settings use plain-language copy for controls and inventory', async ({ pag
   await expect(page.getByText(/% reviewed frame width/)).toHaveCount(0)
   await expect(page.getByText(/Text area \d+%/)).toHaveCount(0)
   await expect(page.getByText(/Page zoom — \d+%/)).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Notation guide' })).toBeVisible()
-  await page.getByRole('button', { name: 'Notation guide' }).click()
-  await expect(page.getByRole('heading', { name: 'Notation guide' })).toBeVisible()
-  await expect(page.getByText('Notation conventions differ between printed editions.')).toBeVisible()
-  await expect(page.getByText(/does not guess at a mark's meaning/)).toBeVisible()
-  await expect(page.getByText(/bowing is recommended/)).toHaveCount(0)
-  await page.keyboard.press('Escape')
   await expect(page.getByText('Fit width')).toHaveCount(0)
+  // Settings stays minimal: no preview, no notation guide, no edition switch,
+  // no Downloads/About link rows.
+  await expect(page.getByRole('button', { name: 'Notation guide' })).toHaveCount(0)
+  await expect(page.getByRole('radiogroup', { name: 'Mushaf edition' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Downloads/ })).toHaveCount(0)
+  await expect(page.getByText('Preview of your reading settings')).toHaveCount(0)
   await page.getByRole('button', { name: 'Close settings', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Settings' })).toHaveCount(0)
 })
@@ -345,21 +344,28 @@ test('verse selection reveals the quiet action row and the copy toast confirms',
   await page.goto('/#/s/1')
   await page.getByTestId('verse-1:1').click()
   await expect(page.getByTestId('verse-1:1')).toHaveAttribute('data-selected', 'true')
-  await expect(page.getByRole('button', { name: 'Bookmark Al-Fātiḥah 1' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Bookmark', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Copy reference' }).click()
   await expect(page.getByText('Reference copied')).toBeVisible()
 })
 
-test('verse medallion is not a button and the bookmark is a separate control', async ({ page }) => {
+test('verse reference is a plain Western numeral and bookmarking lives in the action row', async ({ page }) => {
   await seedOnboardedReader(page)
   await page.goto('/#/s/1')
-  // The number is a stable reference, never a button (Step 3/S2).
-  await expect(page.getByRole('button', { name: /Bookmark verse 1\b/ })).toHaveCount(0)
-  const bookmark = page.getByRole('button', { name: 'Bookmark Al-Fātiḥah 1' })
+  // The number is a stable reference, never a button, and renders Western
+  // digits (no Arabic-Indic numerals in the reader chrome).
+  const verse = page.getByTestId('verse-1:1')
+  await expect(verse.getByRole('button')).toHaveCount(0)
+  await expect(verse).toContainText('1')
+  await expect(verse).not.toContainText('١')
+  // No persistent per-verse bookmark icon; selecting the verse reveals the
+  // quiet action row with the bookmark control.
+  await expect(page.getByRole('button', { name: /Bookmark Al-Fātiḥah/ })).toHaveCount(0)
+  await verse.click()
+  const bookmark = page.getByRole('button', { name: 'Bookmark', exact: true })
   await expect(bookmark).toBeVisible()
   await bookmark.click()
-  // Bookmark fills accent when saved: aria-pressed flips and the remove name appears.
-  await expect(page.getByRole('button', { name: 'Remove bookmark from Al-Fātiḥah 1' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Bookmarked', exact: true })).toBeVisible()
 })
 
 test('about documents reference numbering and identifies editions', async ({ page }) => {
@@ -371,10 +377,11 @@ test('about documents reference numbering and identifies editions', async ({ pag
   await expect(page.getByText(/Qalun Furatiyyah 2023/)).toBeVisible()
 })
 
-test('downloads link opens the downloads surface with the included inventory', async ({ page }) => {
+test('downloads surface opens by address with the included inventory', async ({ page }) => {
   await seedOnboardedReader(page)
-  await page.goto('/#/settings')
-  await page.getByRole('button', { name: /Downloads/ }).click()
+  // Downloads is reachable by its address only — settings and the drawer no
+  // longer link to it.
+  await page.goto('/#/assets')
   await expect(page.getByRole('region', { name: 'Offline reading data' })).toBeVisible()
   await expect(page.getByText('Reader texts')).toBeVisible()
 })

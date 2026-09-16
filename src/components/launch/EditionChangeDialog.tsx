@@ -10,16 +10,15 @@ import { readNativeSettings } from '../../storage/native-reader-store'
 import { emitReactReaderPreferencesChanged } from '../../storage/reader-preferences'
 import { readNativeReactReaderPreferences } from '../../storage/settings-writer'
 import { DEFAULT_READER_ASSET_PROFILE } from '../../../shared/reader-assets/default-profile'
-import { Button, ChoiceButton, Spinner } from '../ui'
-import { SettingsGroup } from './SettingsGroup'
-import { useQueuedSettingWrite } from './useQueuedSettingWrite'
+import { Button, ChoiceButton, Dialog, Spinner } from '../ui'
+import { useQueuedSettingWrite } from '../settings/useQueuedSettingWrite'
 
-// S8 Mushaf edition section: one row per edition — name, one-line description,
-// page-image size when known; the current edition carries the selection
-// treatment (tint + border + check). Switching shows the S1 edition banner
-// once on return (the banner re-appears because the dismissed id no longer
-// matches).
-export function MushafEditionSection() {
+// Edition switching lives in the reader, not in settings: the S1 edition
+// banner's "Change edition" button opens this dialog. One quiet row per
+// edition — name, one-line description, page-image size when known; the
+// current edition carries an accent check. Switching re-shows the edition
+// banner once on return (the dismissed id no longer matches).
+export function EditionChangeDialog({ onOpenChange, open }: { onOpenChange: (open: boolean) => void; open: boolean }) {
   const [options, setOptions] = useState<Array<MushafEditionOption & { sizeText?: string }> | null>(null)
   const [value, setValue] = useState(DEFAULT_READER_ASSET_PROFILE.mushafEditionId)
   const [saveFailed, setSaveFailed] = useState(false)
@@ -105,11 +104,11 @@ export function MushafEditionSection() {
   const absent = options !== null && options.length > 0 && !options.some((edition) => edition.id === value)
 
   return (
-    <SettingsGroup
-      description="The Mushaf pages your reader displays. Offline downloads follow this choice."
-      title="Mushaf edition"
-    >
-      <div aria-busy={options === null ? 'true' : undefined} className="qar:grid qar:gap-2">
+    <Dialog onOpenChange={onOpenChange} open={open} title="Mushaf edition">
+      <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
+        The Mushaf pages your reader displays. Offline downloads follow this choice.
+      </p>
+      <div aria-busy={options === null ? 'true' : undefined} className="qar:grid">
         {options === null ? <Spinner label="Loading Mushaf editions" /> : null}
         {unavailable ? (
           <p className="qar:m-0 qar:text-sm qar:text-muted">Edition options unavailable right now</p>
@@ -117,7 +116,7 @@ export function MushafEditionSection() {
         {absent ? (
           <p className="qar:m-0 qar:text-sm qar:text-muted">Your selected Mushaf edition is no longer available</p>
         ) : null}
-        <div aria-label="Mushaf edition" className="qar:grid qar:gap-2" role="radiogroup">
+        <div aria-label="Mushaf edition" className="qar:grid" role="radiogroup">
           {options !== null && !unavailable && !absent
             ? options.map((edition) => {
                 const selected = edition.id === value
@@ -152,7 +151,7 @@ export function MushafEditionSection() {
             : null}
         </div>
         {saveFailed ? (
-          <div className="qar:grid qar:gap-2">
+          <div className="qar:grid qar:gap-2 qar:pt-2">
             <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">
               Could not save Mushaf edition
             </p>
@@ -162,7 +161,7 @@ export function MushafEditionSection() {
           </div>
         ) : null}
       </div>
-    </SettingsGroup>
+    </Dialog>
   )
 }
 

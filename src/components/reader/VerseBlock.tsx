@@ -5,7 +5,7 @@ import type { ReaderVerse } from '../../data/reader-corpus'
 import type { VerseMetadata } from '../../metadata/metadata-state'
 import { pulseBookmarkLanding } from '../../continuity/bookmarks/pulse'
 import { cn } from '../../design-system/utils/cn'
-import { Button, ChoiceButton, Status, Tooltip } from '../ui'
+import { Button, ChoiceButton, Status } from '../ui'
 import { KnowledgeChips } from './KnowledgeChips'
 import { TranslationFootnote } from './TranslationFootnote'
 
@@ -32,15 +32,6 @@ export type VerseBlockProps = {
 type TranslationToken = { type: 'text'; value: string } | { type: 'footnote'; marker: string }
 
 const FOOTNOTE_RE = /\[(\d+)\]/g
-
-const ARABIC_INDIC_DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩']
-
-export function arabicIndic(value: number): string {
-  return String(value)
-    .split('')
-    .map((digit) => ARABIC_INDIC_DIGITS[Number(digit)] ?? digit)
-    .join('')
-}
 
 function parseTranslationTokens(translation: string): TranslationToken[] {
   const tokens: TranslationToken[] = []
@@ -129,23 +120,8 @@ export function VerseBlock({
       </span>
       <div className="qar-reader-verse-gutter">
         <span aria-hidden="true" className="qar-reader-verse-medallion">
-          {arabicIndic(verse.verse)}
+          {verse.verse}
         </span>
-        <Tooltip content={bookmarked ? 'Remove bookmark' : 'Bookmark'}>
-          <ChoiceButton
-            aria-label={
-              bookmarked ? `Remove bookmark from ${surahName} ${verse.verse}` : `Bookmark ${surahName} ${verse.verse}`
-            }
-            aria-pressed={bookmarked}
-            className="qar-reader-verse-bookmark"
-            onClick={(event) => {
-              event.stopPropagation()
-              handleToggleBookmark()
-            }}
-          >
-            <Bookmark fill={bookmarked ? 'currentColor' : 'none'} size={18} strokeWidth={1.8} />
-          </ChoiceButton>
-        </Tooltip>
       </div>
       <div className="qar-reader-verse-body">
         <p className="qar-reader-verse-arabic" data-reader-arabic-line="true" dir="rtl" lang="ar">
@@ -162,7 +138,7 @@ export function VerseBlock({
                 lang="ar"
               >
                 <span aria-hidden="true" className="qar-reader-verse-continuation-num">
-                  {arabicIndic(continuation.verse)}
+                  {continuation.verse}
                 </span>
                 {continuation.arabic}
               </p>

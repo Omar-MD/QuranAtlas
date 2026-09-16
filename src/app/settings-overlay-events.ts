@@ -5,8 +5,6 @@ const READER_SETTINGS_ANCHOR_KEY = '__quranAtlasReaderSettingsAnchor'
 
 export type ReactOpenSettingsRequest = {
   mode?: SettingsRouteMode
-  /** Live thumbnail source for the Mushaf fit options (S4). */
-  pageImageUrl?: string | null
   returnFocusId?: string
 }
 export type ReactOpenSettingsEvent = CustomEvent<ReactOpenSettingsRequest>
@@ -15,14 +13,10 @@ type ReaderSettingsAnchorWindow = Window & {
   [READER_SETTINGS_ANCHOR_KEY]?: ReaderSettingsAnchor
 }
 
-export function requestReactSettingsOverlay(
-  mode: SettingsRouteMode,
-  returnFocusId = 'reader-settings-trigger',
-  pageImageUrl?: string | null,
-): void {
+export function requestReactSettingsOverlay(mode: SettingsRouteMode, returnFocusId = 'reader-settings-trigger'): void {
   if (typeof window === 'undefined') return
   captureReactSettingsReaderAnchor()
-  window.dispatchEvent(new CustomEvent(REACT_OPEN_SETTINGS_EVENT, { detail: { mode, pageImageUrl, returnFocusId } }))
+  window.dispatchEvent(new CustomEvent(REACT_OPEN_SETTINGS_EVENT, { detail: { mode, returnFocusId } }))
 }
 
 export function subscribeReactSettingsOverlayRequests(

@@ -510,6 +510,19 @@ export function MushafPageViewer({
   )
 }
 
+export function MushafInlineSvgPage({ ariaLabel, inlineSvg }: { ariaLabel: string; inlineSvg: ReactInlineMushafSvg }) {
+  // The markup comes from prepareReactInlineMushafSvg, which strips scripts,
+  // event handlers, and unsafe references before this component ever sees it.
+  return (
+    <div
+      aria-label={ariaLabel}
+      className="qar-react-mushaf-page-fit qar:text-text"
+      dangerouslySetInnerHTML={{ __html: inlineSvg.markup }}
+      role="img"
+    />
+  )
+}
+
 export function retainReadyMushafPage(
   entries: readonly MushafPageWindowEntry[],
   retainedPage?: MushafReadyPageAssetState,
@@ -562,12 +575,7 @@ const MushafPageCell = ({
       style={frameRatio ? { aspectRatio: String(frameRatio) } : undefined}
     >
       {entry?.status === 'ready' && media?.kind === 'inline-svg' ? (
-        <div
-          aria-label={pageAccessibleName(entry.asset)}
-          className="qar-react-mushaf-page-fit qar:text-text"
-          dangerouslySetInnerHTML={{ __html: media.inlineSvg.markup }}
-          role="img"
-        />
+        <MushafInlineSvgPage ariaLabel={pageAccessibleName(entry.asset)} inlineSvg={media.inlineSvg} />
       ) : entry?.status === 'ready' && media?.kind === 'external-image' ? (
         <div aria-label={pageAccessibleName(entry.asset)} className="qar-react-mushaf-page-fit" role="img">
           <div

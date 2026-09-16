@@ -86,8 +86,8 @@ export type SegmentedControlProps = {
   compact?: boolean
 }
 
-// Universal selected treatment (brief §2.3): tint wash + 1 px accent border +
-// visible checkmark — never colour alone.
+// Universal selected treatment: one solid ink pill (shape + contrast carry
+// the state — never colour alone, no checkmarks).
 export function SegmentedControl({
   label,
   options,
@@ -110,7 +110,7 @@ export function SegmentedControl({
   return (
     <fieldset
       aria-label={label}
-      className="qar:inline-flex qar:min-w-0 qar:max-w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:p-1"
+      className="qar:inline-flex qar:min-w-0 qar:max-w-full qar:rounded-full qar:border qar:border-border qar:p-1"
       // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: the design brief requires an explicit radiogroup role even though the fieldset with radio inputs already implies it
       role="radiogroup"
     >
@@ -122,10 +122,8 @@ export function SegmentedControl({
         return (
           <label
             className={cn(
-              'qar-react-segmented-option qar:flex qar:min-h-11 qar:min-w-0 qar:items-center qar:justify-center qar:gap-1 qar:rounded-control qar:px-3 qar:text-sm',
-              // Selected label stays ink (accent text on tint is below 4.5:1 in
-              // Dark); the check carries the accent (icon: 3:1 applies).
-              selected ? 'qar-react-segmented-option--selected qar:text-text' : 'qar:text-muted qar:hover:text-text',
+              'qar-react-segmented-option qar:flex qar:min-h-11 qar:min-w-0 qar:items-center qar:justify-center qar:rounded-full qar:px-3 qar:text-sm',
+              selected ? 'qar-react-segmented-option--selected' : 'qar:text-muted qar:hover:text-text',
             )}
             key={option.value}
           >
@@ -139,7 +137,6 @@ export function SegmentedControl({
               type="radio"
               value={option.value}
             />
-            {selected ? <Check aria-hidden="true" className="qar:size-3.5 qar:shrink-0 qar:text-accent" /> : null}
             <span className="qar:truncate">{option.shortLabel ?? option.label}</span>
           </label>
         )
@@ -170,8 +167,17 @@ export function Checkbox({ label, className, id, ...props }: CheckboxProps) {
   )
 }
 
-export type SwitchProps = SwitchPrimitive.SwitchProps & { label: string }
-export function Switch({ label, className, checked, defaultChecked, id, onCheckedChange, ...props }: SwitchProps) {
+export type SwitchProps = SwitchPrimitive.SwitchProps & { hideLabel?: boolean; label: string }
+export function Switch({
+  hideLabel = false,
+  label,
+  className,
+  checked,
+  defaultChecked,
+  id,
+  onCheckedChange,
+  ...props
+}: SwitchProps) {
   const [visualChecked, setVisualChecked] = useState(Boolean(checked ?? defaultChecked))
   const switchId = id ?? `qa-switch-${label.replace(/\W+/g, '-').toLowerCase()}`
 
@@ -196,18 +202,18 @@ export function Switch({ label, className, checked, defaultChecked, id, onChecke
       >
         <span
           aria-hidden="true"
-          className="qar:pointer-events-none qar:absolute qar:h-6 qar:w-11 qar:rounded-surface qar:border qar:border-border qar:bg-border qar:data-[state=checked]:border-accent qar:data-[state=checked]:bg-accent"
+          className="qar:pointer-events-none qar:absolute qar:h-6 qar:w-11 qar:rounded-full qar:border qar:border-border qar:bg-border qar:transition-colors qar:data-[state=checked]:border-text qar:data-[state=checked]:bg-text"
           data-state={visualState ? 'checked' : 'unchecked'}
         />
-        <SwitchPrimitive.Thumb className="qar:pointer-events-none qar:absolute qar:left-0 qar:top-1/2 qar:block qar:size-5 qar:-translate-y-1/2 qar:translate-x-0.5 qar:rounded-surface qar:bg-surface qar:transition-transform qar:data-[state=checked]:translate-x-5" />
+        <SwitchPrimitive.Thumb className="qar:pointer-events-none qar:absolute qar:left-0 qar:top-1/2 qar:block qar:size-5 qar:-translate-y-1/2 qar:translate-x-0.5 qar:rounded-full qar:border qar:border-border qar:bg-surface qar:transition-transform qar:data-[state=checked]:translate-x-5" />
       </SwitchPrimitive.Root>
-      <span>{label}</span>
+      <span className={hideLabel ? 'qar:sr-only' : undefined}>{label}</span>
     </label>
   )
 }
 
 const sliderThumbClass =
-  'qar:block qar:size-5 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-40'
+  'qar:block qar:size-5 qar:rounded-full qar:border qar:border-border qar:bg-surface qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-40'
 
 export type SliderProps = SliderPrimitive.SliderProps & { hideLabel?: boolean; label: string }
 export function Slider({ hideLabel = false, label, className, ...props }: SliderProps) {
@@ -219,8 +225,8 @@ export function Slider({ hideLabel = false, label, className, ...props }: Slider
         className="qar:relative qar:flex qar:min-h-11 qar:w-full qar:touch-none qar:items-center"
         {...props}
       >
-        <SliderPrimitive.Track className="qar:relative qar:h-2 qar:grow qar:rounded-surface qar:bg-border">
-          <SliderPrimitive.Range className="qar:absolute qar:h-full qar:rounded-surface qar:bg-accent" />
+        <SliderPrimitive.Track className="qar:relative qar:h-1 qar:grow qar:rounded-full qar:bg-border">
+          <SliderPrimitive.Range className="qar:absolute qar:h-full qar:rounded-full qar:bg-text" />
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb aria-label={label} className={sliderThumbClass} />
       </SliderPrimitive.Root>

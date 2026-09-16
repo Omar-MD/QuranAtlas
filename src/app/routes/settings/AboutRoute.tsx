@@ -6,6 +6,7 @@ import { REACT_ROUTES } from '../../router/routes'
 import { ChromeFrame } from '../../../components/navigation/ChromeFrame'
 import { useNavDrawerController } from '../../../components/navigation/nav-drawer-controller'
 import { Button, Dialog, Input } from '../../../components/ui'
+import { NotationGuideButton } from '../../../components/settings/NotationGuide'
 import { SettingsGroup } from '../../../components/settings/SettingsGroup'
 import { SettingsPageRecipe } from '../../../design-system/recipes/settings-page'
 import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInstall } from './pwa-install'
@@ -159,6 +160,9 @@ export function AboutRoute() {
             the same. Furatiyyah page numbers are the edition's own printed pagination, and page-start references are
             mapped to the nearest printed page.
           </p>
+          <div>
+            <NotationGuideButton />
+          </div>
         </SettingsGroup>
 
         <SettingsGroup title="Report an issue">

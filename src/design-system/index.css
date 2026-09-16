@@ -498,8 +498,8 @@
   .qar-reader-verse {
     position: relative;
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    column-gap: 8px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    column-gap: 10px;
     margin-top: var(--qa-react-verse-gap);
     padding: 4px;
     border: 1px solid transparent;
@@ -568,52 +568,27 @@
     display: block;
   }
 
-  /* Left gutter: medallion (stable reference, never a button) above a separate
-     bookmark control (S2). */
+  /* Left gutter: a quiet Western-numeral verse reference (never a button).
+     Bookmarking lives in the selection action row, not on every verse. */
   .qar-reader-verse-gutter {
     grid-column: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding-top: 4px;
+    padding-top: 16px;
   }
 
   .qar-reader-verse-medallion {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 28px;
-    block-size: 28px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-pill);
-    color: var(--qa-react-text);
-    font-size: 14px;
-    font-variant-numeric: normal;
+    color: var(--qa-react-text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
     line-height: 1;
     user-select: none;
   }
 
-  .qar-reader-verse-bookmark {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    margin: -6px 0 0 -8px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--qa-react-radius-pill);
-    background: transparent;
-    color: var(--qa-react-text-muted);
-  }
-
-  .qar-reader-verse-bookmark:hover {
+  .qar-reader-verse[data-selected="true"] .qar-reader-verse-medallion {
     color: var(--qa-react-text);
-    background: transparent;
-  }
-
-  .qar-reader-verse-bookmark[aria-pressed="true"] {
-    color: var(--qa-react-accent);
   }
 
   .qar-reader-verse-body {
@@ -944,8 +919,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    min-height: 64px;
-    padding: 8px 12px;
+    min-height: 56px;
+    padding: 4px 12px;
     border-bottom: 1px solid var(--qa-react-border);
   }
 
@@ -960,22 +935,23 @@
     background: transparent;
     color: var(--qa-react-text);
     font-family: var(--qa-react-font-translation);
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 500;
+    letter-spacing: 0.01em;
   }
 
   .qar-react-nav-drawer-logo {
     display: grid;
     place-items: center;
-    flex: 0 0 32px;
-    inline-size: 32px;
-    block-size: 32px;
-    color: var(--qa-react-accent);
+    flex: 0 0 26px;
+    inline-size: 26px;
+    block-size: 26px;
+    color: var(--qa-react-text);
   }
 
   .qar-react-nav-drawer-logo-svg {
-    inline-size: 32px;
-    block-size: 32px;
+    inline-size: 26px;
+    block-size: 26px;
     stroke: currentcolor;
     stroke-width: 1.45;
     stroke-linecap: round;
@@ -1405,7 +1381,7 @@
   }
 
   /* Theme swatch row (S8 Appearance): one selector, swatches share one layout,
-     selected = tint + border + check. */
+     selected = quiet ink ring (shape + contrast, no checkmark). */
   .qar-theme-choice {
     display: grid;
     justify-items: center;
@@ -1416,19 +1392,19 @@
     border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-control);
     background: transparent;
-    color: var(--qa-react-text);
+    color: var(--qa-react-text-muted);
     cursor: pointer;
     transition: var(--qa-react-transition-fast);
   }
 
   .qar-theme-choice:hover {
-    background: var(--qa-react-accent-tint);
+    border-color: var(--qa-react-text-muted);
   }
 
   .qar-theme-choice[aria-checked="true"] {
-    border-color: var(--qa-react-accent);
-    background: var(--qa-react-accent-tint);
-    color: var(--qa-react-accent);
+    border-color: var(--qa-react-text);
+    box-shadow: 0 0 0 1px var(--qa-react-text);
+    color: var(--qa-react-text);
   }
 
   .qar-theme-swatch {
@@ -1447,30 +1423,8 @@
     line-height: 1.2;
   }
 
-  /* Dim page images preview thumbnail (S8): the only image treatment. */
-  .qar-dim-preview {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    inline-size: 44px;
-    block-size: 56px;
-    overflow: hidden;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-control);
-    background:
-      repeating-linear-gradient(
-        0deg,
-        transparent 0 6px,
-        color-mix(in srgb, var(--qa-react-text-muted) 18%, transparent) 6px 7px
-      ),
-      var(--qa-react-paper);
-  }
-
-  html[data-dim-page-images="on"][data-theme="dark"] .qar-dim-preview {
-    filter: brightness(0.72);
-  }
-
-  /* Mushaf edition rows (S8): one row per edition, selected treatment. */
+  /* Mushaf edition rows (S8): one quiet hairline-separated row per edition;
+     the selected row carries an accent check. */
   .qar-edition-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1479,53 +1433,30 @@
     width: 100%;
     min-height: var(--qa-react-control-touch-target);
     margin: 0;
-    padding: 16px 12px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-control);
-    background: var(--qa-react-surface);
-    color: var(--qa-react-text);
-    cursor: pointer;
-    font: inherit;
-    text-align: start;
-  }
-
-  .qar-edition-row:hover {
-    background: var(--qa-react-accent-tint);
-  }
-
-  .qar-edition-row[aria-checked="true"] {
-    border-color: var(--qa-react-accent);
-    background: var(--qa-react-accent-tint);
-  }
-
-  /* Link rows (Downloads / About). */
-  .qar-react-settings-linkrow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 16px;
-    width: 100%;
-    min-height: var(--qa-react-control-touch-target);
-    margin: 0;
-    padding: 16px 0;
+    padding: 12px 4px;
     border: 0;
-    border-top: 1px solid var(--qa-react-border);
-    background: none;
+    border-block-end: 1px solid var(--qa-react-border);
+    border-radius: 0;
+    background: transparent;
     color: var(--qa-react-text);
     cursor: pointer;
     font: inherit;
     text-align: start;
   }
 
-  .qar-react-settings-linkrow:hover {
+  .qar-edition-row:last-child {
+    border-block-end-color: transparent;
+  }
+
+  .qar-edition-row:hover .qar-react-settings-row-label {
     color: var(--qa-react-accent);
   }
 
-  /* Segmented + tabs selected treatment: tint + 1 px accent border (+ check
-     rendered by the primitive unless compact). */
+  /* Segmented + tabs selected treatment: one solid ink pill — shape and
+     contrast carry the state, no tint, no checkmark. */
   .qar-react-segmented-option--selected {
-    background: var(--qa-react-accent-tint);
-    box-shadow: inset 0 0 0 1px var(--qa-react-accent);
+    background: var(--qa-react-text);
+    color: var(--qa-react-canvas);
   }
 
   .qar-react-segmented-option:has(input:focus-visible) {
@@ -1534,9 +1465,8 @@
   }
 
   .qar-react-tab-trigger[data-state="active"] {
-    background: var(--qa-react-accent-tint);
-    box-shadow: inset 0 0 0 1px var(--qa-react-accent);
-    color: var(--qa-react-accent);
+    background: var(--qa-react-text);
+    color: var(--qa-react-canvas);
   }
 
   /* Theme swatches (S8): fixed previews of each theme's canvas. */
@@ -1823,6 +1753,26 @@
     outline-offset: 2px;
   }
 
+  /* Scroll mode and fit-width Single mode scroll on the stage itself, not the
+     strip: the component's scroll reconciliation, keyboard paging, and
+     dominant-page measurement all target the stage element (the old rules
+     pointed at the Single-mode strip, which Scroll mode never renders, and
+     left the stage without a definite viewport height inside the locked,
+     overflow:hidden surface — so nothing could scroll). The stage stretches
+     to the surface's reserved viewport block and caps its width at the
+     page-ratio-derived column. */
+  [data-mushaf-layout-mode="scroll"] .qar-react-mushaf-page-stage,
+  [data-mushaf-layout-mode="single"][data-mushaf-fit-width="true"] .qar-react-mushaf-page-stage {
+    align-self: stretch;
+    justify-self: center;
+    width: min(100%, var(--qa-react-mushaf-stage-width));
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
   [data-mushaf-layout-mode="single"][data-mushaf-fit-width="false"] .qar-react-mushaf-page-stage {
     align-self: center;
     justify-self: center;
@@ -1853,22 +1803,11 @@
     transition: none;
   }
 
-  [data-mushaf-layout-mode="scroll"] .qar-react-mushaf-page-strip {
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
-  }
-
+  /* Fit-width cells size from their aspect ratio; without this the flex
+     stretch would let them fill the strip and distort the page. Taller pages
+     overflow the strip as scrollable stage content. */
   [data-mushaf-layout-mode="single"][data-mushaf-fit-width="true"] .qar-react-mushaf-page-strip {
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
+    align-items: flex-start;
   }
 
   .qar-react-mushaf-page-cell {
@@ -1954,24 +1893,6 @@
     display: grid;
     gap: 12px;
     min-inline-size: min(18rem, 100%);
-  }
-
-  /* Live fit thumbnails (Step 8-A): the current page rendered in each fit. */
-  .qar-fit-thumbnail {
-    display: block;
-    inline-size: 44px;
-    block-size: 60px;
-    overflow: hidden;
-    border: 1px solid var(--qa-react-border);
-    border-radius: 2px;
-    background: var(--qa-react-paper);
-  }
-
-  .qar-fit-thumbnail > img {
-    display: block;
-    inline-size: 100%;
-    block-size: 100%;
-    object-fit: contain;
   }
 
   .qar-react-mushaf-page-status {
@@ -2148,14 +2069,6 @@
     gap: 8px;
   }
 
-  /* Settings live preview (S8): dedicated sample block inside the sheet. */
-  .qar-settings-preview {
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-surface);
-    padding: 16px;
-  }
-
   /* Selector dialog scroll body. */
   .qar-react-selector-body {
     max-height: 70dvh;
@@ -2209,13 +2122,6 @@
     flex: 1;
     min-width: 0;
   }
-  .qar-theme-choice[aria-pressed="true"] {
-    border-color: var(--qa-react-accent);
-    background: var(--qa-react-accent-tint);
-  }
-  .qar-theme-choice[aria-checked="true"] {
-    color: var(--qa-react-text);
-  }
   @media (max-width: 639px) {
     .qar-reader-chrome-bookmarks {
       display: none;
@@ -2232,23 +2138,6 @@
 }
 
 @layer qa-react-components {
-  .qar-fit-thumbnail {
-    position: relative;
-    block-size: auto;
-  }
-  .qar-fit-thumbnail > img {
-    position: absolute;
-    max-width: none;
-  }
-  .qar-settings-page-preview {
-    position: relative;
-    width: 160px;
-    max-width: 100%;
-    overflow: hidden;
-  }
-  .qar-settings-preview-verse + .qar-settings-preview-verse {
-    margin-top: var(--qa-react-verse-gap);
-  }
   .qar-react-selector-recents {
     margin: 0;
     padding: 0;

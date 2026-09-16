@@ -119,6 +119,12 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
   function renderRow(entry: ReaderSurahIndexEntry) {
     const recent = recentBySurah.get(entry.n)
     const recentVerse = recent ? Math.min(recent.verse, entry.counts.qaloon) : null
+    // A filtered verse reference (e.g. 2:142) must activate the row on its
+    // verse target, matching the Enter shortcut and the Surahs page rows.
+    const targetVerse =
+      parsedQuery.kind === 'ref' && parsedQuery.surah === entry.n && parsedQuery.verse <= entry.counts.qaloon
+        ? parsedQuery.verse
+        : recentVerse
     const meta = recentVerse ? `Last reached ${entry.n}:${recentVerse}` : `${entry.counts.qaloon} verses`
     return (
       <li key={entry.n}>
@@ -128,7 +134,7 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
           data-surah={entry.n}
           meta={meta}
           num={entry.n}
-          onSelect={() => navigate(recentVerse ? `#/s/${entry.n}/${recentVerse}` : `#/s/${entry.n}`)}
+          onSelect={() => navigate(targetVerse ? `#/s/${entry.n}/${targetVerse}` : `#/s/${entry.n}`)}
           title={entry.name}
         />
       </li>
@@ -322,7 +328,8 @@ function parseSurahQuery(query: string): ParsedQuery {
 function filterSurahs(rows: ReaderSurahIndexEntry[], parsedQuery: ParsedQuery): ReaderSurahIndexEntry[] {
   if (parsedQuery.kind === 'empty') return rows
   if (parsedQuery.kind === 'surahNum') return rows.filter((row) => row.n === parsedQuery.n)
-  if (parsedQuery.kind === 'ref') return rows.filter((row) => row.n === parsedQuery.surah)
+  if (parsedQuery.kind === 'ref')
+    return rows.filter((row) => row.n === parsedQuery.surah && row.counts.qaloon >= parsedQuery.verse)
   return rows.filter((row) => {
     const name = row.name.toLowerCase()
     const arabic = row.name_ar.toLowerCase()

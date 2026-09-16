@@ -22,7 +22,6 @@ export function ReaderPageShell({
   mode,
   onChromePinChange,
   onModeChange,
-  pageImageUrl,
   resolveSelectorHref,
   showWirdStatus = true,
   surahName,
@@ -39,7 +38,6 @@ export function ReaderPageShell({
   mode: ReaderMode
   onChromePinChange?: (source: MushafChromePin, pinned: boolean) => void
   onModeChange?: (mode: ReaderMode) => void
-  pageImageUrl?: string | null
   resolveSelectorHref?: (hash: string) => Promise<string> | string
   showWirdStatus?: boolean
   surahName?: string
@@ -128,7 +126,7 @@ export function ReaderPageShell({
                 }}
                 onOpenSelector={() => setSelectorOpen(true)}
                 onOpenSettings={() => {
-                  requestReactSettingsOverlay(mode, 'reader-settings-trigger', pageImageUrl)
+                  requestReactSettingsOverlay(mode, 'reader-settings-trigger')
                 }}
                 onModeChange={onModeChange}
                 surahName={surahName}

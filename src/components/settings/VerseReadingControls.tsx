@@ -106,7 +106,7 @@ export function VerseReadingControls({
             <span className="qar-react-settings-row-label">Reading continuity</span>
             <span className="qar-react-settings-row-control">Show Daily Wird progress in the reader</span>
           </span>
-          <Switch checked={wirdVisible} label="Reading continuity" onCheckedChange={onWirdVisibleChange} />
+          <Switch checked={wirdVisible} hideLabel label="Reading continuity" onCheckedChange={onWirdVisibleChange} />
         </div>
       ) : null}
     </div>
