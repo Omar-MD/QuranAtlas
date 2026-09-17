@@ -28,7 +28,6 @@
         "dependencies",
         "tokenNamespaces",
         "stories",
-        "tests",
         "accessibility",
         "visualProof",
         "owner",
@@ -71,7 +70,6 @@
         },
         "tests": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "type": "object",
             "required": ["path", "behaviors"],

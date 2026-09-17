@@ -7,12 +7,14 @@ export {
   SegmentedControl,
   Select,
   Slider,
+  Stepper,
   Switch,
   type CheckboxProps,
   type InputProps,
   type SegmentedControlProps,
   type SelectProps,
   type SliderProps,
+  type StepperProps,
   type SwitchProps,
 } from './form-controls'
 export {

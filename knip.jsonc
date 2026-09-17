@@ -1,5 +1,5 @@
 {
-  // Entry points not auto-detected by Knip's Vite/Playwright/Storybook plugins.
+  // Entry points not auto-detected by Knip's Vite/Storybook plugins.
   // Narrowed to files that are actually EXECUTED (the previous
   // "scripts/**/*.{js,mjs}" catch-all marked every script an entry, which
   // permanently masked orphaned scripts from the unused-files audit):

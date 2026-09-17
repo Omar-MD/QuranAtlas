@@ -33,7 +33,7 @@ export const Dark: Story = {
 export const DimPageImages: Story = {
   render: () => (
     <DimAppearance>
-      <SettingsRoute mode="verse" />
+      <SettingsRoute mode="mushaf" />
     </DimAppearance>
   ),
 }

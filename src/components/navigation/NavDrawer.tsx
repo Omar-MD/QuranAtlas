@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useId, useState } from 'react'
+import { Bookmark, BookOpen, CalendarDays, ChevronRight, Info, Settings, X } from 'lucide-react'
 
 import { REACT_ROUTES } from '../../app/router/routes'
 import type { JuzIndexEntry } from '../../data/juz-index'
@@ -7,7 +7,6 @@ import { openReactDb } from '../../storage/db'
 import { readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
 import { resolveDrawerHrefForReaderMode } from '../reader/reader-mode-routing'
 import { Badge, ChoiceButton, IconButton, ListRow, Sheet } from '../ui'
-import { DailyWirdCard } from '../reader/wird/DailyWirdCard'
 import { createWirdPlan, deriveWirdSummary, getLocalDayKey } from '../../continuity/wird/progress'
 import { createWirdBoundaries } from '../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../continuity/wird/page-boundaries'
@@ -29,11 +28,6 @@ const FALLBACK_WIRD_COUNTS: SurahCount[] = [
   { n: 114, count: 6 },
 ]
 
-// S6 navigation drawer: reader destinations only — header, Surahs (opens the
-// S5 selector), Bookmarks (its own full row with count badge), Daily wird
-// (existing feature, inherits the system), then Downloads / Settings / About.
-// No destination rail, no search panel, no inline surah filter or lists
-// (§8 items 2/7/11). Active destination uses the selection treatment.
 export function NavDrawer({
   currentRoute,
   initialWirdView = 'card',
@@ -60,6 +54,8 @@ export function NavDrawer({
   showWird?: boolean
   suppressFocusRestore?: boolean
 }) {
+  const wirdDetailId = useId()
+  const wirdDescriptionId = useId()
   const [bookmarkCount, setBookmarkCount] = useState(0)
   const [currentPosition, setCurrentPosition] = useState<SavedPosition | null>(null)
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
@@ -227,9 +223,31 @@ export function NavDrawer({
   const drawerShowsWird = showWird
   const wirdBoundaries = createWirdBoundaries(wirdCounts, wirdPageBoundaries)
   const wirdSummary = drawerShowsWird ? deriveWirdSummary(wirdPlan, wirdCounts, { boundaries: wirdBoundaries }) : null
-  const fallbackReadHref = currentPosition
-    ? REACT_ROUTES.surah(currentPosition.surah, currentPosition.verse)
-    : REACT_ROUTES.home
+  const wirdStatus =
+    !wirdSummary || wirdSummary.state === 'no-plan'
+      ? 'Build a consistent rhythm'
+      : wirdSummary.state === 'today-complete'
+        ? 'Today complete'
+        : wirdSummary.state === 'plan-complete'
+          ? 'Plan complete'
+          : wirdSummary.state === 'behind-target'
+            ? 'Adjusted today'
+            : 'Today'
+  const wirdDescription =
+    wirdSummary && wirdSummary.state !== 'no-plan'
+      ? [
+          wirdStatus,
+          `${wirdSummary.todayPercent}%`,
+          wirdSummary.nextRef && wirdSummary.state !== 'today-complete' && wirdSummary.state !== 'plan-complete'
+            ? `Continue from ${wirdSummary.nextRef.surah}:${wirdSummary.nextRef.verse}`
+            : null,
+          wirdSummary.todayRangeLabel,
+          wirdSummary.remainingLabel,
+          wirdSummary.reminderLabel,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      : wirdStatus
 
   function openDestination(hash: string): () => void {
     return () => navigateForReaderMode(hash)
@@ -248,28 +266,12 @@ export function NavDrawer({
       variant="navigation-drawer"
     >
       <div className="qar-react-nav-drawer-header">
-        <ChoiceButton className="qar-react-nav-drawer-wordmark" onClick={() => onNavigate(fallbackReadHref)}>
-          <span aria-hidden="true" className="qar-react-nav-drawer-logo">
-            <svg
-              aria-hidden="true"
-              className="qar-react-nav-drawer-logo-svg"
-              data-icon="brand-rosette"
-              fill="none"
-              viewBox="0 0 48 48"
-            >
-              <path d="M24 4.5l4.1 5.2 6.6-1.1 1.6 6.4 6.2 2.6-2.9 6 2.9 6-6.2 2.6-1.6 6.4-6.6-1.1L24 43.5l-4.1-5.2-6.6 1.1-1.6-6.4-6.2-2.6 2.9-6-2.9-6 6.2-2.6 1.6-6.4 6.6 1.1L24 4.5Z" />
-              <circle cx="24" cy="24" r="12.2" />
-              <circle cx="24" cy="24" r="6.2" />
-              <path d="M24 16.8v14.4M20.4 21.2c2.4-1.2 4.8-1.2 7.2 0" />
-            </svg>
-          </span>
-          <span className="qar-react-nav-drawer-wordmark-text">QuranAtlas</span>
-        </ChoiceButton>
         <IconButton label="Close" onClick={onClose}>
           <X aria-hidden="true" size={22} strokeWidth={1.7} />
         </IconButton>
       </div>
       <div className="qar-react-drawer-section" data-drawer-destinations="true">
+        <h2 className="qar-react-drawer-group-label">READ</h2>
         <ListRow
           onSelect={
             onOpenSurahs
@@ -279,45 +281,86 @@ export function NavDrawer({
                 }
               : openDestination(REACT_ROUTES.surahs)
           }
+          num={
+            <span aria-hidden="true" className="qar-react-drawer-icon-tile">
+              <BookOpen size={17} strokeWidth={1.7} />
+            </span>
+          }
           title="Surahs"
         />
         <ListRow
           action={bookmarkCount > 0 ? <Badge tone="neutral">{bookmarkCount}</Badge> : undefined}
           current={currentRoute === 'bookmarks'}
           onSelect={openDestination(REACT_ROUTES.bookmarks)}
+          num={
+            <span aria-hidden="true" className="qar-react-drawer-icon-tile">
+              <Bookmark size={17} strokeWidth={1.7} />
+            </span>
+          }
           title="Bookmarks"
         />
-        {drawerShowsWird && wirdView === 'card' ? (
-          <div className="qar-react-drawer-wird-slot">
-            <DailyWirdCard
-              boundaries={wirdBoundaries}
-              counts={wirdCounts}
-              onOpen={() => setWirdView('detail')}
-              plan={wirdPlan}
-            />
-          </div>
-        ) : drawerShowsWird && wirdSummary ? (
-          <div className="qar-react-drawer-wird-slot">
-            <WirdDetail
-              counts={wirdCounts}
-              currentPosition={currentPosition}
-              onBack={() => setWirdView('card')}
-              onContinue={handleWirdContinue}
-              onCreate={handleWirdCreate}
-              onRequestBrowserNotifications={requestWirdNotifications}
-              onReset={handleWirdReset}
-              summary={wirdSummary}
-            />
-          </div>
+        {drawerShowsWird ? (
+          <ChoiceButton
+            aria-controls={wirdView === 'detail' ? wirdDetailId : undefined}
+            aria-describedby={wirdDescriptionId}
+            aria-expanded={wirdView === 'detail'}
+            aria-label="Daily Wird"
+            className="qar-react-drawer-wird-row"
+            onClick={() => setWirdView('detail')}
+            title={wirdDescription}
+          >
+            <span aria-hidden="true" className="qar-react-drawer-icon-tile">
+              <CalendarDays size={17} strokeWidth={1.7} />
+            </span>
+            <span className="qar-react-drawer-wird-copy">
+              <span className="qar-react-list-row-title">Daily Wird</span>
+              <span aria-hidden="true" className="qar-react-list-row-meta">
+                {wirdStatus}
+                {wirdSummary && wirdSummary.state !== 'no-plan' ? ` · ${wirdSummary.todayPercent}%` : null}
+              </span>
+              <span className="qar:sr-only" id={wirdDescriptionId}>
+                {wirdDescription}
+              </span>
+            </span>
+            <ChevronRight aria-hidden="true" size={16} strokeWidth={1.7} />
+          </ChoiceButton>
         ) : null}
-        <div aria-hidden="true" className="qar:my-2 qar:border-t qar:border-border" />
+        <h2 className="qar-react-drawer-group-label qar-react-drawer-group-label--after-gap">APP</h2>
         <ListRow
           current={currentRoute === 'settings'}
           onSelect={openDestination(REACT_ROUTES.settings)}
+          num={
+            <span aria-hidden="true" className="qar-react-drawer-icon-tile">
+              <Settings size={17} strokeWidth={1.7} />
+            </span>
+          }
           title="Settings"
         />
-        <ListRow current={currentRoute === 'about'} onSelect={openDestination(REACT_ROUTES.about)} title="About" />
+        <ListRow
+          current={currentRoute === 'about'}
+          onSelect={openDestination(REACT_ROUTES.about)}
+          num={
+            <span aria-hidden="true" className="qar-react-drawer-icon-tile">
+              <Info size={17} strokeWidth={1.7} />
+            </span>
+          }
+          title="About"
+        />
       </div>
+      {drawerShowsWird && wirdView === 'detail' && wirdSummary ? (
+        <div className="qar-react-drawer-wird-slot" id={wirdDetailId}>
+          <WirdDetail
+            counts={wirdCounts}
+            currentPosition={currentPosition}
+            onBack={() => setWirdView('card')}
+            onContinue={handleWirdContinue}
+            onCreate={handleWirdCreate}
+            onRequestBrowserNotifications={requestWirdNotifications}
+            onReset={handleWirdReset}
+            summary={wirdSummary}
+          />
+        </div>
+      ) : null}
     </Sheet>
   )
 }

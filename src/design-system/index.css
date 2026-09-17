@@ -917,45 +917,76 @@
   .qar-react-nav-drawer-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 8px;
     min-height: 56px;
     padding: 4px 12px;
     border-bottom: 1px solid var(--qa-react-border);
   }
 
-  .qar-react-nav-drawer-wordmark {
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
-    min-width: 0;
-    min-height: 44px;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--qa-react-text);
-    font-family: var(--qa-react-font-translation);
-    font-size: 1.125rem;
-    font-weight: 500;
-    letter-spacing: 0.01em;
+  /* Icon-row drawer groups (polish v2, mockup A): tiny labels, 30 px icon
+     tiles, one slim Wird row — no wordmark, no promo card. */
+  .qar-react-drawer-group-label {
+    margin: 0;
+    padding: 8px 12px 4px;
+    color: var(--qa-react-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+    text-transform: uppercase;
   }
 
-  .qar-react-nav-drawer-logo {
+  .qar-react-drawer-group-label--after-gap {
+    padding-top: 16px;
+  }
+
+  .qar-react-drawer-icon-tile {
     display: grid;
     place-items: center;
-    flex: 0 0 26px;
-    inline-size: 26px;
-    block-size: 26px;
-    color: var(--qa-react-text);
+    inline-size: 30px;
+    block-size: 30px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-surface);
+    color: var(--qa-react-text-muted);
   }
 
-  .qar-react-nav-drawer-logo-svg {
-    inline-size: 26px;
-    block-size: 26px;
-    stroke: currentcolor;
-    stroke-width: 1.45;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  /* Slim Daily Wird row: same metrics as ListRow (44 px target, 12 px gap
+     and gutters, bottom hairline) with a trailing chevron. */
+  .qar-react-drawer-wird-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: var(--qa-react-control-touch-target);
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    border-block-end-color: var(--qa-react-border);
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .qar-react-drawer-wird-row:hover {
+    background: var(--qa-react-accent-tint);
+  }
+
+  .qar-react-drawer-wird-row:focus-visible {
+    outline: 2px solid var(--qa-react-accent);
+    outline-offset: 2px;
+  }
+
+  .qar-react-drawer-wird-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    text-align: start;
   }
 
   .qar-react-drawer-wird-slot {
@@ -1260,8 +1291,8 @@
   @media (min-width: 768px) {
     [data-sheet-variant="adaptive-settings"] {
       inset: 0;
-      width: min(640px, calc(100vw - 32px));
-      height: min(85dvh, 100%);
+      width: min(540px, calc(100vw - 32px));
+      height: min(680px, 90dvh);
       margin: auto;
       border: 1px solid var(--qa-react-border);
       border-radius: var(--qa-react-radius-surface);
@@ -1297,9 +1328,9 @@
     display: grid;
     align-content: start;
     grid-auto-rows: max-content;
-    gap: 24px;
+    gap: 16px;
     min-height: 0;
-    padding: 16px 16px calc(env(safe-area-inset-bottom) + 24px);
+    padding: 16px 20px calc(env(safe-area-inset-bottom) + 20px);
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--qa-react-sheet);
@@ -1313,8 +1344,58 @@
   }
 
   .qar-react-settings-section > .qar-eyebrow {
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--qa-react-border);
+    margin: 0;
+    padding-bottom: 6px;
+    font-size: 0.6875rem;
+  }
+
+  .qar-react-settings-body > .qar-react-settings-section {
+    padding: 14px;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-surface);
+    background: var(--qa-react-surface);
+  }
+
+  .qar-react-stepper {
+    display: inline-grid;
+    grid-template-columns: 44px 64px 44px;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+  }
+
+  .qar-react-stepper-button {
+    min-height: 44px;
+    border: 0;
+    border-radius: var(--qa-react-radius-control);
+    background: transparent;
+    color: var(--qa-react-text);
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .qar-react-stepper-button:hover:not(:disabled) {
+    background: var(--qa-react-accent-tint);
+  }
+
+  .qar-react-stepper-button:focus-visible {
+    outline: 2px solid var(--qa-react-accent);
+    outline-offset: 2px;
+  }
+
+  .qar-react-stepper-button:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  .qar-react-stepper-value {
+    color: var(--qa-react-text-muted);
+    font-size: 0.75rem;
+    text-align: center;
   }
 
   .qar-react-settings-panel-controls {
@@ -1327,7 +1408,7 @@
     align-items: center;
     gap: 16px;
     min-height: var(--qa-react-control-touch-target);
-    padding: 16px 0;
+    padding: 8px 0;
   }
 
   .qar-react-settings-row + .qar-react-settings-row {
@@ -1380,47 +1461,55 @@
     }
   }
 
-  /* Theme swatch row (S8 Appearance): one selector, swatches share one layout,
-     selected = quiet ink ring (shape + contrast, no checkmark). */
-  .qar-theme-choice {
+  /* About calm sheet (polish v2, mockup A): tagline → notation row →
+     11 px fine-print attribution → quiet report link → version footer.
+     The footer's top border is the single hairline on the screen. */
+  .qar-about-page {
+    gap: 20px;
+  }
+
+  .qar-about-fine-print {
     display: grid;
-    justify-items: center;
-    gap: 4px;
-    min-width: 64px;
-    min-height: var(--qa-react-control-touch-target);
-    padding: 8px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-control);
-    background: transparent;
-    color: var(--qa-react-text-muted);
-    cursor: pointer;
-    transition: var(--qa-react-transition-fast);
+    gap: 2px;
+    font-size: 11px;
+    line-height: 1.6;
   }
 
-  .qar-theme-choice:hover {
-    border-color: var(--qa-react-text-muted);
-  }
-
-  .qar-theme-choice[aria-checked="true"] {
-    border-color: var(--qa-react-text);
-    box-shadow: 0 0 0 1px var(--qa-react-text);
-    color: var(--qa-react-text);
-  }
-
-  .qar-theme-swatch {
-    display: block;
-    inline-size: 20px;
-    block-size: 20px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-pill);
-  }
-
-  .qar-theme-choice-label {
-    display: inline-flex;
+  .qar-about-notation-row {
+    display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 0.75rem;
-    line-height: 1.2;
+    gap: 12px;
+    width: 100%;
+    min-height: var(--qa-react-control-touch-target);
+    margin: 0;
+    padding: 8px 0;
+    border: 0;
+    background: none;
+    color: var(--qa-react-text);
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .qar-about-notation-row:hover {
+    color: var(--qa-react-accent);
+  }
+
+  .qar-about-notation-row:focus-visible {
+    outline: 2px solid var(--qa-react-accent);
+    outline-offset: 2px;
+  }
+
+  .qar-about-notation-row-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 600;
+  }
+
+  .qar-about-notation-row-chevron {
+    flex: none;
+    color: var(--qa-react-text-muted);
   }
 
   /* Mushaf edition rows (S8): one quiet hairline-separated row per edition;
@@ -1467,23 +1556,6 @@
   .qar-react-tab-trigger[data-state="active"] {
     background: var(--qa-react-text);
     color: var(--qa-react-canvas);
-  }
-
-  /* Theme swatches (S8): fixed previews of each theme's canvas. */
-  .qar-theme-swatch[data-swatch="light"] {
-    background: var(--qa-react-theme-swatch-light);
-  }
-
-  .qar-theme-swatch[data-swatch="sepia"] {
-    background: var(--qa-react-theme-swatch-sepia);
-  }
-
-  .qar-theme-swatch[data-swatch="dark"] {
-    background: var(--qa-react-theme-swatch-dark);
-  }
-
-  .qar-theme-swatch[data-swatch="system"] {
-    background: linear-gradient(90deg, var(--qa-react-theme-swatch-light) 50%, var(--qa-react-theme-swatch-dark) 50%);
   }
 
   /* ------------------------------ List rows (S5/S7) ------------------------ */
@@ -2062,13 +2134,6 @@
     background: var(--qa-react-surface);
   }
 
-  /* Theme swatch strip (S8): one selector, swatches share one layout. */
-  .qar-theme-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
   /* Selector dialog scroll body. */
   .qar-react-selector-body {
     max-height: 70dvh;
@@ -2093,34 +2158,6 @@
   }
   .qar-react-sheet-handle {
     touch-action: none;
-  }
-  .qar-react-settings-font-slider {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
-  /* The settings row's second grid column is `auto`; without a floor the
-     slider's flex chain collapses to a 0 px track and the thumb swallows the
-     large mark. Definite width (a percentage inside min() stays indefinite
-     here and never applies). */
-  .qar-react-settings-row--font-size .qar-react-settings-font-slider {
-    width: 11rem;
-    max-width: 100%;
-  }
-  .qar-react-settings-font-size-mark {
-    color: var(--qa-react-text-muted);
-    line-height: 1;
-  }
-  .qar-react-settings-font-size-mark--small {
-    font-size: 0.75rem;
-  }
-  .qar-react-settings-font-size-mark--large {
-    font-size: 1.2rem;
-  }
-  .qar-react-settings-font-size-slider {
-    flex: 1;
-    min-width: 0;
   }
   @media (max-width: 639px) {
     .qar-reader-chrome-bookmarks {

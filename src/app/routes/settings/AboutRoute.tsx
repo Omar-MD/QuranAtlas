@@ -7,16 +7,11 @@ import { ChromeFrame } from '../../../components/navigation/ChromeFrame'
 import { useNavDrawerController } from '../../../components/navigation/nav-drawer-controller'
 import { Button, Dialog, Input } from '../../../components/ui'
 import { NotationGuideButton } from '../../../components/settings/NotationGuide'
-import { SettingsGroup } from '../../../components/settings/SettingsGroup'
 import { SettingsPageRecipe } from '../../../design-system/recipes/settings-page'
 import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInstall } from './pwa-install'
 import { fetchLatestAppChanges, type AppUpdateCheckResult } from './pwa-updates'
 import { useClearDataDialog } from './useClearDataDialog'
 
-// S10 About & Sources — fixed structure: Sources used (no framework names) /
-// Numbering and references (shared with the S2 passage-group explainer) /
-// Report an issue / App (version, updates, technical credits last and
-// visually secondary).
 const sources: Array<{ content: ReactNode; id: string }> = [
   {
     content: (
@@ -142,38 +137,46 @@ export function AboutRoute() {
         window.location.hash = REACT_ROUTES.settings
       }}
     >
-      <SettingsPageRecipe title="About">
+      <SettingsPageRecipe className="qar-about-page qar:mx-auto qar:w-full qar:max-w-xl" title="About">
         <p className="qar:m-0 qar:text-base qar:font-medium">Read, reflect, remember.</p>
 
-        <SettingsGroup title="Sources used">
-          <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
-            {sources.map((source) => (
-              <li key={source.id}>{source.content}</li>
-            ))}
-          </ul>
-        </SettingsGroup>
+        <NotationGuideButton />
 
-        <SettingsGroup title="Numbering and references">
-          <p className="qar:m-0 qar:text-sm qar:leading-6">
-            This translation renders one passage across several verses. Verse references follow the Hafs counting; the
-            printed Qalūn edition may number these verses differently. Nothing is missing or repeated — the words are
-            the same. Furatiyyah page numbers are the edition's own printed pagination, and page-start references are
-            mapped to the nearest printed page.
-          </p>
-          <div>
-            <NotationGuideButton />
+        <section aria-label="Source attributions" className="qar:grid qar:gap-2">
+          <div className="qar-about-fine-print qar:text-muted">
+            <p className="qar:m-0">Qalūn text · KFGQPC restricted terms.</p>
+            <p className="qar:m-0">Bridges · Fadel Soliman / QUL.</p>
+            <p className="qar:m-0">Quran.ws · free use; Furatiyyah 2023 · noncommercial.</p>
+            <p className="qar:m-0">KFGQPC Uthmanic Qaloon · Newsreader (OFL).</p>
           </div>
-        </SettingsGroup>
+          <Dialog
+            contentClassName="qar:max-h-dvh qar:overflow-y-auto"
+            title="Sources used"
+            trigger={
+              <Button size="sm" variant="ghost">
+                Sources and licenses
+              </Button>
+            }
+          >
+            <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
+              {sources.map((source) => (
+                <li key={source.id}>{source.content}</li>
+              ))}
+            </ul>
+            <p className="qar:m-0 qar:text-xs qar:leading-5 qar:text-muted">Built with React, Vite, and Workbox.</p>
+          </Dialog>
+        </section>
 
-        <SettingsGroup title="Report an issue">
-          <p className="qar:m-0">
-            <a href="https://github.com/Omar-MD/QuranAtlas/issues" rel="noreferrer" target="_blank">
-              Report an issue
-            </a>
-          </p>
-        </SettingsGroup>
+        <a
+          className="qar:flex qar:min-h-11 qar:items-center qar:justify-self-start qar:text-sm qar:text-muted"
+          href="https://github.com/Omar-MD/QuranAtlas/issues"
+          rel="noreferrer"
+          target="_blank"
+        >
+          Report an issue
+        </a>
 
-        <SettingsGroup title="App">
+        <footer className="qar:grid qar:gap-2 qar:border-t qar:border-border qar:pt-3">
           <p className="qar:m-0 qar:text-sm qar:text-muted" data-testid="about-version">
             Version {pkg.version}
           </p>
@@ -267,11 +270,7 @@ export function AboutRoute() {
               </Button>
             </div>
           </Dialog>
-          {/* Technical credits: last and visually secondary (S10 item 4). */}
-          <p className="qar:m-0 qar:pt-2 qar:text-xs qar:leading-5 qar:text-muted">
-            Built with React, Vite, and Workbox.
-          </p>
-        </SettingsGroup>
+        </footer>
       </SettingsPageRecipe>
     </ChromeFrame>
   )

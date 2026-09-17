@@ -57,8 +57,7 @@ export async function readActiveMushafProfile(): Promise<{ mushafEditionId: stri
 
 // D29 — the native reader store creates its two stores with raw IndexedDB;
 // these specs derive from the Dexie declarations in schema.ts so the mirrored
-// key paths and index names cannot drift (tests/e2e/fixtures/app.ts applies
-// the same translation when seeding the fixture database).
+// key paths and index names cannot drift.
 type NativeReaderStoreSpec = {
   autoIncrement: boolean
   indexes: Array<{ keyPath: string | string[]; multiEntry: boolean; name: string; unique: boolean }>

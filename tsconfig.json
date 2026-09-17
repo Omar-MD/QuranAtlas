@@ -20,6 +20,6 @@
     "jsx": "react-jsx",
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "shared/**/*.ts", ".storybook/**/*", "tests/e2e/**/*.ts"],
-  "exclude": ["node_modules", "dist", "storybook-static", "test-output"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "shared/**/*.ts", ".storybook/**/*"],
+  "exclude": ["node_modules", "dist", "storybook-static"]
 }

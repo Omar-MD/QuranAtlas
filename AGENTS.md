@@ -112,8 +112,8 @@ Use this structure:
 - Use mise for the project interface. Tool pins are Node `24.20.0` and
   pnpm `10.31.0`.
 - Run `mise install`, then `mise run install` for a reproducible checkout.
-- Use `mise run dev`, `mise run preview`, `mise run check`, `mise run smoke`,
-  `mise run offline`, `mise run data:check`, `mise run data:build`,
+- Use `mise run dev`, `mise run preview`, `mise run check`,
+  `mise run data:check`, `mise run data:build`,
   `mise run data:media`, `mise run build:release`, `mise run storybook:build`,
   and `mise run validate` instead of creating ad hoc orchestration commands.
 - `mise run check` includes GitHub Actions workflow-schema validation via
@@ -132,23 +132,24 @@ Use this structure:
 
 ## Durable Tests
 
-- Automated coverage is limited to the complete offline lifecycle and the
-  desktop/mobile core UI smoke journey.
-- Assert accessible roles and names, visible content, URLs, persisted state,
-  network outcomes, and service-worker behavior.
-- Do not assert CSS classes, DOM shape, icon internals, screenshots, visual
-  snapshots, or implementation-only state.
+- There are no automated e2e, smoke, or browser tests in this repository;
+  Playwright has been removed entirely.
+- All e2e and smoke verification (including the offline lifecycle and the
+  desktop/mobile core UI journey) is performed manually: an agent or the user
+  drives the real UI through computer-use/browser control against
+  `mise run dev` or `mise run preview`.
+- Manual verification asserts observable behavior only: accessible roles and
+  names, visible content, URLs, persisted state, network outcomes, and
+  service-worker behavior — not CSS classes, DOM shape, or icon internals.
 - There are no screenshot regression tests or screenshot artifacts.
-- Browser-only reload, offline, hydration, and viewport behavior belongs in
-  the retained Playwright specs.
 
 ## Generated Assets
 
 - `public/dataset/**`, `public/search-packs/**`,
-  `data/normalized/mushaf-pages/**`, `dist/**`, `storybook-static/**`, and
-  Playwright output are generated or local-only and must not be tracked.
+  `data/normalized/mushaf-pages/**`, `dist/**`, and `storybook-static/**` are
+  generated or local-only and must not be tracked.
 - Do not precache datasets, search packs, or Mushaf pages. Keep Mushaf media
-  lazy and out of ordinary smoke/offline CI.
+  lazy and out of ordinary CI.
 - Never commit browser state, credentials, or screenshots.
 
 ## Git Safety

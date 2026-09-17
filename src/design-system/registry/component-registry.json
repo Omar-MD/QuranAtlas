@@ -21,12 +21,6 @@
           "states": ["default", "clear-data-confirmation"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["shared configure chrome operates in the core settings journey"]
-        }
-      ],
       "accessibility": [
         "main landmark",
         "semantic attribution section",
@@ -64,12 +58,6 @@
           "states": ["default", "expanded"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["included-assets disclosure family operates in the core settings journey"]
-        }
-      ],
       "accessibility": ["button trigger", "keyboard toggle", "visible focus"],
       "visualProof": {
         "status": "covered",
@@ -100,12 +88,6 @@
         {
           "path": "src/components/reader/reader.stories.tsx",
           "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["adjustments sheet opens from the mobile bottom strip"]
         }
       ],
       "accessibility": ["sheet focus trap and focus return to the invoker", "one scroll owner"],
@@ -140,12 +122,6 @@
           "states": ["default", "status"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["status badge surfaces operate in the core reader journey"]
-        }
-      ],
       "accessibility": ["state is not color-only when composed with text"],
       "visualProof": {
         "status": "covered",
@@ -176,12 +152,6 @@
         {
           "path": "src/components/navigation/navigation.stories.tsx",
           "states": ["default", "empty", "populated", "page-bookmark", "landing-pulse"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["navigation list rows operate in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -220,12 +190,6 @@
           "states": ["default", "disabled", "focus-visible"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["reader and settings chrome buttons operate in the core journey"]
-        }
-      ],
       "accessibility": ["native button semantics", "visible focus", "disabled state"],
       "visualProof": {
         "status": "covered",
@@ -257,14 +221,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["titled", "untitled"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "runtime consumers: DailyWirdCard in the navigation drawer. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
-          ]
         }
       ],
       "accessibility": [
@@ -302,12 +258,6 @@
           "states": ["checked", "unchecked", "disabled"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["settings checkboxes operate in the core settings journey"]
-        }
-      ],
       "accessibility": ["labelled checkbox", "keyboard toggle", "visible focus"],
       "visualProof": {
         "status": "covered",
@@ -338,12 +288,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["theme choices and surah selector operate in the core journey"]
         }
       ],
       "accessibility": ["accessible name", "radio/pressed semantics owned by consumer", "visible focus"],
@@ -377,14 +321,6 @@
         {
           "path": "src/components/navigation/navigation.stories.tsx",
           "states": ["default", "drawer-open"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "reader, surah-list, bookmarks, and About journeys render through the shared chrome frame and drawer host"
-          ]
         }
       ],
       "accessibility": [
@@ -423,12 +359,6 @@
           "states": ["default"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["wird status surfaces operate in the core reader journey"]
-        }
-      ],
       "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
       "visualProof": {
         "status": "covered",
@@ -459,12 +389,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["closed", "open"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["confirmation dialog family operates in the core settings journey"]
         }
       ],
       "accessibility": ["labelled dialog", "focus trap", "escape closes"],
@@ -499,12 +423,6 @@
           "states": ["default"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/offline-lifecycle.spec.ts",
-          "behaviors": ["first run renders the edition banner and the dismissal persists"]
-        }
-      ],
       "accessibility": ["aria-label Current edition", "focusable dismiss and change actions"],
       "visualProof": {
         "status": "covered",
@@ -535,12 +453,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["default", "disabled", "focus-visible"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["reader chrome icon buttons operate in the core journey"]
         }
       ],
       "accessibility": [
@@ -579,12 +491,6 @@
           "states": ["default", "disabled", "invalid"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["drawer and SurahsRoute surah-filter fields operate in the core reader journey"]
-        }
-      ],
       "accessibility": ["visible label", "native input semantics"],
       "visualProof": {
         "status": "covered",
@@ -615,14 +521,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["default", "selected", "current", "with-action", "long-labels", "numbered"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "runtime consumers: SurahsRoute surah list, NavDrawer recent-surah rows, and BookmarksList rows. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
-          ]
         }
       ],
       "accessibility": [
@@ -663,14 +561,6 @@
           "states": ["with-action"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "reusable action cluster primitive retained for composing consumers; current product consumers are none, so durable e2e coverage is bounded by the smoke charter and storybook states remain the per-state matrix."
-          ]
-        }
-      ],
       "accessibility": [
         "actions remain labelled controls reachable by keyboard inside the row",
         "container stays a passive group so row activation is not intercepted"
@@ -704,12 +594,6 @@
         {
           "path": "src/components/reader/metadata/metadata.stories.tsx",
           "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["verse metadata surfaces operate in the core reader journey"]
         }
       ],
       "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
@@ -763,12 +647,6 @@
           ]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["reader mode chrome that bridges to Mushaf operates in the core journey"]
-        }
-      ],
       "accessibility": [
         "chrome visible by default",
         "Focus mode reveals via handle, page tap, and Escape",
@@ -793,7 +671,7 @@
       "namedExport": "NavDrawer",
       "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["header", "destinations", "wird", "downloadsRow", "settingsRow", "aboutRow"],
+      "slots": ["header", "destinations", "wird", "settingsRow", "aboutRow"],
       "dependencies": {
         "radix": [],
         "components": ["button", "icon-button", "input", "segmented-control", "sheet"],
@@ -804,12 +682,6 @@
         {
           "path": "src/components/navigation/navigation.stories.tsx",
           "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["drawer navigation operates in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -850,12 +722,6 @@
           "states": ["NavigationPage"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["navigation page surfaces bridge from the core reader journey"]
-        }
-      ],
       "accessibility": [
         "main landmark labelled by the page title",
         "single-h1 page heading with optional muted kicker",
@@ -890,14 +756,6 @@
         {
           "path": "src/components/settings/settings.stories.tsx",
           "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "notation information opens from the Mushaf settings section and does not invent unsourced meanings"
-          ]
         }
       ],
       "accessibility": [
@@ -935,12 +793,6 @@
           "states": ["partial", "complete"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["asset progress feedback operates in the core settings journey"]
-        }
-      ],
       "accessibility": ["labelled progressbar", "numeric value"],
       "visualProof": {
         "status": "covered",
@@ -971,19 +823,6 @@
         {
           "path": "src/design-system/recipes/page-recipes.stories.tsx",
           "states": ["ReaderPage", "ReaderPageWithChrome"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["verse reader main landmark renders in the core journey"]
-        },
-        {
-          "path": "tests/e2e/offline-lifecycle.spec.ts",
-          "behaviors": [
-            "verse reader main landmark survives offline reload",
-            "reader resynchronizes a missing surah after connectivity returns"
-          ]
         }
       ],
       "accessibility": [
@@ -1035,19 +874,6 @@
           ]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["verse reader renders Al-Fatihah translation text in the core journey"]
-        },
-        {
-          "path": "tests/e2e/offline-lifecycle.spec.ts",
-          "behaviors": [
-            "cached verse text renders on offline reload",
-            "unfetched surah text resynchronizes when connectivity returns"
-          ]
-        }
-      ],
       "accessibility": [
         "semantic main content via ReaderPageShell",
         "named footnote buttons",
@@ -1082,12 +908,6 @@
         {
           "path": "src/components/reader/reader.stories.tsx",
           "states": ["ReaderChromeWithWirdStatus"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["reader chrome status controls operate in the core journey"]
         }
       ],
       "accessibility": [
@@ -1130,12 +950,6 @@
           "states": ["Verse destination", "Mushaf destination"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["reading-mode chrome operates in the core reader journey"]
-        }
-      ],
       "accessibility": ["labelled segmented control", "radio semantics with accessible names"],
       "visualProof": {
         "status": "covered",
@@ -1166,12 +980,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["selected", "disabled"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["settings mode controls operate in the core settings journey"]
         }
       ],
       "accessibility": ["labelled radiogroup", "explicit role=radiogroup on the group container", "selected state"],
@@ -1206,12 +1014,6 @@
           "states": ["closed", "open", "disabled"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["settings choice selects operate in the core settings journey"]
-        }
-      ],
       "accessibility": ["labelled combobox", "keyboard listbox", "portal content layers above active settings shells"],
       "visualProof": {
         "status": "covered",
@@ -1244,12 +1046,6 @@
           "states": ["Verse groups", "Mushaf groups", "included-assets disclosure"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["Verse settings heading and Texts and editions region render in the core settings journey"]
-        }
-      ],
       "accessibility": ["quiet eyebrow section heading", "no nested bordered cards"],
       "visualProof": {
         "status": "covered",
@@ -1280,12 +1076,6 @@
         {
           "path": "src/components/settings/settings.stories.tsx",
           "states": ["About"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["configure surface operates in the core settings journey"]
         }
       ],
       "accessibility": [
@@ -1322,15 +1112,6 @@
         {
           "path": "src/components/settings/settings.stories.tsx",
           "states": ["Verse", "Mushaf", "compact assets-collapsed", "dark", "night"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "settings overlay opens over the reader preserving its route",
-            "closing settings returns to the reader surface"
-          ]
         }
       ],
       "accessibility": [
@@ -1377,12 +1158,6 @@
           ]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["settings sheet opens and closes in the core settings journey"]
-        }
-      ],
       "accessibility": [
         "labelled dialog",
         "focus trap",
@@ -1423,12 +1198,6 @@
           "states": ["adaptive-settings open"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["settings sheet body hosts group content in the core settings journey"]
-        }
-      ],
       "accessibility": ["inherits the labelled dialog semantics of the owned Sheet primitive"],
       "visualProof": {
         "status": "covered",
@@ -1459,12 +1228,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["default", "disabled"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["verse typography sliders operate in the core settings journey"]
         }
       ],
       "accessibility": ["labelled slider", "numeric value"],
@@ -1499,12 +1262,6 @@
           "states": ["loading"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["boot loading feedback operates in the core journey"]
-        }
-      ],
       "accessibility": ["labelled status"],
       "visualProof": {
         "status": "covered",
@@ -1537,14 +1294,6 @@
           "states": ["info", "success", "warning", "error", "with-action", "with-icon"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "runtime consumers app-wide: reader and Mushaf asset gates and corpus states, bookmarks route error, edition-unavailable settings state, and unsupported-hash fallback. Durable e2e coverage is bounded by the smoke charter; storybook states remain the per-state matrix."
-          ]
-        }
-      ],
       "accessibility": [
         "role=status with polite live region semantics for non-error tones",
         "role=alert only for the error tone",
@@ -1560,6 +1309,24 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not hand-roll empty, error, offline, or gate surfaces outside Status."]
+    },
+    {
+      "id": "stepper",
+      "name": "Stepper",
+      "maturity": "behavior",
+      "exportPath": "src/components/ui/form-controls.tsx",
+      "namedExport": "Stepper",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["group", "decrease", "value", "increase"],
+      "dependencies": { "radix": [], "icons": [] },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [{ "path": "src/components/settings/settings.stories.tsx", "states": ["Verse settings"] }],
+      "accessibility": ["labelled group", "named buttons", "live value", "disabled endpoints"],
+      "visualProof": { "status": "covered", "references": ["src/components/settings/settings.stories.tsx"] },
+      "owner": { "surface": "react-design-system", "package": "src/components/ui" },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": ["Do not use for continuous values."]
     },
     {
       "id": "surah-list",
@@ -1579,12 +1346,6 @@
         {
           "path": "src/components/navigation/navigation.stories.tsx",
           "states": ["default", "loading", "error"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["navigation list rows operate in the core reader journey"]
         }
       ],
       "accessibility": [
@@ -1621,12 +1382,6 @@
         {
           "path": "src/components/reader/reader.stories.tsx",
           "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["surah selector opens from the chrome title and filters by name, number, and verse reference"]
         }
       ],
       "accessibility": [
@@ -1666,12 +1421,6 @@
           "states": ["checked", "unchecked", "disabled"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["settings switches operate in the core settings journey"]
-        }
-      ],
       "accessibility": ["labelled switch", "keyboard toggle"],
       "visualProof": {
         "status": "covered",
@@ -1704,14 +1453,6 @@
           "states": ["selected"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": [
-            "reusable tabbed-content primitive retained for composing consumers; current product consumers are none, so durable e2e coverage is bounded by the smoke charter and storybook states remain the per-state matrix."
-          ]
-        }
-      ],
       "accessibility": ["labelled tablist", "tabpanel content"],
       "visualProof": {
         "status": "covered",
@@ -1732,7 +1473,7 @@
       "namedExport": "ThemeControls",
       "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["themeRadiogroup", "dimSwitch", "dimPreview"],
+      "slots": ["themeRadiogroup"],
       "dependencies": {
         "radix": [],
         "icons": ["lucide-react"]
@@ -1744,16 +1485,9 @@
           "states": ["default", "dim-page-images"]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["theme offers a system-following option and dimming is named by effect"]
-        }
-      ],
       "accessibility": [
         "one theme selector (Light/Sepia/Dark/System)",
-        "swatch selected state is tint + border + check",
-        "dim switch labelled by effect (repair A3)"
+        "selected state is the ink-pill segmented treatment"
       ],
       "visualProof": {
         "status": "covered",
@@ -1784,12 +1518,6 @@
         {
           "path": "src/components/ui/ui.stories.tsx",
           "states": ["closed", "open"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["reader chrome tooltips operate in the core reader journey"]
         }
       ],
       "accessibility": ["triggered description", "keyboard hover coverage"],
@@ -1835,16 +1563,6 @@
           ]
         }
       ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["verse translation text renders in the core reader journey"]
-        },
-        {
-          "path": "tests/e2e/offline-lifecycle.spec.ts",
-          "behaviors": ["cached verse content renders offline"]
-        }
-      ],
       "accessibility": [
         "medallion is not a button",
         "selection is tint + border + check",
@@ -1880,12 +1598,6 @@
         {
           "path": "src/components/settings/settings.stories.tsx",
           "states": ["default"]
-        }
-      ],
-      "tests": [
-        {
-          "path": "tests/e2e/core-smoke.spec.ts",
-          "behaviors": ["verse spacing offers three plain-language options"]
         }
       ],
       "accessibility": [

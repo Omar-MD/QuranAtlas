@@ -122,7 +122,7 @@ export function SegmentedControl({
         return (
           <label
             className={cn(
-              'qar-react-segmented-option qar:flex qar:min-h-11 qar:min-w-0 qar:items-center qar:justify-center qar:rounded-full qar:px-3 qar:text-sm',
+              'qar-react-segmented-option qar:relative qar:flex qar:min-h-11 qar:min-w-0 qar:items-center qar:justify-center qar:rounded-full qar:px-3 qar:text-sm',
               selected ? 'qar-react-segmented-option--selected' : 'qar:text-muted qar:hover:text-text',
             )}
             key={option.value}
@@ -130,7 +130,7 @@ export function SegmentedControl({
             <input
               aria-label={accname}
               checked={selected}
-              className="qar:sr-only"
+              className="qar:absolute qar:inset-0 qar:m-0 qar:h-full qar:w-full qar:cursor-pointer qar:opacity-0"
               disabled={option.disabled}
               name={groupName}
               onChange={() => selectOption(option.value)}
@@ -141,6 +141,48 @@ export function SegmentedControl({
           </label>
         )
       })}
+    </fieldset>
+  )
+}
+
+export type StepperProps = {
+  label: string
+  options: Array<{ label: string; value: string }>
+  value: string
+  onValueChange: (value: string) => void
+}
+
+export function Stepper({ label, options, value, onValueChange }: StepperProps) {
+  const index = options.findIndex((option) => option.value === value)
+  return (
+    <fieldset aria-label={label} className="qar-react-stepper">
+      <button
+        aria-label={`Decrease ${label}`}
+        className="qar-react-stepper-button"
+        disabled={index <= 0}
+        onClick={() => {
+          const previous = options[index - 1]
+          if (previous) onValueChange(previous.value)
+        }}
+        type="button"
+      >
+        A−
+      </button>
+      <output aria-live="polite" className="qar-react-stepper-value">
+        {options[index]?.label ?? value}
+      </output>
+      <button
+        aria-label={`Increase ${label}`}
+        className="qar-react-stepper-button"
+        disabled={index < 0 || index >= options.length - 1}
+        onClick={() => {
+          const next = options[index + 1]
+          if (next) onValueChange(next.value)
+        }}
+        type="button"
+      >
+        A+
+      </button>
     </fieldset>
   )
 }

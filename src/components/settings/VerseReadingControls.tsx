@@ -1,4 +1,4 @@
-import { SegmentedControl, Slider, Switch } from '../ui'
+import { SegmentedControl, Stepper, Switch } from '../ui'
 import type { ReactPreferenceStep } from '../../storage/settings-writer'
 
 const ARABIC_STEPS: ReactPreferenceStep[] = ['xs', 'sm', 'md', 'lg', 'xl']
@@ -27,31 +27,15 @@ function SizeStepControl({
   steps: ReactPreferenceStep[]
   value: ReactPreferenceStep
 }) {
-  const index = Math.max(0, steps.indexOf(value))
   return (
     <div className="qar-react-settings-row qar-react-settings-row--font-size">
-      <span className="qar-react-settings-row-copy">
-        <span className="qar-react-settings-row-label">{label}</span>
-        <span className="qar-react-settings-row-control">{stepLabel(value, index, steps.length)}</span>
-      </span>
-      <div className="qar-react-settings-font-slider">
-        <span aria-hidden="true" className="qar-react-settings-font-size-mark qar-react-settings-font-size-mark--small">
-          A
-        </span>
-        <Slider
-          className="qar-react-settings-font-size-slider"
-          hideLabel
-          label={label}
-          max={steps.length - 1}
-          min={0}
-          onValueChange={([nextValue]) => onChange(steps[nextValue ?? 2] ?? 'md')}
-          step={1}
-          value={[index]}
-        />
-        <span aria-hidden="true" className="qar-react-settings-font-size-mark qar-react-settings-font-size-mark--large">
-          A
-        </span>
-      </div>
+      <span className="qar-react-settings-row-label">{label}</span>
+      <Stepper
+        label={label}
+        options={steps.map((step, index) => ({ value: step, label: stepLabel(step, index, steps.length) }))}
+        onValueChange={(next) => onChange(next as ReactPreferenceStep)}
+        value={value}
+      />
     </div>
   )
 }

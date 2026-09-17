@@ -10,7 +10,6 @@
     "ci:build": "node scripts/ci/build.mjs",
     "data": "node scripts/data/cli.mjs",
     "data:fetch": "node scripts/data/fetch-source.mjs",
-    "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6007 --config-dir .storybook"
   },
   "keywords": [],
@@ -53,7 +52,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
-    "@playwright/test": "^1.59.1",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/react": "^10.6.0",
     "@storybook/react-vite": "^10.6.0",

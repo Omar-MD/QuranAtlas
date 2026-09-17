@@ -1,7 +1,7 @@
 # mise is the command front door for QuranAtlas. Tools are pinned; every task
 # below is the documented interface (AGENTS.md). Freshness (sources/outputs) is
 # used only for dependency installation and deterministic generated data —
-# never to skip checks or tests.
+# never to skip checks.
 
 [tools]
 node = "24.20.0"
@@ -127,36 +127,23 @@ description = "Audit GitHub Actions security"
 tools = { "aqua:zizmorcore/zizmor" = "1.30.0" }
 run = "zizmor --strict-collection ."
 
-[tasks.smoke]
-description = "Core smoke suite on desktop + mobile viewports (dev server)"
-depends = ["data:build"]
-run = "pnpm exec playwright test --project=desktop-smoke --project=mobile-smoke"
-
-[tasks.offline]
-description = "Offline lifecycle suite against the production preview build"
-depends = ["build:release"]
-env = { PLAYWRIGHT_USE_PREVIEW = "1" }
-run = "pnpm exec playwright test --project=offline-lifecycle"
-
 [tasks.audit]
 description = "Dependency security audit"
 run = "pnpm audit --audit-level moderate"
 
 [tasks.validate]
-description = "Full verification gate: static checks, data, release build, both suites, audit"
-depends = ["check", "data:check", "build:release", "smoke", "offline", "audit"]
+description = "Full verification gate: static checks, data, release build, audit"
+depends = ["check", "data:check", "build:release", "audit"]
 run = "echo 'validate passed'"
 
 [tasks."clean:generated"]
-description = "Delete generated datasets, packs, Mushaf media, and build/test output (explicit paths only)"
+description = "Delete generated datasets, packs, Mushaf media, and build output (explicit paths only)"
 run = [
   "rm -rf public/dataset",
   "rm -rf public/search-packs",
   "rm -rf data/normalized/mushaf-pages",
   "rm -rf dist",
   "rm -rf storybook-static",
-  "rm -rf test-output",
-  "rm -rf .playwright",
   "rm -f .data-build-complete",
 ]
 

@@ -164,52 +164,42 @@ export function SettingsRoute({
         </div>
       ) : (
         <>
-          <SettingsGroup description="Applies to the view you are reading in." title="Reading">
+          <SettingsGroup title="Appearance">
+            <ThemeControls onThemeChange={setTheme} theme={preferences.theme} />
+          </SettingsGroup>
+
+          <SettingsGroup title="Reading">
             {mode === 'verse' ? (
-              <VerseReadingControls
-                fontSize={preferences.fontSize}
-                onFontSizeChange={setFontSize}
-                onTranslationFontSizeChange={setTranslationFontSize}
-                onVerseSpacingChange={setVerseSpacing}
-                onWirdVisibleChange={setWirdReaderStatusVisible}
-                showContinuityToggle
-                translationFontSize={preferences.translationFontSize}
-                verseSpacing={preferences.verseSpacing}
-                wirdVisible={preferences.wirdReaderStatusVisible}
-              />
+              <>
+                <VerseReadingControls
+                  fontSize={preferences.fontSize}
+                  onFontSizeChange={setFontSize}
+                  onTranslationFontSizeChange={setTranslationFontSize}
+                  onVerseSpacingChange={setVerseSpacing}
+                  onWirdVisibleChange={setWirdReaderStatusVisible}
+                  showContinuityToggle
+                  translationFontSize={preferences.translationFontSize}
+                  verseSpacing={preferences.verseSpacing}
+                  wirdVisible={preferences.wirdReaderStatusVisible}
+                />
+                <div className="qar-react-settings-row">
+                  <span className="qar-react-settings-row-label">Translation</span>
+                  <TranslationSelector onChange={setTranslationVisible} value={preferences.translationVisible} />
+                </div>
+              </>
             ) : (
               <MushafSettings
+                dimPageImages={preferences.dimPageImages}
                 framing={preferences.mushafPageFraming}
                 framingWriteStatus={mushafFramingWriteStatus}
                 hasValidFraming={framingCapability.hasValidFraming}
                 mode={preferences.mushafViewMode}
+                onDimPageImagesChange={setDimPageImages}
                 onFramingChange={setMushafPageFraming}
                 onModeChange={setMushafViewMode}
                 onRetryFraming={retryMushafPageFraming}
               />
             )}
-          </SettingsGroup>
-
-          <SettingsGroup title="Translation">
-            <div className="qar-react-settings-row">
-              <span className="qar-react-settings-row-copy">
-                <span className="qar-react-settings-row-label">Translation</span>
-                <span className="qar-react-settings-row-control">Shown below each verse</span>
-              </span>
-              <TranslationSelector
-                onChange={(visible) => setTranslationVisible(visible)}
-                value={preferences.translationVisible}
-              />
-            </div>
-          </SettingsGroup>
-
-          <SettingsGroup title="Appearance">
-            <ThemeControls
-              dimPageImages={preferences.dimPageImages}
-              onDimPageImagesChange={setDimPageImages}
-              onThemeChange={setTheme}
-              theme={preferences.theme}
-            />
           </SettingsGroup>
         </>
       )}
@@ -221,10 +211,6 @@ export function SettingsRoute({
   )
 }
 
-// Translation section: the shipped translation list (existing data); the
-// switch controls visibility (existing behaviour).
-const AVAILABLE_TRANSLATIONS = [{ id: 'bridges', label: 'Bridges — Fadel Soliman (Quranic Universal Library)' }]
-
 function TranslationSelector({ onChange, value }: { onChange: (visible: boolean) => void; value: boolean }) {
   return (
     <Select
@@ -232,8 +218,8 @@ function TranslationSelector({ onChange, value }: { onChange: (visible: boolean)
       label="Translation"
       onValueChange={(next) => onChange(next === 'bridges')}
       options={[
-        ...AVAILABLE_TRANSLATIONS.map((translation) => ({ label: translation.label, value: translation.id })),
-        { label: 'Off — Arabic only', value: 'off' },
+        { label: 'Bridges', value: 'bridges' },
+        { label: 'Off', value: 'off' },
       ]}
     />
   )
