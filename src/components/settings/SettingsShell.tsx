@@ -2,14 +2,19 @@ import type { ReactNode } from 'react'
 
 import { Sheet, SheetBody } from '../ui'
 
+// Shared settings/Wird shell (brief §15.3): one 56 px title bar, ✕ tier,
+// gutters and full-height/adaptive behaviour on every breakpoint. The Wird
+// sheet renders through this shell with its own close label.
 export function SettingsShell({
   children,
+  closeLabel = 'Close settings',
   onClose,
   returnFocusId,
   subtitle,
   title,
 }: {
   children: ReactNode
+  closeLabel?: string
   onClose: () => void
   returnFocusId?: string
   subtitle: string
@@ -17,7 +22,7 @@ export function SettingsShell({
 }) {
   return (
     <Sheet
-      closeLabel="Close settings"
+      closeLabel={closeLabel}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}

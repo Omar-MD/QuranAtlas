@@ -7,6 +7,7 @@ import { NavigationPageRecipe } from '../design-system/recipes/navigation-page'
 import { LaunchSplash } from '../components/launch/LaunchSplash'
 import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/routes'
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
+import { subscribeReactWirdOverlayRequests } from './wird-overlay-events'
 import { shouldPersistLastSurface, useLaunchRestore } from '../continuity/launch-restore'
 import { normalizeLastSurface } from '../continuity/last-surface'
 import {
@@ -37,6 +38,7 @@ const SettingsRoute = lazy(() =>
 const SurahsRoute = lazy(() =>
   import('./routes/navigation/SurahsRoute').then((module) => ({ default: module.SurahsRoute })),
 )
+const WirdSheet = lazy(() => import('../components/wird/WirdSheet').then((module) => ({ default: module.WirdSheet })))
 
 export function App() {
   useWirdReminderScheduler()
@@ -47,9 +49,11 @@ export function App() {
   const [settingsOverlay, setSettingsOverlay] = useState<{
     initialAssetsExpanded?: boolean
     mode: SettingsRouteMode
+    openHash: string
     previousHash: string
     returnFocusId?: string
   } | null>(null)
+  const [wirdOverlay, setWirdOverlay] = useState<{ returnFocusId?: string } | null>(null)
   const upgradeBlocked = useSyncExternalStore(subscribeReaderUpgrade, isReaderUpgradeBlocked, () => false)
   const launchRestore = useLaunchRestore(hash)
   const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : hash
@@ -115,9 +119,18 @@ export function App() {
         setLastBaseHash(previousHash)
         setSettingsOverlay({
           mode: settingsModeForHash(previousHash),
+          openHash: previousHash,
           previousHash,
           returnFocusId: request.returnFocusId,
         })
+      }),
+    [],
+  )
+
+  useEffect(
+    () =>
+      subscribeReactWirdOverlayRequests((request) => {
+        setWirdOverlay({ returnFocusId: request.returnFocusId })
       }),
     [],
   )
@@ -153,6 +166,7 @@ export function App() {
       setSettingsOverlay({
         initialAssetsExpanded,
         mode: settingsModeForHash(previousHash),
+        openHash: activeHash,
         previousHash,
       })
       window.history.replaceState(null, '', previousHash)
@@ -167,8 +181,17 @@ export function App() {
 
   function closeSettingsOverlay() {
     const previousHash = settingsOverlay?.previousHash
+    const openHash = settingsOverlay?.openHash
     setSettingsOverlay(null)
-    if (previousHash && window.location.hash !== previousHash) {
+    if (!previousHash) return
+    // G-8: only restore when the hash still matches what was active when the
+    // overlay opened (or sits on a transient settings hash); a navigation
+    // issued while closing must win.
+    const currentHash = window.location.hash
+    const navigatedAway =
+      currentHash !== openHash && currentHash !== REACT_ROUTES.settings && currentHash !== REACT_ROUTES.assets
+    if (navigatedAway) return
+    if (currentHash !== previousHash) {
       window.history.replaceState(null, '', previousHash)
       setHash(previousHash)
     }
@@ -222,6 +245,7 @@ export function App() {
           )}
           {(route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'unsupported') && (
             <NavigationRouteHost
+              currentRoute={route.type === 'bookmarks' ? 'bookmarks' : null}
               statusMessage={
                 route.type === 'surahs' ? 'Surahs' : route.type === 'bookmarks' ? 'Bookmarks' : 'Unavailable'
               }
@@ -241,6 +265,11 @@ export function App() {
                 previousHash={settingsOverlay.previousHash}
                 returnFocusId={settingsOverlay.returnFocusId}
               />
+            </Suspense>
+          )}
+          {wirdOverlay && (
+            <Suspense fallback={null}>
+              <WirdSheet onClose={() => setWirdOverlay(null)} returnFocusId={wirdOverlay.returnFocusId} />
             </Suspense>
           )}
         </Suspense>

@@ -60,21 +60,22 @@ export function SurahsRoute() {
             onChange={(event) => setQuery(event.currentTarget.value)}
             onKeyDown={handleSearchKeyDown}
             placeholder="Filter by name, number, or verse"
-            prefix={
-              <SearchIcon aria-hidden="true" className="qar-react-nav-drawer-search-icon" size={15} strokeWidth={1.7} />
-            }
+            prefix={<SearchIcon aria-hidden="true" size={15} strokeWidth={1.7} />}
             type="search"
             value={query}
           />
-          <SegmentedControl
-            label="Show"
-            onValueChange={(next) => setFilter(next as SurahsFilter)}
-            options={[
-              { label: 'All', value: 'all' },
-              { label: 'Recent', value: 'recent' },
-            ]}
-            value={filter}
-          />
+          {/* Content-sized pill, left-aligned (brief §4.16). */}
+          <div className="qar:justify-self-start">
+            <SegmentedControl
+              label="Show"
+              onValueChange={(next) => setFilter(next as SurahsFilter)}
+              options={[
+                { label: 'All', value: 'all' },
+                { label: 'Recent', value: 'recent' },
+              ]}
+              value={filter}
+            />
+          </div>
         </div>
         <SurahList
           filter={filter}

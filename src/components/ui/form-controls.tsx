@@ -23,11 +23,27 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   ref,
 ) {
   const inputId = id ?? `qa-input-${label.replace(/\W+/g, '-').toLowerCase()}`
+  const field = (
+    <input
+      className={cn(fieldClass, prefix ? 'qar-react-input-prefixed' : undefined, className)}
+      id={inputId}
+      ref={ref}
+      {...props}
+    />
+  )
   return (
     <label className={cn(labelClass, labelClassName)} htmlFor={inputId}>
       <span className={hideLabel ? 'qar:sr-only' : undefined}>{label}</span>
-      {prefix}
-      <input className={cn(fieldClass, className)} id={inputId} ref={ref} {...props} />
+      {prefix ? (
+        <span className="qar-react-input-prefix-wrap">
+          <span aria-hidden="true" className="qar-react-input-prefix">
+            {prefix}
+          </span>
+          {field}
+        </span>
+      ) : (
+        field
+      )}
     </label>
   )
 })
@@ -146,14 +162,20 @@ export function SegmentedControl({
 }
 
 export type StepperProps = {
+  /** Reading-face glyphs: latin "A" (Newsreader) or arabic "ع" (Arabic face). */
+  glyph?: 'latin' | 'arabic'
   label: string
   options: Array<{ label: string; value: string }>
   value: string
   onValueChange: (value: string) => void
 }
 
-export function Stepper({ label, options, value, onValueChange }: StepperProps) {
+// Content-sized stepper (brief §4.1): exactly two 44 px glyph buttons and a
+// 64 px value cell — never full width. The glyphs are decorative; the buttons
+// carry the accessible names and the value cell is the live region.
+export function Stepper({ glyph = 'latin', label, options, value, onValueChange }: StepperProps) {
   const index = options.findIndex((option) => option.value === value)
+  const glyphChar = glyph === 'arabic' ? 'ع' : 'A'
   return (
     <fieldset aria-label={label} className="qar-react-stepper">
       <button
@@ -166,7 +188,12 @@ export function Stepper({ label, options, value, onValueChange }: StepperProps) 
         }}
         type="button"
       >
-        A−
+        <span
+          aria-hidden="true"
+          className={`qar-react-stepper-glyph qar-react-stepper-glyph--${glyph} qar-react-stepper-glyph--decrease`}
+        >
+          {glyphChar}
+        </span>
       </button>
       <output aria-live="polite" className="qar-react-stepper-value">
         {options[index]?.label ?? value}
@@ -181,7 +208,12 @@ export function Stepper({ label, options, value, onValueChange }: StepperProps) 
         }}
         type="button"
       >
-        A+
+        <span
+          aria-hidden="true"
+          className={`qar-react-stepper-glyph qar-react-stepper-glyph--${glyph} qar-react-stepper-glyph--increase`}
+        >
+          {glyphChar}
+        </span>
       </button>
     </fieldset>
   )

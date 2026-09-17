@@ -24,7 +24,7 @@ function clampIndex(index: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.floor(index)))
 }
 
-function inclusiveDays(fromDay: string, toDay: string): number {
+export function inclusiveDays(fromDay: string, toDay: string): number {
   const from = new Date(`${fromDay}T00:00:00`)
   const to = new Date(`${toDay}T00:00:00`)
   const days = Math.floor((to.getTime() - from.getTime()) / 86_400_000) + 1
@@ -86,6 +86,41 @@ export function createWirdPlan(
     ...base,
     progress: {
       ...base.progress,
+      nextRef: assignment.nextRef,
+      todayEndRef: assignment.todayEnd,
+      todayStartRef: assignment.todayStart,
+    },
+  }
+}
+
+// Edit-preserving plan update (brief §15.4.2): change the finish date, unit
+// and reminder while keeping the plan identity and progress — today's
+// assignment is recomputed from the existing completedThroughRef, never reset.
+export function updateWirdPlanTarget(
+  plan: WirdPlan,
+  target: { reminder: WirdReminder; targetEndOn: string; unit: WirdUnit },
+  counts: ReadonlyArray<SurahCount>,
+  dayKey = getLocalDayKey(),
+): WirdPlan {
+  const targetDays = inclusiveDays(plan.startedOn, target.targetEndOn)
+  const assignment = computeAssignment(
+    {
+      endRef: plan.endRef,
+      progress: plan.progress,
+      startRef: plan.startRef,
+      targetEndOn: target.targetEndOn,
+    },
+    counts,
+    dayKey,
+  )
+  return {
+    ...plan,
+    reminder: target.reminder,
+    targetDays,
+    targetEndOn: target.targetEndOn,
+    unit: target.unit,
+    progress: {
+      ...plan.progress,
       nextRef: assignment.nextRef,
       todayEndRef: assignment.todayEnd,
       todayStartRef: assignment.todayStart,

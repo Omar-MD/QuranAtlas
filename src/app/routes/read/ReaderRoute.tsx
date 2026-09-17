@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Bookmark, CaseSensitive } from 'lucide-react'
+import { CaseSensitive } from 'lucide-react'
 
 import { loadReaderSurah, type ReaderCorpusState } from '../../../data/reader-corpus'
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
@@ -32,7 +32,6 @@ import { readWirdPlan, subscribeWirdPlanChanged } from '../../../continuity/wird
 import { createWirdBoundaries } from '../../../continuity/wird/metadata'
 import { loadReactWirdPageBoundaries } from '../../../continuity/wird/page-boundaries'
 import { deriveWirdSummary } from '../../../continuity/wird/progress'
-import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
 import type { SurahCount, WirdBoundary, WirdPlan } from '../../../continuity/wird/types'
 import { useSharedBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 
@@ -123,7 +122,9 @@ export function ReaderRoute({
     () => deriveWirdSummary(wirdPlan, wirdCounts, { boundaries: wirdBoundaries }),
     [wirdBoundaries, wirdCounts, wirdPlan],
   )
-  const enableWirdProgress = hasWirdProgressIntent()
+  // §15.4.8: progress counts for any reading inside today's range — no
+  // URL intent gate; a complete surah index plus an existing plan is enough.
+  const enableWirdProgress = wirdPlan !== null && wirdCounts.length === 114
   const { selectedVerseKey, selectVerse } = useVerseInteractionReducer()
   const { getCurrentPosition, syncPosition } = useReaderPositionSync(corpus, {
     enableWirdProgress,
@@ -131,6 +132,7 @@ export function ReaderRoute({
     wirdCounts: wirdProgressCounts,
   })
   const { bookmarkedVerseKeys, toggleBookmark } = useSharedBookmarks()
+  const [positionVerseKey, setPositionVerseKey] = useState<string | null>(null)
 
   useEffect(
     () =>
@@ -219,7 +221,8 @@ export function ReaderRoute({
   }, [surah, corpusRequestToken])
 
   // S3: live verse range in the compact header ("Al-Fātiḥah · 1–4") updates on
-  // scroll from the verse groups actually in view.
+  // scroll from the verse groups actually in view. The header position
+  // bookmark recomputes from the same measurement (brief §4.10).
   useEffect(() => {
     if (corpus.status !== 'ready') return undefined
     function measureRange() {
@@ -235,6 +238,8 @@ export function ReaderRoute({
         if (last === null || verse > last) last = verse
       }
       setVerseRange(first !== null && last !== null ? (first === last ? `${first}` : `${first}–${last}`) : undefined)
+      const position = getCurrentPosition()
+      setPositionVerseKey(position ? `${position.surah}:${position.verse}` : null)
     }
     let frame = 0
     function onScroll() {
@@ -250,7 +255,7 @@ export function ReaderRoute({
       if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', onScroll)
     }
-  }, [corpus])
+  }, [corpus, getCurrentPosition])
 
   useEffect(() => {
     const routeKey = `${surah}:${ayah}`
@@ -295,39 +300,43 @@ export function ReaderRoute({
     void toggleBookmark({ surah: position?.surah ?? surah, verseKey })
   }, [getCurrentPosition, surah, toggleBookmark])
 
+  const bookmarkKey = positionVerseKey ?? `${surah}:1`
+  const verseBookmarked = bookmarkedVerseKeys.has(bookmarkKey)
+  const positionBookmark = {
+    saved: verseBookmarked,
+    label: verseBookmarked ? `Remove bookmark for verse ${bookmarkKey}` : `Bookmark verse ${bookmarkKey}`,
+    onToggle: toggleBookmarkForPosition,
+  }
+
+  const goMushaf = useCallback(() => {
+    const currentPosition = getCurrentPosition()
+    const hrefPromise =
+      currentPosition?.surah === surah
+        ? resolveMushafHrefForVerseRef(currentPosition)
+        : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
+    void hrefPromise.then((href) => {
+      window.location.hash = href
+    })
+  }, [ayah, getCurrentPosition, surah])
+
   const bottomStrip = (
     <div className="qar-reader-bottom-strip" data-bottom-strip="verse">
       <div className="qar-reader-bottom-strip-left">
         <ReadingViewToggle
-          compact
           mode="verse"
           onModeChange={(nextMode) => {
             if (nextMode !== 'mushaf') return
-            const currentPosition = getCurrentPosition()
-            const hrefPromise =
-              currentPosition?.surah === surah
-                ? resolveMushafHrefForVerseRef(currentPosition)
-                : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
-            void hrefPromise.then((href) => {
-              window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
-            })
+            goMushaf()
           }}
+          variant="icon"
         />
       </div>
-      <div className="qar-reader-bottom-strip-center">
-        <IconButton
-          className="qar-reader-chrome-icon"
-          label="Bookmark current verse"
-          onClick={toggleBookmarkForPosition}
-        >
-          <Bookmark aria-hidden="true" size={20} strokeWidth={1.7} />
-        </IconButton>
-      </div>
+      <div className="qar-reader-bottom-strip-center" />
       <div className="qar-reader-bottom-strip-right">
         <IconButton
           className="qar-reader-chrome-icon"
           id="reader-adjustments-trigger"
-          label="Text size"
+          label="Text and spacing"
           onClick={() => setAdjustmentsOpen(true)}
         >
           <CaseSensitive aria-hidden="true" size={22} strokeWidth={1.7} />
@@ -343,16 +352,10 @@ export function ReaderRoute({
       mode="verse"
       onModeChange={(nextMode) => {
         if (nextMode === 'mushaf') {
-          const currentPosition = getCurrentPosition()
-          const hrefPromise =
-            currentPosition?.surah === surah
-              ? resolveMushafHrefForVerseRef(currentPosition)
-              : resolveMushafHrefForVerseRoute({ explicitVerse: ayah !== undefined, surah, verse: ayah ?? 1 })
-          void hrefPromise.then((href) => {
-            window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
-          })
+          goMushaf()
         }
       }}
+      positionBookmark={positionBookmark}
       showWirdStatus={wirdReaderStatusVisible}
       surahName={surahName}
       verseRange={verseRange}

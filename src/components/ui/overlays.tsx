@@ -3,7 +3,6 @@ import { X } from 'lucide-react'
 import { useRef, useState, type ReactNode, type RefObject } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
-import { Button } from './button'
 
 type OverlayBaseProps = {
   title: string
@@ -18,12 +17,18 @@ export type DialogProps = OverlayBaseProps & {
   initialFocusRef?: RefObject<HTMLElement | null>
 }
 
+// Shared overlay close (brief §4.6): one plain-icon tier for Sheet and
+// Dialog — 20 px X, muted to ink on hover, 44 px target, no border or
+// background. A Radix Close cannot wrap the Tooltip inside IconButton, so the
+// same classes are applied to the Close control itself.
 function CloseButton({ label = 'Close' }: { label?: string }) {
   return (
-    <DialogPrimitive.Close asChild>
-      <Button aria-label={label} size="sm" variant="ghost">
-        <X aria-hidden="true" size={16} />
-      </Button>
+    <DialogPrimitive.Close
+      aria-label={label}
+      className="qar:inline-flex qar:min-h-11 qar:min-w-11 qar:items-center qar:justify-center qar:rounded-control qar:bg-transparent qar:text-muted qar:transition-colors qar:hover:text-text qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar-react-overlay-close"
+      type="button"
+    >
+      <X aria-hidden="true" size={20} strokeWidth={1.7} />
     </DialogPrimitive.Close>
   )
 }
@@ -77,7 +82,7 @@ export type SheetProps = OverlayBaseProps & {
   closeLabel?: string
   returnFocusId?: string
   suppressCloseAutoFocus?: boolean
-  variant?: 'default' | 'adaptive-settings' | 'navigation-drawer'
+  variant?: 'default' | 'adaptive-settings' | 'navigation-drawer' | 'quick'
 }
 
 export function Sheet({
@@ -93,9 +98,11 @@ export function Sheet({
   variant = 'default',
 }: SheetProps) {
   const invoker = useRef<HTMLElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
   const dragStart = useRef<{ x: number; y: number } | null>(null)
   const [expanded, setExpanded] = useState(false)
   const isNavigationDrawer = variant === 'navigation-drawer'
+  const isQuick = variant === 'quick'
   // S6: the navigation drawer is unambiguously modal everywhere — scrim,
   // focus trap, Esc close; Radix owns the trap for every variant.
   return (
@@ -112,7 +119,9 @@ export function Sheet({
           className={
             isNavigationDrawer
               ? 'qar:fixed qar:inset-0 qar:z-40 qar-react-scrim qar-react-sheet-scrim'
-              : 'qar:fixed qar:inset-0 qar:z-[125] qar-react-scrim'
+              : isQuick
+                ? 'qar:fixed qar:inset-0 qar:z-[125] qar-react-scrim-quiet'
+                : 'qar:fixed qar:inset-0 qar:z-[125] qar-react-scrim'
           }
         />
         <DialogPrimitive.Content
@@ -124,9 +133,6 @@ export function Sheet({
           }
           data-sheet-variant={variant}
           data-expanded={expanded ? 'true' : 'false'}
-          onOpenAutoFocus={() => {
-            invoker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
-          }}
           onCloseAutoFocus={(event) => {
             // Route-transition closes hand focus to the destination route.
             if (suppressCloseAutoFocus) {
@@ -147,14 +153,26 @@ export function Sheet({
             event.preventDefault()
             target.focus({ preventScroll: true })
           }}
+          onOpenAutoFocus={(event) => {
+            invoker.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+            // Initial focus lands on the content container (brief §4.5): no
+            // ring shows on the close control when the sheet is opened by
+            // touch; keyboard users still reach it with Tab.
+            if (isNavigationDrawer || !contentRef.current) return
+            event.preventDefault()
+            contentRef.current.focus({ preventScroll: true })
+          }}
+          ref={contentRef}
+          tabIndex={isNavigationDrawer ? undefined : -1}
         >
           {isNavigationDrawer ? (
             <DialogPrimitive.Title className="qar:sr-only">{title}</DialogPrimitive.Title>
           ) : (
             <div
-              className="qar:flex qar:items-center qar:justify-between qar:gap-3 qar-react-sheet-handle"
+              className={isQuick ? 'qar-react-sheet-quick-head' : 'qar-react-sheet-handle'}
               onPointerDown={(event) => {
-                if (variant !== 'default' || (event.target as HTMLElement).closest('button')) return
+                if ((event.target as HTMLElement).closest('button')) return
+                if (variant !== 'default' && !isQuick) return
                 dragStart.current = { x: event.clientX, y: event.clientY }
                 event.currentTarget.setPointerCapture(event.pointerId)
               }}
@@ -163,9 +181,9 @@ export function Sheet({
                 dragStart.current = null
                 if (!start || Math.abs(event.clientX - start.x) > Math.abs(event.clientY - start.y)) return
                 const delta = event.clientY - start.y
-                if (delta < -60) setExpanded(true)
+                if (delta < -60 && variant === 'default') setExpanded(true)
                 if (delta > 60) {
-                  if (expanded) setExpanded(false)
+                  if (variant === 'default' && expanded) setExpanded(false)
                   else onOpenChange?.(false)
                 }
               }}
@@ -173,8 +191,11 @@ export function Sheet({
                 dragStart.current = null
               }}
             >
-              <DialogPrimitive.Title className="qar:m-0 qar:text-base qar:font-semibold">{title}</DialogPrimitive.Title>
-              <CloseButton label={closeLabel} />
+              {isQuick ? <span aria-hidden="true" className="qar-react-sheet-grabber" /> : null}
+              <div className="qar-react-sheet-titlebar">
+                <DialogPrimitive.Title className="qar-react-sheet-title">{title}</DialogPrimitive.Title>
+                <CloseButton label={closeLabel} />
+              </div>
             </div>
           )}
           {children}

@@ -9,7 +9,7 @@
       "namedExport": "AboutRoute",
       "allowedVariants": ["default", "app-update-check", "clear-data-confirmation"],
       "allowedSizes": [],
-      "slots": ["root", "attribution", "install", "appUpdate", "clearData"],
+      "slots": ["root", "notationDisclosure", "sourcesDisclosure", "reportLink", "install", "appUpdate", "clearData"],
       "dependencies": {
         "radix": [],
         "icons": []
@@ -25,7 +25,8 @@
         "main landmark",
         "semantic attribution section",
         "polite app update status",
-        "dialog focus and escape handled by owned Dialog primitive"
+        "dialog focus and escape handled by owned Dialog primitive",
+        "sources and licenses is a disclosure row with aria-expanded matching the notation guide row"
       ],
       "visualProof": {
         "status": "covered",
@@ -326,7 +327,8 @@
       "accessibility": [
         "chrome bar wordmark, destination hamburger, and settings gear are labelled controls",
         "one polite status region per page; no duplicate live announcements",
-        "visible focus through owned primitives"
+        "visible focus through owned primitives",
+        "nav drawer Daily Wird row opens the Wird sheet via requestReactWirdOverlay; Downloads row navigates to the assets surface"
       ],
       "visualProof": {
         "status": "covered",
@@ -338,38 +340,6 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not mount a second drawer host or app header outside the shared chrome composition."]
-    },
-    {
-      "id": "daily-wird-card",
-      "name": "DailyWirdCard",
-      "maturity": "product",
-      "exportPath": "src/components/reader/wird/DailyWirdCard.tsx",
-      "namedExport": "DailyWirdCard",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["root"],
-      "dependencies": {
-        "radix": [],
-        "icons": ["lucide-react"]
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/navigation/wird/wird.stories.tsx",
-          "states": ["default"]
-        }
-      ],
-      "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/navigation/wird/wird.stories.tsx"]
-      },
-      "owner": {
-        "surface": "read",
-        "package": "src/components/reader/wird"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
     },
     {
       "id": "dialog",
@@ -479,7 +449,7 @@
       "namedExport": "Input",
       "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["label", "input"],
+      "slots": ["label", "input", "prefix"],
       "dependencies": {
         "radix": [],
         "icons": []
@@ -664,6 +634,42 @@
       "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
     },
     {
+      "id": "mushaf-settings",
+      "name": "MushafSettings",
+      "maturity": "product",
+      "exportPath": "src/components/settings/MushafSettings.tsx",
+      "namedExport": "MushafSettings",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["pageMode", "view", "dimPageImages", "readingContinuity", "framingError"],
+      "dependencies": {
+        "radix": [],
+        "components": ["button", "segmented-control", "settings-row", "slider", "switch"],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": ["Mushaf settings", "dim-page-images"]
+        }
+      ],
+      "accessibility": [
+        "Reading group order: Page mode, View, Dim page images, Reading continuity",
+        "Dim page images switch disabled outside the dark resolved theme with an explanatory helper"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/settings/settings.stories.tsx"]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src/components/settings"
+      },
+      "allowedConsumers": ["src/app/routes/settings/**", "src/components/settings/**"],
+      "forbiddenUses": ["Do not change Mushaf settings values or semantics here."]
+    },
+    {
       "id": "nav-drawer",
       "name": "NavDrawer",
       "maturity": "product",
@@ -671,10 +677,10 @@
       "namedExport": "NavDrawer",
       "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["header", "destinations", "wird", "settingsRow", "aboutRow"],
+      "slots": ["header", "destinations", "downloadsRow", "settingsRow", "aboutRow", "wirdRow"],
       "dependencies": {
         "radix": [],
-        "components": ["button", "icon-button", "input", "segmented-control", "sheet"],
+        "components": ["button", "icon-button", "sheet"],
         "icons": ["lucide-react"]
       },
       "tokenNamespaces": ["--qa-react-*"],
@@ -687,7 +693,8 @@
       "accessibility": [
         "modal drawer everywhere with scrim and focus return",
         "active destination uses the selection treatment",
-        "Bookmarks row carries a count badge"
+        "Bookmarks row carries a count badge",
+        "Daily Wird row opens the Wird sheet after closing the drawer; no inline plan UI"
       ],
       "visualProof": {
         "status": "covered",
@@ -698,9 +705,7 @@
         "package": "src/components/navigation"
       },
       "allowedConsumers": ["src/**"],
-      "forbiddenUses": [
-        "No destination rail, search panel, inline surah filter, or inline lists (\u00a78 items 2/7/11)."
-      ]
+      "forbiddenUses": ["No destination rail, search panel, inline surah filter, or inline lists (§8 items 2/7/11)."]
     },
     {
       "id": "navigation-page-recipe",
@@ -806,6 +811,45 @@
       "forbiddenUses": ["Do not show progress using color alone."]
     },
     {
+      "id": "reader-chrome",
+      "name": "ReaderChrome",
+      "maturity": "product",
+      "exportPath": "src/components/reader/ReaderChrome.tsx",
+      "namedExport": "ReaderChrome",
+      "allowedVariants": ["verse", "mushaf"],
+      "allowedSizes": [],
+      "slots": ["menu", "title", "viewToggle", "positionBookmark", "settings", "wirdStatus"],
+      "dependencies": {
+        "radix": [],
+        "components": ["icon-button", "reading-view-toggle", "choice-button"],
+        "icons": ["lucide-react"]
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/reader/reader.stories.tsx",
+          "states": ["ReaderChromeWithWirdStatus", "VerseReadingViewToggle", "MushafReadingViewToggle"]
+        }
+      ],
+      "accessibility": [
+        "header order menu, title, position bookmark, settings",
+        "positionBookmark exposes aria-pressed and names the target verse or page",
+        "no Bookmarks destination icon in the header; the destination lives in the nav drawer"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/reader/reader.stories.tsx"]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/reader"
+      },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": [
+        "Do not reintroduce a header Bookmarks destination icon; the Bookmark glyph only toggles the reading position."
+      ]
+    },
+    {
       "id": "reader-page-recipe",
       "name": "ReaderPageRecipe",
       "maturity": "recipe",
@@ -894,14 +938,15 @@
       "id": "reader-wird-status-indicator",
       "name": "ReaderWirdStatusIndicator",
       "maturity": "product",
-      "exportPath": "src/components/reader/wird/ReaderWirdStatusIndicator.tsx",
+      "exportPath": "src/components/wird/ReaderWirdStatusIndicator.tsx",
       "namedExport": "ReaderWirdStatusIndicator",
       "allowedVariants": ["active", "today-complete", "plan-complete"],
       "allowedSizes": [],
       "slots": ["root", "progressRing"],
       "dependencies": {
         "radix": ["@radix-ui/react-tooltip"],
-        "icons": ["lucide-react"]
+        "icons": ["lucide-react"],
+        "components": ["wird-ring"]
       },
       "tokenNamespaces": ["--qa-react-*"],
       "stories": [
@@ -913,7 +958,8 @@
       "accessibility": [
         "button aria-label summarizes Daily Wird state",
         "visible focus through owned IconButton primitive",
-        "tooltip uses owned Tooltip primitive"
+        "tooltip uses owned Tooltip primitive",
+        "opens the Wird sheet via requestReactWirdOverlay"
       ],
       "visualProof": {
         "status": "covered",
@@ -921,13 +967,10 @@
       },
       "owner": {
         "surface": "read",
-        "package": "src/components/reader/wird"
+        "package": "src/components/wird"
       },
-      "allowedConsumers": ["src/components/reader/**"],
-      "forbiddenUses": [
-        "Do not replace the nav drawer Daily Wird card with this compact indicator.",
-        "Do not show this indicator when no active Wird plan exists."
-      ]
+      "allowedConsumers": ["src/components/reader/**", "src/components/wird/**"],
+      "forbiddenUses": ["Do not hand-roll a second header ring.", "Do not render the compact indicator on phones."]
     },
     {
       "id": "reading-view-toggle",
@@ -935,7 +978,7 @@
       "maturity": "product",
       "exportPath": "src/components/reader/ReadingViewToggle.tsx",
       "namedExport": "ReadingViewToggle",
-      "allowedVariants": ["default", "compact"],
+      "allowedVariants": ["segmented", "icon"],
       "allowedSizes": [],
       "slots": ["root", "icon", "tooltip"],
       "dependencies": {
@@ -959,8 +1002,10 @@
         "surface": "read",
         "package": "src/components/reader"
       },
-      "allowedConsumers": ["src/components/reader/ReaderChrome.tsx"],
-      "forbiddenUses": ["Do not render an icon-only Verse/Mushaf toggle (\u00a78 item 9)."]
+      "allowedConsumers": ["src/app/routes/read/**", "src/components/reader/ReaderChrome.tsx"],
+      "forbiddenUses": [
+        "Icon variant must expose `aria-pressed` and the name `Mushaf view`; the segmented variant remains the desktop treatment."
+      ]
     },
     {
       "id": "segmented-control",
@@ -1046,7 +1091,7 @@
           "states": ["Verse groups", "Mushaf groups", "included-assets disclosure"]
         }
       ],
-      "accessibility": ["quiet eyebrow section heading", "no nested bordered cards"],
+      "accessibility": ["quiet eyebrow section heading", "no borders or backgrounds; eyebrow + rows"],
       "visualProof": {
         "status": "covered",
         "references": ["src/components/settings/settings.stories.tsx"]
@@ -1095,6 +1140,47 @@
       "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
     },
     {
+      "id": "settings-row",
+      "name": "SettingsRow",
+      "maturity": "product",
+      "exportPath": "src/components/settings/SettingsRow.tsx",
+      "namedExport": "SettingsRow",
+      "allowedVariants": ["inline", "block"],
+      "allowedSizes": [],
+      "slots": ["label", "helper", "control"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": ["Verse settings", "Mushaf groups"]
+        }
+      ],
+      "accessibility": [
+        "label associated via htmlFor when provided",
+        "hairline row separation",
+        "content-sized control slot"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/settings/settings.stories.tsx"]
+      },
+      "owner": {
+        "surface": "configure",
+        "package": "src/components/settings"
+      },
+      "allowedConsumers": [
+        "src/components/settings/**",
+        "src/components/reader/AdjustmentsSheet.tsx",
+        "src/app/routes/settings/**",
+        "src/components/wird/**"
+      ],
+      "forbiddenUses": ["Do not hand-roll settings rows with ad hoc markup."]
+    },
+    {
       "id": "settings-shell",
       "name": "SettingsShell",
       "maturity": "product",
@@ -1118,7 +1204,8 @@
         "labelled modal dialog",
         "group regions with visible headings",
         "focus containment and controlled return",
-        "visible focus through owned primitives"
+        "visible focus through owned primitives",
+        "closeLabel prop names the close control per surface"
       ],
       "visualProof": {
         "status": "covered",
@@ -1128,7 +1215,7 @@
         "surface": "configure",
         "package": "src/components/settings"
       },
-      "allowedConsumers": ["src/**"],
+      "allowedConsumers": ["src/**", "src/components/wird/**"],
       "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
     },
     {
@@ -1137,7 +1224,7 @@
       "maturity": "behavior",
       "exportPath": "src/components/ui/overlays.tsx",
       "namedExport": "Sheet",
-      "allowedVariants": ["default", "adaptive-settings", "navigation-drawer"],
+      "allowedVariants": ["adaptive-settings", "default", "navigation-drawer", "quick"],
       "allowedSizes": [],
       "slots": ["trigger", "title", "content", "body", "close"],
       "dependencies": {
@@ -1165,7 +1252,8 @@
         "outside dismissal",
         "controlled return focus",
         "navigation-drawer traps focus through a manual loop while the background stays interactive",
-        "aria-modal applies only in the mobile modal case"
+        "aria-modal applies only in the mobile modal case",
+        "quick variant: quiet scrim, content height, initial focus on content"
       ],
       "visualProof": {
         "status": "covered",
@@ -1318,13 +1406,37 @@
       "namedExport": "Stepper",
       "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["group", "decrease", "value", "increase"],
-      "dependencies": { "radix": [], "icons": [] },
+      "slots": ["group", "decrease", "value", "increase", "glyph"],
+      "dependencies": {
+        "radix": [],
+        "icons": []
+      },
       "tokenNamespaces": ["--qa-react-*"],
-      "stories": [{ "path": "src/components/settings/settings.stories.tsx", "states": ["Verse settings"] }],
-      "accessibility": ["labelled group", "named buttons", "live value", "disabled endpoints"],
-      "visualProof": { "status": "covered", "references": ["src/components/settings/settings.stories.tsx"] },
-      "owner": { "surface": "react-design-system", "package": "src/components/ui" },
+      "stories": [
+        {
+          "path": "src/components/settings/settings.stories.tsx",
+          "states": ["Verse settings"]
+        },
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": ["arabic-glyph", "disabled-endpoints"]
+        }
+      ],
+      "accessibility": [
+        "labelled group",
+        "named buttons",
+        "live value",
+        "disabled endpoints",
+        "content-sized, never full width"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/settings/settings.stories.tsx"]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not use for continuous values."]
     },
@@ -1372,7 +1484,7 @@
       "namedExport": "SurahSelector",
       "allowedVariants": ["default", "desktop-dialog", "mobile-sheet"],
       "allowedSizes": [],
-      "slots": ["trigger", "surface", "tabs", "filter", "list", "adjacentFooter"],
+      "slots": ["trigger", "surface", "browsePill", "filter", "list", "adjacentFooter"],
       "dependencies": {
         "radix": ["@radix-ui/react-dialog"],
         "icons": ["lucide-react"]
@@ -1388,7 +1500,8 @@
         "accessible name extends the visible surah title (repair D2)",
         "filter keyboard navigation",
         "dialog/sheet focus trap and return",
-        "no wrap at surah 1/114 (repair D6)"
+        "no wrap at surah 1/114 (repair D6)",
+        "Surahs/Juz switch is a labelled segmented control; current row shows the check in the trailing slot"
       ],
       "visualProof": {
         "status": "covered",
@@ -1463,7 +1576,10 @@
         "package": "src/components/ui"
       },
       "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not import Radix tabs from feature code."]
+      "forbiddenUses": [
+        "Do not import Radix tabs from feature code.",
+        "Do not use for two-way list switches; use SegmentedControl"
+      ]
     },
     {
       "id": "theme-controls",
@@ -1476,7 +1592,8 @@
       "slots": ["themeRadiogroup"],
       "dependencies": {
         "radix": [],
-        "icons": ["lucide-react"]
+        "icons": ["lucide-react"],
+        "components": ["tile-group"]
       },
       "tokenNamespaces": ["--qa-react-*"],
       "stories": [
@@ -1487,7 +1604,7 @@
       ],
       "accessibility": [
         "one theme selector (Light/Sepia/Dark/System)",
-        "selected state is the ink-pill segmented treatment"
+        "TileGroup theme samples drawn from per-theme sample tokens; selection triple"
       ],
       "visualProof": {
         "status": "covered",
@@ -1499,6 +1616,42 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not reintroduce the Theme/Night control pair or night-dimming radios."]
+    },
+    {
+      "id": "tile-group",
+      "name": "TileGroup",
+      "maturity": "primitive",
+      "exportPath": "src/components/ui/tile-group.tsx",
+      "namedExport": "TileGroup",
+      "allowedVariants": ["default"],
+      "allowedSizes": [],
+      "slots": ["group", "tile", "visual", "label", "badge"],
+      "dependencies": {
+        "radix": [],
+        "icons": ["lucide-react"]
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/ui/ui.stories.tsx",
+          "states": ["theme", "spacing", "selected", "focus-visible", "disabled"]
+        }
+      ],
+      "accessibility": [
+        "labelled radiogroup with native radios",
+        "selection triple: accent border + check badge + label weight (never colour alone)",
+        "touch target at least 44 px including the label"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/ui/ui.stories.tsx"]
+      },
+      "owner": {
+        "surface": "react-design-system",
+        "package": "src/components/ui"
+      },
+      "allowedConsumers": ["src/**"],
+      "forbiddenUses": ["Do not use for text-only mode switches (use SegmentedControl)."]
     },
     {
       "id": "tooltip",
@@ -1588,10 +1741,18 @@
       "namedExport": "VerseReadingControls",
       "allowedVariants": ["default", "in-adjustments-sheet"],
       "allowedSizes": [],
-      "slots": ["arabicSize", "translationSize", "verseSpacing", "continuityToggle"],
+      "slots": [
+        "arabicSize",
+        "translationSize",
+        "verseSpacing",
+        "continuityToggle",
+        "translationDisabledHelper",
+        "translationRow"
+      ],
       "dependencies": {
         "radix": [],
-        "icons": []
+        "icons": [],
+        "components": ["settings-row", "tile-group"]
       },
       "tokenNamespaces": ["--qa-react-*"],
       "stories": [
@@ -1614,6 +1775,162 @@
       },
       "allowedConsumers": ["src/**"],
       "forbiddenUses": ["Do not reintroduce the five-option Reading-flow select or a blank legacy value (repair D1)."]
+    },
+    {
+      "id": "wird-overview",
+      "name": "WirdOverview",
+      "maturity": "product",
+      "exportPath": "src/components/wird/WirdOverview.tsx",
+      "namedExport": "WirdOverview",
+      "allowedVariants": ["active", "behind", "today-complete", "plan-complete"],
+      "allowedSizes": [],
+      "slots": ["hero", "ring", "wholePlanBar", "planRows", "actions", "resetDialog"],
+      "dependencies": {
+        "radix": [],
+        "components": ["button", "dialog", "settings-row", "status", "wird-ring"],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/wird/wird.stories.tsx",
+          "states": ["active", "behind", "today-complete", "plan-complete", "reset-dialog"]
+        }
+      ],
+      "accessibility": ["ring and bar expose role=progressbar with values", "reset dialog initial focus on Keep plan"],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/wird/wird.stories.tsx"]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/wird"
+      },
+      "allowedConsumers": ["src/components/wird/**"],
+      "forbiddenUses": ["Do not add streaks, confetti, or heat-maps to the overview."]
+    },
+    {
+      "id": "wird-plan-form",
+      "name": "WirdPlanForm",
+      "maturity": "product",
+      "exportPath": "src/components/wird/WirdPlanForm.tsx",
+      "namedExport": "WirdPlanForm",
+      "allowedVariants": ["create", "edit"],
+      "allowedSizes": [],
+      "slots": ["finishBy", "countIn", "startFrom", "reminder", "footer"],
+      "dependencies": {
+        "radix": [],
+        "components": ["button", "input", "segmented-control", "settings-row", "status", "switch"],
+        "icons": []
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/wird/wird.stories.tsx",
+          "states": ["setup", "setup-no-position", "edit"]
+        }
+      ],
+      "accessibility": [
+        "labelled radiogroups for each choice",
+        "date input carries min, aria-invalid and describedby helpers",
+        "primary action disabled while counts load or the form is invalid"
+      ],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/wird/wird.stories.tsx"]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/wird"
+      },
+      "allowedConsumers": ["src/components/wird/**"],
+      "forbiddenUses": ["Do not show the Start-from choice when a plan exists (start point is create-only)."]
+    },
+    {
+      "id": "wird-ring",
+      "name": "WirdRing",
+      "maturity": "product",
+      "exportPath": "src/components/wird/WirdRing.tsx",
+      "namedExport": "WirdRing",
+      "allowedVariants": ["sm", "md"],
+      "allowedSizes": [],
+      "slots": ["ring", "face"],
+      "dependencies": {
+        "radix": [],
+        "icons": ["lucide-react"]
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/wird/wird.stories.tsx",
+          "states": ["WirdRingSizes"]
+        }
+      ],
+      "accessibility": ["role=progressbar with aria-valuenow and label", "children are decorative"],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/wird/wird.stories.tsx"]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/wird"
+      },
+      "allowedConsumers": ["src/components/wird/**", "src/components/reader/**"],
+      "forbiddenUses": ["Do not hand-roll a second ring implementation."]
+    },
+    {
+      "id": "wird-sheet",
+      "name": "WirdSheet",
+      "maturity": "product",
+      "exportPath": "src/components/wird/WirdSheet.tsx",
+      "namedExport": "WirdSheet",
+      "allowedVariants": ["overview", "setup", "edit", "loading", "error"],
+      "allowedSizes": [],
+      "slots": ["titleBar", "hero", "planRows", "actions", "form"],
+      "dependencies": {
+        "radix": [],
+        "components": [
+          "settings-shell",
+          "settings-row",
+          "segmented-control",
+          "switch",
+          "input",
+          "button",
+          "status",
+          "dialog",
+          "wird-ring"
+        ],
+        "icons": ["lucide-react"]
+      },
+      "tokenNamespaces": ["--qa-react-*"],
+      "stories": [
+        {
+          "path": "src/components/wird/wird.stories.tsx",
+          "states": [
+            "setup",
+            "setup-no-position",
+            "active",
+            "behind",
+            "today-complete",
+            "plan-complete",
+            "edit",
+            "reset-dialog",
+            "loading",
+            "error"
+          ]
+        }
+      ],
+      "accessibility": ["Radix dialog via SettingsShell; focus return to invoker; real counts only"],
+      "visualProof": {
+        "status": "covered",
+        "references": ["src/components/wird/wird.stories.tsx"]
+      },
+      "owner": {
+        "surface": "read",
+        "package": "src/components/wird"
+      },
+      "allowedConsumers": ["src/app/**"],
+      "forbiddenUses": ["Never build or display a plan from fallback counts."]
     }
   ]
 }

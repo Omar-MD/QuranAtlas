@@ -8,7 +8,7 @@ import { MUSHAF_PAGE_COUNT } from '../../packs/mushaf-paths'
 import { MushafPageViewer } from './MushafPageViewer'
 import { ReaderChrome } from './ReaderChrome'
 import { ReaderVerseSurface } from './ReaderVerseSurface'
-import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
+import { ReaderWirdStatusIndicator } from '../wird/ReaderWirdStatusIndicator'
 
 const meta = {
   title: 'React Reader/Reader',

@@ -27,12 +27,48 @@
     --qa-react-status-success-bg: color-mix(in srgb, var(--qa-react-success) 8%, var(--qa-react-surface));
     --qa-react-offline-warning: #806100;
     --qa-react-scrim: rgb(0 0 0 / 32%);
-    /* Fixed swatch previews (S8 Appearance) and paper sample colours: static
-       content previews, not themed surfaces. */
-    --qa-react-theme-swatch-light: #fcfcfa;
-    --qa-react-theme-swatch-sepia: #f3ecdb;
-    --qa-react-theme-swatch-dark: #141311;
+    /* Aa sheet overlay only (brief §3.1): near-transparent so the reader
+       stays legible as the live preview. Dark lifts to keep the sheet edge
+       visible on the dark canvas. */
+    --qa-react-scrim-quiet: rgb(0 0 0 / 8%);
+    /* Theme tile samples (brief §3.1): static per-theme palettes for the
+       TileGroup visuals. These MUST equal the values in the
+       html[data-theme=…] blocks below — update both together. */
+    --qa-react-theme-sample-light-canvas: #fcfcfa;
+    --qa-react-theme-sample-light-border: #e7e5e0;
+    --qa-react-theme-sample-light-ink: #1c1917;
+    --qa-react-theme-sample-light-muted: #57534e;
+    --qa-react-theme-sample-light-accent: #0e6b52;
+    --qa-react-theme-sample-sepia-canvas: #f3ecdb;
+    --qa-react-theme-sample-sepia-border: #e0d3b8;
+    --qa-react-theme-sample-sepia-ink: #3a3126;
+    --qa-react-theme-sample-sepia-muted: #6b5d49;
+    --qa-react-theme-sample-sepia-accent: #0b5c46;
+    --qa-react-theme-sample-dark-canvas: #141311;
+    --qa-react-theme-sample-dark-border: #2e2b26;
+    --qa-react-theme-sample-dark-ink: #e8e4dc;
+    --qa-react-theme-sample-dark-muted: #a39e95;
+    --qa-react-theme-sample-dark-accent: #3ba587;
     --qa-react-paper: #f5efe0;
+    /* Content-sized control geometry (brief §3.1): steppers, tiles, chrome
+       badges, and settings rhythm. Controls reference these, never literals. */
+    --qa-react-tile-width: 72px;
+    --qa-react-tile-height: 48px;
+    --qa-react-tile-gap: 8px;
+    --qa-react-stepper-button: 44px;
+    --qa-react-stepper-value: 64px;
+    --qa-react-mode-badge: 32px;
+    --qa-react-settings-gutter: 20px;
+    --qa-react-settings-group-gap: 28px;
+    --qa-react-settings-row-min: 56px;
+    /* Settings field widths so no control is sized by eye (brief §3.1). */
+    --qa-react-field-select: 140px;
+    --qa-react-field-date: 156px;
+    --qa-react-field-time: 112px;
+    /* Wird ring geometry (brief §3.1 / §15.5). */
+    --qa-react-wird-ring: 64px;
+    --qa-react-wird-ring-sm: 28px;
+    --qa-react-wird-ring-stroke: 5px;
     /* The single overlay shadow (brief §1.5): drawer, sheet, dialog only. */
     --qa-react-overlay-shadow: 0 12px 32px color-mix(in srgb, var(--qa-react-text) 12%, transparent);
     --qa-react-page-max-width: 72rem;
@@ -81,6 +117,7 @@
     --qa-react-accent-tint: #e4ecdc;
     --qa-react-text-on-accent: #ffffff;
     --qa-react-scrim: rgb(0 0 0 / 32%);
+    --qa-react-scrim-quiet: rgb(0 0 0 / 8%);
   }
 
   html[data-theme="dark"] {
@@ -96,6 +133,7 @@
     --qa-react-text-on-accent: #141311;
     --qa-react-text-on-danger: #ffffff;
     --qa-react-scrim: rgb(0 0 0 / 44%);
+    --qa-react-scrim-quiet: rgb(0 0 0 / 18%);
     /* Readable yellow: the inherited light #806100 is too dark on the dark canvas. */
     --qa-react-offline-warning: #d6ae37;
   }

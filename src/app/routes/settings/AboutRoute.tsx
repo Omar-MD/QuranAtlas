@@ -1,11 +1,11 @@
-import { RefreshCw } from 'lucide-react'
+import { ChevronRight, ExternalLink, RefreshCw } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import pkg from '../../../../package.json'
 import { REACT_ROUTES } from '../../router/routes'
 import { ChromeFrame } from '../../../components/navigation/ChromeFrame'
 import { useNavDrawerController } from '../../../components/navigation/nav-drawer-controller'
-import { Button, Dialog, Input } from '../../../components/ui'
+import { Button, ChoiceButton, Dialog, Input } from '../../../components/ui'
 import { NotationGuideButton } from '../../../components/settings/NotationGuide'
 import { SettingsPageRecipe } from '../../../design-system/recipes/settings-page'
 import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInstall } from './pwa-install'
@@ -86,6 +86,7 @@ export function AboutRoute() {
   const clearData = useClearDataDialog()
   const cancelClearDataRef = useRef<HTMLButtonElement>(null)
   const drawer = useNavDrawerController()
+  const [sourcesOpen, setSourcesOpen] = useState(false)
   const [installAvailable, setInstallAvailable] = useState(false)
   const [installDone, setInstallDone] = useState(false)
   const [online, setOnline] = useState(() => typeof navigator === 'undefined' || navigator.onLine)
@@ -133,6 +134,7 @@ export function AboutRoute() {
   return (
     <ChromeFrame
       controller={drawer}
+      currentRoute="about"
       onOpenSettings={() => {
         window.location.hash = REACT_ROUTES.settings
       }}
@@ -142,41 +144,48 @@ export function AboutRoute() {
 
         <NotationGuideButton />
 
-        <section aria-label="Source attributions" className="qar:grid qar:gap-2">
-          <div className="qar-about-fine-print qar:text-muted">
-            <p className="qar:m-0">Qalūn text · KFGQPC restricted terms.</p>
-            <p className="qar:m-0">Bridges · Fadel Soliman / QUL.</p>
-            <p className="qar:m-0">Quran.ws · free use; Furatiyyah 2023 · noncommercial.</p>
-            <p className="qar:m-0">KFGQPC Uthmanic Qaloon · Newsreader (OFL).</p>
-          </div>
-          <Dialog
-            contentClassName="qar:max-h-dvh qar:overflow-y-auto"
-            title="Sources used"
-            trigger={
-              <Button size="sm" variant="ghost">
-                Sources and licenses
-              </Button>
-            }
+        {/* G-7: a second disclosure row matching the notation row idiom; the
+            attribution fine print lives inside its expanded content. */}
+        <div className="qar:grid qar:gap-2">
+          <ChoiceButton
+            aria-controls="about-sources-content"
+            aria-expanded={sourcesOpen}
+            className="qar-about-notation-row"
+            data-testid="sources-licenses-button"
+            onClick={() => setSourcesOpen((open) => !open)}
           >
-            <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
-              {sources.map((source) => (
-                <li key={source.id}>{source.content}</li>
-              ))}
-            </ul>
-            <p className="qar:m-0 qar:text-xs qar:leading-5 qar:text-muted">Built with React, Vite, and Workbox.</p>
-          </Dialog>
-        </section>
+            <span className="qar-about-notation-row-copy">Sources and licenses</span>
+            <ChevronRight aria-hidden="true" className="qar-about-notation-row-chevron" size={16} strokeWidth={1.7} />
+          </ChoiceButton>
+          {sourcesOpen ? (
+            <div className="qar:grid qar:gap-2" id="about-sources-content">
+              <ul className="qar:m-0 qar:grid qar:gap-2 qar:list-disc qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted qar:marker:text-muted">
+                {sources.map((source) => (
+                  <li key={source.id}>{source.content}</li>
+                ))}
+              </ul>
+              <p className="qar:m-0 qar:text-xs qar:leading-5 qar:text-muted">Built with React, Vite, and Workbox.</p>
+              <div className="qar-about-fine-print qar:text-muted">
+                <p className="qar:m-0">Qalūn text · KFGQPC restricted terms.</p>
+                <p className="qar:m-0">Bridges · Fadel Soliman / QUL.</p>
+                <p className="qar:m-0">Quran.ws · free use; Furatiyyah 2023 · noncommercial.</p>
+                <p className="qar:m-0">KFGQPC Uthmanic Qaloon · Newsreader (OFL).</p>
+              </div>
+            </div>
+          ) : null}
+        </div>
 
         <a
-          className="qar:flex qar:min-h-11 qar:items-center qar:justify-self-start qar:text-sm qar:text-muted"
+          className="qar:flex qar:min-h-11 qar:items-center qar:gap-1 qar:justify-self-start qar:text-sm qar:text-muted"
           href="https://github.com/Omar-MD/QuranAtlas/issues"
           rel="noreferrer"
           target="_blank"
         >
           Report an issue
+          <ExternalLink aria-hidden="true" size={14} strokeWidth={1.7} />
         </a>
 
-        <footer className="qar:grid qar:gap-2 qar:border-t qar:border-border qar:pt-3">
+        <footer className="qar:grid qar:gap-3 qar:border-t qar:border-border qar:pt-3">
           <p className="qar:m-0 qar:text-sm qar:text-muted" data-testid="about-version">
             Version {pkg.version}
           </p>
@@ -201,19 +210,18 @@ export function AboutRoute() {
           >
             {online ? updateCheck.message : 'Connect to the internet to check for updates.'}
           </p>
-          <div>
-            <Button
-              aria-describedby="react-about-app-updates-status"
-              disabled={updateCheckPending || !online}
-              onClick={() => {
-                void handleFetchLatestChanges()
-              }}
-              variant="secondary"
-            >
-              <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
-              {updateCheckPending ? 'Checking...' : 'Check for updates'}
-            </Button>
-          </div>
+          <Button
+            aria-describedby="react-about-app-updates-status"
+            className="qar:justify-self-start"
+            disabled={updateCheckPending || !online}
+            onClick={() => {
+              void handleFetchLatestChanges()
+            }}
+            variant="secondary"
+          >
+            <RefreshCw aria-hidden="true" size={16} strokeWidth={1.8} />
+            {updateCheckPending ? 'Checking...' : 'Check for updates'}
+          </Button>
           <Dialog
             initialFocusRef={cancelClearDataRef}
             onOpenChange={(open) => {
@@ -223,7 +231,7 @@ export function AboutRoute() {
             open={clearData.state.open}
             title="Clear All Data?"
             trigger={
-              <Button size="sm" variant="secondary">
+              <Button className="qar:justify-self-start qar:text-danger" size="sm" variant="ghost">
                 Clear all data
               </Button>
             }

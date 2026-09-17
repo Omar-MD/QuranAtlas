@@ -56,17 +56,13 @@ export function ChromeBar({
 export function ChromeDrawer({
   controller,
   currentRoute = null,
-  initialWirdView = 'card',
   mode = 'verse',
   onOpenSurahs,
-  showWird = false,
 }: {
   controller: ChromeDrawerController
   currentRoute?: 'bookmarks' | 'downloads' | 'settings' | 'about' | null
-  initialWirdView?: 'card' | 'detail'
   mode?: 'verse' | 'mushaf'
   onOpenSurahs?: () => void
-  showWird?: boolean
 }) {
   const { dispatch, state } = controller
 
@@ -78,14 +74,12 @@ export function ChromeDrawer({
   return (
     <NavDrawer
       currentRoute={currentRoute}
-      initialWirdView={initialWirdView}
       mode={mode}
       onClose={() => dispatch({ type: 'close' })}
       onNavigate={navigate}
       onOpenSurahs={onOpenSurahs}
       open={state.open}
       returnFocusId={state.returnFocusId ?? undefined}
-      showWird={showWird}
       suppressFocusRestore={state.routeTransitioning}
     />
   )
@@ -99,16 +93,16 @@ export function ChromeDrawer({
 export function ChromeFrame({
   children,
   controller,
+  currentRoute = null,
   mode = 'verse',
   onOpenSettings,
-  showWird = false,
   statusMessage,
 }: {
   children: ReactNode
   controller: ChromeDrawerController
+  currentRoute?: 'bookmarks' | 'downloads' | 'settings' | 'about' | null
   mode?: 'verse' | 'mushaf'
   onOpenSettings: () => void
-  showWird?: boolean
   statusMessage?: string
 }) {
   return (
@@ -121,7 +115,7 @@ export function ChromeFrame({
         {statusMessage ?? ''}
       </div>
       {children}
-      <ChromeDrawer controller={controller} mode={mode} showWird={showWird} />
+      <ChromeDrawer controller={controller} currentRoute={currentRoute} mode={mode} />
     </>
   )
 }

@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 
-import { loadReaderSurahIndex } from '../../data/surah-index'
 import { nativeSettingsReader, readNativeSetting, writeNativeSetting } from '../../storage/native-reader-store'
 import { deriveWirdSummary, getLocalDayKey } from './progress'
 import { compareQuranRefs } from '../verse-key'
@@ -12,12 +11,11 @@ import {
   showWirdReminderNotification,
   syncWirdReminderBackgroundRegistration,
 } from './reminders'
+import { loadWirdSurahCounts } from './surah-counts'
 import { readWirdPlan, subscribeWirdPlanChanged } from './store'
-import type { SurahCount, WirdPlan } from './types'
+import type { WirdPlan } from './types'
 
 const MAX_TIMEOUT_MS = 2_147_483_647
-
-let cachedCounts: Promise<SurahCount[]> | null = null
 
 export function useWirdReminderScheduler(): void {
   useEffect(() => {
@@ -60,7 +58,7 @@ export function useWirdReminderScheduler(): void {
           schedule(null)
           return
         }
-        const counts = await loadSurahCounts()
+        const counts = await loadWirdSurahCounts()
         const summary = deriveWirdSummary(plan, counts)
         const dayKey = getLocalDayKey()
         const lastSent = await readNativeSetting('wirdReminderLastSentDay')
@@ -89,11 +87,4 @@ export function useWirdReminderScheduler(): void {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
-}
-
-async function loadSurahCounts(): Promise<SurahCount[]> {
-  cachedCounts ??= loadReaderSurahIndex(fetch).then((rows) =>
-    rows.map((row) => ({ count: row.counts.qaloon, n: row.n })),
-  )
-  return cachedCounts
 }

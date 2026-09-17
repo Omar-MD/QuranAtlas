@@ -1,16 +1,16 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { ReaderPageRecipe } from '../../design-system/recipes/reader-page'
-import { ReaderChrome, type ReaderMode } from './ReaderChrome'
+import { requestReactWirdOverlay } from '../../app/wird-overlay-events'
+import { ReaderChrome, type ReaderMode, type ReaderPositionBookmark } from './ReaderChrome'
 import { SurahSelector } from './SurahSelector'
-import { ReaderWirdStatusIndicator } from './wird/ReaderWirdStatusIndicator'
+import { ReaderWirdStatusIndicator } from '../wird/ReaderWirdStatusIndicator'
 import { ChromeDrawer } from '../navigation/ChromeFrame'
 import { requestReactSettingsOverlay } from '../../app/settings-overlay-events'
 import type { WirdSummary } from '../../continuity/wird/types'
 import { useNavDrawerController } from '../navigation/nav-drawer-controller'
 import { ReaderInteractionProvider } from './ReaderInteractionContext'
 import type { MushafChromePin } from './useMushafChromeVisibility'
-import { REACT_ROUTES } from '../../app/router/routes'
 
 export function ReaderPageShell({
   bottomStrip,
@@ -22,6 +22,7 @@ export function ReaderPageShell({
   mode,
   onChromePinChange,
   onModeChange,
+  positionBookmark,
   resolveSelectorHref,
   showWirdStatus = true,
   surahName,
@@ -38,6 +39,8 @@ export function ReaderPageShell({
   mode: ReaderMode
   onChromePinChange?: (source: MushafChromePin, pinned: boolean) => void
   onModeChange?: (mode: ReaderMode) => void
+  /** Header bookmark that toggles the reading position (brief §4.9/§4.10). */
+  positionBookmark?: ReaderPositionBookmark
   resolveSelectorHref?: (hash: string) => Promise<string> | string
   showWirdStatus?: boolean
   surahName?: string
@@ -46,7 +49,6 @@ export function ReaderPageShell({
 }) {
   const { dispatch: dispatchDrawer, state: drawerState } = useNavDrawerController()
   const [selectorOpen, setSelectorOpen] = useState(false)
-  const [drawerWirdInitialView, setDrawerWirdInitialView] = useState<'card' | 'detail'>('card')
   const dailyWirdVisible = showWirdStatus
   // S3: the mobile verse bottom strip hides on scroll down and returns on
   // scroll up — one stable hidden endpoint, one directional threshold.
@@ -96,8 +98,7 @@ export function ReaderPageShell({
   const stripShown = bottomStripPinned || (mode === 'verse' && stripVisible)
 
   const openDrawer = useCallback(
-    (returnFocusId: string, initialWirdView: 'card' | 'detail') => {
-      setDrawerWirdInitialView(initialWirdView)
+    (returnFocusId: string) => {
       dispatchDrawer({ returnFocusId, type: 'open' })
     },
     [dispatchDrawer],
@@ -118,24 +119,22 @@ export function ReaderPageShell({
               <ReaderChrome
                 mode={mode}
                 visible={chromeVisible}
-                onOpenBookmarks={() => {
-                  window.location.hash = REACT_ROUTES.bookmarks
-                }}
                 onOpenNavigation={() => {
-                  openDrawer('reader-navigation-trigger', 'card')
+                  openDrawer('reader-navigation-trigger')
                 }}
                 onOpenSelector={() => setSelectorOpen(true)}
                 onOpenSettings={() => {
                   requestReactSettingsOverlay(mode, 'reader-settings-trigger')
                 }}
                 onModeChange={onModeChange}
+                positionBookmark={positionBookmark}
                 surahName={surahName}
                 verseRange={verseRange}
                 wirdStatus={
                   dailyWirdVisible && wirdSummary ? (
                     <ReaderWirdStatusIndicator
                       onOpen={() => {
-                        openDrawer('reader-wird-status-trigger', 'detail')
+                        requestReactWirdOverlay({ returnFocusId: 'reader-wird-status-trigger' })
                       }}
                       summary={wirdSummary}
                     />
@@ -144,12 +143,10 @@ export function ReaderPageShell({
               />
               <ChromeDrawer
                 controller={{ dispatch: dispatchDrawer, state: drawerState }}
-                initialWirdView={dailyWirdVisible ? drawerWirdInitialView : 'card'}
                 mode={mode}
                 onOpenSurahs={() => {
                   setSelectorOpen(true)
                 }}
-                showWird={dailyWirdVisible}
               />
               <SurahSelector
                 currentSurah={currentSurah}

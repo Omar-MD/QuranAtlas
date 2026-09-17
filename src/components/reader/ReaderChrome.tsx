@@ -6,27 +6,34 @@ import { ReadingViewToggle } from './ReadingViewToggle'
 
 export type ReaderMode = 'verse' | 'mushaf'
 
-// Reader chrome bar (S2/S3/S4): menu · surah selector (title button, S5) ·
-// Verses/Mushaf labelled segmented (desktop) · Bookmarks · settings overflow.
-// No search action anywhere (Search removed); the bar is flat panel surface.
+export type ReaderPositionBookmark = {
+  saved: boolean
+  label: string
+  onToggle: () => void
+}
+
+// Reader chrome bar (brief §4.9): menu · surah selector (title button, S5) ·
+// Verses/Mushaf labelled segmented (desktop) · position bookmark · settings.
+// The Bookmark glyph toggles the reading position — never a Bookmarks
+// destination (that lives in the navigation drawer with its count badge).
 export function ReaderChrome({
   mode,
-  onOpenBookmarks,
   onOpenNavigation,
   onOpenSelector,
   onOpenSettings,
   onModeChange,
+  positionBookmark,
   surahName,
   visible = true,
   verseRange,
   wirdStatus,
 }: {
   mode: ReaderMode
-  onOpenBookmarks?: () => void
   onOpenNavigation?: () => void
   onOpenSelector?: () => void
   onOpenSettings?: () => void
   onModeChange?: (mode: ReaderMode) => void
+  positionBookmark?: ReaderPositionBookmark
   surahName?: string
   visible?: boolean
   verseRange?: string
@@ -78,12 +85,20 @@ export function ReaderChrome({
             <ReadingViewToggle compact mode={mode} onModeChange={onModeChange} />
           </span>
         ) : null}
-        {onOpenBookmarks ? (
-          <span className="qar-reader-chrome-bookmarks">
-            <IconButton className="qar-reader-chrome-icon" label="Bookmarks" onClick={onOpenBookmarks}>
-              <Bookmark aria-hidden="true" size={20} strokeWidth={1.7} />
-            </IconButton>
-          </span>
+        {positionBookmark ? (
+          <IconButton
+            aria-pressed={positionBookmark.saved}
+            className="qar-reader-chrome-icon"
+            label={positionBookmark.label}
+            onClick={positionBookmark.onToggle}
+          >
+            <Bookmark
+              aria-hidden="true"
+              fill={positionBookmark.saved ? 'currentColor' : 'none'}
+              size={20}
+              strokeWidth={1.7}
+            />
+          </IconButton>
         ) : null}
         <IconButton
           className="qar-reader-chrome-icon"

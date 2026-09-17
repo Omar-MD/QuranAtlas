@@ -4,7 +4,7 @@ import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/sur
 import type { RecentSurahPosition } from '../../continuity/recent-surahs'
 import { openReactDb } from '../../storage/db'
 import { readRecentSurahs } from '../../continuity/recent-surahs'
-import { Button, Dialog, Input, ListRow, Sheet, Tabs } from '../ui'
+import { Button, Dialog, Input, ListRow, SegmentedControl, Sheet } from '../ui'
 
 const SURAH_COUNT = 114
 
@@ -142,76 +142,84 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
   }
 
   const body = (
-    <Tabs
-      label="Browse"
-      onValueChange={setTab}
-      items={[
-        {
-          label: 'Surahs',
-          value: 'surahs',
-          content: (
-            <div className="qar:grid qar:gap-2">
-              <Input
-                autoComplete="off"
-                className="qar-react-selector-filter"
-                hideLabel
-                label="Filter by name, number, or verse"
-                maxLength={20}
-                onChange={(event) => setQuery(event.currentTarget.value)}
-                onKeyDown={handleFilterKeyDown}
-                placeholder="Filter by name, number, or verse"
-                type="text"
-                value={query}
-              />
-              {status === 'loading' ? (
-                <p className="qar-react-selector-empty" role="status">
-                  Loading surahs…
-                </p>
-              ) : status === 'error' ? (
-                <div className="qar-react-selector-empty" role="status">
-                  <p className="qar:m-0">Surah list unavailable.</p>
-                  <Button onClick={() => setAttempt((n) => n + 1)} size="sm" variant="secondary">
-                    Try again
-                  </Button>
-                </div>
-              ) : visibleRows.length === 0 ? (
-                <p className="qar-react-selector-empty" data-selector-empty="true" role="status">
-                  No surah matches "{query}"
-                </p>
-              ) : (
-                <>
-                  {parsedQuery.kind === 'empty' && recentOthers.length > 0 ? (
-                    <section aria-label="Recent surahs">
-                      <p className="qar-eyebrow">Recent</p>
-                      <ul className="qar-react-selector-recents">
-                        {recentOthers.flatMap((recent) => {
-                          const entry = rows.find((row) => row.n === recent.surah)
-                          return entry ? [renderRow(entry)] : []
-                        })}
-                      </ul>
-                    </section>
-                  ) : null}
-                  <ul
-                    aria-label="Surah list"
-                    className="qar-react-selector-list"
-                    ref={listRef}
-                    onKeyDown={handleFilterKeyDown}
-                  >
-                    {visibleRows.map(renderRow)}
-                  </ul>
-                </>
-              )}
+    <div className="qar:grid qar:gap-3">
+      {/* G-5(a): Surahs/Juz are alternatives, not simultaneous panels — a
+          segmented pill, not tabs. */}
+      <div className="qar:justify-self-start">
+        <SegmentedControl
+          label="Browse"
+          onValueChange={setTab}
+          options={[
+            { label: 'Surahs', value: 'surahs' },
+            { label: 'Juz', value: 'juz' },
+          ]}
+          value={tab}
+        />
+      </div>
+      {tab === 'juz' ? (
+        <JuzPickerRows onNavigate={navigate} />
+      ) : (
+        <div className="qar:grid qar:gap-2">
+          <Input
+            autoComplete="off"
+            className="qar-react-selector-filter"
+            hideLabel
+            label="Filter by name, number, or verse"
+            maxLength={20}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            onKeyDown={handleFilterKeyDown}
+            placeholder="Filter by name, number, or verse"
+            type="text"
+            value={query}
+          />
+          {status === 'loading' ? (
+            <p className="qar-react-selector-empty" role="status">
+              Loading surahs…
+            </p>
+          ) : status === 'error' ? (
+            <div className="qar-react-selector-empty" role="status">
+              <p className="qar:m-0">Surah list unavailable.</p>
+              <Button onClick={() => setAttempt((n) => n + 1)} size="sm" variant="secondary">
+                Try again
+              </Button>
             </div>
-          ),
-        },
-        {
-          label: 'Juz',
-          value: 'juz',
-          content: <JuzPickerRows onNavigate={navigate} />,
-        },
-      ]}
-      value={tab}
-    />
+          ) : visibleRows.length === 0 ? (
+            <p className="qar-react-selector-empty" data-selector-empty="true" role="status">
+              No surah matches "{query}"
+            </p>
+          ) : (
+            <>
+              {parsedQuery.kind === 'empty' && recentOthers.length > 0 ? (
+                <section aria-label="Recent surahs">
+                  <p className="qar-eyebrow">Recent</p>
+                  <ul className="qar-react-selector-recents">
+                    {recentOthers.flatMap((recent) => {
+                      const entry = rows.find((row) => row.n === recent.surah)
+                      return entry ? [renderRow(entry)] : []
+                    })}
+                  </ul>
+                </section>
+              ) : null}
+              {/* G-5(c): the full list gets its own eyebrow when it follows
+                  the Recent group. */}
+              {parsedQuery.kind === 'empty' && recentOthers.length > 0 ? (
+                <p className="qar-eyebrow" data-selector-all-eyebrow="true">
+                  All surahs
+                </p>
+              ) : null}
+              <ul
+                aria-label="Surah list"
+                className="qar-react-selector-list"
+                ref={listRef}
+                onKeyDown={handleFilterKeyDown}
+              >
+                {visibleRows.map(renderRow)}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   )
 
   const footer =

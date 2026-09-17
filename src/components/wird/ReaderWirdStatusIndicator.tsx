@@ -1,9 +1,9 @@
-import type { CSSProperties } from 'react'
-import { Check, ListChecks } from 'lucide-react'
+import { IconButton } from '../ui'
+import type { WirdSummary } from '../../continuity/wird/types'
+import { WirdRing } from './WirdRing'
 
-import { IconButton } from '../../ui'
-import type { WirdSummary } from '../../../continuity/wird/types'
-
+// Desktop reader-header indicator (brief §15.3): the one ring implementation
+// at 28 px; opens the Wird sheet via requestReactWirdOverlay.
 export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => void; summary: WirdSummary }) {
   const complete = summary.state === 'today-complete' || summary.state === 'plan-complete'
   const label = statusLabel(summary)
@@ -16,13 +16,8 @@ export function ReaderWirdStatusIndicator({ onOpen, summary }: { onOpen: () => v
         id="reader-wird-status-trigger"
         label={label}
         onClick={onOpen}
-        style={{ '--qa-react-wird-status-progress': `${summary.todayPercent * 3.6}deg` } as CSSProperties}
       >
-        <span className="qar-reader-chrome-wird-ring" aria-hidden="true">
-          <span className="qar-reader-chrome-wird-core">
-            {complete ? <Check size={15} strokeWidth={2.2} /> : <ListChecks size={15} strokeWidth={1.65} />}
-          </span>
-        </span>
+        <WirdRing label="Today's Wird progress" size="sm" value={complete ? 100 : summary.todayPercent} />
       </IconButton>
     </span>
   )

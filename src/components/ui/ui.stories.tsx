@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { useState } from 'react'
 import { AlertTriangle, CheckCircle2, Info, Settings, WifiOff, X } from 'lucide-react'
 
 import {
@@ -19,8 +20,10 @@ import {
   Slider,
   Spinner,
   Status,
+  Stepper,
   Switch,
   Tabs,
+  TileGroup,
   Tooltip,
 } from '.'
 
@@ -283,5 +286,137 @@ export const NavigationDrawerSheetTrigger: Story = {
         </div>
       </Sheet>
     </main>
+  ),
+}
+
+// TileGroup stories (brief §10): theme, spacing, selected, focus-visible,
+// disabled. Visuals mirror the ThemeControls and VerseReadingControls usage.
+function TileGroupStories() {
+  const [theme, setTheme] = useState('light')
+  const [spacing, setSpacing] = useState('md')
+  const themeOptions = [
+    { label: 'Light', value: 'light', visual: <ThemeTileSample sample="light" /> },
+    { label: 'Sepia', value: 'sepia', visual: <ThemeTileSample sample="sepia" /> },
+    { label: 'Dark', value: 'dark', visual: <ThemeTileSample sample="dark" /> },
+    { label: 'System', value: 'auto', visual: <ThemeTileSample sample="system" /> },
+  ]
+  return (
+    <div className="qar:grid qar:max-w-3xl qar:gap-6 qar:bg-canvas qar:p-6 qar:text-text">
+      <TileGroup label="Theme" onValueChange={setTheme} options={themeOptions} value={theme} />
+      <TileGroup
+        label="Verse spacing"
+        onValueChange={setSpacing}
+        options={[
+          { label: 'Compact', value: 'xs', visual: <SpacingBars gap={3} /> },
+          { label: 'Comfortable', value: 'md', visual: <SpacingBars gap={6} /> },
+          { label: 'Spacious', value: 'xl', visual: <SpacingBars gap={10} /> },
+        ]}
+        value={spacing}
+      />
+      <TileGroup
+        label="Verse spacing with disabled option"
+        onValueChange={setSpacing}
+        options={[
+          { label: 'Compact', value: 'xs', visual: <SpacingBars gap={3} /> },
+          { label: 'Comfortable', value: 'md', visual: <SpacingBars gap={6} /> },
+          { disabled: true, label: 'Spacious', value: 'xl', visual: <SpacingBars gap={10} /> },
+        ]}
+        value={spacing}
+      />
+    </div>
+  )
+}
+
+function ThemeTileSample({ sample }: { sample: 'light' | 'sepia' | 'dark' | 'system' }) {
+  if (sample === 'system') {
+    return (
+      <span aria-hidden="true" className="qar-react-theme-tile qar-react-theme-tile--system">
+        <span className="qar-react-theme-tile-half" data-sample="light">
+          <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--ink" />
+          <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--muted" />
+          <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--accent" />
+        </span>
+        <span className="qar-react-theme-tile-half" data-sample="dark">
+          <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--ink" />
+          <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--muted" />
+          <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--accent" />
+        </span>
+      </span>
+    )
+  }
+  return (
+    <span aria-hidden="true" className="qar-react-theme-tile" data-sample={sample}>
+      <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--ink" />
+      <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--muted" />
+      <span className="qar-react-theme-tile-bar qar-react-theme-tile-bar--accent" />
+    </span>
+  )
+}
+
+function SpacingBars({ gap }: { gap: number }) {
+  const block = 5.5
+  const top = (24 - (block * 2 + gap)) / 2
+  return (
+    <svg aria-hidden="true" fill="none" height={24} viewBox="0 0 28 24" width={28}>
+      <rect fill="currentColor" height={2} rx={0.75} width={20} x={4} y={top} />
+      <rect className="qar-react-spacing-glyph-muted" height={1.5} rx={0.75} width={14} x={4} y={top + 3.5} />
+      <rect fill="currentColor" height={2} rx={0.75} width={20} x={4} y={top + block + gap} />
+      <rect
+        className="qar-react-spacing-glyph-muted"
+        height={1.5}
+        rx={0.75}
+        width={14}
+        x={4}
+        y={top + block + gap + 3.5}
+      />
+    </svg>
+  )
+}
+
+export const TileGroupStates: Story = {
+  render: () => <TileGroupStories />,
+}
+
+// Stepper stories (brief §10): reading-face glyphs and the endpoint-disabled
+// states.
+export const StepperStates: Story = {
+  render: () => (
+    <div className="qar:grid qar:max-w-3xl qar:gap-4 qar:bg-canvas qar:p-6 qar:text-text">
+      <Stepper
+        glyph="arabic"
+        label="Arabic size"
+        onValueChange={() => undefined}
+        options={[
+          { label: 'Default', value: 'md' },
+          { label: 'Large', value: 'lg' },
+          { label: 'Largest', value: 'xl' },
+        ]}
+        value="md"
+      />
+      <Stepper
+        glyph="latin"
+        label="Translation size"
+        onValueChange={() => undefined}
+        options={[
+          { label: 'Smallest', value: 'xs' },
+          { label: 'Small', value: 'sm' },
+          { label: 'Default', value: 'md' },
+          { label: 'Large', value: 'lg' },
+          { label: 'Largest', value: 'xl' },
+        ]}
+        value="md"
+      />
+      <Stepper
+        glyph="arabic"
+        label="Arabic size at endpoints"
+        onValueChange={() => undefined}
+        options={[
+          { label: 'Smallest', value: 'xs' },
+          { label: 'Default', value: 'md' },
+          { label: 'Largest', value: 'xl' },
+        ]}
+        value="md"
+      />
+    </div>
   ),
 }

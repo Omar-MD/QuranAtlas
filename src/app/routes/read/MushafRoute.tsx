@@ -1,4 +1,4 @@
-import { BookOpen, Bookmark, ChevronLeft, ChevronRight, ScanEye } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Expand, ScanEye } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
@@ -6,6 +6,7 @@ import { MushafPageViewer } from '../../../components/reader/MushafPageViewer'
 import type { ReaderAssetState } from '../../../components/reader/ReaderAssetGate'
 import { ReaderAssetGate } from '../../../components/reader/ReaderAssetGate'
 import { ReaderPageShell } from '../../../components/reader/ReaderPageShell'
+import { ReadingViewToggle } from '../../../components/reader/ReadingViewToggle'
 import { useMushafChromeVisibility, type MushafChromePin } from '../../../components/reader/useMushafChromeVisibility'
 import type { MushafViewMode } from '../../../components/reader/MushafModeControl'
 import { Button, ChoiceButton, IconButton, Spinner, Status } from '../../../components/ui'
@@ -23,7 +24,6 @@ import {
   deriveWirdSummary,
   getLocalDayKey,
 } from '../../../continuity/wird/progress'
-import { hasWirdProgressIntent, withWirdProgressIntent } from '../../../continuity/wird/session'
 import {
   normalizeWirdPlan,
   notifyWirdPlanChanged,
@@ -110,7 +110,9 @@ export function MushafRoute({
     if (!wirdPlan || wirdCounts.length !== 114) return undefined
     return deriveWirdSummary(wirdPlan, wirdCounts, { boundaries: wirdBoundaries })
   }, [wirdBoundaries, wirdCounts, wirdPlan])
-  const enableWirdProgress = hasWirdProgressIntent()
+  // §15.4.8: progress counts for any reading inside today's range — no
+  // URL intent gate; a complete surah index plus an existing plan is enough.
+  const enableWirdProgress = wirdPlan !== null && wirdCounts.length === 114
   const profileSession = useMushafProfileSession({
     enabled: assetState === 'ready',
     profile: activeSettings
@@ -260,13 +262,7 @@ export function MushafRoute({
     setVisiblePage(next)
   }, [])
 
-  const mushafHash = useCallback(
-    (nextPage: number): string => {
-      const href = REACT_ROUTES.mushaf(nextPage)
-      return enableWirdProgress ? withWirdProgressIntent(href) : href
-    },
-    [enableWirdProgress],
-  )
+  const mushafHash = useCallback((nextPage: number): string => REACT_ROUTES.mushaf(nextPage), [])
 
   const replaceMushafHash = useCallback(
     (nextPage: number): void => {
@@ -421,28 +417,58 @@ export function MushafRoute({
     ? bookmarkedVerseKeys.has(createMushafPageBookmarkKey(visiblePage.resolved.page))
     : false
 
+  const togglePageBookmark = useCallback(() => {
+    if (!visiblePage) return
+    const bookmarkPage = visiblePage.resolved.page
+    void toggleBookmark({
+      kind: 'page',
+      page: bookmarkPage,
+      riwayah: visiblePage.resolved.riwayah,
+      surah: 0,
+      verseKey: createMushafPageBookmarkKey(bookmarkPage),
+    })
+  }, [toggleBookmark, visiblePage])
+
+  const goToVerseMode = useCallback(() => {
+    const visibleRef = visiblePage?.resolved.firstVerse
+    if (visibleRef) {
+      window.location.hash = REACT_ROUTES.surah(visibleRef.surah, visibleRef.verse)
+      return
+    }
+    void resolveVerseHrefForMushafPage(page).then((href) => {
+      window.location.hash = href
+    })
+  }, [page, visiblePage])
+
+  const handleModeChange = useCallback(
+    (nextMode: 'verse' | 'mushaf') => {
+      if (nextMode === 'verse') goToVerseMode()
+    },
+    [goToVerseMode],
+  )
+
+  const positionBookmark = visiblePage
+    ? {
+        saved: pageBookmarked,
+        label: pageBookmarked
+          ? `Remove bookmark for page ${visiblePage.resolved.page}`
+          : `Bookmark page ${visiblePage.resolved.page}`,
+        onToggle: togglePageBookmark,
+      }
+    : undefined
+
   return (
     <ReaderPageShell
       bottomStrip={
         visiblePage ? (
           <MushafBottomStrip
-            bookmarked={pageBookmarked}
             focusMode={chrome.focusMode}
             juz={juzForVerse(visiblePage.resolved.firstVerse)}
             onEnterFocus={chrome.enterFocus}
             onNextPage={() => requestDiscretePage(visiblePage.resolved.page + 1)}
             onPreviousPage={() => requestDiscretePage(visiblePage.resolved.page - 1)}
-            onRevealChrome={() => chrome.reveal()}
-            onToggleBookmark={() => {
-              const bookmarkPage = visiblePage.resolved.page
-              void toggleBookmark({
-                kind: 'page',
-                page: bookmarkPage,
-                riwayah: visiblePage.resolved.riwayah,
-                surah: 0,
-                verseKey: createMushafPageBookmarkKey(bookmarkPage),
-              })
-            }}
+            onRevealChrome={chrome.reveal}
+            onToVerse={handleModeChange}
             page={visiblePage.resolved.page}
             pageCount={visiblePage.resolved.pageCount}
           />
@@ -454,19 +480,8 @@ export function MushafRoute({
       interactionSuspended={interactionSuspended || gateSurfaceRendered}
       mode="mushaf"
       onChromePinChange={handleChromePin}
-      onModeChange={(nextMode) => {
-        if (nextMode === 'verse') {
-          const visibleRef = visiblePage?.resolved.firstVerse
-          if (visibleRef) {
-            const href = REACT_ROUTES.surah(visibleRef.surah, visibleRef.verse)
-            window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
-            return
-          }
-          void resolveVerseHrefForMushafPage(page).then((href) => {
-            window.location.hash = enableWirdProgress ? withWirdProgressIntent(href) : href
-          })
-        }
-      }}
+      onModeChange={handleModeChange}
+      positionBookmark={positionBookmark}
       resolveSelectorHref={(hash) => resolveDrawerHrefForReaderMode('mushaf', hash)}
       showWirdStatus={
         activeSettings?.wirdReaderStatusVisible ?? DEFAULT_REACT_READER_PREFERENCES.wirdReaderStatusVisible
@@ -582,66 +597,91 @@ export function MushafRoute({
   )
 }
 
-// Bottom strip (S4): Prev/Next · live page identity (eyebrow style, always
-// visible; the printed number is never the only reference) · page bookmark ·
-// Focus button (icon + label).
+// Bottom strip (brief §4.11): mode mark left · ‹ Page N · Juz M › centre ·
+// Focus right. Phones page around the identity and enter Focus with an icon;
+// desktop pages from the left cluster and keeps the labelled Focus button.
+// The page bookmark lives in the header (§4.9).
 function MushafBottomStrip({
-  bookmarked,
   focusMode,
   juz,
   onEnterFocus,
   onNextPage,
   onPreviousPage,
   onRevealChrome,
-  onToggleBookmark,
+  onToVerse,
   page,
   pageCount,
 }: {
-  bookmarked: boolean
   focusMode: boolean
   juz: number
   onEnterFocus: () => void
   onNextPage: () => void
   onPreviousPage: () => void
   onRevealChrome: () => void
-  onToggleBookmark: () => void
+  onToVerse: (mode: 'verse' | 'mushaf') => void
   page: number
   pageCount: number
 }) {
+  const identity = (
+    <span className="qar-mushaf-page-identity qar-eyebrow" role="status">
+      <span className="qar:sr-only">Mushaf page </span>
+      Page {page} · Juz {juz}
+    </span>
+  )
   return (
     <div className="qar-reader-bottom-strip" data-bottom-strip="mushaf">
       <div className="qar-reader-bottom-strip-left">
-        <IconButton disabled={page >= pageCount} label="Next Mushaf page" onClick={onNextPage}>
+        <span className="qar-reader-mode-toggle-slot">
+          <ReadingViewToggle mode="mushaf" onModeChange={onToVerse} variant="icon" />
+        </span>
+        <span className="qar-mushaf-paging-desktop">
+          <IconButton disabled={page >= pageCount} label="Next Mushaf page" onClick={onNextPage}>
+            <ChevronLeft aria-hidden="true" size={20} strokeWidth={1.8} />
+          </IconButton>
+          <IconButton disabled={page <= 1} label="Previous Mushaf page" onClick={onPreviousPage}>
+            <ChevronRight aria-hidden="true" size={20} strokeWidth={1.8} />
+          </IconButton>
+        </span>
+      </div>
+      <div className="qar-reader-bottom-strip-center">
+        <IconButton
+          className="qar-mushaf-paging-mobile qar-reader-chrome-icon"
+          disabled={page >= pageCount}
+          label="Next Mushaf page"
+          onClick={onNextPage}
+        >
           <ChevronLeft aria-hidden="true" size={20} strokeWidth={1.8} />
         </IconButton>
-        <IconButton disabled={page <= 1} label="Previous Mushaf page" onClick={onPreviousPage}>
+        {identity}
+        <IconButton
+          className="qar-mushaf-paging-mobile qar-reader-chrome-icon"
+          disabled={page <= 1}
+          label="Previous Mushaf page"
+          onClick={onPreviousPage}
+        >
           <ChevronRight aria-hidden="true" size={20} strokeWidth={1.8} />
         </IconButton>
       </div>
-      <div className="qar-reader-bottom-strip-center">
-        <span className="qar-mushaf-page-identity qar-eyebrow" role="status">
-          <span className="qar:sr-only">Mushaf page </span>
-          Page {page} · Juz {juz}
-        </span>
-      </div>
       <div className="qar-reader-bottom-strip-right">
-        <IconButton
-          aria-pressed={bookmarked}
-          label={bookmarked ? `Remove bookmark for Mushaf page ${page}` : `Bookmark Mushaf page ${page}`}
-          onClick={onToggleBookmark}
-        >
-          <Bookmark aria-hidden="true" fill={bookmarked ? 'currentColor' : 'none'} size={18} strokeWidth={1.8} />
-        </IconButton>
         {focusMode ? (
           <Button onClick={onRevealChrome} size="sm" variant="secondary">
             <ScanEye aria-hidden="true" size={16} strokeWidth={1.8} />
             Show controls
           </Button>
         ) : (
-          <Button onClick={onEnterFocus} size="sm" variant="secondary">
-            <BookOpen aria-hidden="true" size={16} strokeWidth={1.8} />
-            Focus
-          </Button>
+          <>
+            <span className="qar-mushaf-focus-mobile">
+              <IconButton label="Focus" onClick={onEnterFocus}>
+                <Expand aria-hidden="true" size={20} strokeWidth={1.8} />
+              </IconButton>
+            </span>
+            <span className="qar-mushaf-focus-desktop">
+              <Button onClick={onEnterFocus} size="sm" variant="secondary">
+                <Expand aria-hidden="true" size={16} strokeWidth={1.8} />
+                Focus
+              </Button>
+            </span>
+          </>
         )}
       </div>
     </div>
@@ -687,7 +727,7 @@ function MushafCoachMark({ chromeVisible, readable }: { chromeVisible: boolean; 
   return (
     <aside aria-label="Mushaf controls tip" className="qar-react-mushaf-coach" data-coach-mark="true" role="note">
       <p className="qar:m-0 qar:text-sm qar:leading-5">
-        Tap Focus to hide the controls — tap the page to bring them back.
+        Tap the Focus button (⤢) to hide the controls — tap the page to bring them back.
       </p>
       <div>
         <Button

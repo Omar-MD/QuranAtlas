@@ -7,6 +7,7 @@ import { IncludedAssetsSection } from '../../../components/settings/IncludedAsse
 import { OfflineDataSection } from '../../../components/settings/OfflineDataSection'
 import { MushafSettings } from '../../../components/settings/MushafSettings'
 import { SettingsGroup } from '../../../components/settings/SettingsGroup'
+import { SettingsRow } from '../../../components/settings/SettingsRow'
 import { ThemeControls } from '../../../components/settings/ThemeControls'
 import { VerseReadingControls } from '../../../components/settings/VerseReadingControls'
 import { useSettingsForm } from '../../../components/settings/useSettingsForm'
@@ -49,6 +50,23 @@ export function SettingsRoute({
   const [includedAssetsVisible, setIncludedAssetsVisible] = useState(
     () => downloadsOpen && shouldShowIncludedAssetsByDefault(),
   )
+  // G-3(b): the resolved theme (System included) decides whether "Dim page
+  // images" can be toggled; the attribute is maintained by
+  // applyReactReaderAppearance, so read it back instead of re-deriving.
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'sepia' | 'dark'>(() => getResolvedTheme())
+  useEffect(() => {
+    function syncResolvedTheme() {
+      setResolvedTheme(getResolvedTheme())
+    }
+    syncResolvedTheme()
+    const unsubscribe = subscribeReactReaderPreferencesChanged(syncResolvedTheme)
+    const query = window.matchMedia?.('(prefers-color-scheme: dark)')
+    query?.addEventListener('change', syncResolvedTheme)
+    return () => {
+      unsubscribe()
+      query?.removeEventListener('change', syncResolvedTheme)
+    }
+  }, [])
   const [framingCapability, setFramingCapability] = useState<{
     hasValidFraming: boolean
     representativeTextFrame?: NormalizedRect
@@ -158,7 +176,11 @@ export function SettingsRoute({
       ) : null}
 
       {downloadsOpen ? (
-        <div className="qar:scroll-mt-20" data-settings-downloads-section="true" ref={downloadsSectionRef}>
+        <div
+          className="qar:grid qar:gap-7 qar:scroll-mt-20"
+          data-settings-downloads-section="true"
+          ref={downloadsSectionRef}
+        >
           <OfflineDataSection />
           <IncludedAssetsSection onVisibleChange={setIncludedAssetsVisible} visible={includedAssetsVisible} />
         </div>
@@ -170,23 +192,32 @@ export function SettingsRoute({
 
           <SettingsGroup title="Reading">
             {mode === 'verse' ? (
-              <>
-                <VerseReadingControls
-                  fontSize={preferences.fontSize}
-                  onFontSizeChange={setFontSize}
-                  onTranslationFontSizeChange={setTranslationFontSize}
-                  onVerseSpacingChange={setVerseSpacing}
-                  onWirdVisibleChange={setWirdReaderStatusVisible}
-                  showContinuityToggle
-                  translationFontSize={preferences.translationFontSize}
-                  verseSpacing={preferences.verseSpacing}
-                  wirdVisible={preferences.wirdReaderStatusVisible}
-                />
-                <div className="qar-react-settings-row">
-                  <span className="qar-react-settings-row-label">Translation</span>
-                  <TranslationSelector onChange={setTranslationVisible} value={preferences.translationVisible} />
-                </div>
-              </>
+              <VerseReadingControls
+                fontSize={preferences.fontSize}
+                onFontSizeChange={setFontSize}
+                onTranslationFontSizeChange={setTranslationFontSize}
+                onVerseSpacingChange={setVerseSpacing}
+                onWirdVisibleChange={setWirdReaderStatusVisible}
+                showContinuityToggle
+                translationFontSize={preferences.translationFontSize}
+                translationRow={
+                  <SettingsRow label="Translation">
+                    <Select
+                      className="qar-react-field-select"
+                      label="Translation"
+                      onValueChange={(next) => setTranslationVisible(next === 'bridges')}
+                      options={[
+                        { label: 'Bridges', value: 'bridges' },
+                        { label: 'Off', value: 'off' },
+                      ]}
+                      value={preferences.translationVisible ? 'bridges' : 'off'}
+                    />
+                  </SettingsRow>
+                }
+                translationVisible={preferences.translationVisible}
+                verseSpacing={preferences.verseSpacing}
+                wirdVisible={preferences.wirdReaderStatusVisible}
+              />
             ) : (
               <MushafSettings
                 dimPageImages={preferences.dimPageImages}
@@ -198,6 +229,9 @@ export function SettingsRoute({
                 onFramingChange={setMushafPageFraming}
                 onModeChange={setMushafViewMode}
                 onRetryFraming={retryMushafPageFraming}
+                resolvedTheme={resolvedTheme}
+                wirdVisible={preferences.wirdReaderStatusVisible}
+                onWirdVisibleChange={setWirdReaderStatusVisible}
               />
             )}
           </SettingsGroup>
@@ -211,18 +245,9 @@ export function SettingsRoute({
   )
 }
 
-function TranslationSelector({ onChange, value }: { onChange: (visible: boolean) => void; value: boolean }) {
-  return (
-    <Select
-      value={value ? 'bridges' : 'off'}
-      label="Translation"
-      onValueChange={(next) => onChange(next === 'bridges')}
-      options={[
-        { label: 'Bridges', value: 'bridges' },
-        { label: 'Off', value: 'off' },
-      ]}
-    />
-  )
+function getResolvedTheme(): 'light' | 'sepia' | 'dark' {
+  const theme = document.documentElement.dataset.theme
+  return theme === 'dark' || theme === 'sepia' ? theme : 'light'
 }
 
 function shouldShowIncludedAssetsByDefault(): boolean {

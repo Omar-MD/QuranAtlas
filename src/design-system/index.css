@@ -273,6 +273,13 @@
     background: transparent;
   }
 
+  /* Pressed chrome toggles (brief §4.7): position bookmark and mode toggle ink
+     the icon when aria-pressed=true — no fill beyond the glyph's own. */
+  .qar-reader-chrome .qar-reader-chrome-icon[aria-pressed="true"],
+  .qar-reader-bottom-strip .qar-reader-chrome-icon[aria-pressed="true"] {
+    color: var(--qa-react-text);
+  }
+
   /* The view toggle renders in the top bar on desktop; on phones it lives in
      the bottom strip (S3). */
   .qar-reader-chrome-view-toggle {
@@ -397,6 +404,53 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  /* Mushaf strip responsive treatment (brief §4.11): phones page around the
+     identity and enter Focus by icon; desktop pages from the left and keeps
+     the labelled Focus button. The header segmented control owns mode on
+     desktop, so the icon toggle is a phone-only mark. */
+  .qar-reader-mode-toggle-slot {
+    display: inline-flex;
+  }
+
+  .qar-mushaf-paging-desktop,
+  .qar-mushaf-focus-desktop {
+    display: none;
+  }
+
+  .qar-mushaf-focus-mobile {
+    display: inline-flex;
+  }
+
+  @media (min-width: 640px) {
+    .qar-reader-bottom-strip[data-bottom-strip="mushaf"] .qar-reader-mode-toggle-slot,
+    .qar-reader-bottom-strip[data-bottom-strip="mushaf"] .qar-mushaf-paging-mobile,
+    .qar-reader-bottom-strip[data-bottom-strip="mushaf"] .qar-mushaf-focus-mobile {
+      display: none;
+    }
+
+    .qar-reader-bottom-strip[data-bottom-strip="mushaf"] .qar-mushaf-paging-desktop {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qar-reader-bottom-strip[data-bottom-strip="mushaf"] .qar-mushaf-focus-desktop {
+      display: inline-flex;
+    }
+  }
+
+  /* Inverted mode badge (brief §4.8): solid ink square, canvas glyph — the
+     icon-variant "pressed" face of the mode toggle. */
+  .qar-reader-mode-badge {
+    display: grid;
+    place-items: center;
+    width: var(--qa-react-mode-badge);
+    height: var(--qa-react-mode-badge);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-text);
+    color: var(--qa-react-canvas);
   }
 
   /* Mushaf page identity (criterion 4): always-visible eyebrow line. */
@@ -839,9 +893,11 @@
     margin: 0 auto 16px;
     max-width: 68ch;
     padding: 16px;
-    border: 1px solid color-mix(in srgb, var(--qa-react-accent) 35%, var(--qa-react-border));
+    /* G-10: hairline card on surface — the accent survives only as the
+       eyebrow text, never a tinted panel fill. */
+    border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-accent-tint);
+    background: var(--qa-react-surface);
   }
 
   .qar-edition-banner-actions {
@@ -857,6 +913,12 @@
   /* Shared modal scrim: every overlay paints var(--qa-react-scrim). */
   .qar-react-scrim {
     background: var(--qa-react-scrim);
+  }
+
+  /* Aa sheet overlay only (brief §3.1): near-transparent so the reader stays
+     legible as the live preview. */
+  .qar-react-scrim-quiet {
+    background: var(--qa-react-scrim-quiet);
   }
 
   /* The single overlay shadow (brief §1.5) as a composable class. */
@@ -925,16 +987,11 @@
   }
 
   /* Icon-row drawer groups (polish v2, mockup A): tiny labels, 30 px icon
-     tiles, one slim Wird row — no wordmark, no promo card. */
+     tiles. G-9: the labels use the shared eyebrow type role; this modifier
+     only adds the drawer gutter spacing. */
   .qar-react-drawer-group-label {
     margin: 0;
     padding: 8px 12px 4px;
-    color: var(--qa-react-text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    line-height: 1.4;
-    text-transform: uppercase;
   }
 
   .qar-react-drawer-group-label--after-gap {
@@ -952,315 +1009,173 @@
     color: var(--qa-react-text-muted);
   }
 
-  /* Slim Daily Wird row: same metrics as ListRow (44 px target, 12 px gap
-     and gutters, bottom hairline) with a trailing chevron. */
-  .qar-react-drawer-wird-row {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: var(--qa-react-control-touch-target);
-    margin: 0;
-    padding: 8px 12px;
-    border: 1px solid transparent;
-    border-block-end-color: var(--qa-react-border);
-    border-radius: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .qar-react-drawer-wird-row:hover {
-    background: var(--qa-react-accent-tint);
-  }
-
-  .qar-react-drawer-wird-row:focus-visible {
-    outline: 2px solid var(--qa-react-accent);
-    outline-offset: 2px;
-  }
-
-  .qar-react-drawer-wird-copy {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-    text-align: start;
-  }
-
-  .qar-react-drawer-wird-slot {
-    padding: 12px;
-  }
-
   .qar-react-drawer-section {
     display: grid;
     padding: 8px 12px 12px;
   }
 
-  /* Daily wird card (existing feature; flat treatment per the tier rules). */
-  .qar-react-wird-card {
-    position: relative;
-    display: block;
-    width: 100%;
-    min-height: 88px;
-    padding: 0;
-    overflow: hidden;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-surface);
-    color: var(--qa-react-text);
-    cursor: pointer;
-    text-align: start;
-  }
+  /* --------------------------- Daily Wird surface (§15) -------------------- */
 
-  .qar-react-wird-card-hit {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: var(--qa-react-radius-surface);
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .qar-react-wird-card-main {
-    display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-    min-height: 88px;
-    padding: 12px 10px 11px 13px;
-  }
-
-  .qar-react-wird-card--setup .qar-react-wird-card-main {
-    min-height: 84px;
-  }
-
-  .qar-react-wird-card-status-badge {
+  /* One ring implementation (brief §15.11): conic accent fill on a border
+     track, masked to the stroke by the inner surface disc. */
+  .qar-react-wird-ring {
     position: relative;
     display: grid;
     place-items: center;
-    inline-size: 40px;
-    block-size: 40px;
-    border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-pill);
-    background: var(--qa-react-accent-tint);
-    color: var(--qa-react-accent);
+    background: var(--qa-react-border);
   }
 
-  .qar-react-wird-card--complete .qar-react-wird-card-status-badge {
-    border-color: var(--qa-react-accent);
-    background: var(--qa-react-accent-tint);
-  }
-
-  .qar-react-wird-card--setup .qar-react-wird-card-status-badge::after {
-    content: "+";
-    position: absolute;
-    right: -1px;
-    bottom: -1px;
-    display: grid;
-    place-items: center;
-    inline-size: 14px;
-    block-size: 14px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-pill);
-    background: var(--qa-react-surface);
-    color: var(--qa-react-accent);
-    font: 700 0.65rem / 1 var(--qa-react-font-ui);
-  }
-
-  .qar-react-wird-card-copy,
-  .qar-react-wird-card-head,
-  .qar-react-wird-card-line,
-  .qar-react-wird-card-meta {
-    display: flex;
-    min-width: 0;
-  }
-
-  .qar-react-wird-card-copy {
-    flex-direction: column;
-    gap: 3px;
-  }
-
-  .qar-react-wird-card-head,
-  .qar-react-wird-card-line,
-  .qar-react-wird-card-meta {
-    align-items: baseline;
-    gap: 7px;
-  }
-
-  .qar-react-wird-card-kicker,
-  .qar-react-wird-card-pct {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-
-  .qar-react-wird-card-kicker {
-    color: var(--qa-react-text);
-    font-family: inherit;
-    font-size: 0.92rem;
-    letter-spacing: 0;
-    line-height: 1.12;
-    text-transform: none;
-  }
-
-  .qar-react-wird-card-range {
-    display: block;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--qa-react-text);
-    font-family: var(--qa-react-font-mono);
-    font-size: 0.78rem;
-    font-weight: 650;
-    line-height: 1.25;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .qar-react-wird-card--setup .qar-react-wird-card-range {
-    color: var(--qa-react-text-muted);
-    font-family: inherit;
-    font-size: 0.76rem;
-    font-weight: 500;
-    line-height: 1.3;
-    white-space: normal;
-  }
-
-  .qar-react-wird-card-meta {
-    display: block;
-    overflow: hidden;
-    color: var(--qa-react-text-muted);
-    font-size: 0.75rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .qar-react-wird-card-end {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    min-width: 52px;
-    color: var(--qa-react-text);
-  }
-
-  .qar-react-wird-card-meter {
-    position: relative;
-    display: grid;
-    place-items: center;
-    inline-size: 42px;
-    block-size: 42px;
-    border-radius: var(--qa-react-radius-pill);
-    background:
-      conic-gradient(
-        var(--qa-react-accent) var(--qa-react-wird-card-progress),
-        color-mix(in srgb, var(--qa-react-accent) 14%, transparent) 0
-      ),
-      var(--qa-react-surface);
-  }
-
-  .qar-react-wird-card-meter::after {
+  .qar-react-wird-ring::before {
     content: "";
     position: absolute;
-    inset: 4px;
+    inset: 0;
     border-radius: inherit;
-    background: var(--qa-react-surface);
+    background: conic-gradient(var(--qa-react-accent) var(--qa-react-wird-ring-progress, 0deg), transparent 0);
   }
 
-  .qar-react-wird-card-pct {
+  .qar-react-wird-ring::after {
+    content: "";
+    position: absolute;
+    inset: var(--qa-react-wird-ring-stroke);
+    border-radius: inherit;
+    background: var(--qa-react-sheet);
+  }
+
+  .qar-react-wird-ring--md {
+    inline-size: var(--qa-react-wird-ring);
+    block-size: var(--qa-react-wird-ring);
+  }
+
+  .qar-react-wird-ring--sm {
+    --qa-react-wird-ring-stroke: 3px;
+    inline-size: var(--qa-react-wird-ring-sm);
+    block-size: var(--qa-react-wird-ring-sm);
+  }
+
+  .qar-react-wird-ring-face {
     position: relative;
     z-index: 1;
-    color: var(--qa-react-accent);
-    font-family: var(--qa-react-font-mono);
-    font-size: 0.68rem;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0;
+    display: grid;
+    place-items: center;
+    color: var(--qa-react-text);
   }
 
-  .qar-react-wird-card-chev {
-    color: var(--qa-react-text);
-    font-size: 1.45rem;
+  .qar-react-wird-ring--md .qar-react-wird-ring-face {
+    font-family: var(--qa-react-font-translation);
+    font-size: 15px;
+    font-weight: 600;
     line-height: 1;
   }
 
-  .qar-react-wird-card-reminder-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 14px 12px 67px;
-    color: var(--qa-react-text-muted);
-    font-size: 0.75rem;
-  }
-
-  .qar-react-wird-detail {
+  /* Overview (W-A, brief §15.5). */
+  .qar-react-wird-overview {
     display: grid;
-    gap: 14px;
-    padding: 12px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-surface);
-    color: var(--qa-react-text);
+    gap: var(--qa-react-settings-group-gap);
   }
 
-  .qar-react-wird-detail-head,
-  .qar-react-wird-field-head {
+  .qar-react-wird-hero {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    gap: 16px;
   }
 
-  .qar-react-wird-detail-title {
+  .qar-react-wird-hero-copy {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .qar-react-wird-range {
     margin: 0;
-    font-size: 1rem;
+    color: var(--qa-react-text);
+    font-family: var(--qa-react-font-translation);
+    font-size: 22px;
+    font-weight: 600;
     line-height: 1.2;
   }
 
-  .qar-react-wird-setup,
-  .qar-react-wird-current,
-  .qar-react-wird-field {
-    display: grid;
-    gap: 10px;
-  }
-
-  .qar-react-wird-field {
-    padding-block: 2px 8px;
-    border-bottom: 1px solid var(--qa-react-border);
-  }
-
-  .qar-react-wird-field:last-of-type {
-    border-bottom: 0;
-  }
-
-  .qar-react-wird-eyebrow,
-  .qar-react-wird-help,
-  .qar-react-wird-range,
-  .qar-react-wird-remaining,
-  .qar-react-wird-reminder-line,
-  .qar-react-wird-note {
+  .qar-react-wird-meta {
     margin: 0;
-  }
-
-  .qar-react-wird-eyebrow,
-  .qar-react-wird-field-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    color: var(--qa-react-text);
-    font-size: 0.78rem;
-    font-weight: 700;
-  }
-
-  .qar-react-wird-help,
-  .qar-react-wird-field-value,
-  .qar-react-wird-remaining,
-  .qar-react-wird-reminder-line,
-  .qar-react-wird-note {
     color: var(--qa-react-text-muted);
-    font-size: 0.78rem;
-    line-height: 1.35;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .qar-react-wird-whole-plan {
+    display: grid;
+    gap: 8px;
+  }
+
+  .qar-react-wird-whole-plan-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    color: var(--qa-react-text-muted);
+    font-size: 12px;
+  }
+
+  .qar-react-wird-plan-bar {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--qa-react-border);
+    overflow: hidden;
+  }
+
+  .qar-react-wird-plan-bar > span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 2px;
+    background: var(--qa-react-accent);
+  }
+
+  .qar-react-wird-row-value {
+    color: var(--qa-react-text);
+    font-size: 15px;
+  }
+
+  .qar-react-wird-actions {
+    display: grid;
+    gap: 12px;
+  }
+
+  .qar-react-wird-secondary-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* Form (W-B, brief §15.6): eyebrow groups at the settings group rhythm. */
+  .qar-react-wird-form {
+    display: grid;
+    gap: var(--qa-react-settings-group-gap);
+  }
+
+  .qar-react-wird-form section {
+    display: grid;
+    gap: 8px;
+    justify-items: start;
+  }
+
+  .qar-react-wird-helper {
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .qar-react-wird-form-footer {
+    display: grid;
+    gap: 12px;
+  }
+
+  .qar-react-wird-loading {
+    display: grid;
+    gap: 12px;
+    padding-block: 8px;
   }
 
   /* ------------------------------ Settings (S8) ---------------------------- */
@@ -1311,7 +1226,7 @@
     background: var(--qa-react-sheet);
   }
 
-  [data-sheet-variant="adaptive-settings"] > div:first-child > button {
+  [data-sheet-variant="adaptive-settings"] > div:first-child button {
     min-width: var(--qa-react-control-touch-target);
     min-height: var(--qa-react-control-touch-target);
   }
@@ -1328,53 +1243,49 @@
     display: grid;
     align-content: start;
     grid-auto-rows: max-content;
-    gap: 16px;
+    gap: var(--qa-react-settings-group-gap);
     min-height: 0;
-    padding: 16px 20px calc(env(safe-area-inset-bottom) + 20px);
+    padding: 16px var(--qa-react-settings-gutter) calc(16px + env(safe-area-inset-bottom));
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--qa-react-sheet);
   }
 
-  /* Quiet section heading (brief §2.2): eyebrow + hairline, never a nested
-     bordered card. */
+  /* Quiet section heading (brief §2.2): eyebrow + rows — never a nested
+     bordered card. Groups separate by space only (brief §4.12). */
   .qar-react-settings-section {
     display: grid;
-    gap: 4px;
+    gap: 8px;
   }
 
   .qar-react-settings-section > .qar-eyebrow {
     margin: 0;
-    padding-bottom: 6px;
     font-size: 0.6875rem;
   }
 
-  .qar-react-settings-body > .qar-react-settings-section {
-    padding: 14px;
-    border: 1px solid var(--qa-react-border);
-    border-radius: var(--qa-react-radius-surface);
-    background: var(--qa-react-surface);
-  }
-
+  /* Stepper (brief §4.1): content-sized 44/64/44 grid, reading-face glyphs,
+     hairline on the group only — no cell borders, never full width. */
   .qar-react-stepper {
     display: inline-grid;
-    grid-template-columns: 44px 64px 44px;
+    grid-template-columns: var(--qa-react-stepper-button) var(--qa-react-stepper-value) var(--qa-react-stepper-button);
     align-items: center;
     min-width: 0;
     margin: 0;
     padding: 0;
     border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-surface);
   }
 
   .qar-react-stepper-button {
+    display: grid;
+    place-items: center;
     min-height: 44px;
     border: 0;
     border-radius: var(--qa-react-radius-control);
     background: transparent;
     color: var(--qa-react-text);
     font: inherit;
-    font-size: 0.875rem;
     cursor: pointer;
   }
 
@@ -1384,7 +1295,7 @@
 
   .qar-react-stepper-button:focus-visible {
     outline: 2px solid var(--qa-react-accent);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   .qar-react-stepper-button:disabled {
@@ -1392,9 +1303,40 @@
     cursor: default;
   }
 
+  .qar-react-stepper-glyph {
+    display: block;
+    color: var(--qa-react-text);
+    line-height: 1;
+  }
+
+  .qar-react-stepper-glyph--latin {
+    font-family: var(--qa-react-font-translation);
+    font-weight: 500;
+  }
+
+  .qar-react-stepper-glyph--arabic {
+    font-family: var(--qa-react-font-arabic);
+  }
+
+  .qar-react-stepper-glyph--decrease {
+    font-size: 13px;
+  }
+
+  .qar-react-stepper-glyph--arabic.qar-react-stepper-glyph--decrease {
+    font-size: 15px;
+  }
+
+  .qar-react-stepper-glyph--increase {
+    font-size: 19px;
+  }
+
+  .qar-react-stepper-glyph--arabic.qar-react-stepper-glyph--increase {
+    font-size: 22px;
+  }
+
   .qar-react-stepper-value {
     color: var(--qa-react-text-muted);
-    font-size: 0.75rem;
+    font-size: 12px;
     text-align: center;
   }
 
@@ -1402,12 +1344,15 @@
     display: grid;
   }
 
+  /* Settings rows (brief §3.3): inline rows keep label left / content-sized
+     control right at all widths; flex-wrap lets enlarged text stack the label
+     above the control while it stays right-aligned (brief §9). */
   .qar-react-settings-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 16px;
-    min-height: var(--qa-react-control-touch-target);
+    gap: 8px 16px;
+    min-height: var(--qa-react-settings-row-min);
     padding: 8px 0;
   }
 
@@ -1417,8 +1362,25 @@
 
   .qar-react-settings-row-copy {
     display: grid;
+    flex: 1 1 auto;
     gap: 4px;
     min-width: 0;
+  }
+
+  /* The control slot right-aligns on the shared right edge; block rows pin
+     their control under the label, left-aligned. */
+  .qar-react-settings-row > :not(.qar-react-settings-row-copy) {
+    margin-inline-start: auto;
+  }
+
+  .qar-react-settings-row--block {
+    display: grid;
+    justify-items: start;
+    gap: 8px;
+  }
+
+  .qar-react-settings-row--block > :not(.qar-react-settings-row-copy) {
+    margin-inline-start: 0;
   }
 
   .qar-react-settings-row-label {
@@ -1434,31 +1396,239 @@
     line-height: 1.4;
   }
 
-  .qar-react-settings-row--stack {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .qar-react-settings-row [role="radiogroup"] {
-    min-width: min(100%, 13rem);
-  }
-
   .qar-react-settings-row [role="radio"],
   .qar-react-settings-row [role="switch"],
   .qar-react-settings-row [role="combobox"] {
     min-height: var(--qa-react-control-touch-target);
   }
 
-  /* Phone settings rows stack label above control (S8 mobile shell). */
-  @media (max-width: 639px) {
-    .qar-react-settings-row,
-    .qar-react-settings-row--font-size {
-      grid-template-columns: minmax(0, 1fr);
-      gap: 8px;
+  /* Aria-disabled control state (brief §4.14 rule 2): 40 % opacity, inert. */
+  .qar-react-settings-control-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* Fixed field widths (brief §3.1): settings controls are sized by token. */
+  .qar-react-field-select {
+    width: var(--qa-react-field-select);
+  }
+
+  .qar-react-field-date {
+    width: var(--qa-react-field-date);
+  }
+
+  .qar-react-field-time {
+    width: var(--qa-react-field-time);
+  }
+
+  /* Input leading adornment (brief §16 G-4): the prefix sits inside the field,
+     vertically centred, and the field reserves space for it. */
+  .qar-react-input-prefix-wrap {
+    position: relative;
+    display: block;
+  }
+
+  .qar-react-input-prefix {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    z-index: 1;
+    display: inline-flex;
+    color: var(--qa-react-text-muted);
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+
+  .qar-react-input-prefixed {
+    padding-inline-start: 36px;
+  }
+
+  /* TileGroup (brief §4.2): visual-choice radiogroup — accent border + check
+     badge + label weight, never colour alone, never the ink pill. */
+  .qar-react-tile-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--qa-react-tile-gap);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .qar-react-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: var(--qa-react-tile-width);
+    cursor: pointer;
+  }
+
+  .qar-react-tile-visual {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: var(--qa-react-tile-height);
+    border: 1px solid var(--qa-react-border);
+    border-radius: var(--qa-react-radius-control);
+    background: var(--qa-react-surface);
+    color: var(--qa-react-text);
+    transition: border-color 150ms;
+  }
+
+  .qar-react-tile-label {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--qa-react-text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+    text-align: center;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    transition: color 150ms;
+  }
+
+  .qar-react-tile-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: var(--qa-react-radius-pill);
+    background: var(--qa-react-accent);
+    color: var(--qa-react-text-on-accent);
+  }
+
+  .qar-react-tile[data-selected="true"] .qar-react-tile-visual {
+    border-color: var(--qa-react-accent);
+    border-width: 2px;
+  }
+
+  .qar-react-tile[data-selected="true"] .qar-react-tile-label {
+    color: var(--qa-react-text);
+    font-weight: 600;
+  }
+
+  @media (hover: hover) {
+    .qar-react-tile:hover .qar-react-tile-visual {
+      border-color: var(--qa-react-text-muted);
     }
 
-    .qar-react-settings-row--switch {
-      grid-template-columns: minmax(0, 1fr) auto;
+    .qar-react-tile[data-selected="true"]:hover .qar-react-tile-visual {
+      border-color: var(--qa-react-accent);
     }
+  }
+
+  .qar-react-tile:has(input:focus-visible) {
+    outline: 2px solid var(--qa-react-accent);
+    outline-offset: 2px;
+  }
+
+  .qar-react-tile:has(input:disabled) {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  /* Theme tile samples (brief §4.3): each tile paints its own theme's real
+     canvas/ink/muted/accent from the static sample tokens — never the live
+     theme, so switching themes never recolours the tiles. */
+  .qar-react-theme-tile {
+    --qa-react-theme-sample-canvas: var(--qa-react-theme-sample-light-canvas);
+    --qa-react-theme-sample-ink: var(--qa-react-theme-sample-light-ink);
+    --qa-react-theme-sample-muted: var(--qa-react-theme-sample-light-muted);
+    --qa-react-theme-sample-accent: var(--qa-react-theme-sample-light-accent);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 100%;
+    padding: 0 12px;
+    border-radius: calc(var(--qa-react-radius-control) - 1px);
+    background: var(--qa-react-theme-sample-canvas);
+    overflow: hidden;
+  }
+
+  .qar-react-theme-tile[data-sample="sepia"] {
+    --qa-react-theme-sample-canvas: var(--qa-react-theme-sample-sepia-canvas);
+    --qa-react-theme-sample-ink: var(--qa-react-theme-sample-sepia-ink);
+    --qa-react-theme-sample-muted: var(--qa-react-theme-sample-sepia-muted);
+    --qa-react-theme-sample-accent: var(--qa-react-theme-sample-sepia-accent);
+  }
+
+  .qar-react-theme-tile[data-sample="dark"] {
+    --qa-react-theme-sample-canvas: var(--qa-react-theme-sample-dark-canvas);
+    --qa-react-theme-sample-ink: var(--qa-react-theme-sample-dark-ink);
+    --qa-react-theme-sample-muted: var(--qa-react-theme-sample-dark-muted);
+    --qa-react-theme-sample-accent: var(--qa-react-theme-sample-dark-accent);
+  }
+
+  .qar-react-theme-tile-bar {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  .qar-react-theme-tile-bar--ink {
+    width: 32px;
+    background: var(--qa-react-theme-sample-ink);
+  }
+
+  .qar-react-theme-tile-bar--muted {
+    width: 20px;
+    background: var(--qa-react-theme-sample-muted);
+  }
+
+  .qar-react-theme-tile-bar--accent {
+    width: 12px;
+    background: var(--qa-react-theme-sample-accent);
+  }
+
+  /* System: a page split light/dark down the middle, bars scaled to the half
+     (brief §4.3). */
+  .qar-react-theme-tile--system {
+    flex-direction: row;
+    gap: 0;
+    padding: 0;
+  }
+
+  .qar-react-theme-tile-half {
+    display: flex;
+    flex: 1 1 50%;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 6px;
+    background: var(--qa-react-theme-sample-canvas);
+  }
+
+  .qar-react-theme-tile-half[data-sample="dark"] {
+    --qa-react-theme-sample-canvas: var(--qa-react-theme-sample-dark-canvas);
+    --qa-react-theme-sample-ink: var(--qa-react-theme-sample-dark-ink);
+    --qa-react-theme-sample-muted: var(--qa-react-theme-sample-dark-muted);
+    --qa-react-theme-sample-accent: var(--qa-react-theme-sample-dark-accent);
+  }
+
+  .qar-react-theme-tile--system .qar-react-theme-tile-bar--ink {
+    width: 16px;
+  }
+
+  .qar-react-theme-tile--system .qar-react-theme-tile-bar--muted {
+    width: 10px;
+  }
+
+  .qar-react-theme-tile--system .qar-react-theme-tile-bar--accent {
+    width: 6px;
+  }
+
+  /* Spacing glyph muted lines (brief §4.4): the Arabic-verse block pairs. */
+  .qar-react-spacing-glyph-muted {
+    fill: var(--qa-react-text-muted);
   }
 
   /* About calm sheet (polish v2, mockup A): tagline → notation row →
@@ -1510,6 +1680,11 @@
   .qar-about-notation-row-chevron {
     flex: none;
     color: var(--qa-react-text-muted);
+  }
+
+  /* Disclosure affordance (G-7): the chevron turns when the row is expanded. */
+  .qar-about-notation-row[aria-expanded="true"] .qar-about-notation-row-chevron {
+    transform: rotate(90deg);
   }
 
   /* Mushaf edition rows (S8): one quiet hairline-separated row per edition;
@@ -1649,6 +1824,9 @@
   }
 
   .qar-react-list-row-arabic {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     overflow: hidden;
     font-family: var(--qa-react-font-arabic);
     text-align: right;
@@ -1722,8 +1900,11 @@
     text-align: center;
   }
 
+  /* G-11: the empty-state ornament reads as a mark, not a gear — larger and
+     muted. The reader's own 14 px rule-star is untouched. */
   .qar-empty-state .qar-ornament-rule-star {
-    font-size: 20px;
+    font-size: 28px;
+    color: var(--qa-react-text-muted);
   }
 
   /* Bookmarks route (S7). */
@@ -2111,11 +2292,6 @@
     line-height: 1.5;
   }
 
-  /* Adjustments sheet (S3): bottom sheet, half-detent feel via content size. */
-  .qar-react-adjustments-sheet {
-    max-height: 62dvh;
-  }
-
   /* Mushaf loading reserve (S4): same paper surface + hairline at the page's
      aspect ratio so the anchor never shifts while a page loads. */
   .qar-react-mushaf-loading-reserve {
@@ -2147,22 +2323,61 @@
     overflow-y: auto;
     padding-bottom: calc(20px + env(safe-area-inset-bottom));
   }
-  .qar-react-bottom-sheet.qar-react-adjustments-sheet {
-    height: 62dvh;
-    max-height: 62dvh;
-    overflow: hidden;
+
+  /* Quick sheet (brief §4.5): content-height bottom sheet — no fixed height,
+     no drag-to-expand; the reader above is the live preview. */
+  .qar-react-bottom-sheet[data-sheet-variant="quick"] {
+    gap: 0;
+    max-height: 85dvh;
+    padding: 0;
+    overflow-y: auto;
   }
-  .qar-react-bottom-sheet.qar-react-adjustments-sheet[data-expanded="true"] {
-    height: 92dvh;
-    max-height: 92dvh;
+
+  /* Title bar (brief §4.5): 56 px, gutter-aligned padding, 17 px title, close
+     right. The adaptive-settings variant keeps its own full-height rules. */
+  .qar-react-sheet-titlebar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 56px;
+    padding: 0 12px 0 20px;
   }
+
+  .qar-react-sheet-title {
+    margin: 0;
+    color: var(--qa-react-text);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  /* Decorative grabber on the quick sheet (brief §4.5): also the drag-down
+     handle. */
+  .qar-react-sheet-grabber {
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 4px;
+    border-radius: 2px;
+    background: var(--qa-react-border);
+  }
+
+  .qar-react-sheet-quick-head {
+    touch-action: none;
+  }
+
+  /* Overlay close (brief §4.6): no wash at rest or on hover — muted to ink. */
+  .qar-react-overlay-close:hover,
+  .qar-react-overlay-close:focus-visible {
+    background: transparent;
+    color: var(--qa-react-text);
+  }
+
   .qar-react-sheet-handle {
     touch-action: none;
   }
   @media (max-width: 639px) {
-    .qar-reader-chrome-bookmarks {
-      display: none;
-    }
     .qar-reader-surah-header {
       margin-bottom: 24px;
     }

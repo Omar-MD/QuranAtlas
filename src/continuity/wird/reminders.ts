@@ -1,5 +1,4 @@
 import type { BrowserNotificationState, QuranRef, WirdReminder, WirdSummary } from './types'
-import { withWirdProgressIntent } from './session'
 
 export const WIRD_REMINDER_NOTIFICATION_TAG = 'quranatlas-daily-wird-reminder'
 export const WIRD_REMINDER_PERIODIC_SYNC_TAG = 'quranatlas-daily-wird-reminder'
@@ -37,7 +36,7 @@ export function createWirdReminderNotification(
   summary: WirdSummary & { nextRef: QuranRef },
   origin = globalThis.location?.origin ?? '',
 ): WirdReminderNotification {
-  const hash = withWirdProgressIntent(`#/s/${summary.nextRef.surah}/${summary.nextRef.verse}`)
+  const hash = `#/s/${summary.nextRef.surah}/${summary.nextRef.verse}`
   return {
     body: `Tap to continue at ${summary.nextRef.surah}:${summary.nextRef.verse}. ${summary.remainingLabel}.`,
     hash,

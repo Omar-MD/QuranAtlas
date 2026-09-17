@@ -110,6 +110,13 @@ export function ListRow({
   ...props
 }: ListRowProps) {
   const isSelected = Boolean(selected || current)
+  // G-5(b): for rows with a trailing slot the current-check rides inside it —
+  // never its own line — so every row keeps the same height.
+  const check = isSelected ? (
+    <span aria-hidden="true" className="qar-react-list-row-check">
+      <Check size={16} strokeWidth={2} />
+    </span>
+  ) : null
   const content = (
     <>
       {num != null ? <span className="qar-react-list-row-num qar:tabular-nums">{num}</span> : null}
@@ -120,6 +127,7 @@ export function ListRow({
       {arabic ? (
         <span className="qar-react-list-row-arabic" dir="rtl">
           {arabic}
+          {check}
         </span>
       ) : null}
     </>
@@ -143,11 +151,7 @@ export function ListRow({
       ) : (
         content
       )}
-      {isSelected ? (
-        <span aria-hidden="true" className="qar-react-list-row-check">
-          <Check size={16} strokeWidth={2} />
-        </span>
-      ) : null}
+      {arabic ? null : check}
       {action ? <ListRowActions>{action}</ListRowActions> : null}
     </div>
   )

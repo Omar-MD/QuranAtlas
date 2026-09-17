@@ -32,6 +32,55 @@ This is a current-tree status update, not a claim that the original review's rem
 
 The browser evidence uses simulated viewports, not a physical phone or native touch input. A clean origin was used for the final pass; an earlier contaminated multi-tab run produced an IndexedDB upgrade-blocked warning and is not treated as a product finding. Juz-to-printed-page metadata remains a documented mapping caveat, not a confirmed navigation failure.
 
+## Mobile reader browser comments — 17 September 2026
+
+**Status: documented user direction; not implemented.** These comments were attached directly to the live Verse reader at `#/s/1` in the built-in browser at 390 × 844. They supersede the earlier recommendation for a labelled `Verses / Mushaf` segmented control wherever the two directions conflict.
+
+### MR-001 — Reader-mode control disappears in Mushaf mode
+
+The mobile Verse reader exposes a `Verses / Mushaf` control in its bottom strip, but the corresponding Mushaf bottom strip does not expose a route back to Verse view. The shared desktop header control is hidden below the mobile breakpoint. As a result, selecting Mushaf removes the control the reader just used and makes the two reader modes appear one-way.
+
+**Required behaviour:** the reader-mode control must remain available in the visible control set in both Verse and Mushaf modes. It must support a complete Verse → Mushaf → Verse round trip while retaining the equivalent reading position. Mushaf Focus mode may intentionally hide chrome, but revealing the controls must restore the reader-mode action.
+
+### MR-002 — Replace the text switch with a book icon toggle
+
+The current segmented control is not the desired mobile presentation. Replace the mobile text switch with one book icon control. The icon should be outline/unfilled in Verse mode and filled or visually inverted in Mushaf mode so the current state is visible without adding a second labelled segment.
+
+The control must retain a 44 × 44 CSS-pixel target, expose its state programmatically, and use a mode-specific accessible name such as `Switch to Mushaf view` or `Switch to Verse view`. The active appearance must not depend on colour alone. The final icon treatment should use the owned icon-button primitive and existing reader tokens rather than introducing a separate control style.
+
+### MR-003 — Move the current bookmark action into the top-right header
+
+Move the action that bookmarks the current verse or Mushaf page from the bottom strip to the top-right reader header, immediately beside Settings. The header action must represent the current reading position—not navigate to the Bookmarks screen—and must show a clear saved/unsaved state. The Bookmarks destination remains available from navigation.
+
+Do not leave a duplicate bookmark action in the bottom strip. Verse mode bookmarks the current visible verse; Mushaf mode bookmarks the current visible page using its edition-aware page bookmark identity.
+
+### MR-004 — Remove wasted space from the Aa sheet
+
+The mobile `Text size` sheet uses substantially more vertical space than its three controls require. The controls are stretched across the sheet even when their content needs much less width, and the remaining empty lower area makes the sheet feel unfinished.
+
+**Required direction:** size the sheet and its control groups to their content instead of using a large fixed presentation. Each control should occupy only the width needed for its label, values and touch targets. Keep related typography controls visually composed rather than presenting three plain, full-width rows in a loose vertical stack. The exact compact composition remains a design decision; this comment does not approve a specific replacement layout.
+
+### MR-005 — Redesign the Arabic and translation size controls
+
+The current elongated `A− / Small / A+` boxed stepper treatment is visually rejected. Arabic size and Translation size still need clearly labelled decrease/current/increase behaviour, but the replacement should be a compact control with stronger visual intent and without a full-width empty container.
+
+The redesign must preserve at least 44 × 44 CSS-pixel interactive targets, visible focus, clear disabled endpoints and an immediately understandable current value. Arabic and translation sizing must remain independently adjustable. A final visual treatment has not yet been selected and requires a separate approved design proposal before implementation.
+
+### Acceptance checks for this direction
+
+- At 360, 390 and 430 CSS px, the book control is present whenever normal reader chrome is visible in both reader modes.
+- Activating it completes Verse → Mushaf → Verse navigation without losing the equivalent verse/page position.
+- Verse mode presents the outline/unfilled state; Mushaf mode presents the filled or inverted state; focus and pressed states remain distinct.
+- Screen readers announce both the available action and the current mode; keyboard activation works with Enter and Space.
+- The current-position bookmark appears directly beside Settings, uses a clear selected state, and toggles the correct verse or page.
+- Neither bottom strip contains a duplicate bookmark control. The remaining controls stay balanced, reachable above safe areas, and at least 44 px.
+- Mushaf Focus mode may hide the bars intentionally; its existing reveal affordance must restore both the mode and bookmark controls.
+- Verify Light, Sepia, Dark and System themes, including contrast of the filled/inverted book and bookmark states.
+- The Aa sheet has no large unused lower region at 360, 390 or 430 CSS px and does not expand substantially beyond the content it contains.
+- Typography controls use intrinsic or deliberately bounded widths, remain visually grouped, and do not become full-width boxes without a content reason.
+- Arabic and translation size controls remain independently operable, have 44 px targets, communicate their current values, and wrap or reflow without horizontal overflow.
+- Physical-device gesture, safe-area and browser-chrome behaviour remain separate completion gates; the browser comments are simulated-viewport evidence.
+
 Severity: **Critical** blocks a core task or materially undermines reference confidence; **Important** significantly harms clarity or comfort; **Nice-to-have** improves polish after core fixes. Effort estimates are directional.
 
 ## Pass 1 — skeptical first-time visitor
@@ -245,8 +294,8 @@ Rendered-surface redesign, implementing the Phase 2 structures. All theme/contro
 2. **Type scale** (M): Arabic 32–36 px and translation 18 px starting points with separate size controls; diacritic-safe line heights; finalise the Newsreader / system-UI / KFGQPC role split with upright sustained translation. *Findings: type sizes, typography hierarchy.*
 3. **Light theme neutrality** (S–M): neutral off-white canvas, near-black text, distinct white panels; cream reserved for Sepia; one accent; selection paired with checkmark/border. *Finding: light theme sepia cast.*
 4. **Control standardisation** (M): solid primary / outlined secondary / plain icon; consistent icon weight; ~8 px control corners; 44 px targets; remove inset shading; one overlay shadow; 1 px dividers; 12 px card corners. *Findings: control mix, ornamental framing.*
-5. **Labelled view switching** (S): Verses / Mushaf labelled toggle; desktop tooltips on icon controls. *Finding: unfamiliar glyphs.*
-6. **Bookmark action** (S–M): distinct bookmark control with clear selected state, separate from the verse number; dismissible help for mouse and touch. *Finding: verse number as bookmark target.*
+5. **Persistent reader-mode icon** (S): per MR-001/MR-002, replace the mobile `Verses / Mushaf` segmented control with one book icon toggle that remains available in both modes; outline in Verse mode, filled or inverted in Mushaf mode, with explicit accessible names and state. Desktop behaviour is unchanged unless separately approved. *Finding: disappearing mobile mode control; user browser comment supersedes the earlier labelled-toggle recommendation.*
+6. **Bookmark action** (S–M): per MR-003, move the current-position bookmark control into the top-right reader header beside Settings, give it a clear selected state, and remove its duplicate bottom-strip placement. Keep the Bookmarks destination in navigation. *Finding: verse number as bookmark target; user browser comment on mobile placement.*
 7. **Mushaf chrome** (M): explicit Focus mode; visible reveal target plus the existing tap/Escape; refit the page or reserve space when controls appear; keep printed notes and page numbers reachable. *Findings: hidden controls, control overlay.*
 8. **Edition viewer controls** (M): previews for Full page versus Text focus; improved Text-focus defaults for Furatiyyah; neutral surrounding interface preserving printed colours; edition-specific notation guide. *Findings: edition controls, Furatiyyah framing, notation guide.*
 9. **Passage-group labelling** (S–M): present translations spanning multiple verses as clearly labelled passage groups, with a brief numbering explanation available on demand; no internal database vocabulary in the reading line. *Findings: Al-Fātiḥah translation copy, passage grouping.*

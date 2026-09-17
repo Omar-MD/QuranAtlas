@@ -12,7 +12,7 @@ const ALLOW_LIST = new Set([
   'src/app/routes/settings/pwa-install.ts',
   'src/components/navigation/nav-drawer-controller.ts',
   'src/continuity/recent-surahs.ts',
-  'src/continuity/wird/use-wird-reminder-scheduler.ts',
+  'src/continuity/wird/surah-counts.ts',
   'src/storage/db.ts',
 ])
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { OfflineDownloadFailedStatus, OfflineDownloadProgress } from '../offline/OfflineDownloadProgress'
 import { Button, Dialog } from '../ui'
 import { SettingsGroup } from './SettingsGroup'
+import { SettingsRow } from './SettingsRow'
 import {
   getOfflineDownloadSnapshot,
   pauseOfflinePack,
@@ -432,18 +433,15 @@ function OfflineDataRow({
   }
 
   const installing = row.status === 'installing'
+  const statusText = row.status === 'not-installed' ? `Not downloaded · ${row.sizeText}` : STATUS_TEXT[row.status]
+  // G-6: pack rows are block rows — title, status line, then the
+  // content-sized, left-aligned action.
   return (
-    <div className="qar-react-settings-row">
-      <div className="qar-react-settings-row-copy">
-        <span className="qar-react-settings-row-label">{row.rowName}</span>
-        <span className="qar:text-sm qar:text-muted">
-          {row.status === 'not-installed' ? `Not downloaded · ${row.sizeText}` : STATUS_TEXT[row.status]}
-        </span>
+    <SettingsRow helper={statusText} label={row.rowName} layout="block">
+      <div className="qar:grid qar:justify-items-start qar:gap-2">
         {installing && row.item ? (
           <OfflineDownloadProgress items={[row.item]} label={`Downloading ${row.rowName}`} />
         ) : null}
-      </div>
-      <div className="qar:flex qar:items-center">
         {row.status === 'not-installed' ? (
           <Button
             disabled={!row.planBuildable || !online}
@@ -476,18 +474,15 @@ function OfflineDataRow({
           </Button>
         ) : null}
       </div>
-    </div>
+    </SettingsRow>
   )
 }
 
 function OfflineRowShell({ rowName, statusText }: { rowName: string; statusText: string }) {
   return (
-    <div className="qar-react-settings-row">
-      <div className="qar-react-settings-row-copy">
-        <span className="qar-react-settings-row-label">{rowName}</span>
-        <span className="qar:text-sm qar:text-muted">{statusText}</span>
-      </div>
-    </div>
+    <SettingsRow helper={statusText} label={rowName} layout="block">
+      <span />
+    </SettingsRow>
   )
 }
 

@@ -34,5 +34,6 @@ export {
   type StatusProps,
 } from './feedback'
 export { Tooltip, type TooltipProps } from './tooltip'
+export { TileGroup, type TileGroupProps, type TileOption } from './tile-group'
 export { Dialog, Sheet, SheetBody, type DialogProps, type SheetProps } from './overlays'
 export { Accordion, Tabs, type AccordionProps, type TabsProps } from './menus'
