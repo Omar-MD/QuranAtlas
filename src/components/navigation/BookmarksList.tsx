@@ -4,7 +4,7 @@ import { Bookmark as BookmarkIcon, Trash2 } from 'lucide-react'
 import { isMushafPageBookmark, pageNumberForBookmark } from '../../continuity/bookmarks/page-bookmark'
 import { verseNumberOfKey } from '../../continuity/verse-key'
 import type { Riwayah } from '../../storage/types'
-import { Button, IconButton, ListRow, ListRowActions, Status } from '../ui'
+import { Button, IconButton, ListRow, Status } from '../ui'
 
 export type BookmarkListItem = {
   arabicSnippet?: string
@@ -24,18 +24,9 @@ type BookmarkMeta = {
 
 const EMPTY_BOOKMARKS: BookmarkListItem[] = []
 
-function formatDate(timestamp?: number): string | null {
-  if (!timestamp) return null
-  try {
-    return new Date(timestamp).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-  } catch {
-    return null
-  }
-}
-
-// S7 bookmarks route: one ListRow per bookmark — verse reference eyebrow,
-// translation excerpt, saved date — with Open in reader and Remove (immediate,
-// with a 5-second undo toast). Fully local: works offline.
+// S7 bookmarks route: one ListRow per bookmark — one line with a short
+// translation snippet — tapping opens the reader; remove is immediate with a
+// 5-second undo toast. Fully local: works offline.
 export function BookmarksList({
   bookmarks = EMPTY_BOOKMARKS,
   onDeleteBookmark,
@@ -84,49 +75,48 @@ export function BookmarksList({
       {ordered.map((bookmark) => {
         const pageBookmark = isMushafPageBookmark(bookmark)
         const page = pageNumberForBookmark(bookmark)
-        const reference =
-          pageBookmark && page
-            ? `Mushaf page ${page}`
-            : `${meta.surahNames.get(bookmark.surah) ?? `Surah ${bookmark.surah}`} ${bookmark.verseKey}`
-        const excerpt = meta.excerpts.get(bookmark.verseKey)
-        const date = formatDate(bookmark.createdAt)
+        const surahName = meta.surahNames.get(bookmark.surah) ?? `Surah ${bookmark.surah}`
+        const reference = pageBookmark && page ? `Page ${page}` : `${surahName} ${bookmark.verseKey}`
+        const excerpt = pageBookmark ? undefined : meta.excerpts.get(bookmark.verseKey)
         const openHash =
           pageBookmark && page ? `#/m/${page}` : `#/s/${bookmark.surah}/${verseNumberOfKey(bookmark.verseKey)}`
         return (
           <li key={`${bookmark.riwayah}:${bookmark.verseKey}`}>
             <ListRow
               action={
-                <ListRowActions>
-                  <Button onClick={() => onNavigate?.(openHash)} size="sm" variant="secondary">
-                    Open in reader
-                  </Button>
-                  <IconButton
-                    className="qar-react-nav-row-delete"
-                    label={
-                      pageBookmark && page
-                        ? `Remove bookmark from Mushaf page ${page}`
-                        : `Remove bookmark from ${meta.surahNames.get(bookmark.surah) ?? `Surah ${bookmark.surah}`} ${bookmark.verseKey}`
-                    }
-                    onClick={() => {
-                      pendingRemovalFocus.current = true
-                      onDeleteBookmark?.(bookmark)
-                    }}
-                  >
-                    <Trash2 aria-hidden="true" size={16} strokeWidth={1.8} />
-                  </IconButton>
-                </ListRowActions>
+                <IconButton
+                  className="qar-react-nav-row-delete"
+                  label={
+                    pageBookmark && page
+                      ? `Remove bookmark from Mushaf page ${page}`
+                      : `Remove bookmark from ${surahName} ${bookmark.verseKey}`
+                  }
+                  onClick={() => {
+                    pendingRemovalFocus.current = true
+                    onDeleteBookmark?.(bookmark)
+                  }}
+                >
+                  <Trash2 aria-hidden="true" size={16} strokeWidth={1.8} />
+                </IconButton>
               }
-              arabic={pageBookmark ? undefined : <span lang="ar">{bookmark.arabicSnippet ?? ''}</span>}
+              className="qar-bookmark-row"
               data-bookmark-kind={pageBookmark ? 'page' : 'verse'}
               data-verse-key={bookmark.verseKey}
-              meta={
+              num={<BookmarkIcon aria-hidden="true" size={16} strokeWidth={1.8} />}
+              onSelect={() => onNavigate?.(openHash)}
+              title={
                 <>
-                  {date ? <span>{date}</span> : null}
-                  {!pageBookmark && excerpt ? <span>{excerpt}</span> : null}
+                  <span className="qar-bookmark-row-name">{reference}</span>
+                  {excerpt ? (
+                    <>
+                      <span aria-hidden="true" className="qar-bookmark-row-separator">
+                        ·
+                      </span>
+                      <span className="qar-bookmark-row-excerpt">{excerpt}</span>
+                    </>
+                  ) : null}
                 </>
               }
-              num={<BookmarkIcon aria-hidden="true" size={16} strokeWidth={1.8} />}
-              title={<span className="qar-bookmark-row-ref">{reference}</span>}
             />
           </li>
         )
@@ -207,13 +197,9 @@ async function loadExcerpts(meta: BookmarkMeta, bookmarks: BookmarkListItem[]): 
           const corpus = await loadReaderSurah(surah, { riwayah })
           if (corpus.status !== 'ready') continue
           for (const row of rows.filter((row) => row.riwayah === riwayah)) {
-            const verse = corpus.verses.find((verse) => verse.key === row.verseKey)
-            const text =
-              verse?.translation ??
-              corpus.verses.find(
-                (candidate) => candidate.translation && candidate.translationSourceKey === verse?.translationSourceKey,
-              )?.translation
-            if (text) meta.excerpts.set(row.verseKey, firstLine(text))
+            const verse = corpus.verses.find((candidate) => candidate.key === row.verseKey)
+            const text = verse?.translation
+            if (text) meta.excerpts.set(row.verseKey, translationSnippet(text))
           }
         }
       } catch {
@@ -223,10 +209,10 @@ async function loadExcerpts(meta: BookmarkMeta, bookmarks: BookmarkListItem[]): 
   )
 }
 
-function firstLine(text: string): string {
-  const trimmed = text.trim()
-  const sentenceEnd = trimmed.search(/[.!?](\s|$)/)
-  return sentenceEnd > 0 ? trimmed.slice(0, sentenceEnd + 1) : trimmed.slice(0, 160)
+function translationSnippet(text: string): string {
+  const words = text.replace(/\s+/g, ' ').trim().split(' ').filter(Boolean)
+  if (words.length === 0) return ''
+  return `${words.slice(0, 2).join(' ')}…`
 }
 
 function compareBookmarkRows(a: BookmarkListItem, b: BookmarkListItem): number {

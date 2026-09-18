@@ -10,7 +10,7 @@ import { cn } from '../../design-system/utils/cn'
 
 const fieldClass =
   'qar:min-h-11 qar:w-full qar:rounded-control qar:border qar:border-border qar:bg-surface qar:px-3 qar:py-2 qar:font-ui qar:text-sm qar:text-text qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:opacity-40'
-const labelClass = 'qar:grid qar:gap-1 qar:text-sm qar:text-muted'
+const labelClass = 'qar:grid qar:w-full qar:self-start qar:gap-1 qar:text-sm qar:text-muted'
 
 export type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> & {
   hideLabel?: boolean

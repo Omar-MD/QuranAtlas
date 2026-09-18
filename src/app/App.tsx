@@ -1,5 +1,5 @@
 import { isReaderUpgradeBlocked, subscribeReaderUpgrade } from '../storage/db'
-import { Suspense, lazy, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { Suspense, lazy, startTransition, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 
 import type { SettingsRouteMode } from './routes/settings/SettingsRoute'
 import { Button, Status } from '../components/ui'
@@ -79,7 +79,10 @@ export function App() {
         const previousHash = event.oldURL ? new URL(event.oldURL, window.location.href).hash : hash
         if (isBaseHash(previousHash)) setLastBaseHash(previousHash)
       }
-      setHash(nextHash)
+      // Keep the current surface visible while a lazy route chunk loads.
+      // Without a transition, the top-level Suspense boundary replaces the
+      // whole app with LaunchSplash on the first visit to each route.
+      startTransition(() => setHash(nextHash))
     }
 
     window.addEventListener('hashchange', syncHash)

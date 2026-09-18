@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { startTransition, useEffect, useRef, useState } from 'react'
 
 import type { SettingRecord } from '../storage/types'
 import type { QuranRef } from './verse-key'
@@ -114,12 +114,14 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
     if (canKeepReady) {
       // Preserve a pending offline offer across in-session navigation: the
       // one-shot prompt stays up until the user decides or dismisses it.
-      setState((current) => ({
-        status: 'ready',
-        hash,
-        sourceHash: hash,
-        offlineOffer: current.status === 'ready' ? (current.offlineOffer ?? null) : null,
-      }))
+      startTransition(() => {
+        setState((current) => ({
+          status: 'ready',
+          hash,
+          sourceHash: hash,
+          offlineOffer: current.status === 'ready' ? (current.offlineOffer ?? null) : null,
+        }))
+      })
       return () => {
         active = false
       }

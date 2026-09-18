@@ -82,7 +82,7 @@ export type SheetProps = OverlayBaseProps & {
   closeLabel?: string
   returnFocusId?: string
   suppressCloseAutoFocus?: boolean
-  variant?: 'default' | 'adaptive-settings' | 'navigation-drawer' | 'quick'
+  variant?: 'default' | 'adaptive-settings' | 'navigation-drawer' | 'quick' | 'settings'
 }
 
 export function Sheet({

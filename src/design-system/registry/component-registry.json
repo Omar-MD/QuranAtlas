@@ -1224,7 +1224,7 @@
       "maturity": "behavior",
       "exportPath": "src/components/ui/overlays.tsx",
       "namedExport": "Sheet",
-      "allowedVariants": ["adaptive-settings", "default", "navigation-drawer", "quick"],
+      "allowedVariants": ["adaptive-settings", "default", "navigation-drawer", "quick", "settings"],
       "allowedSizes": [],
       "slots": ["trigger", "title", "content", "body", "close"],
       "dependencies": {
@@ -1253,7 +1253,8 @@
         "controlled return focus",
         "navigation-drawer traps focus through a manual loop while the background stays interactive",
         "aria-modal applies only in the mobile modal case",
-        "quick variant: quiet scrim, content height, initial focus on content"
+        "quick variant: quiet scrim, content height, initial focus on content",
+        "settings variant: content-height sheet/dialog with the standard scrim for compact settings; tall surfaces stay on adaptive-settings"
       ],
       "visualProof": {
         "status": "covered",

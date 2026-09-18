@@ -278,6 +278,7 @@ export function WirdSheet({
   return (
     <SettingsShell
       closeLabel="Close Daily Wird"
+      layout="full"
       onClose={onClose}
       returnFocusId={returnFocusId}
       subtitle=""

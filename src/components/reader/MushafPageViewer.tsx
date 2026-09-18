@@ -130,13 +130,6 @@ export function MushafPageViewer({
   const restoreStageFocusRef = useRef(false)
   const suppressReplacementStageFocusRevealRef = useRef(false)
   const interactionSuspended = useReaderInteractionSuspended()
-  const sourceRatio = resolved.displaySize
-    ? resolved.displaySize.width / resolved.displaySize.height
-    : inlineSvg.viewBox.width / inlineSvg.viewBox.height
-  const ratio =
-    resolved.displaySize && resolved.framing
-      ? mushafImagePlacement(resolved.displaySize, resolved.framing.textFrame, framingValue).ratio
-      : sourceRatio
   const isScrollMode = viewMode === 'continuous'
   const stageScrollable = fitWidth || isScrollMode
   const effectivePages = useMemo(
@@ -454,11 +447,6 @@ export function MushafPageViewer({
       data-mushaf-layout-mode={isScrollMode ? 'scroll' : 'single'}
       inert={inert || undefined}
       onFocusCapture={revealChrome}
-      style={
-        {
-          '--qa-react-mushaf-page-ratio': String(ratio),
-        } as CSSProperties
-      }
     >
       <section
         {...gesture.stageHandlers}
@@ -561,10 +549,6 @@ const MushafPageCell = ({
   ref?: (node: HTMLDivElement | null) => void
 }) => {
   const media = entry?.status === 'ready' ? entryMedia(entry.asset) : null
-  const frameRatio =
-    entry?.status === 'ready' && media?.kind === 'external-image'
-      ? mushafImagePlacement(media.source, entry.asset.resolved.framing?.textFrame, framingValue).ratio
-      : undefined
   return (
     <div
       aria-hidden={hidden ? true : undefined}
@@ -572,7 +556,6 @@ const MushafPageCell = ({
       data-mushaf-cell={position}
       data-mushaf-cell-page={entry?.page}
       ref={ref}
-      style={frameRatio ? { aspectRatio: String(frameRatio) } : undefined}
     >
       {entry?.status === 'ready' && media?.kind === 'inline-svg' ? (
         <MushafInlineSvgPage ariaLabel={pageAccessibleName(entry.asset)} inlineSvg={media.inlineSvg} />
@@ -580,11 +563,13 @@ const MushafPageCell = ({
         <div aria-label={pageAccessibleName(entry.asset)} className="qar-react-mushaf-page-fit" role="img">
           <div
             className="qar-react-mushaf-page-frame"
-            style={{
-              aspectRatio: String(
-                mushafImagePlacement(media.source, entry.asset.resolved.framing?.textFrame, framingValue).ratio,
-              ),
-            }}
+            style={
+              {
+                '--mushaf-frame-ratio': String(
+                  mushafImagePlacement(media.source, entry.asset.resolved.framing?.textFrame, framingValue).ratio,
+                ),
+              } as CSSProperties
+            }
           >
             <img
               alt=""

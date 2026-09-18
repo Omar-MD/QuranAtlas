@@ -59,8 +59,11 @@
     --qa-react-stepper-value: 64px;
     --qa-react-mode-badge: 32px;
     --qa-react-settings-gutter: 20px;
-    --qa-react-settings-group-gap: 28px;
-    --qa-react-settings-row-min: 56px;
+    --qa-react-settings-group-gap: 20px;
+    --qa-react-settings-row-min: 44px;
+    /* Compact settings dialog width: the reading controls fit in 480 px, so
+       the dialog never shows an empty page around them. */
+    --qa-react-settings-dialog-width: 480px;
     /* Settings field widths so no control is sized by eye (brief §3.1). */
     --qa-react-field-select: 140px;
     --qa-react-field-date: 156px;

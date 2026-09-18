@@ -150,14 +150,15 @@ export function SettingsRoute({
 
   return (
     <SettingsShell
+      layout={downloadsOpen ? 'full' : 'compact'}
       onClose={onClose}
       returnFocusId={returnFocusId}
       subtitle=""
       title={downloadsOpen ? 'Downloads' : 'Settings'}
     >
-      {!settingsWriteError && settingsWriteStatus === 'saving' ? (
-        <Status description="Your change is being saved on this device." title="Saving settings…" tone="info" />
-      ) : null}
+      {/* Transient write state must not render here in flow: the compact
+          sheet is content-height, so anything that mounts per save resizes
+          it and the dialog jumps. Only persistent failures get space. */}
       {settingsWriteError ? (
         <Status
           action={

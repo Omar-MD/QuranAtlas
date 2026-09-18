@@ -49,13 +49,11 @@ export function SurahsRoute() {
   return (
     <NavigationPageRecipe title="Surahs">
       <div className="qar:mx-auto qar:grid qar:w-full qar:max-w-page qar:gap-3">
-        <div className="qar:grid qar:gap-2">
+        <div className="qar:grid qar:gap-3">
           <Input
             autoComplete="off"
-            className="qar:min-h-11"
             hideLabel
             label="Filter by name, number, or verse"
-            labelClassName="qar:grid qar:gap-2"
             maxLength={20}
             onChange={(event) => setQuery(event.currentTarget.value)}
             onKeyDown={handleSearchKeyDown}

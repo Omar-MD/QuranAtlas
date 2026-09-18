@@ -113,6 +113,15 @@
       --qar-motion-fast: 1ms;
       --qar-motion-settle: 1ms;
     }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 1ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 1ms !important;
+    }
   }
 }
 
@@ -1220,13 +1229,68 @@
     top: 0;
     z-index: 1;
     flex: 0 0 auto;
-    min-height: calc(env(safe-area-inset-top) + var(--qa-react-control-touch-target));
-    padding: calc(env(safe-area-inset-top) + 0.5rem) 1rem 0.5rem;
+    padding-top: env(safe-area-inset-top);
     border-bottom: 1px solid var(--qa-react-border);
     background: var(--qa-react-sheet);
   }
 
   [data-sheet-variant="adaptive-settings"] > div:first-child button {
+    min-width: var(--qa-react-control-touch-target);
+    min-height: var(--qa-react-control-touch-target);
+  }
+
+  /* Compact settings (verse/mushaf reading controls): a content-height
+     bottom sheet on phones and a centred auto-height dialog on desktop —
+     never a full-page takeover, so no empty page surrounds the controls.
+     Tall surfaces (Downloads, Wird) stay on adaptive-settings. */
+  [data-sheet-variant="settings"] {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 130;
+    display: flex;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: 85dvh;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--qa-react-border);
+    border-bottom: 0;
+    border-radius: var(--qa-react-radius-surface) var(--qa-react-radius-surface) 0 0;
+    background: var(--qa-react-sheet);
+    color: var(--qa-react-text);
+    box-shadow: var(--qa-react-overlay-shadow);
+  }
+
+  @media (min-width: 768px) {
+    [data-sheet-variant="settings"] {
+      inset: auto;
+      top: 50%;
+      left: 50%;
+      width: min(var(--qa-react-settings-dialog-width), calc(100vw - 32px));
+      height: auto;
+      max-height: 85dvh;
+      transform: translate(-50%, -50%);
+      border-bottom: 1px solid var(--qa-react-border);
+      border-radius: var(--qa-react-radius-surface);
+    }
+  }
+
+  [data-sheet-variant="settings"] > div:first-child {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex: 0 0 auto;
+    border-bottom: 1px solid var(--qa-react-border);
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+    background: var(--qa-react-sheet);
+  }
+
+  [data-sheet-variant="settings"] > div:first-child button {
     min-width: var(--qa-react-control-touch-target);
     min-height: var(--qa-react-control-touch-target);
   }
@@ -1245,7 +1309,7 @@
     grid-auto-rows: max-content;
     gap: var(--qa-react-settings-group-gap);
     min-height: 0;
-    padding: 16px var(--qa-react-settings-gutter) calc(16px + env(safe-area-inset-bottom));
+    padding: 12px var(--qa-react-settings-gutter) calc(12px + env(safe-area-inset-bottom));
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--qa-react-sheet);
@@ -1287,10 +1351,15 @@
     color: var(--qa-react-text);
     font: inherit;
     cursor: pointer;
+    transition: background-color var(--qa-react-transition-fast);
   }
 
   .qar-react-stepper-button:hover:not(:disabled) {
     background: var(--qa-react-accent-tint);
+  }
+
+  .qar-react-stepper-button:active:not(:disabled) {
+    background: color-mix(in srgb, var(--qa-react-accent) 14%, transparent);
   }
 
   .qar-react-stepper-button:focus-visible {
@@ -1353,11 +1422,7 @@
     align-items: center;
     gap: 8px 16px;
     min-height: var(--qa-react-settings-row-min);
-    padding: 8px 0;
-  }
-
-  .qar-react-settings-row + .qar-react-settings-row {
-    border-top: 1px solid var(--qa-react-border);
+    padding: 4px 0;
   }
 
   .qar-react-settings-row-copy {
@@ -1443,6 +1508,33 @@
     padding-inline-start: 36px;
   }
 
+  .qar-react-input-prefixed[type="search"] {
+    appearance: none;
+  }
+
+  /* Search/filter fields (Surahs page, surah selector): quiet border at
+     rest, ink on hover, accent on focus — the same grammar as every other
+     control, never the browser default. */
+  input.qar-react-input-prefixed {
+    transition: border-color var(--qa-react-transition-fast);
+  }
+
+  input.qar-react-input-prefixed:hover {
+    border-color: var(--qa-react-text-muted);
+  }
+
+  .qar-react-input-prefix {
+    transition: color var(--qa-react-transition-fast);
+  }
+
+  .qar-react-input-prefix-wrap:focus-within > input.qar-react-input-prefixed {
+    border-color: var(--qa-react-accent);
+  }
+
+  .qar-react-input-prefix-wrap:focus-within .qar-react-input-prefix {
+    color: var(--qa-react-text);
+  }
+
   /* TileGroup (brief §4.2): visual-choice radiogroup — accent border + check
      badge + label weight, never colour alone, never the ink pill. */
   .qar-react-tile-group {
@@ -1475,7 +1567,7 @@
     border-radius: var(--qa-react-radius-control);
     background: var(--qa-react-surface);
     color: var(--qa-react-text);
-    transition: border-color 150ms;
+    transition: border-color var(--qa-react-transition-fast);
   }
 
   .qar-react-tile-label {
@@ -1488,7 +1580,7 @@
     text-align: center;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    transition: color 150ms;
+    transition: color var(--qa-react-transition-fast);
   }
 
   .qar-react-tile-badge {
@@ -1502,6 +1594,7 @@
     border-radius: var(--qa-react-radius-pill);
     background: var(--qa-react-accent);
     color: var(--qa-react-text-on-accent);
+    transition: opacity var(--qa-react-transition-fast);
   }
 
   .qar-react-tile[data-selected="true"] .qar-react-tile-visual {
@@ -1718,6 +1811,17 @@
 
   /* Segmented + tabs selected treatment: one solid ink pill — shape and
      contrast carry the state, no tint, no checkmark. */
+  .qar-react-segmented-option {
+    transition:
+      background-color var(--qa-react-transition-fast),
+      color var(--qa-react-transition-fast);
+  }
+
+  .qar-react-segmented-option:not(.qar-react-segmented-option--selected):hover {
+    background: var(--qa-react-accent-tint);
+    color: var(--qa-react-text);
+  }
+
   .qar-react-segmented-option--selected {
     background: var(--qa-react-text);
     color: var(--qa-react-canvas);
@@ -1749,6 +1853,9 @@
     color: inherit;
     font: inherit;
     text-align: left;
+    transition:
+      background-color var(--qa-react-transition-fast),
+      border-color var(--qa-react-transition-fast);
   }
 
   .qar-react-list-row:last-child {
@@ -1777,11 +1884,17 @@
   }
 
   button.qar-react-list-row-select {
+    border-radius: var(--qa-react-radius-control);
     cursor: pointer;
+    transition: background-color var(--qa-react-transition-fast);
   }
 
   button.qar-react-list-row-select:hover {
     background: var(--qa-react-accent-tint);
+  }
+
+  button.qar-react-list-row-select:active {
+    background: color-mix(in srgb, var(--qa-react-accent) 14%, transparent);
   }
 
   .qar-react-list-row:focus-visible,
@@ -1809,6 +1922,17 @@
     display: inline-flex;
   }
 
+  .qar-react-list-row[data-selected="true"]:hover,
+  .qar-react-list-row[data-current="true"]:hover {
+    background: color-mix(in srgb, var(--qa-react-accent) 12%, transparent);
+  }
+
+  /* Drawer rows separate by spacing, not hairlines; selected/current rows
+     keep the accent ring from the rules above. */
+  .qar-react-drawer-section .qar-react-list-row:not([data-selected="true"]):not([data-current="true"]) {
+    border-block-end-color: transparent;
+  }
+
   .qar-react-list-row-num {
     min-width: 3ch;
     color: var(--qa-react-text-muted);
@@ -1834,7 +1958,17 @@
     white-space: nowrap;
   }
 
+  /* Row delete stays quiet (muted) until hovered, when it turns danger on
+     a danger wash — a list of red icons is noise, not affordance. */
   .qar-react-nav-row-delete {
+    color: var(--qa-react-text-muted);
+    transition:
+      color var(--qa-react-transition-fast),
+      background-color var(--qa-react-transition-fast);
+  }
+
+  .qar-react-nav-row-delete:hover {
+    background: var(--qa-react-status-error-bg);
     color: var(--qa-react-text-danger);
   }
 
@@ -1842,40 +1976,48 @@
     color: var(--qa-react-text-muted);
     font-size: 1.15rem;
     line-height: 1;
+    transition: color var(--qa-react-transition-fast);
   }
 
-  /* Surah selector (S5). */
-  .qar-react-selector-list {
+  .qar-react-list-row:hover .qar-react-list-row-chevron {
+    color: var(--qa-react-text);
+  }
+
+  /* Surahs page list + live search hint: the same hairline-separated list
+     rhythm as every other list surface. */
+  .qar-react-nav-drawer-surah-list {
     display: flex;
-    flex: 1;
     flex-direction: column;
-    gap: 0;
-    min-height: 0;
     margin: 0;
     padding: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
     list-style: none;
   }
 
-  .qar-react-juz-list {
+  .qar-react-nav-drawer-search-hint {
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  /* Surah selector (S5). */
+  .qar-react-selector-list,
+  .qar-react-juz-list,
+  .qar-react-selector-recents {
     display: flex;
-    flex: 1;
     flex-direction: column;
     gap: 0;
-    min-height: 0;
     margin: 0;
-    padding: 0 0 8px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    padding: 0;
     list-style: none;
   }
 
   .qar-react-selector-footer {
     display: grid;
+    flex: 0 0 auto;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    padding-top: 12px;
+    padding: 8px var(--qa-react-settings-gutter) calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--qa-react-border);
   }
 
@@ -1885,9 +2027,9 @@
 
   .qar-react-selector-empty {
     margin: 0;
-    padding: 16px;
+    padding: 16px 0;
     color: var(--qa-react-text-muted);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     text-align: center;
   }
 
@@ -1896,7 +2038,7 @@
     display: grid;
     justify-items: center;
     gap: 12px;
-    padding: 48px 24px;
+    padding: 32px 20px;
     text-align: center;
   }
 
@@ -1907,14 +2049,57 @@
     color: var(--qa-react-text-muted);
   }
 
-  /* Bookmarks route (S7). */
-  .qar-bookmark-row-ref {
+  .qar-bookmark-row {
+    overflow: hidden;
+  }
+
+  .qar-bookmark-row .qar-react-list-row-select {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .qar-bookmark-row .qar-react-list-row-select > span:not(.qar-react-list-row-num) {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* Bookmarks: one line — reference · two-word excerpt, never a stacked
+     translation. The middot separates the ink reference from the muted
+     snippet so the row reads as one intentional line. */
+  .qar-bookmark-row .qar-react-list-row-title {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .qar-bookmark-row-separator {
+    flex: none;
     color: var(--qa-react-text-muted);
-    font-size: 11px;
+    font-size: 0.875rem;
+    line-height: 1.3;
+  }
+
+  .qar-bookmark-row-name,
+  .qar-bookmark-row-excerpt {
+    overflow: hidden;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .qar-bookmark-row-name {
+    flex: 0 1 auto;
+    color: var(--qa-react-text);
     font-weight: 600;
-    letter-spacing: 0.14em;
-    line-height: 1.4;
-    text-transform: uppercase;
+  }
+
+  .qar-bookmark-row-excerpt {
+    flex: 1 1 0;
+    min-width: 0;
+    color: var(--qa-react-text-muted);
+    font-weight: 400;
   }
 
   /* ------------------------------ Mushaf (S4) ------------------------------ */
@@ -1930,6 +2115,11 @@
     --qa-react-mushaf-safe-left: max(0.25rem, env(safe-area-inset-left));
     --qa-react-mushaf-safe-right: max(0.25rem, env(safe-area-inset-right));
     --qa-react-mushaf-safe-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    /* Stable nominal page ratio (standard mushaf trim): the reading column
+       never resizes on page turns. Per-page media letterboxes inside the
+       paper — deriving the column from each page's own measured ratio made
+       the column jump whenever page geometry differed. */
+    --qa-react-mushaf-page-ratio: 0.707;
     /* Chrome reserves its bars so printed content is never covered; Focus
        releases the reserve and the page refits (transition below). */
     --qa-react-mushaf-reserve-top: 0px;
@@ -2065,7 +2255,8 @@
 
   .qar-react-mushaf-page-cell {
     /* "Paper on a desk" (Step 10-A): panel surface, 12 px corners, 1 px
-       hairline; margins are live canvas; no shadow. */
+       hairline; the page scans carry their own margins, so the plate keeps
+       only a thin inner margin and the page fills the rest. */
     display: grid;
     place-items: stretch;
     min-width: 0;
@@ -2074,13 +2265,7 @@
     border: 1px solid var(--qa-react-border);
     border-radius: var(--qa-react-radius-surface);
     background: var(--qa-react-surface);
-    padding: 24px 32px;
-  }
-
-  @media (max-width: 639px) {
-    .qar-react-mushaf-page-cell {
-      padding: 24px 12px;
-    }
+    padding: 8px;
   }
 
   .qar-react-mushaf-page-strip > .qar-react-mushaf-page-cell {
@@ -2127,7 +2312,13 @@
   .qar-react-mushaf-page-frame {
     overflow: hidden;
     position: relative;
-    width: 100%;
+    /* Contain-fit within the stable column: the framed crop keeps its own
+       ratio (set inline as --mushaf-frame-ratio) and is capped so a page
+       taller than the nominal column ratio can never overflow the paper. */
+    aspect-ratio: var(--mushaf-frame-ratio, 1);
+    width: min(100%, calc(var(--mushaf-frame-ratio, 1) / var(--qa-react-mushaf-page-ratio) * 100%));
+    max-height: 100%;
+    margin-inline: auto;
   }
 
   .qar-react-mushaf-page-image {
@@ -2244,16 +2435,61 @@
 }
 
 @layer qa-react-components {
-  /* Surah selector surfaces (S5). */
+  /* Surah selector surfaces (S5): same title bar and gutter as Settings. */
   .qar-react-selector-dialog {
     width: min(640px, calc(100vw - 32px));
+    max-height: 85dvh;
+    padding: 0;
+    gap: 0;
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
-  /* Full-height sizing lives with the later block (see below): it must beat
-     .qar-react-bottom-sheet[data-sheet-variant="default"]'s 85dvh cap. */
+  .qar-react-selector-dialog > :first-child {
+    height: 48px;
+    padding: 0 8px 0 var(--qa-react-settings-gutter);
+    border-bottom: 1px solid var(--qa-react-border);
+  }
 
-  .qar-react-selector-filter {
-    background: var(--qa-react-surface);
+  .qar-react-selector-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+  }
+
+  .qar-react-selector-frame {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .qar-react-selector-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    padding: 8px var(--qa-react-settings-gutter) 0;
+    overflow: hidden;
+  }
+
+  .qar-react-selector-scroller {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .qar-react-selector-scroller > .qar-eyebrow {
+    padding: 8px 0 4px;
+  }
+
+  .qar-react-selector-scroller .qar-react-list-row,
+  .qar-react-selector-footer .qar-react-list-row {
+    padding-inline: 0;
   }
 
   /* Bottom strip slot is layout-transparent; the hidden state drives the strip. */
@@ -2309,11 +2545,6 @@
     border-radius: var(--qa-react-radius-surface);
     background: var(--qa-react-surface);
   }
-
-  /* Selector dialog scroll body. */
-  .qar-react-selector-body {
-    max-height: 70dvh;
-  }
 }
 
 @layer qa-react-components {
@@ -2333,15 +2564,14 @@
     overflow-y: auto;
   }
 
-  /* Title bar (brief §4.5): 56 px, gutter-aligned padding, 17 px title, close
-     right. The adaptive-settings variant keeps its own full-height rules. */
+  /* Title bar: matches the 48 px reader header, gutter-aligned with the body. */
   .qar-react-sheet-titlebar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    height: 56px;
-    padding: 0 12px 0 20px;
+    height: 48px;
+    padding: 0 8px 0 var(--qa-react-settings-gutter);
   }
 
   .qar-react-sheet-title {
@@ -2390,11 +2620,6 @@
 }
 
 @layer qa-react-components {
-  .qar-react-selector-recents {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
   /* Full-height mobile selector (brief S5). Compound selector + late source
      order beats the default sheet's 85dvh max-height (0,2,0 specificity). */
   .qar-react-bottom-sheet.qar-react-selector-sheet {
@@ -2403,9 +2628,11 @@
     max-width: none;
     height: 100dvh;
     max-height: none;
+    padding: 0;
+    gap: 0;
     border: 0;
     border-radius: 0;
     grid-template-rows: auto minmax(0, 1fr);
-    overflow: auto;
+    overflow: hidden;
   }
 }

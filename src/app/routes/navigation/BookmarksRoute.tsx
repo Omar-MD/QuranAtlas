@@ -42,11 +42,10 @@ export function BookmarksRoute() {
       <div className="qar:mx-auto qar:w-full qar:max-w-page">
         {status === 'loading' ? (
           <div aria-label="Loading bookmarks" aria-live="polite" data-bookmarks-loading="true" role="status">
-            {/* 3 row skeletons (S7) */}
+            {/* 3 single-line row skeletons (S7): bookmark rows are one line. */}
             {[0, 1, 2].map((row) => (
-              <div className="qar:grid qar:gap-2 qar:py-4" key={row}>
-                <div className="qar-reader-skeleton-bar" style={{ width: '38%' }} />
-                <div className="qar-reader-skeleton-bar" style={{ width: '82%' }} />
+              <div className="qar:grid qar:gap-2 qar:py-2" key={row}>
+                <div className="qar-reader-skeleton-bar" style={{ width: '62%' }} />
               </div>
             ))}
           </div>

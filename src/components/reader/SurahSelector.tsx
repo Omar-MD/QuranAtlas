@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { Search as SearchIcon } from 'lucide-react'
 
 import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/surah-index'
 import type { RecentSurahPosition } from '../../continuity/recent-surahs'
@@ -142,10 +143,10 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
   }
 
   const body = (
-    <div className="qar:grid qar:gap-3">
+    <div className="qar-react-selector-body">
       {/* G-5(a): Surahs/Juz are alternatives, not simultaneous panels — a
           segmented pill, not tabs. */}
-      <div className="qar:justify-self-start">
+      <div className="qar-react-selector-toolbar">
         <SegmentedControl
           label="Browse"
           onValueChange={setTab}
@@ -157,19 +158,21 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
         />
       </div>
       {tab === 'juz' ? (
-        <JuzPickerRows onNavigate={navigate} />
+        <div className="qar-react-selector-scroller">
+          <JuzPickerRows onNavigate={navigate} />
+        </div>
       ) : (
-        <div className="qar:grid qar:gap-2">
+        <>
           <Input
             autoComplete="off"
-            className="qar-react-selector-filter"
             hideLabel
             label="Filter by name, number, or verse"
             maxLength={20}
             onChange={(event) => setQuery(event.currentTarget.value)}
             onKeyDown={handleFilterKeyDown}
             placeholder="Filter by name, number, or verse"
-            type="text"
+            prefix={<SearchIcon aria-hidden="true" size={15} strokeWidth={1.7} />}
+            type="search"
             value={query}
           />
           {status === 'loading' ? (
@@ -188,7 +191,7 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
               No surah matches "{query}"
             </p>
           ) : (
-            <>
+            <div className="qar-react-selector-scroller">
               {parsedQuery.kind === 'empty' && recentOthers.length > 0 ? (
                 <section aria-label="Recent surahs">
                   <p className="qar-eyebrow">Recent</p>
@@ -215,9 +218,9 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
               >
                 {visibleRows.map(renderRow)}
               </ul>
-            </>
+            </div>
           )}
-        </div>
+        </>
       )}
     </div>
   )
@@ -272,7 +275,7 @@ function SelectorSurface({
       open
       title={title}
     >
-      <div className="qar-react-selector-body qar:grid qar:gap-3">{children}</div>
+      <div className="qar-react-selector-frame">{children}</div>
     </Dialog>
   ) : (
     <Sheet
@@ -285,7 +288,7 @@ function SelectorSurface({
       returnFocusId="reader-surah-selector-trigger"
       title={title}
     >
-      <div className="qar:grid qar:gap-3 qar:grow qar:min-h-0">{children}</div>
+      <div className="qar-react-selector-frame">{children}</div>
     </Sheet>
   )
 }
