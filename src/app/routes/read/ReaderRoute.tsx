@@ -138,17 +138,29 @@ export function ReaderRoute({
   })
   const { bookmarkedVerseKeys, toggleBookmark } = useSharedBookmarks()
   const [positionVerseKey, setPositionVerseKey] = useState<string | null>(null)
+  // Mirrors the corpus for event listeners that subscribe once; see the
+  // translation toggle below (P2).
+  const corpusRef = useRef<ReaderCorpusState>({ status: 'loading' })
+  useEffect(() => {
+    corpusRef.current = corpus
+  }, [corpus])
 
   useEffect(
     () =>
       subscribeReactReaderPreferencesChanged((preferences) => {
         applyReactReaderTypography(preferences)
         if (preferences.translationVisible !== undefined) {
-          setCorpus((current) =>
-            current.status === 'ready'
-              ? { ...current, translationVisible: preferences.translationVisible ?? current.translationVisible }
-              : current,
-          )
+          const nextVisible = preferences.translationVisible
+          const current = corpusRef.current
+          // P2: a corpus loaded with translations hidden carries no
+          // translation payload, so flipping back to visible reloads instead
+          // of rendering blank bridges. A payload-bearing corpus toggles
+          // live, as before.
+          if (nextVisible && current.status === 'ready' && current.translationsLoaded === false) {
+            setCorpusRequestToken((token) => token + 1)
+          } else {
+            setCorpus((cur) => (cur.status === 'ready' ? { ...cur, translationVisible: nextVisible } : cur))
+          }
         }
         if (preferences.wirdReaderStatusVisible !== undefined) {
           setWirdReaderStatusVisible(preferences.wirdReaderStatusVisible)

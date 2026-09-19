@@ -132,27 +132,38 @@ export function useLaunchRestore(hash: string, refreshVersion = 0): LaunchRestor
       const resolvedHash = await resolveHashWithLaunchState(nativeSettingsReader(), hash)
       // The edition resolver runs for its side effects only (persisting the
       // shipped default edition on a fresh profile); its outcome never gates
-      // the launch — the reader renders from bundled data in every state.
-      await resolveMushafEditionSetup({ contractWasValid: assetContract.hadValidContract }).catch(() => undefined)
+      // the launch — the reader renders from bundled data in every state. Its
+      // availability-index revalidation is network work, so it must not delay
+      // first reader paint either (P1): it runs concurrently with the reader
+      // becoming usable.
+      void resolveMushafEditionSetup({ contractWasValid: assetContract.hadValidContract }).catch(() => undefined)
       // Search retirement runs once per launch resolution after the short-lived
       // native reads complete and before reader-core downloads start. It is
       // fire-and-forget by contract: a blocked upgrade (older tab) or cache
       // failure must never block or fail launch resolution; cleanup retries on
       // later launches.
       void retireSearchData()
-      if (active) {
-        hasResolvedOnceRef.current = true
-        // The verse/reader-text pack is required offline data: it enqueues
-        // automatically for every launch-resolved reader. The enqueue must not
-        // block launch resolution; reconcileOfflinePacks resumes pending packs
-        // at ready regardless.
-        const profile = await readActiveReaderProfile().catch(() => null)
-        if (profile) void beginRequiredReaderCoreDownload(profile).catch(() => undefined)
-        if (!active) return
-        const offer = await resolveOfflineDownloadOffer().catch(() => null)
-        if (!active) return
-        setState({ status: 'ready', hash: resolvedHash, sourceHash: hash, offlineOffer: offer })
-      }
+      if (!active) return
+      hasResolvedOnceRef.current = true
+      // First usable reader content waits only on required local contract and
+      // profile/route work (P1). Everything below is optional availability or
+      // enqueue work that must not strand the reader when offline or slow.
+      setState({ status: 'ready', hash: resolvedHash, sourceHash: hash, offlineOffer: null })
+      // The verse/reader-text pack is required offline data: it enqueues
+      // automatically for every launch-resolved reader. The enqueue must not
+      // block launch resolution; reconcileOfflinePacks resumes pending packs
+      // at ready regardless.
+      const profile = await readActiveReaderProfile().catch(() => null)
+      if (profile) await beginRequiredReaderCoreDownload(profile).catch(() => undefined)
+      const offer = await resolveOfflineDownloadOffer().catch(() => null)
+      if (!active) return
+      // The pending offer lands as data on the already-usable reader: the
+      // overlay appears beside it instead of holding first paint hostage.
+      // Guard on sourceHash so a superseded resolution never revives an old
+      // offer for a different launch hash.
+      setState((current) =>
+        current.status === 'ready' && current.sourceHash === hash ? { ...current, offlineOffer: offer } : current,
+      )
     }
 
     setState({ status: 'loading', hash, sourceHash: hash })

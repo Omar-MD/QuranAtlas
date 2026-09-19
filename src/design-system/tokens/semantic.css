@@ -50,6 +50,12 @@
     --qa-react-theme-sample-dark-muted: #a39e95;
     --qa-react-theme-sample-dark-accent: #3ba587;
     --qa-react-paper: #f5efe0;
+    /* Installed-PWA chrome colour (D6): the status-bar/splash tint follows the
+       active theme. Light and sepia use the accent as brand chrome; dark (see
+       below) matches the canvas so the bar never glares above near-black
+       content. index.html's initial meta and the vite.config.js manifest pin
+       the light values — update together. */
+    --qa-react-chrome: var(--qa-react-accent);
     /* Content-sized control geometry (brief §3.1): steppers, tiles, chrome
        badges, and settings rhythm. Controls reference these, never literals. */
     --qa-react-tile-width: 72px;
@@ -88,7 +94,6 @@
     --qa-react-font-ui: var(--qar-font-ui);
     --qa-react-font-arabic: var(--qar-font-arabic);
     --qa-react-font-translation: var(--qar-font-translation);
-    --qa-react-font-mono: var(--qar-font-mono);
     --qa-react-transition-fast: var(--qar-motion-fast) var(--qar-ease-standard);
     --qa-react-transition-settle: var(--qar-motion-settle) var(--qar-ease-standard);
   }
@@ -136,5 +141,11 @@
     --qa-react-scrim-quiet: rgb(0 0 0 / 18%);
     /* Readable yellow: the inherited light #806100 is too dark on the dark canvas. */
     --qa-react-offline-warning: #d6ae37;
+    /* D3: the inherited danger-600 text is ~2.7:1 on the dark sheet. This
+       lightened terracotta keeps the same hue family at AA (6.4:1 on
+       --qa-react-surface). Danger BUTTONS keep --qa-react-danger with
+       on-danger text and are unaffected. */
+    --qa-react-text-danger: #e08573;
+    --qa-react-chrome: #141311;
   }
 }

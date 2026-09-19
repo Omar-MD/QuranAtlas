@@ -148,7 +148,7 @@ export function EditionChangeDialog({ onOpenChange, open }: { onOpenChange: (ope
         </div>
         {saveFailed ? (
           <div className="qar:grid qar:gap-2 qar:pt-2">
-            <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">
+            <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger-text" role="status">
               Could not save Mushaf edition
             </p>
             <Button onClick={retryFailedSave} size="sm" type="button" variant="secondary">

@@ -50,7 +50,7 @@ export function Dialog({
         <DialogPrimitive.Overlay className="qar:fixed qar:inset-0 qar:z-[125] qar-react-scrim" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
-          className={`qar:fixed qar:left-1/2 qar:top-1/2 qar:z-[130] qar:grid qar:w-96 qar:max-w-full qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-5 qar:text-text qar-react-overlay-shadow${contentClassName ? ` ${contentClassName}` : ''}`}
+          className={`qar:fixed qar:left-1/2 qar:top-1/2 qar:z-[130] qar:grid qar:-translate-x-1/2 qar:-translate-y-1/2 qar:gap-4 qar:rounded-surface qar:border qar:border-border qar:bg-surface qar:p-5 qar:text-text qar-react-overlay-shadow qar-react-overlay-dialog${contentClassName ? ` ${contentClassName}` : ''}`}
           onCloseAutoFocus={(event) => {
             if (invoker.current?.isConnected) {
               event.preventDefault()

@@ -31,11 +31,54 @@ type MushafEditionSetupOptions = {
   fetcher?: typeof fetch
 }
 
+// One shared availability-index load per fetcher (P1): simultaneous
+// launch-phase callers (launch restore, offline offer, edition banner,
+// Settings, Downloads, edition dialog) previously each fetched and re-parsed
+// the ~568 KB index. Concurrent calls now share one in-flight request, and a
+// success is remembered for a short window so a same-burst caller (the
+// banner mounting right after launch) does not refetch immediately. The
+// window is short enough that a later explicit refresh (opening Settings or
+// the edition dialog) revalidates through the NetworkFirst service worker; a
+// rejection is never remembered, so an offline failure never poisons the
+// next attempt.
+const AVAILABILITY_INDEX_MEMO_MS = 15_000
+
+type AvailabilityIndexCache = {
+  inFlight: Promise<MushafEditionIndexEntry[]> | null
+  entries: MushafEditionIndexEntry[] | null
+  settledAt: number
+}
+
+const availabilityIndexCache = new WeakMap<typeof fetch, AvailabilityIndexCache>()
+
 export async function loadMushafEditionEntries(fetcher: typeof fetch = fetch): Promise<MushafEditionIndexEntry[]> {
-  assertRuntimeDatasetUrl(MUSHAF_ASSET_INDEX_URL)
-  const response = await fetcher(MUSHAF_ASSET_INDEX_URL)
-  if (!response.ok) throw new Error(`Unable to load Mushaf edition availability: ${response.status}`)
-  return parseMushafAssetIndex(await response.json())
+  const cache = availabilityIndexCache.get(fetcher) ?? { inFlight: null, entries: null, settledAt: 0 }
+  if (cache.entries && Date.now() - cache.settledAt < AVAILABILITY_INDEX_MEMO_MS) {
+    return cache.entries
+  }
+  cache.inFlight ??= (async () => {
+    assertRuntimeDatasetUrl(MUSHAF_ASSET_INDEX_URL)
+    const response = await fetcher(MUSHAF_ASSET_INDEX_URL)
+    if (!response.ok) throw new Error(`Unable to load Mushaf edition availability: ${response.status}`)
+    return parseMushafAssetIndex(await response.json())
+  })()
+  availabilityIndexCache.set(fetcher, cache)
+  try {
+    const entries = await cache.inFlight
+    cache.entries = entries
+    cache.settledAt = Date.now()
+    return entries
+  } catch (error) {
+    // Evict on rejection so a later explicit retry (Try again, reopening a
+    // surface) performs a fresh request instead of rethrowing forever.
+    if (availabilityIndexCache.get(fetcher) === cache) {
+      cache.inFlight = null
+      cache.entries = null
+    }
+    throw error
+  } finally {
+    cache.inFlight = null
+  }
 }
 
 export async function loadMushafEditionOptions(fetcher: typeof fetch = fetch): Promise<MushafEditionOption[]> {

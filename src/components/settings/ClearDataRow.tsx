@@ -16,7 +16,7 @@ export function ClearDataRow() {
         helper="Remove bookmarks, reading positions, downloads, and settings from this device."
         label="Clear all data"
       >
-        <Button className="qar:text-danger" onClick={clearData.open} size="sm" variant="ghost">
+        <Button className="qar:text-danger-text" onClick={clearData.open} size="sm" variant="ghost">
           Clear all data
         </Button>
       </SettingsRow>
@@ -29,10 +29,17 @@ export function ClearDataRow() {
         open={clearData.state.open}
         title="Clear all data?"
       >
-        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          This will permanently delete saved reading positions, bookmarks, offline downloads, settings, and any older
-          local QuranAtlas data still stored on this device. This action cannot be undone.
+        <p className="qar:m-0 qar:text-sm qar:leading-6">
+          This permanently deletes everything QuranAtlas has stored on this device:
         </p>
+        <ul className="qar:m-0 qar:grid qar:gap-1 qar:pl-5 qar:text-sm qar:leading-6 qar:text-muted">
+          <li>Saved reading positions</li>
+          <li>Bookmarks</li>
+          <li>Offline downloads</li>
+          <li>Settings, including theme and text choices</li>
+          <li>Any older local QuranAtlas data</li>
+        </ul>
+        <p className="qar:m-0 qar:text-sm qar:font-medium qar:leading-6">This action cannot be undone.</p>
         <Input
           autoComplete="off"
           disabled={clearData.state.pending}
@@ -42,12 +49,12 @@ export function ClearDataRow() {
           value={clearData.state.input}
         />
         {clearData.state.error ? (
-          <p className="qar:m-0 qar:text-sm qar:text-danger" role="alert">
+          <p className="qar:m-0 qar:text-sm qar:text-danger-text" role="alert">
             {clearData.state.error}
           </p>
         ) : null}
         {clearData.state.blocked ? (
-          <p aria-live="assertive" className="qar:m-0 qar:text-sm qar:text-danger" role="alert">
+          <p aria-live="assertive" className="qar:m-0 qar:text-sm qar:text-danger-text" role="alert">
             The local database is still in use. Close other QuranAtlas tabs or windows, then try again.
           </p>
         ) : null}

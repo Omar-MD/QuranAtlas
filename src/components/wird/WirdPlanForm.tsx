@@ -191,11 +191,16 @@ export function WirdPlanForm({
         submit()
       }}
     >
-      {mode === 'create' ? (
-        <p className="qar:m-0 qar:text-sm qar:leading-6 qar:text-muted">
-          Choose when to finish; each day's portion is sized for you.
+      {/* D1: the view's first text is a real heading + lede, distinct from
+          the shell's "Daily Wird" title and the section eyebrows below. */}
+      <header className="qar-react-wird-form-head">
+        <h3 className="qar-react-wird-form-title">{mode === 'create' ? 'Set up your plan' : 'Adjust your plan'}</h3>
+        <p className="qar-react-wird-form-lede">
+          {mode === 'create'
+            ? 'Choose when to finish; each day’s portion is sized for you.'
+            : 'Change the finish date, counting unit, or reminder. Progress is kept.'}
         </p>
-      ) : null}
+      </header>
 
       <section aria-label="Finish by">
         <p className="qar-eyebrow">Finish by</p>
@@ -226,7 +231,7 @@ export function WirdPlanForm({
         ) : null}
         <p className="qar-react-wird-helper" id={paceId}>
           {dateInvalid ? (
-            <span className="qar:text-danger" id={dateErrorId} role="alert">
+            <span className="qar:text-danger-text" id={dateErrorId} role="alert">
               Pick a date from tomorrow onwards.
             </span>
           ) : pace ? (
@@ -314,7 +319,16 @@ export function WirdPlanForm({
       </section>
 
       <div className="qar-react-wird-form-footer">
-        <Button className="qar:w-full" disabled={!canSubmit} loading={saving} onClick={submit} type="submit">
+        {/* The only stretched control and the view's one primary action (D1);
+            disabled/loading behaviour is unchanged. */}
+        <Button
+          className="qar:w-full"
+          disabled={!canSubmit}
+          loading={saving}
+          onClick={submit}
+          type="submit"
+          variant="primary"
+        >
           {mode === 'edit' ? 'Save changes' : 'Create plan'}
         </Button>
         {mode === 'edit' && onCancel ? (

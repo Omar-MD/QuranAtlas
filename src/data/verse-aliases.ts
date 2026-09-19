@@ -9,7 +9,15 @@ export type VerseAlias = {
 export type VerseAliases = Record<string, VerseAlias[]>
 
 export type TranslationResolution =
-  | { role: 'identity' | 'primary' | 'merged'; sourceKey: string; text: string }
+  | { role: 'identity' | 'merged' | 'primary'; sourceKey: string; text: string }
+  | { role: 'continuation'; sourceKey: string; primaryAyah?: number; text: null }
+  | { role: 'none'; sourceKey: null; text: null }
+
+/** Roles + source keys only, as derived from the alias table alone (see
+    resolveVerseStructureFor). `text` is always null: no translation payload
+    backs a structural resolution. */
+export type VerseStructureResolution =
+  | { role: 'identity' | 'merged' | 'primary'; sourceKey: string; text: null }
   | { role: 'continuation'; sourceKey: string; primaryAyah?: number; text: null }
   | { role: 'none'; sourceKey: null; text: null }
 
@@ -76,4 +84,45 @@ export function getAliasVerses(alias: VerseAlias, riwayah: Riwayah): number[] {
   const value = alias[riwayah]
   if (value === null || value === undefined) return []
   return Array.isArray(value) ? value : [value]
+}
+
+// Structure-only resolution (P2): the roles that drive passage grouping and
+// continuation numbering, derived from the alias table alone. Used when
+// translations are hidden and the translation payload is deliberately not
+// fetched: the per-surah translation pack is complete by contract, so text
+// presence is assumed for aliased surahs instead of checked. Roles match
+// resolveTranslationFor for every complete translation pack.
+export function resolveVerseStructureFor({
+  aliases,
+  riwayah,
+  surah,
+  verse,
+}: {
+  aliases: VerseAliases
+  riwayah: Riwayah
+  surah: number
+  verse: number
+}): VerseStructureResolution {
+  const identityKey = `${surah}:${verse}`
+  const surahAliases = aliases[String(surah)]
+  if (!surahAliases || surahAliases.length === 0) {
+    return { role: 'identity', sourceKey: identityKey, text: null }
+  }
+
+  const matches = surahAliases
+    .map((alias) => ({ alias, verses: getAliasVerses(alias, riwayah) }))
+    .filter((entry) => entry.verses.includes(verse))
+
+  if (matches.length === 0) return { role: 'none', sourceKey: null, text: null }
+
+  if (matches.length > 1) {
+    const sourceKey = matches.map((entry) => `${surah}:${entry.alias.hafs}`).join(',')
+    return { role: 'merged', sourceKey, text: null }
+  }
+
+  const matched = matches[0]
+  const sourceKey = `${surah}:${matched.alias.hafs}`
+  if (matched.verses[0] !== verse)
+    return { role: 'continuation', sourceKey, primaryAyah: matched.verses[0], text: null }
+  return { role: matched.verses.length > 1 ? 'primary' : 'identity', sourceKey, text: null }
 }

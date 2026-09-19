@@ -26,12 +26,28 @@ export function applyReactReaderAppearance(
   if (typeof document === 'undefined') return
   const root = document.documentElement
   root.dataset.themePref = preferences.theme
-  root.dataset.theme = resolveTheme(preferences.theme)
+  const resolvedTheme = resolveTheme(preferences.theme)
+  root.dataset.theme = resolvedTheme
+  syncThemeColorMeta()
   // The Night-mode pair is retired (A3): no night attribute is set; the Dim
   // page images switch is the only image treatment and applies in Dark only.
   delete root.dataset.nightMode
   if (preferences.dimPageImages !== undefined) {
     root.dataset.dimPageImages = preferences.dimPageImages ? 'on' : 'off'
+  }
+}
+
+// Installed-PWA chrome (D6): the browser bar follows the active theme by
+// mirroring the --qa-react-chrome token (accent chrome on light/sepia, dark
+// canvas chrome on dark). Reading the computed token keeps this file free of
+// colour literals and automatically tracks semantic.css; the initial value
+// stays whatever index.html shipped (the light chrome) until first apply.
+function syncThemeColorMeta(): void {
+  if (typeof document === 'undefined') return
+  const chrome = getComputedStyle(document.documentElement).getPropertyValue('--qa-react-chrome').trim()
+  if (!chrome) return
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    meta.setAttribute('content', chrome)
   }
 }
 
@@ -41,7 +57,10 @@ export function subscribeReactSystemTheme(): () => void {
   if (!query) return () => undefined
   function syncTheme() {
     const root = document.documentElement
-    if (root.dataset.themePref === 'auto') root.dataset.theme = query.matches ? 'dark' : 'light'
+    if (root.dataset.themePref === 'auto') {
+      root.dataset.theme = query.matches ? 'dark' : 'light'
+      syncThemeColorMeta()
+    }
   }
   query.addEventListener('change', syncTheme)
   return () => query.removeEventListener('change', syncTheme)

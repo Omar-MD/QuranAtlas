@@ -1,5 +1,5 @@
 import { fetchJson, isAbortError } from './fetch'
-import { loadVerseAliases, resolveTranslationFor } from './verse-aliases'
+import { loadVerseAliases, resolveTranslationFor, resolveVerseStructureFor } from './verse-aliases'
 import type { Riwayah } from '../storage/types'
 import { DEFAULT_QURAN_TEXT_STYLE_ID, DEFAULT_RIWAYAH, DEFAULT_TRANSLATION_ID } from '../storage/reader-settings'
 
@@ -31,6 +31,9 @@ export type ReaderCorpusState =
       riwayah: Riwayah
       surah: ReaderSurahMeta
       translationVisible: boolean
+      /** False when the translation payload was deliberately skipped because
+          translations are hidden (P2). Flipping visible again must reload. */
+      translationsLoaded?: boolean
       verses: ReaderVerse[]
     }
   | { status: 'unavailable'; reason: string }
@@ -120,9 +123,13 @@ export async function loadReaderSurah(surah: number, options: ReaderCorpusOption
   const padded = String(surah).padStart(3, '0')
   try {
     const url = `/dataset/quran-text/${riwayah}/${quranTextStyleId}/${padded}.json`
+    // P2: a translation-hidden reader displays no translation text or
+    // footnotes, so the per-surah translation payload is not fetched. The
+    // alias table still is — passage grouping and continuation numbering are
+    // visible Arabic-layout features that render regardless of the toggle.
     const [payload, translation, aliases] = await Promise.all([
       fetchJson<QuranTextPayload>(fetcher, url, { signal: options.signal, httpError: readerCorpusHttpError }),
-      loadTranslation(surah, translationId, fetcher, options.signal),
+      translationVisible ? loadTranslation(surah, translationId, fetcher, options.signal) : null,
       loadVerseAliases(fetcher, options.signal),
     ])
     assertQuranTextPayload(payload, surah)
@@ -130,13 +137,15 @@ export async function loadReaderSurah(surah: number, options: ReaderCorpusOption
     const verses = payload.ayat.map((ayah) => {
       const verseNo = ayah.aya_no
       const key = `${surah}:${verseNo}`
-      const resolution = resolveTranslationFor({
-        aliases: aliases.aliases,
-        riwayah,
-        surah,
-        translations: translationMap,
-        verse: verseNo,
-      })
+      const resolution = translation
+        ? resolveTranslationFor({
+            aliases: aliases.aliases,
+            riwayah,
+            surah,
+            translations: translationMap,
+            verse: verseNo,
+          })
+        : resolveVerseStructureFor({ aliases: aliases.aliases, riwayah, surah, verse: verseNo })
       return {
         key,
         surah,
@@ -159,6 +168,9 @@ export async function loadReaderSurah(surah: number, options: ReaderCorpusOption
         verseCount: payload.ayat.length,
       },
       translationVisible,
+      // Null also covers a failed default-translation fetch (offline): the
+      // toggle-on path retries instead of staying blank.
+      translationsLoaded: translation !== null,
       verses,
     }
   } catch (error) {

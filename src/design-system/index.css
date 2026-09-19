@@ -30,22 +30,6 @@
   }
 
   @font-face {
-    font-family: "Geist Mono";
-    src: url("/fonts/geist-mono/GeistMono-Regular.woff2") format("woff2");
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
-    font-family: "Geist Mono";
-    src: url("/fonts/geist-mono/GeistMono-Medium.woff2") format("woff2");
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-  }
-
-  @font-face {
     font-family: "KFGQPC Uthmanic Hafs";
     src: url("/fonts/kfgqpc-uthmanic-hafs/uthmanic_hafs_v22.woff2") format("woff2");
     font-weight: 400;
@@ -671,6 +655,24 @@
     text-rendering: optimizelegibility;
   }
 
+  /* Continuation verse markers inside a passage group (D5): the number is a
+     quiet fraction of the Arabic size — never the full text size — isolated
+     from the RTL bidi run and spaced off the following word. The Arabic text
+     itself, its measure, and verse association are untouched. */
+  .qar-reader-verse-continuation-num {
+    display: inline-block;
+    margin-inline-end: calc(var(--qa-react-arabic-size) * 0.25);
+    color: var(--qa-react-text-muted);
+    font-family: var(--qa-react-font-ui);
+    font-size: calc(var(--qa-react-arabic-size) * 0.43);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-align: center;
+    direction: ltr;
+    unicode-bidi: isolate;
+    user-select: none;
+  }
+
   .qar-reader-verse-translation {
     width: 100%;
     margin: var(--qa-react-verse-translation-gap) 0 0;
@@ -948,6 +950,12 @@
     box-shadow: var(--qa-react-overlay-shadow);
   }
 
+  /* Dialog frame (D3): the 384 px column keeps comfortable 20 px gutters on
+     phone widths instead of touching the viewport edges. */
+  .qar-react-overlay-dialog {
+    width: min(24rem, calc(100vw - 2.5rem));
+  }
+
   .qar-react-sheet-scrim {
     z-index: 100;
   }
@@ -1176,6 +1184,31 @@
     gap: var(--qa-react-settings-group-gap);
   }
 
+  /* Create/edit view head (D1): the form's own heading and lede sit between
+     the shell's title/subtitle and the first eyebrow group, giving the view a
+     first text that names the task instead of dissolving into the shell. */
+  .qar-react-wird-form-head {
+    display: grid;
+    gap: 4px;
+    padding-bottom: 4px;
+    border-block-end: 1px solid var(--qa-react-border);
+  }
+
+  .qar-react-wird-form-title {
+    margin: 0;
+    color: var(--qa-react-text);
+    font-size: 1.0625rem;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .qar-react-wird-form-lede {
+    margin: 0;
+    color: var(--qa-react-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
   .qar-react-wird-form section {
     display: grid;
     gap: 8px;
@@ -1274,6 +1307,83 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     background: var(--qa-react-sheet);
+  }
+
+  /* Shell subtitle (D1): sits above the scrolling body, aligned to the same
+     gutters, so the shell title → subtitle → content hierarchy reads as one
+     framed surface on every screen that shares the shell. */
+  .qar-react-settings-shell > .qar-react-settings-subtitle {
+    margin: 12px var(--qa-react-settings-gutter) 0;
+    color: var(--qa-react-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .qar-react-settings-shell > .qar-react-settings-subtitle + .qar-react-settings-body {
+    padding-top: 8px;
+  }
+
+  /* Downloads "Texts and editions" disclosure (D4): one quiet hairline-
+     separated row per included asset — icon, wrapping label, right-aligned
+     status — so long edition names never collide with the status. */
+  .qar-react-settings-assets {
+    display: grid;
+    gap: 8px;
+  }
+
+  .qar-react-settings-section-heading {
+    display: grid;
+    justify-items: start;
+  }
+
+  .qar-react-settings-asset-list {
+    display: grid;
+  }
+
+  .qar-react-settings-asset-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: var(--qa-react-settings-row-min);
+    padding: 8px 0;
+    border-block-end: 1px solid var(--qa-react-border);
+  }
+
+  .qar-react-settings-asset-row:last-child {
+    border-block-end-color: transparent;
+  }
+
+  .qar-react-settings-asset-icon {
+    display: grid;
+    place-items: center;
+    color: var(--qa-react-text-muted);
+  }
+
+  .qar-react-settings-asset-main {
+    min-width: 0;
+  }
+
+  .qar-react-settings-asset-label {
+    display: inline;
+    color: var(--qa-react-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .qar-react-settings-asset-prefix {
+    color: var(--qa-react-text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .qar-react-settings-asset-status {
+    color: var(--qa-react-text-muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    white-space: nowrap;
   }
 
   /* Quiet section heading (brief §2.2): eyebrow + rows — never a nested
@@ -1388,7 +1498,11 @@
 
   .qar-react-settings-row-copy {
     display: grid;
-    flex: 1 1 auto;
+    /* Zero basis (D2): the copy column takes the space left after the
+       control, so a long helper wraps inside the copy instead of pushing the
+       control to its own line. The row still wraps under enlarged text/zoom
+       when the control alone cannot fit. */
+    flex: 1 1 0;
     gap: 4px;
     min-width: 0;
   }

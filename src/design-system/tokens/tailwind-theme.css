@@ -15,6 +15,7 @@
   --color-on-accent: var(--qa-react-text-on-accent);
   --color-focus: var(--qa-react-accent);
   --color-danger: var(--qa-react-danger);
+  --color-danger-text: var(--qa-react-text-danger);
   --color-on-danger: var(--qa-react-text-on-danger);
   --radius-control: var(--qa-react-radius-control);
   --radius-surface: var(--qa-react-radius-surface);

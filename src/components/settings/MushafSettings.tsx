@@ -96,7 +96,7 @@ export function MushafSettings({
       ) : null}
       {framingWriteStatus === 'error' ? (
         <div className="qar:grid qar:gap-2">
-          <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger" role="status">
+          <p aria-live="polite" className="qar:m-0 qar:text-sm qar:leading-6 qar:text-danger-text" role="status">
             Could not save the page zoom
           </p>
           <Button onClick={onRetryFraming} size="sm" type="button" variant="secondary">

@@ -109,8 +109,8 @@ export default defineConfig(() => {
           start_url: '/',
           scope: '/',
           display: 'standalone',
-          theme_color: '#8a5a21',
-          background_color: '#fbf7ef',
+          theme_color: '#0e6b52',
+          background_color: '#fcfcfa',
           icons: [
             {
               src: '/icons/quranatlas-icon-192-v2.png',
