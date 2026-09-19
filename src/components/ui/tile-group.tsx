@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react'
 import { useId, type ReactNode } from 'react'
 
 import { cn } from '../../design-system/utils/cn'
@@ -13,8 +12,8 @@ export type TileGroupProps = {
 }
 
 // Visual-choice radiogroup (brief §4.2): small picture + label tiles with the
-// app's selection triple (accent border + check + label weight). Used for
-// Theme and Verse spacing — never for text-only mode switches (those are
+// app's selection pair (accent border + label weight). Used for Theme and
+// Verse spacing — never for text-only mode switches (those are
 // SegmentedControl's ink pill).
 export function TileGroup({ label, options, value, onValueChange }: TileGroupProps) {
   const groupName = useId()
@@ -39,14 +38,7 @@ export function TileGroup({ label, options, value, onValueChange }: TileGroupPro
               type="radio"
               value={option.value}
             />
-            <span className="qar-react-tile-visual">
-              {option.visual}
-              {selected ? (
-                <span aria-hidden="true" className="qar-react-tile-badge">
-                  <Check size={10} strokeWidth={2.5} />
-                </span>
-              ) : null}
-            </span>
+            <span className="qar-react-tile-visual">{option.visual}</span>
             <span aria-hidden="true" className="qar-react-tile-label">
               {option.label}
             </span>

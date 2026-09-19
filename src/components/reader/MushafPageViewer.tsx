@@ -560,7 +560,11 @@ const MushafPageCell = ({
       {entry?.status === 'ready' && media?.kind === 'inline-svg' ? (
         <MushafInlineSvgPage ariaLabel={pageAccessibleName(entry.asset)} inlineSvg={media.inlineSvg} />
       ) : entry?.status === 'ready' && media?.kind === 'external-image' ? (
-        <div aria-label={pageAccessibleName(entry.asset)} className="qar-react-mushaf-page-fit" role="img">
+        <div
+          aria-label={pageAccessibleName(entry.asset)}
+          className="qar-react-mushaf-page-fit qar-react-mushaf-page-fit--framed"
+          role="img"
+        >
           <div
             className="qar-react-mushaf-page-frame"
             style={

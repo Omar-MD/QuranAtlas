@@ -5,7 +5,6 @@ import {
   writeMushafEditionSelection,
   type MushafEditionOption,
 } from '../../launch/mushaf-edition-setup'
-import { Check } from 'lucide-react'
 import { readNativeSettings } from '../../storage/native-reader-store'
 import { emitReactReaderPreferencesChanged } from '../../storage/reader-preferences'
 import { readNativeReactReaderPreferences } from '../../storage/settings-writer'
@@ -16,8 +15,8 @@ import { useQueuedSettingWrite } from '../settings/useQueuedSettingWrite'
 // Edition switching lives in the reader, not in settings: the S1 edition
 // banner's "Change edition" button opens this dialog. One quiet row per
 // edition — name, one-line description, page-image size when known; the
-// current edition carries an accent check. Switching re-shows the edition
-// banner once on return (the dismissed id no longer matches).
+// current edition carries the accent label treatment. Switching re-shows the
+// edition banner once on return (the dismissed id no longer matches).
 export function EditionChangeDialog({ onOpenChange, open }: { onOpenChange: (open: boolean) => void; open: boolean }) {
   const [options, setOptions] = useState<Array<MushafEditionOption & { sizeText?: string }> | null>(null)
   const [value, setValue] = useState(DEFAULT_READER_ASSET_PROFILE.mushafEditionId)
@@ -124,6 +123,7 @@ export function EditionChangeDialog({ onOpenChange, open }: { onOpenChange: (ope
                   <ChoiceButton
                     aria-checked={selected}
                     className="qar-edition-row"
+                    data-selected={selected || undefined}
                     data-testid="mushaf-edition-option"
                     key={edition.id}
                     onClick={() => selectEdition(edition.id)}
@@ -140,11 +140,6 @@ export function EditionChangeDialog({ onOpenChange, open }: { onOpenChange: (ope
                         <span className="qar-react-settings-row-control">Page images · {edition.sizeText}</span>
                       ) : null}
                     </span>
-                    {selected ? (
-                      <span aria-hidden="true" className="qar:text-accent">
-                        <Check size={18} strokeWidth={2.2} />
-                      </span>
-                    ) : null}
                   </ChoiceButton>
                 )
               })

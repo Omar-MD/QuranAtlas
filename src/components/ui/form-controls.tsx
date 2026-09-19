@@ -2,7 +2,7 @@ import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import * as SliderPrimitive from '@radix-ui/react-slider'
 import * as SwitchPrimitive from '@radix-ui/react-switch'
-import { Check, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { forwardRef, useId, useState } from 'react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
@@ -73,14 +73,11 @@ export function Select({ className, label, options, placeholder = 'Select', ...p
           <SelectPrimitive.Viewport>
             {options.map((option) => (
               <SelectPrimitive.Item
-                className="qar:flex qar:min-h-11 qar:cursor-default qar:items-center qar:gap-2 qar:rounded-control qar:px-2 qar:text-sm qar:outline-none qar:focus:bg-accent-tint qar:data-[disabled]:opacity-40"
+                className="qar:flex qar:min-h-11 qar:cursor-default qar:items-center qar:gap-2 qar:rounded-control qar:px-2 qar:text-sm qar:font-medium qar:outline-none qar:focus:bg-accent-tint qar:data-[state=checked]:bg-accent-tint qar:data-[state=checked]:font-semibold qar:data-[disabled]:opacity-40"
                 disabled={option.disabled}
                 key={option.value}
                 value={option.value}
               >
-                <SelectPrimitive.ItemIndicator>
-                  <Check size={14} />
-                </SelectPrimitive.ItemIndicator>
                 <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
               </SelectPrimitive.Item>
             ))}
@@ -226,16 +223,12 @@ export function Checkbox({ label, className, id, ...props }: CheckboxProps) {
     <label className="qar:inline-flex qar:items-center qar:gap-2 qar:text-sm qar:text-text" htmlFor={checkboxId}>
       <CheckboxPrimitive.Root
         className={cn(
-          'qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:text-on-accent qar:data-[state=checked]:border-accent qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-40',
+          'qar:flex qar:size-5 qar:items-center qar:justify-center qar:rounded-control qar:border qar:border-border qar:bg-surface qar:data-[state=checked]:border-accent qar:data-[state=checked]:bg-accent qar:focus-visible:outline qar:focus-visible:outline-2 qar:focus-visible:outline-offset-2 qar:focus-visible:outline-focus qar:disabled:pointer-events-none qar:disabled:opacity-40',
           className,
         )}
         id={checkboxId}
         {...props}
-      >
-        <CheckboxPrimitive.Indicator>
-          <Check size={14} />
-        </CheckboxPrimitive.Indicator>
-      </CheckboxPrimitive.Root>
+      />
       <span>{label}</span>
     </label>
   )

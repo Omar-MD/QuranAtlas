@@ -1,4 +1,4 @@
-import { Bookmark, Check, Copy } from 'lucide-react'
+import { Bookmark, Copy } from 'lucide-react'
 import { useState } from 'react'
 
 import type { ReaderVerse } from '../../data/reader-corpus'
@@ -115,9 +115,6 @@ export function VerseBlock({
         }
       }}
     >
-      <span aria-hidden="true" className="qar-reader-verse-selection-check">
-        <Check size={16} strokeWidth={2.2} />
-      </span>
       <div className="qar-reader-verse-gutter">
         <span aria-hidden="true" className="qar-reader-verse-medallion">
           {verse.verse}

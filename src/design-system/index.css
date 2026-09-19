@@ -494,6 +494,21 @@
     padding-block: 8px 32px;
   }
 
+  /* Desktop reading measure: at least half the viewport so the verse view
+     stops wasting the wide canvas; 68ch stays the floor for narrow desktop
+     windows and text-resize flows. The wrapper's side padding drops out on
+     desktop — the centered column already carries the margins. */
+  @media (min-width: 1024px) {
+    .qar-reader-column,
+    .qar-reader-verse-surface {
+      max-width: max(68ch, 55vw);
+    }
+
+    .qar-reader-column {
+      padding-inline: 0;
+    }
+  }
+
   /* Surah header block (S2): eyebrow, Arabic display (desktop only), Latin
      name, one metadata line, basmala at verse size, ۞ hairline, 32 px after. */
   .qar-reader-surah-header {
@@ -612,23 +627,10 @@
     }
   }
 
-  /* Selection triple (brief §1.1): tint wash + 1 px accent border + check. */
+  /* Selection pair (brief §1.1): tint wash + 1 px accent border. */
   .qar-reader-verse[data-selected="true"] {
     border-color: var(--qa-react-accent);
     background: var(--qa-react-accent-tint);
-  }
-
-  .qar-reader-verse-selection-check {
-    display: none;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    color: var(--qa-react-accent);
-    pointer-events: none;
-  }
-
-  .qar-reader-verse[data-selected="true"] .qar-reader-verse-selection-check {
-    display: block;
   }
 
   /* Left gutter: a quiet Western-numeral verse reference (never a button).
@@ -1583,20 +1585,6 @@
     transition: color var(--qa-react-transition-fast);
   }
 
-  .qar-react-tile-badge {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    display: grid;
-    place-items: center;
-    width: 16px;
-    height: 16px;
-    border-radius: var(--qa-react-radius-pill);
-    background: var(--qa-react-accent);
-    color: var(--qa-react-text-on-accent);
-    transition: opacity var(--qa-react-transition-fast);
-  }
-
   .qar-react-tile[data-selected="true"] .qar-react-tile-visual {
     border-color: var(--qa-react-accent);
     border-width: 2px;
@@ -1781,7 +1769,7 @@
   }
 
   /* Mushaf edition rows (S8): one quiet hairline-separated row per edition;
-     the selected row carries an accent check. */
+     the selected row carries the accent label + tint wash. */
   .qar-edition-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1806,6 +1794,14 @@
   }
 
   .qar-edition-row:hover .qar-react-settings-row-label {
+    color: var(--qa-react-accent);
+  }
+
+  .qar-edition-row[data-selected="true"] {
+    background: var(--qa-react-accent-tint);
+  }
+
+  .qar-edition-row[data-selected="true"] .qar-react-settings-row-label {
     color: var(--qa-react-accent);
   }
 
@@ -1903,23 +1899,13 @@
     outline-offset: 2px;
   }
 
-  /* Selected treatment (brief §1.1): tint + 1 px accent border + check — never
-     a tier swap, never colour alone (repairs D4/B5). */
+  /* Selected treatment (brief §1.1): tint + 1 px accent border — never a tier
+     swap, never colour alone (repairs D4/B5). */
   .qar-react-list-row[data-selected="true"],
   .qar-react-list-row[data-current="true"] {
     border-color: var(--qa-react-accent);
     border-radius: var(--qa-react-radius-control);
     background: var(--qa-react-accent-tint);
-  }
-
-  .qar-react-list-row-check {
-    display: none;
-    color: var(--qa-react-accent);
-  }
-
-  .qar-react-list-row[data-selected="true"] .qar-react-list-row-check,
-  .qar-react-list-row[data-current="true"] .qar-react-list-row-check {
-    display: inline-flex;
   }
 
   .qar-react-list-row[data-selected="true"]:hover,
@@ -2124,12 +2110,21 @@
        releases the reserve and the page refits (transition below). */
     --qa-react-mushaf-reserve-top: 0px;
     --qa-react-mushaf-reserve-bottom: 0px;
+    /* Stage height mirrors the surface's content box (100dvh minus the chrome
+       reserves and the safe-area insets its paddings carry), so the derived
+       width fits that height exactly and the page centres both ways —
+       deriving from 100dvh alone ignored the insets and forced a height clamp
+       that sat the page off-centre. */
+    --qa-react-mushaf-stage-height: calc(
+      100dvh -
+      var(--qa-react-mushaf-reserve-top) -
+      var(--qa-react-mushaf-reserve-bottom) -
+      env(safe-area-inset-top) -
+      env(safe-area-inset-bottom)
+    );
     --qa-react-mushaf-stage-width: min(
       100%,
-      calc(
-        (100dvh - var(--qa-react-mushaf-reserve-top) - var(--qa-react-mushaf-reserve-bottom)) *
-        var(--qa-react-mushaf-page-ratio)
-      )
+      calc(var(--qa-react-mushaf-stage-height) * var(--qa-react-mushaf-page-ratio))
     );
     position: relative;
     display: grid;
@@ -2208,7 +2203,7 @@
   [data-mushaf-layout-mode="single"][data-mushaf-fit-width="true"] .qar-react-mushaf-page-stage {
     align-self: stretch;
     justify-self: center;
-    width: min(100%, var(--qa-react-mushaf-stage-width));
+    width: var(--qa-react-mushaf-stage-width);
     height: 100%;
     overflow-y: auto;
     overscroll-behavior-y: contain;
@@ -2219,13 +2214,7 @@
   [data-mushaf-layout-mode="single"][data-mushaf-fit-width="false"] .qar-react-mushaf-page-stage {
     align-self: center;
     justify-self: center;
-    width: min(
-      100%,
-      calc(
-        (100dvh - var(--qa-react-mushaf-reserve-top) - var(--qa-react-mushaf-reserve-bottom)) *
-        var(--qa-react-mushaf-page-ratio)
-      )
-    );
+    width: var(--qa-react-mushaf-stage-width);
     max-height: 100%;
     aspect-ratio: var(--qa-react-mushaf-page-ratio);
     overflow: hidden;
@@ -2282,13 +2271,7 @@
 
   [data-mushaf-layout-mode="scroll"][data-mushaf-fit-width="false"] .qar-react-mushaf-page-cell {
     justify-self: center;
-    width: min(
-      100%,
-      calc(
-        (100dvh - var(--qa-react-mushaf-reserve-top) - var(--qa-react-mushaf-reserve-bottom)) *
-        var(--qa-react-mushaf-page-ratio)
-      )
-    );
+    width: var(--qa-react-mushaf-stage-width);
   }
 
   .qar-react-mushaf-continuous-stack {
@@ -2307,6 +2290,18 @@
     height: 100%;
     min-width: 0;
     min-height: 0;
+  }
+
+  /* Framed raster pages centre inside the paper: contain-fit letterboxing
+     must split evenly on all four sides (normal flow sat the frame at the
+     top, leaving the whole slack underneath whenever the crop ratio was
+     taller than the nominal column). Flex — not grid — so the frame's
+     percentage max-height keeps resolving against the definite paper box. */
+  .qar-react-mushaf-page-fit--framed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .qar-react-mushaf-page-frame {
