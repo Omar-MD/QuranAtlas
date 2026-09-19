@@ -203,9 +203,12 @@ export function OfflineOfferPrompt({ offer, onLater }: { offer: OfflineDownloadO
       </Dialog>
     )
   }
+  // The soft "Not now" defer only fits the decision state; once a download is
+  // running (or done) the close is just a close.
+  const offerSettled = installed || downloading || anyPaused || anyFailed
   return (
     <Sheet
-      closeLabel="Not now"
+      closeLabel={offerSettled ? 'Close' : 'Not now'}
       onOpenChange={(open) => {
         if (!open) onLater()
       }}

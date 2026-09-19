@@ -109,11 +109,11 @@ export function NavDrawer({
       open={open}
       returnFocusId={returnFocusId}
       suppressCloseAutoFocus={suppressFocusRestore}
-      title="Navigation"
+      title="Menu"
       variant="navigation-drawer"
     >
       <div className="qar-react-nav-drawer-header">
-        <IconButton label="Close" onClick={onClose}>
+        <IconButton label="Close navigation" onClick={onClose}>
           <X aria-hidden="true" size={22} strokeWidth={1.7} />
         </IconButton>
       </div>

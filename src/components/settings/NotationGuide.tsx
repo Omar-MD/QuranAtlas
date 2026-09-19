@@ -33,12 +33,12 @@ export function NotationGuideButton() {
     <>
       <ChoiceButton
         aria-haspopup="dialog"
-        className="qar-about-notation-row"
+        className="qar-disclosure-row"
         data-testid="notation-guide-button"
         onClick={() => setOpen(true)}
       >
-        <span className="qar-about-notation-row-copy">Notation guide</span>
-        <ChevronRight aria-hidden="true" className="qar-about-notation-row-chevron" size={16} strokeWidth={1.7} />
+        <span className="qar-disclosure-row-copy">Notation guide</span>
+        <ChevronRight aria-hidden="true" className="qar-disclosure-row-chevron" size={16} strokeWidth={1.7} />
       </ChoiceButton>
       {open ? (
         isDesktop ? (

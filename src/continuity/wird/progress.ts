@@ -207,8 +207,9 @@ function labelRef(ref: QuranRef): string {
 function unitName(unit: WirdUnit, amount: number): string {
   if (unit === 'verse') return amount === 1 ? 'verse' : 'verses'
   if (unit === 'page') return amount === 1 ? 'page' : 'pages'
-  if (unit === 'juz') return amount === 1 ? 'juz' : 'ajza'
-  return amount === 1 ? 'hizb' : 'ahzab'
+  // juz and hizb are invariant in English usage — no ajza/ahzab plurals.
+  if (unit === 'juz') return 'juz'
+  return 'hizb'
 }
 
 function countBoundaryUnits(

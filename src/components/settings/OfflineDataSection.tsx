@@ -451,7 +451,7 @@ function OfflineDataRow({
             size="sm"
             variant="secondary"
           >
-            Download pages
+            {row.kind === 'mushaf-pages' ? 'Download pages' : 'Download'}
           </Button>
         ) : null}
         {installing ? (

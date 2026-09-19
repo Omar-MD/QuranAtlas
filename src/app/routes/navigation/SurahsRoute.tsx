@@ -2,6 +2,7 @@ import { useEffect, useState, type KeyboardEvent } from 'react'
 import { Search as SearchIcon } from 'lucide-react'
 
 import { SettingsShell } from '../../../components/settings/SettingsShell'
+import { JuzPickerRows } from '../../../components/navigation/JuzPickerRows'
 import { SurahList } from '../../../components/navigation/SurahList'
 import { Input, SegmentedControl } from '../../../components/ui'
 import { openReactDb } from '../../../storage/db'
@@ -36,6 +37,9 @@ export function SurahsRoute({
 }) {
   const { query, filter, setQuery, setFilter } = useSurahsRouteState(initialHash)
   const [recentSurahs, setRecentSurahs] = useState<RecentSurahPosition[]>([])
+  // Local like the selector's tab: the deep-linkable hash state covers the
+  // surah filter only.
+  const [browse, setBrowse] = useState<'juz' | 'surahs'>('surahs')
 
   useEffect(() => {
     let cancelled = false
@@ -61,41 +65,58 @@ export function SurahsRoute({
   }
 
   return (
-    <SettingsShell
-      closeLabel="Close surah list"
-      onClose={onClose}
-      returnFocusId={returnFocusId}
-      subtitle=""
-      title="Surahs"
-    >
+    <SettingsShell closeLabel="Close Surahs" onClose={onClose} returnFocusId={returnFocusId} subtitle="" title="Surahs">
       <div className="qar:mx-auto qar:grid qar:w-full qar:max-w-page qar:gap-3">
         <div className="qar:grid qar:gap-3">
-          <Input
-            autoComplete="off"
-            hideLabel
-            label="Filter by name, number, or verse"
-            maxLength={20}
-            onChange={(event) => setQuery(event.currentTarget.value)}
-            onKeyDown={handleSearchKeyDown}
-            placeholder="Filter by name, number, or verse"
-            prefix={<SearchIcon aria-hidden="true" size={15} strokeWidth={1.7} />}
-            type="search"
-            value={query}
-          />
-          {/* Content-sized pill, left-aligned (brief §4.16). */}
+          {/* The same browse pill as the reader's Surahs selector: one shared
+              name and capability set across both surfaces. */}
           <div className="qar:justify-self-start">
             <SegmentedControl
-              label="Show"
-              onValueChange={(next) => setFilter(next as SurahsFilter)}
+              label="Browse"
+              onValueChange={(next) => setBrowse(next as 'juz' | 'surahs')}
               options={[
-                { label: 'All', value: 'all' },
-                { label: 'Recent', value: 'recent' },
+                { label: 'Surahs', value: 'surahs' },
+                { label: 'Juz', value: 'juz' },
               ]}
-              value={filter}
+              value={browse}
             />
           </div>
+          {browse === 'surahs' ? (
+            <>
+              <Input
+                autoComplete="off"
+                hideLabel
+                label="Filter by name, number, or verse"
+                maxLength={20}
+                onChange={(event) => setQuery(event.currentTarget.value)}
+                onKeyDown={handleSearchKeyDown}
+                placeholder="Filter by name, number, or verse"
+                prefix={<SearchIcon aria-hidden="true" size={15} strokeWidth={1.7} />}
+                type="search"
+                value={query}
+              />
+              {/* Content-sized pill, left-aligned (brief §4.16). */}
+              <div className="qar:justify-self-start">
+                <SegmentedControl
+                  label="Show"
+                  onValueChange={(next) => setFilter(next as SurahsFilter)}
+                  options={[
+                    { label: 'All', value: 'all' },
+                    { label: 'Recent', value: 'recent' },
+                  ]}
+                  value={filter}
+                />
+              </div>
+            </>
+          ) : null}
         </div>
-        <SurahList filter={filter} onNavigate={onNavigate} query={query} recentSurahs={recentSurahs} />
+        {browse === 'juz' ? (
+          <div className="qar-react-selector-scroller">
+            <JuzPickerRows onNavigate={onNavigate} />
+          </div>
+        ) : (
+          <SurahList filter={filter} onNavigate={onNavigate} query={query} recentSurahs={recentSurahs} />
+        )}
       </div>
     </SettingsShell>
   )

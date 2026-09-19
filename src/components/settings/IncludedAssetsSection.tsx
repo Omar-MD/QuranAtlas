@@ -18,7 +18,7 @@ import { DEFAULT_TRANSLATION_ID, readActiveReaderProfile } from '../../storage/r
 
 const pendingRows = readerAssetProfileRows(DEFAULT_READER_ASSET_PROFILE).map((row) => ({
   ...row,
-  label: 'Loading asset name',
+  label: 'Loading…',
 }))
 
 export function IncludedAssetsSection({

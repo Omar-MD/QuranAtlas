@@ -280,7 +280,7 @@ export function WirdSheet({
       closeLabel="Close Daily Wird"
       onClose={onClose}
       returnFocusId={returnFocusId}
-      subtitle=""
+      subtitle="Your daily reading plan"
       title="Daily Wird"
     >
       {loadState === 'loading' ? (

@@ -21,6 +21,7 @@ import { useWirdReminderScheduler } from '../continuity/wird/use-wird-reminder-s
 import { BookmarksProvider } from '../continuity/bookmarks/use-bookmarks'
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
 import { OfflineOfferPrompt } from '../components/offline/OfflineOfferPrompt'
+import { InstallAppPrompt } from '../components/launch/InstallAppPrompt'
 import { writeOfflineDownloadSetupComplete } from '../launch/offline-download-setup'
 
 // Navigation surfaces (About, Bookmarks, Surahs) render as modal overlays on
@@ -305,6 +306,11 @@ export function App() {
               }}
             />
           ) : null}
+          <InstallAppPrompt
+            interactionSuspended={Boolean(settingsOverlay) || Boolean(navOverlay) || Boolean(wirdOverlay)}
+            offlineOfferVisible={launchRestore.offlineOffer != null && !offerDismissed}
+            readerReady={launchRestore.status === 'ready'}
+          />
           {route.type === 'reader' && (
             <BookmarksProvider>
               <ReaderRoute

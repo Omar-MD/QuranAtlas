@@ -3,7 +3,11 @@ import { useEffect, useRef, useState } from 'react'
 import { matchReactRoute } from '../../router/routes'
 import { clearReactSettingsReaderAnchor, restoreReactSettingsReaderAnchor } from '../../settings-overlay-events'
 import { SettingsShell } from '../../../components/settings/SettingsShell'
+import { AppUpdatesRow } from '../../../components/settings/AppUpdatesRow'
+import { ClearDataRow } from '../../../components/settings/ClearDataRow'
 import { IncludedAssetsSection } from '../../../components/settings/IncludedAssetsSection'
+import { InstallAppSection } from '../../../components/settings/InstallAppSection'
+import { NotationGuideButton } from '../../../components/settings/NotationGuide'
 import { OfflineDataSection } from '../../../components/settings/OfflineDataSection'
 import { MushafSettings } from '../../../components/settings/MushafSettings'
 import { SettingsGroup } from '../../../components/settings/SettingsGroup'
@@ -23,11 +27,11 @@ import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
 
 export type SettingsRouteMode = 'verse' | 'mushaf'
 
-// Settings stays minimal: only the controls for the reader the settings panel
-// is opened from. No live preview, no About/Downloads link rows and no notation
-// guide (it lives on the About screen); the Edition row reuses the reader's
-// edition-change dialog. The #/assets route reuses this shell as a
-// Downloads-only surface for deep links.
+// Settings: only the controls for the reader the settings panel is opened
+// from, the notation guide beside them, and the App group (install, updates,
+// clear data). No live preview and no About/Downloads link rows; the Edition
+// row reuses the reader's edition-change dialog. The #/assets route reuses
+// this shell as a Downloads-only surface for deep links.
 export function SettingsRoute({
   initialAssetsExpanded,
   mode = 'verse',
@@ -174,6 +178,7 @@ export function SettingsRoute({
 
   return (
     <SettingsShell
+      closeLabel={downloadsOpen ? 'Close downloads' : undefined}
       onClose={onClose}
       returnFocusId={returnFocusId}
       subtitle=""
@@ -258,6 +263,9 @@ export function SettingsRoute({
                 onWirdVisibleChange={setWirdReaderStatusVisible}
               />
             )}
+            {/* The notation guide answers a reading question, so it lives one
+                gear-tap from the reader instead of buried in About. */}
+            <NotationGuideButton />
           </SettingsGroup>
 
           <SettingsGroup title="Edition">
@@ -266,6 +274,14 @@ export function SettingsRoute({
                 Change edition
               </Button>
             </SettingsRow>
+          </SettingsGroup>
+
+          {/* Lifecycle actions in one predictable place: install, updates,
+              and the destructive reset (moved out of About's footer). */}
+          <SettingsGroup title="App">
+            <InstallAppSection placement="settings" />
+            <AppUpdatesRow />
+            <ClearDataRow />
           </SettingsGroup>
         </>
       )}

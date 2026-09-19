@@ -4,6 +4,7 @@ import { App } from './App'
 import { ErrorBoundary } from './ErrorBoundary'
 import { AppProviders } from './providers/AppProviders'
 import { installServiceWorkerReloadGuard } from './service-worker-reload'
+import { initReactInstallPromptListener } from '../launch/pwa-install'
 import '../design-system/index.css'
 
 const container = document.getElementById('react-root')
@@ -13,6 +14,8 @@ if (!container) {
 }
 
 installServiceWorkerReloadGuard()
+// The install handshake fires once, early: capture it before React renders.
+initReactInstallPromptListener()
 
 const root = createRoot(container)
 

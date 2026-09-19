@@ -109,7 +109,7 @@ export function EditionBanner({
           Change edition
         </Button>
         <Button onClick={onDismiss} size="sm" variant="ghost">
-          Dismiss
+          Not now
         </Button>
       </div>
     </aside>

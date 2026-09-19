@@ -73,8 +73,8 @@ export function ReaderChrome({
             ) : null}
           </span>
           {/* S5/D2: the accessible name extends the visible label with the
-              selector purpose — never a bare aria-label. */}
-          <span className="qar:sr-only">— Choose surah</span>
+              destination surface — never a bare aria-label. */}
+          <span className="qar:sr-only">— Surahs</span>
           <ChevronDown aria-hidden="true" className="qar:text-muted" size={14} strokeWidth={2} />
         </ChoiceButton>
       ) : null}

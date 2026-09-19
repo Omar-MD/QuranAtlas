@@ -9,10 +9,10 @@ const ROOT = 'src'
 const ALLOW_LIST = new Set([
   // Small module-level browser integration handles are allowed when documented.
   'src/app/settings-overlay-events.ts',
-  'src/app/routes/settings/pwa-install.ts',
   'src/components/navigation/nav-drawer-controller.ts',
   'src/continuity/recent-surahs.ts',
   'src/continuity/wird/surah-counts.ts',
+  'src/launch/pwa-install.ts',
   'src/storage/db.ts',
 ])
 

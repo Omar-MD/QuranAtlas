@@ -7,9 +7,9 @@
       "maturity": "product",
       "exportPath": "src/app/routes/settings/AboutRoute.tsx",
       "namedExport": "AboutRoute",
-      "allowedVariants": ["default", "app-update-check", "clear-data-confirmation"],
+      "allowedVariants": ["default"],
       "allowedSizes": [],
-      "slots": ["root", "notationDisclosure", "sourcesDisclosure", "reportLink", "install", "appUpdate", "clearData"],
+      "slots": ["root", "sourcesDisclosure", "reportLink", "install"],
       "dependencies": {
         "radix": [],
         "icons": []
@@ -18,15 +18,14 @@
       "stories": [
         {
           "path": "src/components/settings/settings.stories.tsx",
-          "states": ["default", "clear-data-confirmation"]
+          "states": ["default"]
         }
       ],
       "accessibility": [
         "main landmark",
         "semantic attribution section",
-        "polite app update status",
-        "dialog focus and escape handled by owned Dialog primitive",
-        "sources and licenses is a disclosure row with aria-expanded matching the notation guide row"
+        "sources and licenses is a disclosure row with aria-expanded",
+        "dialog focus and escape handled by owned Dialog primitive"
       ],
       "visualProof": {
         "status": "covered",

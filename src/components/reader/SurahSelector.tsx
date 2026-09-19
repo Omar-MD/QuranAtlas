@@ -5,6 +5,7 @@ import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/sur
 import type { RecentSurahPosition } from '../../continuity/recent-surahs'
 import { openReactDb } from '../../storage/db'
 import { readRecentSurahs } from '../../continuity/recent-surahs'
+import { JuzPickerRows } from '../navigation/JuzPickerRows'
 import { Button, Input, ListRow, SegmentedControl, Sheet } from '../ui'
 
 const SURAH_COUNT = 114
@@ -237,7 +238,7 @@ export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolve
       </div>
     ) : null
 
-  const labelledTitle = currentEntry ? `${currentEntry.name} — Choose surah` : 'Choose surah'
+  const labelledTitle = currentEntry ? `${currentEntry.name} — Surahs` : 'Surahs'
 
   return (
     <SelectorSurface onClose={onClose} open={open} title={labelledTitle}>
@@ -263,9 +264,9 @@ function SelectorSurface({
   // and chrome as every other screen-level surface.
   return (
     <Sheet
-      closeLabel="Close surah selector"
-      onOpenChange={(next) => {
-        if (!next) onClose()
+      closeLabel="Close Surahs"
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose()
       }}
       open
       returnFocusId="reader-surah-selector-trigger"
@@ -274,36 +275,6 @@ function SelectorSurface({
     >
       <div className="qar-react-selector-frame">{children}</div>
     </Sheet>
-  )
-}
-
-function JuzPickerRows({ onNavigate }: { onNavigate: (hash: string) => void }) {
-  const [rows, setRows] = useState<Array<{ n: number; start: { surah: number; verse: number } }>>([])
-  useEffect(() => {
-    let active = true
-    void import('../../data/juz-index')
-      .then(({ loadJuzIndex }) => loadJuzIndex())
-      .then((loaded) => {
-        if (active) setRows(loaded)
-      })
-      .catch(() => undefined)
-    return () => {
-      active = false
-    }
-  }, [])
-  return (
-    <ul aria-label="Juz list" className="qar-react-juz-list">
-      {rows.map((row) => (
-        <li key={row.n}>
-          <ListRow
-            meta={`Starts at ${row.start.surah}:${row.start.verse}`}
-            num={row.n}
-            onSelect={() => onNavigate(`#/s/${row.start.surah}/${row.start.verse}`)}
-            title={`Juz ${row.n}`}
-          />
-        </li>
-      ))}
-    </ul>
   )
 }
 

@@ -1,6 +1,6 @@
 import { useReducer } from 'react'
 
-import { clearReactApplicationData } from '../../../storage/clear-data'
+import { clearReactApplicationData } from '../../storage/clear-data'
 
 type ClearDataState = {
   error: string | null
