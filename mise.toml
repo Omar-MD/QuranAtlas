@@ -96,7 +96,7 @@ run = "echo 'static checks passed'"
 [tasks."data:build"]
 description = "Build deterministic reader datasets"
 run = "pnpm run data -- build"
-sources = ["data/catalog/**", "data/taxonomy/**", "data/normalized/**", "shared/**", "scripts/data/**"]
+sources = ["data/catalog/**", "data/normalized/**", "shared/**", "scripts/data/**"]
 outputs = [".data-build-complete"]
 
 [tasks."data:check"]

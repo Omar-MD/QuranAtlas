@@ -547,38 +547,6 @@
       "forbiddenUses": ["Do not place primary navigation content in the action area."]
     },
     {
-      "id": "metadata-lane",
-      "name": "MetadataLane",
-      "maturity": "product",
-      "exportPath": "src/components/reader/metadata/MetadataLane.tsx",
-      "namedExport": "MetadataLane",
-      "allowedVariants": ["default"],
-      "allowedSizes": [],
-      "slots": ["root"],
-      "dependencies": {
-        "radix": [],
-        "icons": ["lucide-react"]
-      },
-      "tokenNamespaces": ["--qa-react-*"],
-      "stories": [
-        {
-          "path": "src/components/reader/metadata/metadata.stories.tsx",
-          "states": ["default"]
-        }
-      ],
-      "accessibility": ["semantic landmarks", "visible focus through owned primitives"],
-      "visualProof": {
-        "status": "covered",
-        "references": ["src/components/reader/metadata/metadata.stories.tsx"]
-      },
-      "owner": {
-        "surface": "read",
-        "package": "src/components/reader/metadata"
-      },
-      "allowedConsumers": ["src/**"],
-      "forbiddenUses": ["Do not bypass owned React UI primitives for controls."]
-    },
-    {
       "id": "mushaf-page-viewer",
       "name": "MushafPageViewer",
       "maturity": "product",

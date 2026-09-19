@@ -1,7 +1,7 @@
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import { Search as SearchIcon } from 'lucide-react'
 
-import { NavigationPageRecipe } from '../../../design-system/recipes/navigation-page'
+import { SettingsShell } from '../../../components/settings/SettingsShell'
 import { SurahList } from '../../../components/navigation/SurahList'
 import { Input, SegmentedControl } from '../../../components/ui'
 import { openReactDb } from '../../../storage/db'
@@ -19,8 +19,22 @@ function parseRefQuery(query: string): ParsedRef | null {
   return { surah, verse }
 }
 
-export function SurahsRoute() {
-  const { query, filter, setQuery, setFilter } = useSurahsRouteState()
+// The surah index as an overlay above the reader (desktop dialog, mobile
+// full-screen cover). `initialHash` carries the deep-link filter state: once
+// the overlay opens, the address bar returns to the reader hash, so the query
+// string is only readable from the hash the surface was opened with.
+export function SurahsRoute({
+  initialHash,
+  onClose,
+  onNavigate,
+  returnFocusId,
+}: {
+  initialHash?: string
+  onClose: () => void
+  onNavigate: (hash: string) => void
+  returnFocusId?: string
+}) {
+  const { query, filter, setQuery, setFilter } = useSurahsRouteState(initialHash)
   const [recentSurahs, setRecentSurahs] = useState<RecentSurahPosition[]>([])
 
   useEffect(() => {
@@ -43,11 +57,18 @@ export function SurahsRoute() {
     const ref = parseRefQuery(query)
     if (!ref) return
     event.preventDefault()
-    window.location.hash = `#/s/${ref.surah}/${ref.verse}`
+    onNavigate(`#/s/${ref.surah}/${ref.verse}`)
   }
 
   return (
-    <NavigationPageRecipe title="Surahs">
+    <SettingsShell
+      closeLabel="Close surah list"
+      layout="full"
+      onClose={onClose}
+      returnFocusId={returnFocusId}
+      subtitle=""
+      title="Surahs"
+    >
       <div className="qar:mx-auto qar:grid qar:w-full qar:max-w-page qar:gap-3">
         <div className="qar:grid qar:gap-3">
           <Input
@@ -75,15 +96,8 @@ export function SurahsRoute() {
             />
           </div>
         </div>
-        <SurahList
-          filter={filter}
-          onNavigate={(hash) => {
-            window.location.hash = hash
-          }}
-          query={query}
-          recentSurahs={recentSurahs}
-        />
+        <SurahList filter={filter} onNavigate={onNavigate} query={query} recentSurahs={recentSurahs} />
       </div>
-    </NavigationPageRecipe>
+    </SettingsShell>
   )
 }

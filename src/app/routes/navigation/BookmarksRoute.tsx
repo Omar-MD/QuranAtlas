@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react'
 
-import { NavigationPageRecipe } from '../../../design-system/recipes/navigation-page'
+import { SettingsShell } from '../../../components/settings/SettingsShell'
 import { BookmarkUndoToast, BookmarksList, type BookmarkListItem } from '../../../components/navigation/BookmarksList'
 import { Button, Status } from '../../../components/ui'
 import { useSharedBookmarks } from '../../../continuity/bookmarks/use-bookmarks'
 
 const UNDO_TOAST_MS = 5000
 
-// S7 bookmarks route: full route on desktop (68 ch measure) and mobile, with
-// immediate remove + 5 s undo toast, ۞ empty state, and row skeletons.
-export function BookmarksRoute() {
+// S7 bookmarks: an overlay above the reader (desktop dialog, mobile
+// full-screen cover) with immediate remove + 5 s undo toast, ۞ empty state,
+// and row skeletons. Closing returns to the reader behind it.
+export function BookmarksRoute({
+  onClose,
+  onNavigate,
+  returnFocusId,
+}: {
+  onClose: () => void
+  onNavigate: (hash: string) => void
+  returnFocusId?: string
+}) {
   const { bookmarks, deleteBookmark, toggleBookmark, retry, status } = useSharedBookmarks()
   const [undoTarget, setUndoTarget] = useState<BookmarkListItem | null>(null)
 
@@ -38,7 +47,14 @@ export function BookmarksRoute() {
   }
 
   return (
-    <NavigationPageRecipe title="Bookmarks">
+    <SettingsShell
+      closeLabel="Close bookmarks"
+      layout="full"
+      onClose={onClose}
+      returnFocusId={returnFocusId}
+      subtitle=""
+      title="Bookmarks"
+    >
       <div className="qar:mx-auto qar:w-full qar:max-w-page">
         {status === 'loading' ? (
           <div aria-label="Loading bookmarks" aria-live="polite" data-bookmarks-loading="true" role="status">
@@ -53,13 +69,7 @@ export function BookmarksRoute() {
           <Status action={<Button onClick={retry}>Try again</Button>} title="Bookmarks unavailable." tone="error" />
         ) : (
           <>
-            <BookmarksList
-              bookmarks={bookmarks}
-              onDeleteBookmark={handleDelete}
-              onNavigate={(hash) => {
-                window.location.hash = hash
-              }}
-            />
+            <BookmarksList bookmarks={bookmarks} onDeleteBookmark={handleDelete} onNavigate={onNavigate} />
             {undoTarget ? (
               <div className="qar:sticky qar:bottom-4 qar:mt-4">
                 <BookmarkUndoToast onUndo={handleUndo} />
@@ -68,6 +78,6 @@ export function BookmarksRoute() {
           </>
         )}
       </div>
-    </NavigationPageRecipe>
+    </SettingsShell>
   )
 }

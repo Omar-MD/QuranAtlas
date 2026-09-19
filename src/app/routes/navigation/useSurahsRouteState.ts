@@ -38,8 +38,10 @@ function writeSurahsHashState(state: SurahsHashState): void {
   window.history.replaceState(null, '', nextHash)
 }
 
-export function useSurahsRouteState(): SurahsRouteState {
-  const [hashState, setHashState] = useState<SurahsHashState>(() => readSurahsHashState())
+export function useSurahsRouteState(initialHash?: string): SurahsRouteState {
+  const [hashState, setHashState] = useState<SurahsHashState>(() =>
+    readSurahsHashState(initialHash ?? (typeof window === 'undefined' ? '' : window.location.hash)),
+  )
 
   function setQuery(query: string) {
     setHashState((current) => {

@@ -6,7 +6,6 @@ import { ChromeFrame } from './ChromeFrame'
 import { useNavDrawerController } from './nav-drawer-controller'
 import { BookmarksList } from './BookmarksList'
 import { SurahsRoute } from '../../app/routes/navigation/SurahsRoute'
-
 const meta = {
   title: 'React Navigation/Navigation',
   parameters: { layout: 'padded' },
@@ -73,7 +72,7 @@ function WithHash({ hash, children }: { hash: string; children: ReactNode }) {
 export const SurahsPage: Story = {
   render: () => (
     <WithHash hash="#/surahs">
-      <SurahsRoute />
+      <SurahsRoute onClose={fn()} onNavigate={fn()} />
     </WithHash>
   ),
 }
@@ -81,7 +80,7 @@ export const SurahsPage: Story = {
 export const SurahsPageFiltered: Story = {
   render: () => (
     <WithHash hash="#/surahs?q=ya&filter=recent">
-      <SurahsRoute />
+      <SurahsRoute initialHash="#/surahs?q=ya&filter=recent" onClose={fn()} onNavigate={fn()} />
     </WithHash>
   ),
 }

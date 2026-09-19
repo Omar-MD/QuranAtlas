@@ -13,15 +13,15 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const BUILD_STAMP = join(__dirname, '..', '..', '.data-build-complete')
 
 // Warm checkouts contain the previous release's outputs. Remove only retired
-// generated paths before text/build inventories the tree (knowledge rebuilds
-// happen later and therefore cannot clean these before the first manifest).
+// generated paths before text/build inventories the tree (rebuilds happen
+// later and therefore cannot clean these before the first manifest).
 async function removeRetiredGeneratedData() {
   const root = join(__dirname, '..', '..')
   for (const relativePath of [
     'public/search-packs',
     'public/dataset/search',
     'public/dataset/search-index.json',
-    'public/dataset/knowledge/indexes',
+    'public/dataset/knowledge',
     'public/dataset/riwayat',
   ])
     await rm(join(root, relativePath), { recursive: true, force: true })
@@ -117,7 +117,6 @@ async function main(argv = process.argv.slice(2)) {
     run('text/build.mjs', [`--profile=${sharedProfile}`])
     run('check-juz-hizb.mjs')
     run('check-ayah-counts.mjs')
-    run('knowledge/build.mjs', ['--check'])
     run('mushaf-pages/build.mjs', [`--profile=${profile}`, '--check'])
     run('riwayah-packages/build.mjs', [`--profile=${profile}`, '--check'])
     return
@@ -131,7 +130,6 @@ async function main(argv = process.argv.slice(2)) {
     await rm(BUILD_STAMP, { force: true })
     await removeRetiredGeneratedData()
     run('text/build.mjs', [`--profile=${sharedProfile}`])
-    run('knowledge/build.mjs')
     if (!skipped.has('mushaf-pages')) run('mushaf-pages/build.mjs', [`--profile=${profile}`])
     run('riwayah-packages/build.mjs', [`--profile=${profile}`])
     await writeFile(BUILD_STAMP, `${new Date().toISOString()}\n`, 'utf8')

@@ -1,14 +1,17 @@
 import { useState } from 'react'
 
 import type { ReaderCorpusState } from '../../data/reader-corpus'
-import type { VerseMetadata } from '../../metadata/metadata-state'
+import type { ReaderSurahIndexEntry } from '../../data/surah-index'
 import { Button, Dialog, Sheet, Status } from '../ui'
 import { VirtualVerseList } from './VirtualVerseList'
 
 export type ReaderVerseSurfaceProps = {
+  /** Adjacent surahs for the start/end navigation rows; entries are absent
+      at the two ends of the book (D6: no wrap). */
+  adjacentSurahs?: { previous: ReaderSurahIndexEntry | null; next: ReaderSurahIndexEntry | null }
   bookmarkedVerseKeys?: ReadonlySet<string>
   corpus: ReaderCorpusState
-  metadata?: Map<string, VerseMetadata>
+  onNavigateSurah?: (surah: number) => void
   onRetry?: () => void
   onSelectVerse?: (verseKey: string) => void
   onToggleBookmark?: (verseKey: string) => void
@@ -21,9 +24,10 @@ export const NUMBERING_EXPLAINER =
   'This translation renders one passage across several verses. Verse references follow the Hafs counting; the printed Qalūn edition may number these verses differently. Nothing is missing or repeated — the words are the same.'
 
 export function ReaderVerseSurface({
+  adjacentSurahs,
   bookmarkedVerseKeys = new Set<string>(),
   corpus,
-  metadata = new Map(),
+  onNavigateSurah,
   onCopyReference,
   onRetry,
   onSelectVerse,
@@ -111,10 +115,23 @@ export function ReaderVerseSurface({
   if (corpus.status !== 'ready') return null
   const readyCorpus = corpus
   const startsAtSurahBeginning = readyCorpus.verses[0]?.verse === 1
+  const previousSurah = adjacentSurahs?.previous ?? null
+  const nextSurah = adjacentSurahs?.next ?? null
 
   return (
     <>
       <section className="qar-reader-verse-surface" data-reader-verse-surface="true">
+        {startsAtSurahBeginning && previousSurah && onNavigateSurah && (
+          <Button
+            className="qar-reader-surah-link qar:flex qar:mx-auto qar:mb-4"
+            data-surah-nav="previous"
+            onClick={() => onNavigateSurah(previousSurah.n)}
+            size="sm"
+            variant="ghost"
+          >
+            ← Previous: {previousSurah.name}
+          </Button>
+        )}
         {startsAtSurahBeginning && (
           <header className="qar-reader-surah-header" data-surah-header="true">
             <p className="qar-eyebrow">
@@ -146,7 +163,6 @@ export function ReaderVerseSurface({
         )}
         <VirtualVerseList
           bookmarkedVerseKeys={bookmarkedVerseKeys}
-          metadata={metadata}
           onCopyReference={onCopyReference}
           onOpenPassageExplainer={setExplainerRange}
           onSelectVerse={onSelectVerse}
@@ -162,6 +178,17 @@ export function ReaderVerseSurface({
             <span className="qar-ornament-rule-star">۞</span>
           </div>
           <p className="qar-eyebrow">End of {readyCorpus.surah.nameEnglish}</p>
+          {nextSurah && onNavigateSurah && (
+            <Button
+              className="qar-reader-surah-link qar:mt-1"
+              data-surah-nav="next"
+              onClick={() => onNavigateSurah(nextSurah.n)}
+              size="sm"
+              variant="ghost"
+            >
+              Next: {nextSurah.name} →
+            </Button>
+          )}
         </footer>
       </section>
       {explainerRange ? (

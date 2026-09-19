@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { fn } from 'storybook/test'
 import { useEffect, type ReactNode } from 'react'
 
 import { AboutRoute } from '../../app/routes/settings/AboutRoute'
@@ -39,7 +40,7 @@ export const DimPageImages: Story = {
 }
 
 export const About: Story = {
-  render: () => <AboutRoute />,
+  render: () => <AboutRoute onClose={fn()} />,
 }
 
 function DimAppearance({ children }: { children: ReactNode }) {

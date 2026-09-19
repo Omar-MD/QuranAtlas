@@ -2,12 +2,9 @@ import { ChevronRight, ExternalLink, RefreshCw } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import pkg from '../../../../package.json'
-import { REACT_ROUTES } from '../../router/routes'
-import { ChromeFrame } from '../../../components/navigation/ChromeFrame'
-import { useNavDrawerController } from '../../../components/navigation/nav-drawer-controller'
+import { SettingsShell } from '../../../components/settings/SettingsShell'
 import { Button, ChoiceButton, Dialog, Input } from '../../../components/ui'
 import { NotationGuideButton } from '../../../components/settings/NotationGuide'
-import { SettingsPageRecipe } from '../../../design-system/recipes/settings-page'
 import { hasReactInstallPrompt, initReactInstallPromptListener, promptReactInstall } from './pwa-install'
 import { fetchLatestAppChanges, type AppUpdateCheckResult } from './pwa-updates'
 import { useClearDataDialog } from './useClearDataDialog'
@@ -82,10 +79,11 @@ type UpdateCheckState =
   | { status: 'checking'; message: string }
   | { status: 'error'; message: string }
 
-export function AboutRoute() {
+// About renders as an overlay above the reader (desktop dialog, mobile
+// full-screen cover) so the reader stays the home surface behind it.
+export function AboutRoute({ onClose, returnFocusId }: { onClose: () => void; returnFocusId?: string }) {
   const clearData = useClearDataDialog()
   const cancelClearDataRef = useRef<HTMLButtonElement>(null)
-  const drawer = useNavDrawerController()
   const [sourcesOpen, setSourcesOpen] = useState(false)
   const [installAvailable, setInstallAvailable] = useState(false)
   const [installDone, setInstallDone] = useState(false)
@@ -132,14 +130,18 @@ export function AboutRoute() {
   const updateCheckPending = updateCheck.status === 'checking' || updateCheck.status === 'reloading'
 
   return (
-    <ChromeFrame
-      controller={drawer}
-      currentRoute="about"
-      onOpenSettings={() => {
-        window.location.hash = REACT_ROUTES.settings
-      }}
+    <SettingsShell
+      closeLabel="Close about"
+      layout="full"
+      onClose={onClose}
+      returnFocusId={returnFocusId}
+      subtitle=""
+      title="About"
     >
-      <SettingsPageRecipe className="qar-about-page qar:mx-auto qar:w-full qar:max-w-xl" title="About">
+      {/* About calm sheet (polish v2, mockup A): tagline → notation row →
+          sources disclosure → quiet report link → version footer. The
+          footer's top border is the single hairline on the screen. */}
+      <div className="qar-about-page qar:mx-auto qar:grid qar:w-full qar:max-w-xl">
         <p className="qar:m-0 qar:text-base qar:font-medium">Read, reflect, remember.</p>
 
         <NotationGuideButton />
@@ -279,7 +281,7 @@ export function AboutRoute() {
             </div>
           </Dialog>
         </footer>
-      </SettingsPageRecipe>
-    </ChromeFrame>
+      </div>
+    </SettingsShell>
   )
 }

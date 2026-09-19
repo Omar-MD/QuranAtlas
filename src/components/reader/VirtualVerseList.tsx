@@ -1,10 +1,8 @@
 import type { ReaderVerse } from '../../data/reader-corpus'
-import type { VerseMetadata } from '../../metadata/metadata-state'
 import { VerseBlock } from './VerseBlock'
 
 export type VirtualVerseListProps = {
   bookmarkedVerseKeys?: ReadonlySet<string>
-  metadata?: Map<string, VerseMetadata>
   /** The numbering explainer's open range, if any — feeds each passage
       eyebrow's live aria-expanded state (S2 a11y). */
   openPassageRange?: { from: number; to: number } | null
@@ -58,7 +56,6 @@ function groupVerses(verses: ReaderVerse[]): VerseUnit[] {
 
 export function VirtualVerseList({
   bookmarkedVerseKeys = new Set<string>(),
-  metadata = new Map(),
   openPassageRange = null,
   onCopyReference,
   onOpenPassageExplainer,
@@ -80,7 +77,6 @@ export function VirtualVerseList({
             bookmarked={bookmarkedVerseKeys.has(primary.key)}
             continuationVerses={unit.kind === 'passage' ? unit.continuationVerses : undefined}
             key={primary.key}
-            metadata={metadata.get(primary.key)}
             onCopyReference={onCopyReference}
             onOpenPassageExplainer={onOpenPassageExplainer}
             onSelect={() => onSelectVerse?.(primary.key)}

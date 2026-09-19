@@ -5,7 +5,7 @@ import type { SettingsRouteMode } from './routes/settings/SettingsRoute'
 import { Button, Status } from '../components/ui'
 import { NavigationPageRecipe } from '../design-system/recipes/navigation-page'
 import { LaunchSplash } from '../components/launch/LaunchSplash'
-import { getInitialReactHash, matchReactRoute, REACT_ROUTES } from './router/routes'
+import { getInitialReactHash, matchReactRoute, REACT_ROUTES, type ReactRouteMatch } from './router/routes'
 import { subscribeReactSettingsOverlayRequests } from './settings-overlay-events'
 import { subscribeReactWirdOverlayRequests } from './wird-overlay-events'
 import { shouldPersistLastSurface, useLaunchRestore } from '../continuity/launch-restore'
@@ -22,6 +22,16 @@ import { BookmarksProvider } from '../continuity/bookmarks/use-bookmarks'
 import { readNativeSetting, writeNativeSetting } from '../storage/native-reader-store'
 import { OfflineOfferPrompt } from '../components/offline/OfflineOfferPrompt'
 import { writeOfflineDownloadSetupComplete } from '../launch/offline-download-setup'
+
+// Navigation surfaces (About, Bookmarks, Surahs) render as modal overlays on
+// top of the reader — desktop dialog, mobile full-screen cover — so the reader
+// stays mounted as the home surface behind every destination.
+type NavOverlaySurface = 'about' | 'bookmarks' | 'surahs'
+type NavOverlayState = {
+  surface: NavOverlaySurface
+  openHash: string
+  previousHash: string
+}
 
 const AboutRoute = lazy(() => import('./routes/settings/AboutRoute').then((module) => ({ default: module.AboutRoute })))
 const NavigationRouteHost = lazy(() =>
@@ -53,20 +63,33 @@ export function App() {
     previousHash: string
     returnFocusId?: string
   } | null>(null)
+  const [navOverlay, setNavOverlay] = useState<NavOverlayState | null>(null)
   const [wirdOverlay, setWirdOverlay] = useState<{ returnFocusId?: string } | null>(null)
   const upgradeBlocked = useSyncExternalStore(subscribeReaderUpgrade, isReaderUpgradeBlocked, () => false)
   const launchRestore = useLaunchRestore(hash)
   const activeHash = launchRestore.status === 'ready' ? launchRestore.hash : hash
   const activeRoute = matchReactRoute(activeHash)
   const transientSettingsHash =
-    !settingsOverlay && activeRoute.type === 'settings' && lastBaseHash && isBaseHash(lastBaseHash)
+    !settingsOverlay && activeRoute.type === 'settings' && lastBaseHash && isReaderHash(lastBaseHash)
+      ? lastBaseHash
+      : null
+  const transientNavHash =
+    !settingsOverlay &&
+    !navOverlay &&
+    isNavOverlayRouteType(activeRoute.type) &&
+    lastBaseHash &&
+    isReaderHash(lastBaseHash)
       ? lastBaseHash
       : null
   const route = settingsOverlay
     ? matchReactRoute(settingsOverlay.previousHash)
-    : transientSettingsHash
-      ? matchReactRoute(transientSettingsHash)
-      : activeRoute
+    : navOverlay
+      ? matchReactRoute(navOverlay.previousHash)
+      : transientSettingsHash
+        ? matchReactRoute(transientSettingsHash)
+        : transientNavHash
+          ? matchReactRoute(transientNavHash)
+          : activeRoute
   const containsMushafViewport = route.type === 'mushaf'
 
   useEffect(() => {
@@ -77,7 +100,7 @@ export function App() {
       const nextHash = getInitialReactHash()
       if (matchReactRoute(nextHash).type === 'settings') {
         const previousHash = event.oldURL ? new URL(event.oldURL, window.location.href).hash : hash
-        if (isBaseHash(previousHash)) setLastBaseHash(previousHash)
+        if (isReaderHash(previousHash)) setLastBaseHash(previousHash)
       }
       // Keep the current surface visible while a lazy route chunk loads.
       // Without a transition, the top-level Suspense boundary replaces the
@@ -146,7 +169,10 @@ export function App() {
 
   useEffect(() => {
     if (launchRestore.status !== 'ready') return
-    if (isBaseHash(activeHash)) setLastBaseHash(activeHash)
+    // The base hash only ever records a READER surface: every overlay keeps a
+    // reader behind it, so a transient '#/about' (or any nav hash) must never
+    // become the restore target while the overlay is opening.
+    if (isReaderHash(activeHash)) setLastBaseHash(activeHash)
     if (!shouldPersistLastSurface(activeHash)) return
     let active = true
     void writeNormalizedLastSurface(activeHash, () => active).then(() => {
@@ -164,8 +190,10 @@ export function App() {
 
     async function openSettingsOverlay() {
       const initialAssetsExpanded = activeHash.split('?')[0] === REACT_ROUTES.assets
-      const previousHash = await resolveSettingsPreviousHash(lastBaseHash)
+      const previousHash = await resolveOverlayPreviousHash(lastBaseHash)
       if (!active) return
+      // A settings deep link replaces any open navigation overlay.
+      setNavOverlay(null)
       setSettingsOverlay({
         initialAssetsExpanded,
         mode: settingsModeForHash(previousHash),
@@ -177,6 +205,33 @@ export function App() {
     }
 
     void openSettingsOverlay()
+    return () => {
+      active = false
+    }
+  }, [activeHash, activeRoute.type, lastBaseHash, launchRestore.status])
+
+  // Navigation surfaces open as overlays above the reader: the address bar
+  // returns to the reader hash (replaceState, no history entry), so closing
+  // the overlay — or relaunching — always lands back on the reader.
+  useEffect(() => {
+    if (launchRestore.status !== 'ready') return
+    if (!isNavOverlayRouteType(activeRoute.type)) return
+    let active = true
+
+    async function openNavOverlay() {
+      const previousHash = await resolveOverlayPreviousHash(lastBaseHash)
+      if (!active) return
+      setSettingsOverlay(null)
+      setNavOverlay({
+        surface: activeRoute.type as NavOverlaySurface,
+        openHash: activeHash,
+        previousHash,
+      })
+      window.history.replaceState(null, '', previousHash)
+      setHash(previousHash)
+    }
+
+    void openNavOverlay()
     return () => {
       active = false
     }
@@ -198,6 +253,24 @@ export function App() {
       window.history.replaceState(null, '', previousHash)
       setHash(previousHash)
     }
+  }
+
+  function closeNavOverlay(): void {
+    setNavOverlay(null)
+    // Only restore when the address bar still sits on a navigation hash; when
+    // it already holds the reader hash (the normal open state) there is
+    // nothing to restore, and an in-flight navigation must win.
+    const previousHash = navOverlay?.previousHash
+    if (!previousHash) return
+    const currentHash = window.location.hash
+    if (!isNavOverlayRouteHash(currentHash)) return
+    window.history.replaceState(null, '', previousHash)
+    setHash(previousHash)
+  }
+
+  function navigateFromNavOverlay(nextHash: string): void {
+    setNavOverlay(null)
+    window.location.hash = nextHash
   }
 
   function replaceActiveHash(nextHash: string): void {
@@ -234,31 +307,27 @@ export function App() {
           ) : null}
           {route.type === 'reader' && (
             <BookmarksProvider>
-              <ReaderRoute ayah={route.ayah} preservePosition={Boolean(settingsOverlay)} surah={route.surah} />
+              <ReaderRoute
+                ayah={route.ayah}
+                preservePosition={Boolean(settingsOverlay) || Boolean(navOverlay)}
+                surah={route.surah}
+              />
             </BookmarksProvider>
           )}
           {route.type === 'mushaf' && (
             <BookmarksProvider>
               <MushafRoute
-                interactionSuspended={Boolean(settingsOverlay)}
+                interactionSuspended={Boolean(settingsOverlay) || Boolean(navOverlay)}
                 onReplaceHash={replaceActiveHash}
                 page={route.page}
               />
             </BookmarksProvider>
           )}
-          {(route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'unsupported') && (
-            <NavigationRouteHost
-              currentRoute={route.type === 'bookmarks' ? 'bookmarks' : null}
-              statusMessage={
-                route.type === 'surahs' ? 'Surahs' : route.type === 'bookmarks' ? 'Bookmarks' : 'Unavailable'
-              }
-            >
-              {route.type === 'surahs' && <SurahsRoute />}
-              {route.type === 'bookmarks' && <BookmarksRoute />}
-              {route.type === 'unsupported' && <UnsupportedRoute hash={activeHash} />}
+          {route.type === 'unsupported' && (
+            <NavigationRouteHost currentRoute={null} statusMessage="Unavailable">
+              <UnsupportedRoute hash={activeHash} />
             </NavigationRouteHost>
           )}
-          {route.type === 'about' && <AboutRoute />}
           {settingsOverlay && (
             <Suspense fallback={null}>
               <SettingsRoute
@@ -268,6 +337,30 @@ export function App() {
                 previousHash={settingsOverlay.previousHash}
                 returnFocusId={settingsOverlay.returnFocusId}
               />
+            </Suspense>
+          )}
+          {navOverlay && (
+            <Suspense fallback={null}>
+              <BookmarksProvider>
+                {navOverlay.surface === 'about' ? (
+                  <AboutRoute onClose={closeNavOverlay} returnFocusId="reader-navigation-trigger" />
+                ) : null}
+                {navOverlay.surface === 'bookmarks' ? (
+                  <BookmarksRoute
+                    onClose={closeNavOverlay}
+                    onNavigate={navigateFromNavOverlay}
+                    returnFocusId="reader-navigation-trigger"
+                  />
+                ) : null}
+                {navOverlay.surface === 'surahs' ? (
+                  <SurahsRoute
+                    initialHash={navOverlay.openHash}
+                    onClose={closeNavOverlay}
+                    onNavigate={navigateFromNavOverlay}
+                    returnFocusId="reader-navigation-trigger"
+                  />
+                ) : null}
+              </BookmarksProvider>
             </Suspense>
           )}
           {wirdOverlay && (
@@ -281,8 +374,10 @@ export function App() {
   )
 }
 
-async function resolveSettingsPreviousHash(lastBaseHash: string | null): Promise<string> {
-  if (lastBaseHash && isBaseHash(lastBaseHash)) return lastBaseHash
+// Overlays always keep a reader surface behind them: prefer the last reader
+// hash, then the persisted surface, then the default reader route.
+async function resolveOverlayPreviousHash(lastBaseHash: string | null): Promise<string> {
+  if (lastBaseHash && isReaderHash(lastBaseHash)) return lastBaseHash
   try {
     const record = await readNativeSetting('lastSurface')
     if (typeof record?.value === 'string' && isReaderHash(record.value)) return record.value
@@ -290,6 +385,14 @@ async function resolveSettingsPreviousHash(lastBaseHash: string | null): Promise
     // Fall through to the default reader route.
   }
   return '#/s/1'
+}
+
+function isNavOverlayRouteType(type: ReactRouteMatch['type']): boolean {
+  return type === 'surahs' || type === 'bookmarks' || type === 'about'
+}
+
+function isNavOverlayRouteHash(hash: string): boolean {
+  return isNavOverlayRouteType(matchReactRoute(hash).type)
 }
 
 async function writeNormalizedLastSurface(hash: string, shouldWrite: () => boolean): Promise<void> {
@@ -305,12 +408,6 @@ function settingsModeForHash(hash: string): SettingsRouteMode {
 function isReaderHash(hash: string): boolean {
   const route = matchReactRoute(hash)
   return route.type === 'reader' || route.type === 'mushaf'
-}
-
-function isBaseHash(hash: string): boolean {
-  if (isReaderHash(hash)) return true
-  const route = matchReactRoute(hash)
-  return route.type === 'surahs' || route.type === 'bookmarks' || route.type === 'about'
 }
 
 function UnsupportedRoute({ hash }: { hash: string }) {

@@ -2,11 +2,9 @@ import { Bookmark, Copy } from 'lucide-react'
 import { useState } from 'react'
 
 import type { ReaderVerse } from '../../data/reader-corpus'
-import type { VerseMetadata } from '../../metadata/metadata-state'
 import { pulseBookmarkLanding } from '../../continuity/bookmarks/pulse'
 import { cn } from '../../design-system/utils/cn'
 import { Button, ChoiceButton, Status } from '../ui'
-import { KnowledgeChips } from './KnowledgeChips'
 import { TranslationFootnote } from './TranslationFootnote'
 
 export type VerseBlockProps = {
@@ -21,7 +19,6 @@ export type VerseBlockProps = {
   surahName: string
   verse: ReaderVerse
   bookmarked?: boolean
-  metadata?: VerseMetadata | null
   onSelect?: () => void
   onToggleBookmark?: () => void
   onCopyReference?: () => void
@@ -49,7 +46,6 @@ function parseTranslationTokens(translation: string): TranslationToken[] {
 export function VerseBlock({
   bookmarked = false,
   continuationVerses = [],
-  metadata = null,
   onOpenPassageExplainer,
   onSelect,
   onCopyReference,
@@ -227,11 +223,10 @@ export function VerseBlock({
         {copyError ? (
           <Status
             title="Could not copy reference"
-            description="Try copying again or select the text to copy it."
+            description="Try copying again or select the text to copy."
             tone="error"
           />
         ) : null}
-        {selected && <KnowledgeChips metadata={metadata} />}
       </div>
     </article>
   )

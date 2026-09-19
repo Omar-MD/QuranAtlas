@@ -44,14 +44,6 @@ function readerCoreUrls(profile: { riwayah: string; quranTextStyleId: string; tr
   }
   urls.push('/dataset/translations/_verse-aliases.json')
   urls.push('/dataset/surahs.json')
-  for (let surah = 1; surah <= SURAH_COUNT; surah += 1) {
-    const padded = String(surah).padStart(3, '0')
-    urls.push(`/dataset/knowledge/ayah/${padded}.json`)
-  }
-  for (let surah = 1; surah <= SURAH_COUNT; surah += 1) {
-    const padded = String(surah).padStart(3, '0')
-    urls.push(`/dataset/knowledge/passages/${padded}.json`)
-  }
   return urls
 }
 
@@ -60,8 +52,7 @@ const readerCoreUrlPattern = new RegExp(
   `^/dataset/(?:quran-text/${slug}/${slug}/\\d{3}\\.json` +
     `|translations/${slug}/\\d{3}\\.json` +
     `|translations/_verse-aliases\\.json` +
-    `|surahs\\.json` +
-    `|knowledge/(?:ayah|passages)/\\d{3}\\.json)$`,
+    `|surahs\\.json)$`,
 )
 
 export function buildReaderCorePackPlan(

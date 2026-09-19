@@ -767,7 +767,8 @@
     margin-top: 8px;
   }
 
-  /* End of surah (S2): ۞ hairline + eyebrow; no page-level prev/next. */
+  /* End of surah (S2): ۞ hairline + eyebrow, with the adjacent-surah
+     navigation rows at the start and foot of every surah. */
   .qar-reader-surah-end {
     display: grid;
     justify-items: center;
@@ -778,6 +779,16 @@
   .qar-reader-surah-end .qar-ornament-rule {
     max-width: 320px;
     width: 100%;
+  }
+
+  /* Quiet adjacent-surah rows (reader S2): the same muted ghost idiom as the
+     surah selector footer's Previous/Next — muted ink, text ink on hover. */
+  .qar-reader-surah-link {
+    color: var(--qa-react-text-muted);
+  }
+
+  .qar-reader-surah-link:hover {
+    color: var(--qa-react-text);
   }
 
   /* Loading skeleton (S2): medallion ring + two bars per group, 3 groups. */

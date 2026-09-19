@@ -3,7 +3,7 @@ import { dirname, relative } from 'node:path'
 
 import { listFiles } from '../lib/fs.mjs'
 
-const LANE_KEYS = ['text', 'knowledge', 'reflection', 'pages']
+const LANE_KEYS = ['text', 'reflection', 'pages']
 
 function classifyDatasetFile(path) {
   if (path.startsWith('quran-text/')) {
@@ -27,14 +27,8 @@ function classifyDatasetFile(path) {
   ) {
     return { lane: 'text', category: 'text-index' }
   }
-  if (path.startsWith('knowledge/ayah/')) {
-    return { lane: 'knowledge', category: 'knowledge-ayah' }
-  }
-  if (path.startsWith('knowledge/passages/')) {
-    return { lane: 'knowledge', category: 'knowledge-passages' }
-  }
-  if (path.startsWith('knowledge/indexes/')) {
-    throw new Error(`Retired knowledge reverse index must not ship in the dataset: ${path}`)
+  if (path.startsWith('knowledge/')) {
+    throw new Error(`Retired knowledge dataset must not ship in the dataset: ${path}`)
   }
   if (path.startsWith('mushaf-pages/')) {
     return { lane: 'pages', category: 'pages' }

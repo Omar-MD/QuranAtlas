@@ -3,9 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CaseSensitive } from 'lucide-react'
 
 import { loadReaderSurah, type ReaderCorpusState } from '../../../data/reader-corpus'
-import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
-import { loadKnowledgeForSurah } from '../../../metadata/knowledge'
-import type { VerseMetadata } from '../../../metadata/metadata-state'
+import { findAdjacentSurah, loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../../data/surah-index'
+import { REACT_ROUTES } from '../../router/routes'
 import type { Riwayah } from '../../../storage/types'
 import { nativeSettingsReader, readNativeSettings } from '../../../storage/native-reader-store'
 import {
@@ -97,7 +96,6 @@ export function ReaderRoute({
 }) {
   const [corpus, setCorpus] = useState<ReaderCorpusState>({ status: 'loading' })
   const [corpusRequestToken, setCorpusRequestToken] = useState(0)
-  const [metadata, setMetadata] = useState<Map<string, VerseMetadata>>(new Map())
   const [surahIndex, setSurahIndex] = useState<ReaderSurahIndexEntry[]>([])
   const [wirdPageBoundaries, setWirdPageBoundaries] = useState<WirdBoundary[]>([])
   const [wirdPlan, setWirdPlan] = useState<WirdPlan | null>(null)
@@ -110,6 +108,13 @@ export function ReaderRoute({
   const lastFocusedRouteKeyRef = useRef<string | null>(null)
   const lastRouteKeyRef = useRef<string | null>(null)
   const wirdCounts = useMemo(() => wirdCountsFromIndex(surahIndex, corpus), [corpus, surahIndex])
+  const adjacentSurahs = useMemo(
+    () => ({
+      previous: findAdjacentSurah(surahIndex, surah, 'previous'),
+      next: findAdjacentSurah(surahIndex, surah, 'next'),
+    }),
+    [surah, surahIndex],
+  )
   const wirdProgressCounts = useMemo(
     () => (surahIndex.length === 114 ? wirdCounts : []),
     [surahIndex.length, wirdCounts],
@@ -176,7 +181,6 @@ export function ReaderRoute({
   useEffect(() => {
     const controller = new AbortController()
     setCorpus({ status: 'loading' })
-    setMetadata(new Map())
     setSurahIndex([])
     setWirdPlan(null)
 
@@ -202,10 +206,6 @@ export function ReaderRoute({
       .catch(() => {
         if (!controller.signal.aborted) setWirdPlan(null)
       })
-
-    void loadKnowledgeForSurah(surah, fetch, controller.signal).then((result) => {
-      if (!controller.signal.aborted) setMetadata(result.rows)
-    })
 
     void loadReaderSurahIndex(fetch, controller.signal)
       .then((rows) => {
@@ -364,9 +364,12 @@ export function ReaderRoute({
       <div className="qar-reader-column">
         <EditionBannerGate />
         <ReaderVerseSurface
+          adjacentSurahs={adjacentSurahs}
           bookmarkedVerseKeys={bookmarkedVerseKeys}
           corpus={corpus}
-          metadata={metadata}
+          onNavigateSurah={(nextSurah) => {
+            window.location.hash = REACT_ROUTES.surah(nextSurah)
+          }}
           onCopyReference={() => setCopyToast('Reference copied')}
           onRetry={() => setCorpusRequestToken((token) => token + 1)}
           onSelectVerse={(verseKey) => {
