@@ -63,7 +63,6 @@ export function SurahsRoute({
   return (
     <SettingsShell
       closeLabel="Close surah list"
-      layout="full"
       onClose={onClose}
       returnFocusId={returnFocusId}
       subtitle=""

@@ -130,14 +130,7 @@ export function AboutRoute({ onClose, returnFocusId }: { onClose: () => void; re
   const updateCheckPending = updateCheck.status === 'checking' || updateCheck.status === 'reloading'
 
   return (
-    <SettingsShell
-      closeLabel="Close about"
-      layout="full"
-      onClose={onClose}
-      returnFocusId={returnFocusId}
-      subtitle=""
-      title="About"
-    >
+    <SettingsShell closeLabel="Close about" onClose={onClose} returnFocusId={returnFocusId} subtitle="" title="About">
       {/* About calm sheet (polish v2, mockup A): tagline → notation row →
           sources disclosure → quiet report link → version footer. The
           footer's top border is the single hairline on the screen. */}

@@ -49,7 +49,6 @@ export function BookmarksRoute({
   return (
     <SettingsShell
       closeLabel="Close bookmarks"
-      layout="full"
       onClose={onClose}
       returnFocusId={returnFocusId}
       subtitle=""

@@ -11,9 +11,12 @@ import { SettingsRow } from '../../../components/settings/SettingsRow'
 import { ThemeControls } from '../../../components/settings/ThemeControls'
 import { VerseReadingControls } from '../../../components/settings/VerseReadingControls'
 import { useSettingsForm } from '../../../components/settings/useSettingsForm'
+import { EditionChangeDialog } from '../../../components/launch/EditionChangeDialog'
 import { Button, Select, Status } from '../../../components/ui'
 import { subscribeReactReaderPreferencesChanged } from '../../../storage/reader-preferences'
 import { readNativeSettings } from '../../../storage/native-reader-store'
+import { readActiveMushafProfile } from '../../../storage/reader-settings'
+import { loadMushafEditionEntries } from '../../../launch/mushaf-edition-setup'
 import { DEFAULT_READER_ASSET_PROFILE } from '../../../../shared/reader-assets/default-profile'
 import type { NormalizedRect } from '../../../components/reader/mushaf-page-framing'
 import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
@@ -21,10 +24,10 @@ import { loadMushafFramingCapability } from '../../../packs/mushaf-page-asset'
 export type SettingsRouteMode = 'verse' | 'mushaf'
 
 // Settings stays minimal: only the controls for the reader the settings panel
-// is opened from. No live preview, no About/Downloads link rows, no edition
-// switching (editions change from the reader's edition banner) and no notation
-// guide (it lives on the About screen). The #/assets route reuses this shell
-// as a Downloads-only surface for deep links.
+// is opened from. No live preview, no About/Downloads link rows and no notation
+// guide (it lives on the About screen); the Edition row reuses the reader's
+// edition-change dialog. The #/assets route reuses this shell as a
+// Downloads-only surface for deep links.
 export function SettingsRoute({
   initialAssetsExpanded,
   mode = 'verse',
@@ -50,6 +53,27 @@ export function SettingsRoute({
   const [includedAssetsVisible, setIncludedAssetsVisible] = useState(
     () => downloadsOpen && shouldShowIncludedAssetsByDefault(),
   )
+  const [editionDialogOpen, setEditionDialogOpen] = useState(false)
+  const [editionLabel, setEditionLabel] = useState<string | null>(null)
+  // The Edition row mirrors the reader banner: it names the active edition
+  // and re-reads after any switch (the write emits a preferences change).
+  useEffect(() => {
+    let active = true
+    const refresh = () => {
+      void Promise.all([readActiveMushafProfile(), loadMushafEditionEntries().catch(() => null)])
+        .then(([profile, entries]) => {
+          if (!active) return
+          setEditionLabel(entries?.find((entry) => entry.mushafEditionId === profile.mushafEditionId)?.label ?? null)
+        })
+        .catch(() => undefined)
+    }
+    refresh()
+    const unsubscribe = subscribeReactReaderPreferencesChanged(refresh)
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
   // G-3(b): the resolved theme (System included) decides whether "Dim page
   // images" can be toggled; the attribute is maintained by
   // applyReactReaderAppearance, so read it back instead of re-deriving.
@@ -150,7 +174,6 @@ export function SettingsRoute({
 
   return (
     <SettingsShell
-      layout={downloadsOpen ? 'full' : 'compact'}
       onClose={onClose}
       returnFocusId={returnFocusId}
       subtitle=""
@@ -236,8 +259,18 @@ export function SettingsRoute({
               />
             )}
           </SettingsGroup>
+
+          <SettingsGroup title="Edition">
+            <SettingsRow helper={editionLabel ?? 'Mushaf edition unavailable right now'} label="Mushaf edition">
+              <Button onClick={() => setEditionDialogOpen(true)} size="sm" variant="secondary">
+                Change edition
+              </Button>
+            </SettingsRow>
+          </SettingsGroup>
         </>
       )}
+
+      {editionDialogOpen ? <EditionChangeDialog onOpenChange={setEditionDialogOpen} open={editionDialogOpen} /> : null}
 
       <span className="qar:sr-only">
         Settings are open. Close this panel to return to {settingsReturnDestination(previousHash)}.

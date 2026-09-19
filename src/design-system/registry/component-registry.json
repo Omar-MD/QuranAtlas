@@ -1154,7 +1154,7 @@
       "maturity": "product",
       "exportPath": "src/components/settings/SettingsShell.tsx",
       "namedExport": "SettingsShell",
-      "allowedVariants": ["verse", "mushaf", "compact", "rail", "dark", "night"],
+      "allowedVariants": ["verse", "mushaf", "rail", "dark", "night"],
       "allowedSizes": [],
       "slots": ["root", "header", "scrolling-body", "group-stack"],
       "dependencies": {
@@ -1192,7 +1192,7 @@
       "maturity": "behavior",
       "exportPath": "src/components/ui/overlays.tsx",
       "namedExport": "Sheet",
-      "allowedVariants": ["adaptive-settings", "default", "navigation-drawer", "quick", "settings"],
+      "allowedVariants": ["adaptive-settings", "default", "navigation-drawer", "quick"],
       "allowedSizes": [],
       "slots": ["trigger", "title", "content", "body", "close"],
       "dependencies": {
@@ -1451,7 +1451,7 @@
       "maturity": "product",
       "exportPath": "src/components/reader/SurahSelector.tsx",
       "namedExport": "SurahSelector",
-      "allowedVariants": ["default", "desktop-dialog", "mobile-sheet"],
+      "allowedVariants": ["default", "mobile-sheet", "desktop-sheet"],
       "allowedSizes": [],
       "slots": ["trigger", "surface", "browsePill", "filter", "list", "adjacentFooter"],
       "dependencies": {

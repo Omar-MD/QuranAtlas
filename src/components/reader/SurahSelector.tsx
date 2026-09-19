@@ -5,7 +5,7 @@ import { loadReaderSurahIndex, type ReaderSurahIndexEntry } from '../../data/sur
 import type { RecentSurahPosition } from '../../continuity/recent-surahs'
 import { openReactDb } from '../../storage/db'
 import { readRecentSurahs } from '../../continuity/recent-surahs'
-import { Button, Dialog, Input, ListRow, SegmentedControl, Sheet } from '../ui'
+import { Button, Input, ListRow, SegmentedControl, Sheet } from '../ui'
 
 const SURAH_COUNT = 114
 
@@ -24,11 +24,11 @@ type ParsedQuery =
   | { kind: 'surahNum'; n: number }
   | { kind: 'text'; q: string }
 
-// S5 surah selector: desktop Dialog 640 px / mobile full-height Sheet, Tabs
-// Surahs/Juz, preserved local filter (name, number, verse reference; Enter
-// jumps to the exact match), recent group, selected treatment on the current
-// row, and Previous/Next rows at the foot — absent at surah 1/114 (D6: no
-// wrap at the ends of the book).
+// S5 surah selector: the shared adaptive-settings frame (desktop dialog /
+// mobile full-screen cover), Tabs Surahs/Juz, preserved local filter (name,
+// number, verse reference; Enter jumps to the exact match), recent group,
+// selected treatment on the current row, and Previous/Next rows at the foot —
+// absent at surah 1/114 (D6: no wrap at the ends of the book).
 export function SurahSelector({ currentSurah, onClose, onNavigate, open, resolveHref }: SurahSelectorProps) {
   const [rows, setRows] = useState<ReaderSurahIndexEntry[]>([])
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -258,35 +258,19 @@ function SelectorSurface({
   open: boolean
   title: string
 }) {
-  const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(min-width: 768px)').matches),
-  )
-  useEffect(() => {
-    if (!open) return
-    setIsDesktop(Boolean(window.matchMedia?.('(min-width: 768px)').matches))
-  }, [open])
   if (!open) return null
-  return isDesktop ? (
-    <Dialog
-      contentClassName="qar-react-selector-dialog"
-      onOpenChange={(next) => {
-        if (!next) onClose()
-      }}
-      open
-      title={title}
-    >
-      <div className="qar-react-selector-frame">{children}</div>
-    </Dialog>
-  ) : (
+  // One shared adaptive-settings frame on every breakpoint — the same size
+  // and chrome as every other screen-level surface.
+  return (
     <Sheet
       closeLabel="Close surah selector"
-      contentClassName="qar-react-selector-sheet"
       onOpenChange={(next) => {
         if (!next) onClose()
       }}
       open
       returnFocusId="reader-surah-selector-trigger"
       title={title}
+      variant="adaptive-settings"
     >
       <div className="qar-react-selector-frame">{children}</div>
     </Sheet>

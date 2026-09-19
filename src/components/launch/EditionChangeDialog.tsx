@@ -12,11 +12,12 @@ import { DEFAULT_READER_ASSET_PROFILE } from '../../../shared/reader-assets/defa
 import { Button, ChoiceButton, Dialog, Spinner } from '../ui'
 import { useQueuedSettingWrite } from '../settings/useQueuedSettingWrite'
 
-// Edition switching lives in the reader, not in settings: the S1 edition
-// banner's "Change edition" button opens this dialog. One quiet row per
-// edition — name, one-line description, page-image size when known; the
-// current edition carries the accent label treatment. Switching re-shows the
-// edition banner once on return (the dismissed id no longer matches).
+// Edition switching opens from two places — the S1 edition banner's "Change
+// edition" button in the reader and the Settings Edition row — so both share
+// this one dialog. One quiet row per edition — name, one-line description,
+// page-image size when known; the current edition carries the accent label
+// treatment. Switching re-shows the edition banner once on return (the
+// dismissed id no longer matches).
 export function EditionChangeDialog({ onOpenChange, open }: { onOpenChange: (open: boolean) => void; open: boolean }) {
   const [options, setOptions] = useState<Array<MushafEditionOption & { sizeText?: string }> | null>(null)
   const [value, setValue] = useState(DEFAULT_READER_ASSET_PROFILE.mushafEditionId)
